@@ -6,7 +6,7 @@
 services:
   web:
     build: .
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2
+    command: sh -c "python manage.py ensure_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2"
     env_file: .env
     environment:
       STAGING_MODE: "true"

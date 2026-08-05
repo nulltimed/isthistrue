@@ -33,8 +33,10 @@ def moderate_machina_post(machina_post_id):
     if not post or not post.poster:
         return 'skip'
     text = str(post.content)[:4000]
+    # Mock sensible al contenido: la moderacion es reproducible por UI en el espejo
+    mock = {'flag': 'insulto' in text.lower(), 'reason': 'mock: contiene marcador'}
     haiku = client.call_json(settings.MODEL_CHEAP, HAIKU_SYSTEM, text,
-                             max_tokens=100, mock_payload={'flag': False, 'reason': ''})
+                             max_tokens=100, mock_payload=mock)
     prior = MPost.objects.filter(poster=post.poster, approved=True).exclude(pk=post.pk).count()
     novato = prior < 3
 

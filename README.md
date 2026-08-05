@@ -295,21 +295,11 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
   Turnstile/Brevo/HF), PayPal.me + objetivo en panel, permisos foro machina en /admin/,
   backups B10 nuevos (rclone contigo), confirmar fail2ban, apartado de correos.
 
-## 25. Reparto de modelos v2 (decidido por David, factura mostrada)
-
-- **Haiku SOLO para el barrido de la fase barata** (extraccion + hechos/opiniones + manipulacion
-  + señales; una llamada, ~0,01 EUR). **Todo lo demas: Sonnet** — pivote EN, chequeo de avatares,
-  clasificador de ambiguedad (sobrecoste <1 EUR/mes) y **triaje de moderacion de comentarios**.
-- FACTURA MOSTRADA de la moderacion con Sonnet: 24-36 EUR/mes a 200 comentarios/dia (vs 3-4 con
-  cascada Haiku). Reversible con UNA linea: MODERATION_TRIAGE_MODEL en .env. Vigilar el primer mes.
-- **Reescaneo Opus** (MODEL_RESCAN=claude-opus-4-8): cuando los votos ▲ de un post superan el
-  **40% de los usuarios activos verificados**, se re-verifican todos sus claims con Opus.
-  Candados: suelo absoluto de **10 votos** (evita que 2 amigos disparen Opus en el arranque),
-  **una sola vez por post** (flag opus_rescanned), coste ~0,35 EUR via candado de presupuesto.
-  Umbrales en panel: opus_rescan_percent / opus_rescan_min_votes. Migracion nueva pendiente de
-  generar por el operador (Post.opus_rescanned). Test del umbral incluido.
-
 ## 25. Reparto de modelos DEFINITIVO (decidido por David tras deshacer una ambiguedad)
+
+> (Consolidado en Fase 3.4: existia una seccion "v2" previa que contradecia a esta; se elimino.
+> Donde discrepaban manda ESTA: moderacion SOLO Haiku, reescaneo=MODEL_PREMIUM con candado de
+> 50 usuarios, pivote EN=Haiku. Avatares: Haiku, confirmado por David en la 3.4.)
 
 | Tarea | Modelo | Coste aprox |
 |---|---|---|

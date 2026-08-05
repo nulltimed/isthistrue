@@ -96,11 +96,14 @@ class AlertasAntiSpam(TestCase):
 
 
 class OpusRescan(TestCase):
-    def test_umbral_40_con_suelo_y_una_sola_vez(self):
+    # Fase 3.4 §6: should_opus_rescan eliminada; la unica puerta es
+    # maybe_trigger_opus_rescan (candado de usuarios + 40% + una sola vez).
+    def test_umbral_40_y_una_sola_vez(self):
+        from unittest import mock
         from apps.analysis.models import Post
-        from apps.analysis.services import should_opus_rescan
+        from apps.analysis import tasks
         from apps.forum.models import Vote
-        SystemSetting.objects.get_or_create(key='opus_rescan_min_votes', defaults={'value': '10'})
+        SystemSetting.objects.get_or_create(key='opus_rescan_min_users', defaults={'value': '10'})
         SystemSetting.objects.get_or_create(key='opus_rescan_percent', defaults={'value': '40'})
         author = make_user('autor3')
         author.email_verified = True
@@ -113,18 +116,16 @@ class OpusRescan(TestCase):
             u.email_verified = True
             u.save()
             voters.append(u)
-        # 5 votos: por debajo del suelo de 10 aunque supere el 40% -> NO
-        for u in voters[:5]:
-            Vote.objects.create(post=post, user=u)
-        self.assertFalse(should_opus_rescan(post))
-        # 10 votos sobre 13 usuarios (77%) -> SI
-        for u in voters[5:10]:
-            Vote.objects.create(post=post, user=u)
-        self.assertTrue(should_opus_rescan(post))
-        # ya reescaneado -> nunca mas
-        post.opus_rescanned = True
-        post.save()
-        self.assertFalse(should_opus_rescan(post))
+        with mock.patch.object(tasks.opus_rescan, 'delay'):
+            for u in voters[:3]:
+                Vote.objects.create(post=post, user=u)
+            self.assertFalse(tasks.maybe_trigger_opus_rescan(post))  # 3/13 < 40%
+            for u in voters[3:8]:
+                Vote.objects.create(post=post, user=u)
+            self.assertTrue(tasks.maybe_trigger_opus_rescan(post))   # 8/13 > 40%
+            post.opus_rescanned = True
+            post.save()
+            self.assertFalse(tasks.maybe_trigger_opus_rescan(post))  # nunca mas
 
 
 class ReescaneoOpus(TestCase):

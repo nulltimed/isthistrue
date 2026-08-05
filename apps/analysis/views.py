@@ -165,10 +165,8 @@ def upvote(request, pk):
     if not created:
         obj.delete()
     else:
-        from .services import should_opus_rescan
-        if should_opus_rescan(post):
-            from .tasks import opus_rescan
-            opus_rescan.delay(post.pk)
+        from .tasks import maybe_trigger_opus_rescan
+        if maybe_trigger_opus_rescan(post):  # unica puerta al reescaneo (Fase 3.4 §6)
             messages.info(request, 'Este contenido ha alcanzado gran interés: '
                                    're-verificación con el modelo mayor en marcha.')
     return redirect('post_detail', pk=pk)

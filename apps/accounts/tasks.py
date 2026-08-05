@@ -16,7 +16,7 @@ def check_avatar(user_id):
     with user.avatar.open('rb') as f:
         data = base64.standard_b64encode(f.read()).decode()
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-    msg = client.messages.create(model=settings.MODEL_VERDICT, max_tokens=10,
+    msg = client.messages.create(model=settings.MODEL_CHEAP, max_tokens=10,  # avatares: Haiku (decision de David, Fase 3.4)
         messages=[{'role': 'user', 'content': [
             {'type': 'image', 'source': {'type': 'base64', 'media_type': 'image/jpeg', 'data': data}},
             {'type': 'text', 'text': 'Responde SOLO "OK" o "REVISAR". REVISAR si hay desnudos, violencia, simbologia de odio o contenido inadecuado para un avatar publico.'}]}])

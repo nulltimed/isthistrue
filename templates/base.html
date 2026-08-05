@@ -14,13 +14,20 @@
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
-<header><div class="header-inner">
-  <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
+<header>
+  <div class="masthead">
+    <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
+    <div class="lang-switch">
+      <a href="https://escierto.xyztserver.com{{ request.path }}" {% if request.LANGUAGE_CODE != 'en' %}class="active"{% endif %}>ES</a>
+      <span>·</span>
+      <a href="https://isthistrue.xyztserver.com{{ request.path }}" {% if request.LANGUAGE_CODE == 'en' %}class="active"{% endif %}>EN</a>
+    </div>
+  </div>
   <nav>
     <a href="/">{% trans "Portada" %}</a>
     <a href="/foro/">{% trans "Foro" %}</a>
     <a href="{% url 'recent_changes' %}">Wiki</a>
-    <a href="{% url 'search' %}">🔍</a>
+    <a href="{% url 'search' %}">{% trans "Buscar" %}</a>
     {% if user.is_authenticated %}
       <a href="{% url 'submit' %}">+ {% trans "Analizar" %}</a>
       <a href="{% url 'notifications' %}">🔔</a>
@@ -31,14 +38,13 @@
       <a href="{% url 'login' %}">{% trans "Entrar" %}</a><a href="{% url 'register' %}">{% trans "Registro" %}</a>
     {% endif %}
   </nav>
-</div></header>
+</header>
 {% if quota_banner %}
 <div class="quota-banner">
   {% trans "Hoy" %}: {{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} € ·
   {% trans "Este mes" %}: {{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} € —
   {% trans "Si donas, estos cupos suben." %}
   {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
-  — {% trans "open source (AGPL), sin ánimo de lucro" %}
 </div>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}

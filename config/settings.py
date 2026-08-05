@@ -11,6 +11,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'inseguro-solo-desarrollo')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 STAGING_MODE = os.getenv('STAGING_MODE', 'false').lower() == 'true'
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost').split(',')]
+# HTTPS termina en el Nginx del host: sin esto, los POST de navegador fallan con CSRF 403
+# (el navegador manda Origin https:// y Django creia estar en http). Fase 3.4 §1.
+CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS
+                        if h not in ('localhost', '127.0.0.1')]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
     'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',

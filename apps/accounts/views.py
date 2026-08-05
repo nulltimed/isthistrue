@@ -129,6 +129,8 @@ def verify_email(request, token):
     if user:
         user.email_verified = True
         user.save(update_fields=['email_verified'])
+        from .verification import send_welcome_email
+        send_welcome_email(user)
         messages.success(request, 'Email verificado: ya puedes iniciar sesión.')
     else:
         messages.error(request, 'Enlace de verificación no válido o caducado.')
