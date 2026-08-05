@@ -327,3 +327,19 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
   y pasa por try_spend (~0,40 €). Genera nuevas versiones de los claims (historial) y alerta admin.
 - Capacidad con Sonnet clasificando: ~30-35 fases baratas/dia con el deposito base; volver a
   Haiku es una linea de .env (MODEL_CLASSIFIER) si el volumen aprieta.
+
+## 26. Fase 3.3 — presupuesto 100/3, centrado, guia maestra de servicios
+
+- **Presupuesto SUBIDO por David: 100 €/mes y 3 €/dia** (env, settings, budget_base_eur=100).
+  Techo duro sigue en 200 = limite a fijar en la consola Anthropic (deben coincidir).
+- **Diseño: todo centrado** (peticion de David): cabecera con contenedor interior alineado a la
+  columna central de 900px; movil centrado.
+- **docs/05-activacion-servicios.md**: guia maestra paso a paso de TODOS los servicios, con la
+  REGLA DE ORO del .env (recrear contenedores + ensure_superuser tras cada edicion — causa
+  raiz del "no puedo iniciar sesion" de David: edito el .env sin recrear ni re-ejecutar el comando).
+- Token GitHub con scope workflow: ARREGLADO por David → Claude Codigo debe subir ci.yml (guia §6).
+- SEGURIDAD: David pego su .env completo en el chat (SECRET_KEY, POSTGRES_PASSWORD,
+  ADMIN_PASSWORD) y decidio NO rotar claves, riesgo asumido conscientemente tras aviso.
+- RECORDATORIOS ACTIVOS (David pidio que se le recuerden): PayPal.me (§8), permisos foro (§9),
+  backups rclone (§10), fail2ban (§11), apartado de correos (§12).
+- Pendiente menor: David no respondio el quiz de peliculas (lista de 10 sci-fi queda a la espera).

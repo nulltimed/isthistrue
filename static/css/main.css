@@ -8,8 +8,8 @@ html{scroll-behavior:smooth}
 body{font-family:system-ui,-apple-system,'Segoe UI',Inter,Roboto,sans-serif;color:var(--ink);background:var(--paper);margin:0;line-height:1.55}
 a{color:var(--ink)}
 /* Cabecera pegajosa */
-header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
-gap:1rem;padding:.6rem 1.2rem;background:var(--paper);border-bottom:2px solid var(--ink)}
+header{position:sticky;top:0;z-index:50;padding:.6rem 1.2rem;background:var(--paper);border-bottom:2px solid var(--ink)}
+.header-inner{max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
 .logo img{display:block;height:34px}
 nav{display:flex;align-items:center;flex-wrap:wrap;gap:.9rem}
 nav a{text-decoration:none;font-weight:600;font-size:.92rem}
@@ -21,6 +21,8 @@ h2{font-size:1.05rem;margin:1.4rem 0 .6rem}
 /* Banner de cupos/donaciones */
 .quota-banner{background:#fdf6e3;border-bottom:1px solid var(--line);padding:.45rem 1.2rem;
 font-size:.84rem;text-align:center;color:#6b5900}
+.quota-banner,footer{max-width:100%}
+.messages{max-width:900px}
 .quota-banner a{font-weight:700}
 /* Listas de posts como tarjetas */
 .post-list{list-style:none;padding:0;display:grid;gap:.55rem}
@@ -87,4 +89,4 @@ th{background:var(--paper)}
 .progress > div{background:var(--green);height:100%}
 footer{border-top:2px solid var(--ink);margin-top:3rem;padding:1.1rem;font-size:.8rem;text-align:center;color:var(--grey)}
 footer a{color:var(--grey);margin:0 .25rem}
-@media (max-width:640px){header{flex-direction:column;align-items:flex-start}.logo img{height:28px}main{margin-top:1rem}}
+@media (max-width:640px){.header-inner{flex-direction:column;align-items:center;text-align:center}.logo img{height:28px}main{margin-top:1rem}}

@@ -14,7 +14,7 @@
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
-<header>
+<header><div class="header-inner">
   <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
   <nav>
     <a href="/">{% trans "Portada" %}</a>
@@ -31,7 +31,7 @@
       <a href="{% url 'login' %}">{% trans "Entrar" %}</a><a href="{% url 'register' %}">{% trans "Registro" %}</a>
     {% endif %}
   </nav>
-</header>
+</div></header>
 {% if quota_banner %}
 <div class="quota-banner">
   {% trans "Hoy" %}: {{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} € ·

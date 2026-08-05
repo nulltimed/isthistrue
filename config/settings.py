@@ -122,7 +122,7 @@ CELERY_TASK_DEFAULT_PRIORITY = 5
 PRIORITY_MANIPULATION = 9
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-# --- Agentes / economia (60 EUR/mes, 2 EUR/dia: decidido) ---
+# --- Agentes / economia (100 EUR/mes, ~3 EUR/dia: decidido por David en Fase 3.3) ---
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 MODEL_CHEAP = os.getenv('MODEL_CHEAP', 'claude-haiku-4-5-20251001')
 MODEL_VERDICT = os.getenv('MODEL_VERDICT', 'claude-sonnet-4-6')
@@ -137,8 +137,8 @@ _mock = os.getenv('MOCK_AGENTS', 'auto').lower()
 MOCK_AGENTS = (_mock == 'true') or (_mock == 'auto' and DEBUG and not ANTHROPIC_API_KEY)
 if STAGING_MODE:
     MOCK_AGENTS = True  # el espejo JAMAS gasta deposito
-DAILY_BUDGET_EUR = float(os.getenv('DAILY_BUDGET_EUR', '2.0'))
-MONTHLY_CAP_EUR = float(os.getenv('MONTHLY_CAP_EUR', '60'))
+DAILY_BUDGET_EUR = float(os.getenv('DAILY_BUDGET_EUR', '3.0'))
+MONTHLY_CAP_EUR = float(os.getenv('MONTHLY_CAP_EUR', '100'))
 SEARXNG_URL = os.getenv('SEARXNG_URL', 'http://searxng:8080')
 SEARCHES_PER_CLAIM = int(os.getenv('SEARCHES_PER_CLAIM', '3'))
 SEARCHES_PER_CLAIM_AMBIGUOUS = int(os.getenv('SEARCHES_PER_CLAIM_AMBIGUOUS', '5'))

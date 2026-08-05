@@ -11,7 +11,7 @@ DEFAULTS = {
     'startup_mode_min_users': '50',
     'mod_vote_weight': '5',
     'name_confirm_points': '5',
-    'budget_base_eur': '60',
+    'budget_base_eur': '100',
     'budget_hard_ceiling_eur': '200',
     'paypal_url': '',
     'opus_rescan_percent': '40',
