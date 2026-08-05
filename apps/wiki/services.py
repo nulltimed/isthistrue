@@ -64,6 +64,7 @@ def find_similar_bad_claim(text):
 
 def _pivot_en(text):
     from apps.agents import client, prompts
+    # README §25 DEFINITIVO: pivote EN = Haiku (la subida a Sonnet era de la ronda v2 superada)
     return client.call(settings.MODEL_CHEAP, prompts.PIVOT_SYSTEM, text,
                        max_tokens=300, mock_payload=None) or text
 

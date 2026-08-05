@@ -39,6 +39,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # sirve /static/ en produccion (DEBUG=False)
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -105,6 +106,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static', MACHINA_MAIN_STATIC_DIR]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+}
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -122,6 +127,12 @@ ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 MODEL_CHEAP = os.getenv('MODEL_CHEAP', 'claude-haiku-4-5-20251001')
 MODEL_VERDICT = os.getenv('MODEL_VERDICT', 'claude-sonnet-4-6')
 MODEL_OFFTOPIC = os.getenv('MODEL_OFFTOPIC', MODEL_CHEAP)
+# Clasificador critico (manipulacion + hecho/opinion): Sonnet por decision de David (conmutable)
+MODEL_CLASSIFIER = os.getenv('MODEL_CLASSIFIER', 'claude-sonnet-4-6')
+# Reescaneo premium al superar el 40% de votos: Opus
+MODEL_PREMIUM = os.getenv('MODEL_PREMIUM', 'claude-opus-4-8')
+# Reparto DEFINITIVO (README §25): moderacion SOLO Haiku (moderation.py usa MODEL_CHEAP);
+# MODERATION_TRIAGE_MODEL y MODEL_RESCAN (ronda v2) retirados: nada los leia.
 _mock = os.getenv('MOCK_AGENTS', 'auto').lower()
 MOCK_AGENTS = (_mock == 'true') or (_mock == 'auto' and DEBUG and not ANTHROPIC_API_KEY)
 if STAGING_MODE:

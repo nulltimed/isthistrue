@@ -7,8 +7,9 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-COST_CHEAP_EUR = 0.01
+COST_CHEAP_EUR = 0.05  # clasificador Sonnet (decidido); en mock tambien se contabiliza: INTENCIONAL (permite probar banner y candados sin gastar)
 COST_FULL_EUR = 0.07  # estimacion conservadora con tope adaptativo
+COST_OPUS_RESCAN_EUR = 0.35  # Opus: 5-7x Sonnet; solo posts muy votados, 1 vez
 
 
 @shared_task(bind=True, max_retries=2)
@@ -186,3 +187,43 @@ def generate_name_proposals(post_id):
                 post=post, speaker_label=label, candidate_name=name,
                 defaults={'photo_url': photo_for(name), 'source': 'ocr'})
     return f'{len(candidates)} candidatos'
+
+
+COST_OPUS_RESCAN_EUR = 0.40  # estimacion conservadora; pasa por los candados como todo
+
+
+@shared_task
+def opus_rescan(post_id):
+    """Reescaneo premium (decidido por David): si los votos ▲ superan el
+    opus_rescan_percent (40%) de los usuarios del foro, el post se re-verifica con
+    MODEL_PREMIUM (Opus). Candados: minimo opus_rescan_min_users (50), UNA vez por
+    post, y presupuesto. Los claims ganan nueva version en su historial."""
+    from .models import Post, DailyBudget
+    post = Post.objects.get(pk=post_id)
+    if post.opus_rescanned or post.status != 'DONE':
+        return 'skip'
+    if not DailyBudget.try_spend(COST_OPUS_RESCAN_EUR):
+        return 'budget_exhausted'
+    post.opus_rescanned = True
+    post.save(update_fields=['opus_rescanned'])
+    from apps.agents import verdict as verdict_agent
+    verdict_agent.run(post, model=settings.MODEL_PREMIUM)  # la firma real es run(post, model=None)
+    from apps.panel.services import alert_admin
+    alert_admin('Reescaneo Opus ejecutado',
+                f'Post {post.pk} supero el umbral de votos y fue re-verificado con Opus.')
+    return 'rescanned'
+
+
+def maybe_trigger_opus_rescan(post):
+    from apps.accounts.models import User
+    from apps.panel.models import SystemSetting
+    min_users = SystemSetting.get_int('opus_rescan_min_users', 50)
+    percent = SystemSetting.get_int('opus_rescan_percent', 40)
+    total = User.objects.filter(is_active=True, email_verified=True).count()
+    if total < min_users or post.opus_rescanned or post.status != 'DONE':
+        return False
+    votes = post.votes.count()
+    if votes * 100 > total * percent:
+        opus_rescan.delay(post.pk)
+        return True
+    return False

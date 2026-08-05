@@ -1,11 +1,11 @@
 /* isthistrue. / escierto. — diseño v1: minimalista tipografico, contraste AA */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Courier+Prime:wght@700&display=swap');
+/* Sin fuentes de terceros (coherencia con la politica de privacidad): pilas del sistema */
 :root{--ink:#141414;--paper:#faf9f6;--card:#ffffff;--line:#e4e1da;--grey:#5b5b5b;
 --green:#1a7f37;--amber:#9a6b00;--red:#b3261e;--accent:#141414;--radius:10px;
 --shadow:0 1px 3px rgba(20,20,20,.06),0 4px 14px rgba(20,20,20,.05)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--paper);margin:0;line-height:1.55}
+body{font-family:system-ui,-apple-system,'Segoe UI',Inter,Roboto,sans-serif;color:var(--ink);background:var(--paper);margin:0;line-height:1.55}
 a{color:var(--ink)}
 /* Cabecera pegajosa */
 header{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
@@ -15,7 +15,7 @@ nav{display:flex;align-items:center;flex-wrap:wrap;gap:.9rem}
 nav a{text-decoration:none;font-weight:600;font-size:.92rem}
 nav a:hover{text-decoration:underline;text-underline-offset:4px}
 main{max-width:900px;margin:1.6rem auto 3rem;padding:0 1.2rem}
-h1{font-family:'Courier Prime',monospace;font-size:1.5rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;margin:2rem 0 1rem}
+h1{font-family:ui-monospace,'Courier Prime','Courier New',monospace;font-size:1.5rem;border-bottom:1px solid var(--line);padding-bottom:.35rem;margin:2rem 0 1rem}
 h1:first-child{margin-top:.4rem}
 h2{font-size:1.05rem;margin:1.4rem 0 .6rem}
 /* Banner de cupos/donaciones */
@@ -41,7 +41,7 @@ padding:1.2rem 1.4rem;box-shadow:var(--shadow)}
 .embed iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px}
 .transcript .segment{position:relative;padding:.4rem .6rem;border-left:3px solid var(--line);margin:.3rem 0;border-radius:0 6px 6px 0}
 .transcript .segment:hover{background:var(--paper)}
-.ts{font-family:'Courier Prime',monospace;font-size:.8rem;color:var(--grey);margin-right:.45rem;text-decoration:none}
+.ts{font-family:ui-monospace,'Courier Prime','Courier New',monospace;font-size:.8rem;color:var(--grey);margin-right:.45rem;text-decoration:none}
 .speaker-tag{font-size:.68rem;background:#eef3fb;border-radius:4px;padding:.05rem .35rem;margin-right:.3rem;color:#28477a}
 .signal{display:inline-block;font-size:.7rem;margin-left:.5rem;padding:.06rem .45rem;border-radius:4px;background:#efefec;color:var(--grey)}
 .signal-CONTRADICTS_MODEL{background:#fdecea;color:var(--red)}

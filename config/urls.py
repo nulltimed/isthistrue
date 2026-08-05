@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import re_path
+from apps.panel.media_serve import media_serve
 from django.contrib import admin
 from django.urls import path, include
 from machina import urls as machina_urls
@@ -21,4 +23,5 @@ urlpatterns = [
     path('rss/veredictos/', RecentVerdictsFeed(), name='rss_verdicts'),
     path('rss/cambios/', RecentChangesFeed(), name='rss_changes'),
     path('', include('apps.analysis.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    re_path(r'^media/(?P<path>.*)$', media_serve, name='media'),
+]

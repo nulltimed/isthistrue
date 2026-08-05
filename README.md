@@ -271,3 +271,59 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
   pareja. En markdown imprimible; PDFs maquetados si David los pide.
 - Deuda del informe atendida: /panel/ y /wiki/ redirigen; CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP;
   docs con --noinput. Deuda aceptada sin tocar: worker como root en contenedor (mejorable con USER).
+
+## 24. Fase 3.1 (correctivo) — diseño visible, VIM3 fuera, deuda de tests saldada
+
+- **Causa raiz de "la web es feisima" ENCONTRADA**: con DEBUG=False Django no sirve /static/
+  y el Nginx (gestionado por certbot) lo proxea todo → CSS 404 → texto plano. El diseño v1
+  estaba entregado pero nunca se sirvio. **Arreglo: WhiteNoise** (middleware + CompressedStaticFilesStorage);
+  tras build: collectstatic. /media/ lo sirve la app con candado (code_batches solo staff — los
+  txt de codigos no pueden ser publicos). CSS sin fuentes de terceros (coherencia con privacidad):
+  pilas del sistema.
+- **VIM3 FUERA DEL PROYECTO PARA SIEMPRE** (decision de David; no volver a nombrarlo ni usarlo):
+  backups rediseñados a restic sobre **rclone:gdrive (Google Drive, 5 TiB)** + snapshots IONOS
+  como segunda linea. install.md B10 reescrito; backup.sh nuevo; la alerta de Home Assistant
+  y la ruta /mnt/server desaparecen del diseño.
+- **Deuda de tests saldada** (la que señalo el operador): tests/test_fase3.py — presupuesto vivo
+  (donacion engorda deposito, techo duro 200 intocable, diario=techo/dias), API v1 (solo
+  consolidated, licencia, 404), verificacion de email (token valido/manipulado, login bloqueado
+  sin verificar), login email-o-nick, anti-spam de alertas 6h. CacheKeyWarning arreglado (clave slugificada).
+- Gasto simulado del mock en DailyBudget: decidido INTENCIONAL (permite probar banner/candados sin coste).
+- Fix YAML del operador replicado en el arbol (comentario fuera de la cadena del puerto). Docs
+  unificadas a ensure_superuser y --noinput.
+- PENDIENTES DAVID vigentes: token GitHub con scope workflow (CI), claves .env (Anthropic/
+  Turnstile/Brevo/HF), PayPal.me + objetivo en panel, permisos foro machina en /admin/,
+  backups B10 nuevos (rclone contigo), confirmar fail2ban, apartado de correos.
+
+## 25. Reparto de modelos v2 (decidido por David, factura mostrada)
+
+- **Haiku SOLO para el barrido de la fase barata** (extraccion + hechos/opiniones + manipulacion
+  + señales; una llamada, ~0,01 EUR). **Todo lo demas: Sonnet** — pivote EN, chequeo de avatares,
+  clasificador de ambiguedad (sobrecoste <1 EUR/mes) y **triaje de moderacion de comentarios**.
+- FACTURA MOSTRADA de la moderacion con Sonnet: 24-36 EUR/mes a 200 comentarios/dia (vs 3-4 con
+  cascada Haiku). Reversible con UNA linea: MODERATION_TRIAGE_MODEL en .env. Vigilar el primer mes.
+- **Reescaneo Opus** (MODEL_RESCAN=claude-opus-4-8): cuando los votos ▲ de un post superan el
+  **40% de los usuarios activos verificados**, se re-verifican todos sus claims con Opus.
+  Candados: suelo absoluto de **10 votos** (evita que 2 amigos disparen Opus en el arranque),
+  **una sola vez por post** (flag opus_rescanned), coste ~0,35 EUR via candado de presupuesto.
+  Umbrales en panel: opus_rescan_percent / opus_rescan_min_votes. Migracion nueva pendiente de
+  generar por el operador (Post.opus_rescanned). Test del umbral incluido.
+
+## 25. Reparto de modelos DEFINITIVO (decidido por David tras deshacer una ambiguedad)
+
+| Tarea | Modelo | Coste aprox |
+|---|---|---|
+| Clasificacion critica: manipulacion + hecho/opinion (sweep) | **Sonnet** (MODEL_CLASSIFIER, conmutable) | ~0,05 €/analisis |
+| Veredictos con fuentes (validados, por lotes) | **Sonnet** (MODEL_VERDICT) | ~0,03-0,07 € |
+| Moderacion de comentarios | **SOLO Haiku** | ~0,0005 € |
+| Pivote EN, +18, candidatos de nombre, señales Off-Topic | Haiku | centimos |
+| Reescaneo al superar votos ▲ > 40% de usuarios del foro | **Opus** (MODEL_PREMIUM) | ~0,40 €/evento |
+
+- Moderacion rediseñada: Haiku decide AUTOMATICA y provisionalmente (novato marcado = bloqueado;
+  veterano marcado = publicado con expediente 48h), SIEMPRE notifica a moderadores si existen
+  (pueden revertir); sin moderadores, la decision automatica es DEFINITIVA. Sonnet FUERA de moderacion.
+- Reescaneo Opus con 3 candados configurables en panel: opus_rescan_min_users=50,
+  opus_rescan_percent=40, UNA vez por post (flag opus_rescanned, nueva migracion analysis),
+  y pasa por try_spend (~0,40 €). Genera nuevas versiones de los claims (historial) y alerta admin.
+- Capacidad con Sonnet clasificando: ~30-35 fases baratas/dia con el deposito base; volver a
+  Haiku es una linea de .env (MODEL_CLASSIFIER) si el volumen aprieta.

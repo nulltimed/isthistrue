@@ -164,6 +164,13 @@ def upvote(request, pk):
     obj, created = Vote.objects.get_or_create(post=post, user=request.user)
     if not created:
         obj.delete()
+    else:
+        from .services import should_opus_rescan
+        if should_opus_rescan(post):
+            from .tasks import opus_rescan
+            opus_rescan.delay(post.pk)
+            messages.info(request, 'Este contenido ha alcanzado gran interés: '
+                                   're-verificación con el modelo mayor en marcha.')
     return redirect('post_detail', pk=pk)
 
 

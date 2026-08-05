@@ -107,7 +107,7 @@ $ sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NO
 $ sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel
 $ sudo -u i docker compose exec web python manage.py migrate
 $ sudo -u i docker compose exec web python manage.py seed_settings
-$ sudo -u i docker compose exec web python manage.py createsuperuser
+$ sudo -u i docker compose exec web python manage.py ensure_superuser   # lee ADMIN_EMAIL/ADMIN_PASSWORD del .env
 $ sudo -u i docker compose exec web python manage.py collectstatic --noinput
 ```
 Comprobación local (el stack NO es visible desde fuera todavía, y así debe ser):
@@ -163,53 +163,32 @@ $ sudo apt install -y fail2ban && sudo systemctl enable --now fail2ban
 ```
 (Si tu mail personal necesita otros puertos —25/465/587/993— y ya los usabas, añádelos ANTES de `enable`.)
 
-## B10. Backups (restic → VIM3 + Google Drive; ruta RENOMBRADA)
+## B10. Backups (restic → Google Drive; el VIM3 queda FUERA del proyecto)
 
-En el **VIM3** (por SSH/VPN Mullvad), crea la carpeta nueva:
-```
-$ mkdir -p /mnt/server/backups/isthistrue
-```
 En el **VPS**:
 ```
 $ sudo apt install -y restic rclone
-$ sudo mkdir -p /root/.config
-```
-Alias SSH del VIM3 para restic (edita IP/usuario reales de tu VPN):
-```
-$ sudo nano /root/.ssh/config
-```
-```
-Host vim3
-    HostName IP_VPN_DEL_VIM3
-    User TU_USUARIO_VIM3
-    IdentityFile /root/.ssh/id_ed25519
-```
-Genera clave e instálala en el VIM3:
-```
-$ sudo ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
-$ sudo cat /root/.ssh/id_ed25519.pub   # copia esta línea a ~/.ssh/authorized_keys del VIM3
-```
-Inicializa el repositorio cifrado (la contraseña que elijas es **RESTIC_PASSWORD: guárdala FUERA del servidor; sin ella los backups son irrecuperables**):
-```
-$ sudo restic -r sftp:vim3:/mnt/server/backups/isthistrue init
-```
-Configura rclone para Google Drive (asistente interactivo; nombre del remoto: `gdrive`):
-```
 $ sudo rclone config
 ```
-Cron (diarias 5:00; el propio script hace la retención y el espejo a GDrive):
+Asistente de rclone: `n` (nuevo) → nombre **gdrive** → tipo **drive** (Google Drive) → deja client_id/secret vacíos → scope **1** (acceso completo) → sigue el enlace de autorización con tu cuenta de Google (5 TiB) → confirma. Comprueba: `sudo rclone lsd gdrive:` debe listar tus carpetas.
+
+Inicializa el repositorio cifrado (la contraseña que elijas es **RESTIC_PASSWORD: guárdala FUERA del servidor** — sin ella los backups son irrecuperables):
+```
+$ sudo restic -r rclone:gdrive:isthistrue-backups init
+```
+Cron (diarias 5:00; el script hace retención — diarias 7, semanales 3):
 ```
 $ sudo crontab -e
 ```
 ```
 0 5 * * * RESTIC_PASSWORD='TU_PASSWORD_RESTIC' /opt/isthistrue/ops/backup/backup.sh >> /var/log/isthistrue-backup.log 2>&1
 ```
-**Test de restauración** (hazlo AHORA una vez, y luego el día 1 de cada mes — "una copia no probada es una esperanza"):
+**Test de restauración** (AHORA una vez, y el día 1 de cada mes):
 ```
-$ sudo RESTIC_PASSWORD='TU_PASSWORD_RESTIC' restic -r sftp:vim3:/mnt/server/backups/isthistrue snapshots
-$ sudo RESTIC_PASSWORD='TU_PASSWORD_RESTIC' restic -r sftp:vim3:/mnt/server/backups/isthistrue restore latest --target /tmp/test-restore && ls /tmp/test-restore && sudo rm -rf /tmp/test-restore
+$ sudo RESTIC_PASSWORD='TU_PASSWORD_RESTIC' restic -r rclone:gdrive:isthistrue-backups snapshots
+$ sudo RESTIC_PASSWORD='TU_PASSWORD_RESTIC' restic -r rclone:gdrive:isthistrue-backups restore latest --target /tmp/test-restore && ls /tmp/test-restore && sudo rm -rf /tmp/test-restore
 ```
-Tercera línea: los snapshots de IONOS ya contratados siguen activos por su cuenta.
+Segunda línea independiente: los snapshots de IONOS ya contratados.
 
 ## B11. Operación diaria en producción
 
@@ -278,7 +257,7 @@ $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web pyt
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py migrate
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_settings
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_forum
-$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py createsuperuser
+$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py ensure_superuser
 ```
 Entra en https://stagings.xyztserver.com con el superusuario (los invitados se gestionan en Panel → Espejo, por email). Pasa el checklist completo del `docs/04-checklist-verificacion.md` contra el espejo.
 
@@ -298,7 +277,7 @@ $ sudo -u i docker compose -f docker-compose.staging.yml -p staging down
 ## C5. El robot de tests, a mano cuando quieras
 
 ```
-$ sudo -u i docker compose exec web python manage.py test tests --settings=tests.settings_test
+$ sudo -u i docker compose exec web python manage.py test tests --settings=tests.settings_test --noinput
 ```
 En un minuto: OK o qué circuito vital se rompió (candados de presupuesto, votaciones, códigos, relegación, edad mínima).
 
@@ -364,3 +343,17 @@ Con `USE_BATCH_API=true` (por defecto) y tu clave de Anthropic puesta, el primer
    35. /api/v1/claims/ devuelve JSON con licencia CC-BY-SA.
    36. El logo SVG se ve en cabecera en ambos dominios (quemado abajo-izquierda).
    37. Al agotar presupuesto (bajar budget_base_eur en panel para probar) llega email de alerta a ADMIN_ALERT_EMAIL.
+
+
+---
+
+# PARTE F — Arreglo del diseño (Fase 3.1) y verificación
+
+El diseño de la Fase 3 no se veía porque con DEBUG=False Django no sirve /static/ y el Nginx
+lo proxea todo: el CSS daba 404 (por eso "todo texto plano"). Arreglado con **WhiteNoise**
+(los estáticos comprimidos los sirve la propia app). Al aplicar este ZIP: `up --build` (instala
+whitenoise) → `collectstatic --noinput` → recarga la web con Ctrl+Shift+R (caché del navegador).
+38. La portada muestra el logo SVG, tarjetas con sombra, chips de tema y cabecera fija (nada de texto plano).
+39. /static/css/main.css responde 200 en los 3 dominios.
+40. /media/code_batches/... sin ser staff responde 403 (candado de los txt de códigos); un avatar subido se ve.
+41. Backups B10 nuevos (Google Drive): snapshot inicial + test de restauración OK. El VIM3 ya no aparece en nada.

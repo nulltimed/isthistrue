@@ -20,3 +20,4 @@ django-prometheus==2.*
 pyannote.audio==3.*
 pytesseract==0.3.*
 markdown2==2.*
+whitenoise==6.*

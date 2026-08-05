@@ -56,3 +56,19 @@ def open_validation_window(post):
     post.status = 'PENDING_VALIDATION'
     post.validation_deadline = timezone.now() + timezone.timedelta(days=days)
     post.save(update_fields=['status', 'validation_deadline'])
+
+
+def should_opus_rescan(post):
+    """>40% de usuarios activos verificados han votado ▲ (minimo absoluto 10 votos),
+    y solo si nunca se reescaneo. Umbrales en panel."""
+    from apps.accounts.models import User
+    from apps.panel.models import SystemSetting
+    if post.opus_rescanned or post.status != 'DONE':
+        return False
+    votes = post.votes.count()
+    floor = SystemSetting.get_int('opus_rescan_min_votes', 10)
+    if votes < floor:
+        return False
+    users = User.objects.filter(is_active=True, email_verified=True).count() or 1
+    percent = SystemSetting.get_int('opus_rescan_percent', 40)
+    return votes * 100 >= users * percent

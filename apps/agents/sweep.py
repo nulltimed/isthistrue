@@ -1,4 +1,5 @@
-"""Barrido universal Haiku: claims + señales + clickbait + adulto (README v2 §4)."""
+"""Barrido universal de clasificacion (MODEL_CLASSIFIER=Sonnet, decidido por David):
+claims + señales + clickbait + adulto. Coste fase barata ~0,05 EUR."""
 from django.conf import settings
 from . import client, prompts
 
@@ -17,7 +18,7 @@ def run(post):
     segments = list(post.transcript_segments.all())
     payload = '\n'.join(f'[{i}] ({s.start_seconds:.0f}s) {s.text}'
                         for i, s in enumerate(segments))
-    result = client.call_json(settings.MODEL_CHEAP, prompts.SWEEP_SYSTEM,
+    result = client.call_json(settings.MODEL_CLASSIFIER, prompts.SWEEP_SYSTEM,
                               payload, mock_payload=MOCK_SWEEP)
     # Anclar señales baratas a sus segmentos (transcripcion sincronizada):
     for c in result.get('claims', []):

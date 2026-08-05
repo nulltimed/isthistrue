@@ -71,6 +71,7 @@ class Post(models.Model):
     topic = models.CharField(max_length=16, choices=TOPICS, default='otros')
     tags = models.CharField(max_length=200, blank=True, default='')  # libres, separadas por comas
     validation_deadline = models.DateTimeField(null=True, blank=True)
+    opus_rescanned = models.BooleanField(default=False)  # candado: UNA vez por post
     created_at = models.DateTimeField(auto_now_add=True)
 
     def distinct_validation_votes(self, kind):

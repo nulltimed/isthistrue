@@ -5,10 +5,10 @@
   </defs>
   <!-- zona intacta: relleno solido -->
   <text x="8" y="46" clip-path="url(#soundES)"
-        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
         font-size="44" fill="#111" letter-spacing="1">escierto.</text>
   <!-- zona quemada por la luz (abajo-izquierda): solo contorno grueso -->
   <text x="8" y="46" clip-path="url(#burnES)"
-        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
         font-size="44" fill="none" stroke="#111" stroke-width="2.4" letter-spacing="1">escierto.</text>
 </svg>

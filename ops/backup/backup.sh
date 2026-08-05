@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# restic cifrado, mismo repo, 3 destinos. RESTIC_PASSWORD fuera del servidor.
-# Destinos: VIM3 sftp/VPN (/mnt/server/backups/isthistrue), GDrive via rclone, snapshots IONOS.
+# Backups SIN VIM3 (decision de David: el VIM3 queda fuera del proyecto para siempre).
+# restic cifrado sobre Google Drive via rclone + snapshots de IONOS como segunda linea.
+# Requiere: rclone config (remoto "gdrive") y RESTIC_PASSWORD (guardada FUERA del servidor).
 set -euo pipefail
-REPO_VIM3="sftp:vim3:/mnt/server/backups/isthistrue"
+REPO="rclone:gdrive:isthistrue-backups"
 SRC="/opt/isthistrue"
-restic -r "$REPO_VIM3" backup "$SRC" --exclude "$SRC/media/audio_tmp"
-rclone sync "$REPO_VIM3" gdrive:isthistrue-backups || true
-restic -r "$REPO_VIM3" forget --keep-daily 7 --keep-weekly 3 --prune
+restic -r "$REPO" backup "$SRC" --exclude "$SRC/media/audio_tmp" --exclude "$SRC/.git"
+restic -r "$REPO" forget --keep-daily 7 --keep-weekly 3 --prune

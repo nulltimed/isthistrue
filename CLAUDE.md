@@ -28,7 +28,7 @@ ejecutar sus pasos directamente.
 ## Comandos clave
 - Producción: `cd /opt/isthistrue && sudo -u i docker compose up --build -d`
 - Espejo (apagado por defecto): `cd /opt/isthistrue-staging && sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d` (y `down` al terminar)
-- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel && sudo -u i docker compose exec web python manage.py migrate`
+- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel && sudo -u i docker compose exec web python manage.py migrate`
 - Primera vez BD: `sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"` y luego `seed_settings` + `seed_forum` + `createsuperuser` + `collectstatic --noinput`
 - Tests: `sudo -u i docker compose exec web python manage.py test tests --settings=tests.settings_test`
 
@@ -59,6 +59,21 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
 3. `makemigrations` para los modelos nuevos → commitear las migraciones resultantes.
 4. Tests (`--settings=tests.settings_test --noinput`) → ritual normal (espejo → producción).
 5. Tras migrar en cada entorno: `manage.py ensure_superuser` (lee ADMIN_EMAIL/ADMIN_PASSWORD del .env).
+
+## Lecciones de operacion acumuladas
+- En YAML los comentarios van FUERA de las comillas (bug del ZIP Fase 3, arreglado).
+- Con DEBUG=False, /static/ lo sirve WhiteNoise (middleware): tras cada build, `collectstatic --noinput`.
+- /media/ lo sirve la app con candado: code_batches/ SOLO staff.
+- El gasto simulado del mock en DailyBudget es INTENCIONAL (prueba banner y candados sin coste real).
+- Superusuario: SIEMPRE `ensure_superuser` (lee .env), nunca createsuperuser.
+- **El Khadas VIM3 esta FUERA del proyecto para siempre** (decision de David): no nombrarlo,
+  no usarlo, no proponerlo. Backups = restic sobre rclone:gdrive + snapshots IONOS.
+
+- Reparto de modelos v2: Haiku SOLO barrido; resto Sonnet; Opus reescanea posts >40% votos
+  (suelo 10, una vez). MODERATION_TRIAGE_MODEL revertible en .env si la factura de moderacion duele.
+
+- Reparto de modelos (README §25): clasificador=Sonnet, veredictos=Sonnet, moderacion=SOLO
+  Haiku, reescaneo 40%=Opus. Nueva migracion pendiente al aplicar: analysis (opus_rescanned).
 
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.

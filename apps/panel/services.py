@@ -25,7 +25,8 @@ def live_daily_budget():
 
 def alert_admin(subject, body):
     """Alertas criticas por email (Telegram descartado para siempre). Anti-spam: 1 cada 6 h por asunto."""
-    key = f'alert:{subject[:40]}'
+    from django.utils.text import slugify
+    key = 'alert-' + slugify(subject)[:40]
     if cache.get(key):
         return
     cache.set(key, 1, 6 * 3600)
