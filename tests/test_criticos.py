@@ -18,14 +18,19 @@ def make_user(name, **kw):
 
 
 class FrenosPresupuesto(TestCase):
+    # Los limites se derivan del presupuesto VIVO: el test no vuelve a romperse
+    # cuando David cambie las cifras (2/60 -> 3/100 en Fase 3.3).
     def test_candado_diario_no_gasta_de_mas(self):
-        ok = DailyBudget.try_spend(1.50)
-        self.assertTrue(ok)
-        self.assertFalse(DailyBudget.try_spend(1.00))  # 1.5+1.0 > 2.0
+        from apps.panel.services import live_daily_budget
+        limite = live_daily_budget()
+        self.assertTrue(DailyBudget.try_spend(limite - 0.5))
+        self.assertFalse(DailyBudget.try_spend(1.00))  # rebasaria el techo diario vivo
 
     def test_corte_mensual(self):
+        from apps.panel.services import live_monthly_cap
+        cap, _, _ = live_monthly_cap()
         ym = timezone.localdate().strftime('%Y-%m')
-        MonthlyCap.objects.create(year_month=ym, spent_eur=Decimal('59.99'))
+        MonthlyCap.objects.create(year_month=ym, spent_eur=Decimal(str(cap)) - Decimal('0.01'))
         self.assertFalse(DailyBudget.try_spend(0.50))
 
 
