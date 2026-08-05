@@ -3,6 +3,15 @@
 <h1>Analizar contenido</h1>
 <form method="post">{% csrf_token %}
   <label>URL del contenido<input type="url" name="url" required placeholder="https://..."></label>
+  <label>Tema<select name="topic">
+    <option value="politica">Política</option><option value="salud">Salud</option>
+    <option value="ciencia">Ciencia</option><option value="economia">Economía</option>
+    <option value="sucesos">Sucesos</option><option value="internacional">Internacional</option>
+    <option value="tecnologia">Tecnología</option><option value="medioambiente">Medioambiente</option>
+    <option value="deporte">Deporte</option><option value="cultura">Cultura</option>
+    <option value="sociedad">Sociedad</option><option value="otros" selected>Otros</option>
+  </select></label>
+  <label>Etiquetas libres (separadas por comas)<input name="tags" placeholder="vacunas, 5G"></label>
   <label><input type="checkbox" name="offtopic"> Subir directamente a Off-Topic (opinión; no consume crédito)</label>
   <label><input type="checkbox" name="is_adult"> Este contenido es para mayores de 18</label>
   <button>Analizar</button>

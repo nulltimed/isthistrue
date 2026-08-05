@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64" width="360" height="64" role="img" aria-label="isthistrue.">
+  <defs>
+    <clipPath id="burnEN"><polygon points="0,64 0,24 160,64"/></clipPath>
+    <clipPath id="soundEN"><polygon points="0,0 360,0 360,64 160,64 0,24"/></clipPath>
+  </defs>
+  <text x="8" y="46" clip-path="url(#soundEN)"
+        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-size="44" fill="#111" letter-spacing="1">isthistrue.</text>
+  <text x="8" y="46" clip-path="url(#burnEN)"
+        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-size="44" fill="none" stroke="#111" stroke-width="2.4" letter-spacing="1">isthistrue.</text>
+</svg>

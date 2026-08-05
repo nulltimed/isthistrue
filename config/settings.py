@@ -88,6 +88,10 @@ MACHINA_MARKUP_LANGUAGE = ('markdown2.markdown', {'safe_mode': 'escape'})  # Mar
 MACHINA_MARKUP_WIDGET = 'django.forms.Textarea'
 
 AUTH_USER_MODEL = 'accounts.User'
+AUTHENTICATION_BACKENDS = ['apps.accounts.backends.EmailOrUsernameBackend',
+                           'django.contrib.auth.backends.ModelBackend']
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 
@@ -111,6 +115,7 @@ CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_BROKER_TRANSPORT_OPTIONS = {'priority_steps': list(range(10)), 'queue_order_strategy': 'priority'}
 CELERY_TASK_DEFAULT_PRIORITY = 5
 PRIORITY_MANIPULATION = 9
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # --- Agentes / economia (60 EUR/mes, 2 EUR/dia: decidido) ---
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')

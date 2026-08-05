@@ -7,12 +7,12 @@
    - Sí debes cambiar: `SECRET_KEY` (cualquier cadena larga) y `POSTGRES_PASSWORD`.
 3. **Levantar el stack**: `docker compose up --build -d`. Primera vez: 5-10 min.
    - Si ves "port already allocated": otro servicio usa el 8080 → cámbialo en compose.
-4. **Migraciones**: `docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel` y luego `docker compose exec web python manage.py migrate`.
+4. **Migraciones**: `docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel` y luego `docker compose exec web python manage.py migrate`.
    - Si falla con "type vector does not exist": `docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"` y repite migrate.
 5. **Sembrar umbrales y foros**: `docker compose exec web python manage.py seed_settings` y `docker compose exec web python manage.py seed_forum`.
    - **Permisos del foro (roce esperado de machina)**: entra en /admin/ → Forum permissions y concede al grupo por defecto los permisos de leer y responder en Principal y Off-Topic. Si los hilos no dejan comentar, es esto.
 6. **Superusuario "d"**: `docker compose exec web python manage.py createsuperuser`.
-7. **Abrir** http://127.0.0.1:8090 → debes ver la portada con "Recientes" y "Off-Topic".
+7. **Abrir** http://127.0.0.1:8080 → debes ver la portada con "Recientes" y "Off-Topic".
 8. **Registro**: crea una cuenta normal con fecha de nacimiento. Con <14 años debe rechazarte. Turnstile se salta solo en DEBUG.
 9. **Análisis simulado**: pulsa "+ Analizar", pega cualquier URL de YouTube. En ~10 s el post debe pasar a "Pendiente de validación" con transcripción `[SIMULADO]` y señales por segmento. (El mock marca manipulación con claims → rescatado a FACTUAL: correcto.)
 10. **Modo arranque**: entra como "d" (es moderador de facto) y pulsa "✔ Es factual" → con menos de 50 usuarios tu voto único valida y lanza el análisis completo simulado → estado "Analizado" y claim `[SIMULADO]` verde en la wiki (`/wiki/claim/1/`).

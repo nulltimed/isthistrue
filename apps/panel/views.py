@@ -98,3 +98,21 @@ def complaints(request):
         return redirect('panel_complaints')
     items = ContentComplaint.objects.order_by('-created_at')[:100]
     return render(request, 'panel/complaints.html', {'items': items})
+
+
+@staff_member_required
+def donations_panel(request):
+    from .models import Donation, SystemSetting
+    if request.method == 'POST':
+        amt = request.POST.get('amount', '').replace(',', '.')
+        try:
+            Donation.objects.create(amount_eur=float(amt),
+                method=request.POST.get('method', 'PAYPAL'),
+                note=request.POST.get('note', '')[:200])
+            AuditLog.objects.create(user=request.user, action='donation_add', detail=amt)
+            messages.success(request, 'Donación registrada: el depósito ha crecido.')
+        except ValueError:
+            messages.error(request, 'Importe no válido.')
+        return redirect('panel_donations')
+    items = Donation.objects.order_by('-created_at')[:100]
+    return render(request, 'panel/donations.html', {'items': items})

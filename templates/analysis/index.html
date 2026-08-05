@@ -1,18 +1,27 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<h1>Recientes</h1>
+<div class="topics">
+  <a href="/" class="{% if not active_topic %}active{% endif %}">{% trans "Todos" %}</a>
+  {% for key, name in topics %}<a href="/?tema={{ key }}" class="{% if active_topic == key %}active{% endif %}">{{ name }}</a>{% endfor %}
+</div>
+
+<h1>{% trans "Recientes" %}</h1>
 <ul class="post-list">
-{% for p in recent %}
-  <li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
-      <span class="badge">{{ p.get_status_display }}</span></li>
-{% empty %}<li>Nada todavía. Sé el primero en analizar algo.</li>{% endfor %}
+{% for p in recent %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
+<span class="badge">{{ p.get_topic_display }}</span><span class="badge">{{ p.get_status_display }}</span></li>
+{% empty %}<li>{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}
 </ul>
 
+{% if top %}<h1>{% trans "Más votados (7 días)" %}</h1>
+<ul class="post-list">{% for p in top %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
+
+{% if repeat_channels %}<h1>{% trans "Reincidentes" %}</h1>
+<ul class="post-list">{% for c in repeat_channels %}<li>{{ c.name|default:c.external_id }} <span class="badge">{{ c.platform }}</span></li>{% endfor %}</ul>{% endif %}
+
 <h1 id="offtopic">Off-Topic</h1>
-<p class="hint">Opiniones y contenidos sin suficientes afirmaciones verificables. 10 votos de la comunidad los rescatan al foro principal.</p>
+<p class="hint">{% trans "Opiniones y contenidos sin suficientes afirmaciones verificables. 10 votos de la comunidad los rescatan al foro principal." %}</p>
 <ul class="post-list">
-{% for p in offtopic %}
-  <li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a></li>
-{% empty %}<li>Vacío por ahora.</li>{% endfor %}
+{% for p in offtopic %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a></li>
+{% empty %}<li>{% trans "Vacío por ahora." %}</li>{% endfor %}
 </ul>
 {% endblock %}

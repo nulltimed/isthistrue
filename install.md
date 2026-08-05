@@ -34,7 +34,7 @@ $ git push -u origin main
 
 # PARTE B — VPS IONOS Ubuntu 24.04 (producción)
 
-> **Regla de oro**: en el host ya corren Nginx, PostgreSQL, Postfix+Dovecot, Grafana y Prometheus. **No se toca ninguno.** Nuestro stack vive en Docker, solo en `127.0.0.1:8090`, y el Nginx del host hace de portero.
+> **Regla de oro**: en el host ya corren Nginx, PostgreSQL, Postfix+Dovecot, Grafana y Prometheus. **No se toca ninguno.** Nuestro stack vive en Docker, solo en `127.0.0.1:8080`, y el Nginx del host hace de portero.
 
 ## B1. Conectar y preparar
 
@@ -104,7 +104,7 @@ $ cd /opt/isthistrue
 $ sudo -u i docker compose up --build -d
 $ sudo -u i docker compose ps
 $ sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"
-$ sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel
+$ sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel
 $ sudo -u i docker compose exec web python manage.py migrate
 $ sudo -u i docker compose exec web python manage.py seed_settings
 $ sudo -u i docker compose exec web python manage.py createsuperuser
@@ -112,7 +112,7 @@ $ sudo -u i docker compose exec web python manage.py collectstatic --noinput
 ```
 Comprobación local (el stack NO es visible desde fuera todavía, y así debe ser):
 ```
-$ curl -I http://127.0.0.1:8090
+$ curl -I http://127.0.0.1:8080
 ```
 Debe responder `HTTP/1.1 200` (o 301/302).
 
@@ -237,7 +237,7 @@ $ sudo -u i docker compose exec web python manage.py collectstatic --noinput
 
 | Síntoma | Comprobación | Remedio habitual |
 |---|---|---|
-| La web no carga desde fuera | `curl -I http://127.0.0.1:8090` en el VPS | Si responde: problema de Nginx/DNS/certbot (B7-B8). Si no: `docker compose ps` y logs de web |
+| La web no carga desde fuera | `curl -I http://127.0.0.1:8080` en el VPS | Si responde: problema de Nginx/DNS/certbot (B7-B8). Si no: `docker compose ps` y logs de web |
 | 502 Bad Gateway | `sudo -u i docker compose ps` | El contenedor web está caído: mira sus logs y rearranca |
 | Análisis se quedan en "Nuevo" | logs del worker | Presupuesto agotado (normal: espera al día siguiente) o worker caído |
 | Emails no llegan | `.env` de Brevo + logs web | Credenciales SMTP o DKIM/DMARC sin propagar en IONOS |
@@ -274,7 +274,7 @@ $ sudo certbot --nginx -d stagings.xyztserver.com
 $ cd /opt/isthistrue-staging
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"
-$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py makemigrations accounts analysis wiki forum_local panel
+$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py makemigrations accounts analysis wiki forum panel
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py migrate
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_settings
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_forum
@@ -341,3 +341,26 @@ Con `USE_BATCH_API=true` (por defecto) y tu clave de Anthropic puesta, el primer
 27. **Amistad**: desde dos cuentas, solicitud → aceptar; comprueba que desactivar "Permitir solicitudes" en ajustes bloquea nuevas; prueba "Bloquear".
 28. **Markdown**: escribe **negrita** y [enlace](https://example.org) en un comentario del foro → debe renderizarse; escribe <script>alert(1)</script> → debe verse como texto plano (escapado).
 29. **Legales**: el aviso legal muestra "David Souto Apariz" y contact@xyztserver.com, y NO contiene tu domicilio real. El campo del apartado de correos queda [pendiente] hasta que lo contrates.
+
+
+---
+
+# PARTE E — Actualización a Fase 3 (aplicar el ZIP sobre el repo vivo)
+
+> IMPORTANTE: producción ya existe. Este ZIP NO se despliega "de cero": se aplica sobre el árbol
+> git siguiendo el protocolo de CLAUDE.md (sincronizar sin borrar, EXCLUIR apps/*/migrations/,
+> revisar git diff, makemigrations nuevas, tests, ritual espejo→producción).
+
+1. En el `.env` de producción añade: `ADMIN_EMAIL=` y `ADMIN_PASSWORD=` (una contraseña fuerte).
+2. Tras migrar: `sudo -u i docker compose exec web python manage.py ensure_superuser`
+   y `... seed_settings` (siembra budget_base_eur/budget_hard_ceiling_eur/paypal_url).
+3. Certbot del espejo (una vez): `sudo certbot --nginx -d stagings.xyztserver.com`.
+4. Checklist Fase 3 (añadir al reporte):
+   30. Registro nuevo → llega email de verificación (consola si Brevo sin configurar) → sin verificar NO deja entrar → con el enlace, sí.
+   31. Login con email Y con nickname: ambos funcionan.
+   32. `ensure_superuser` permite entrar como "d" con la contraseña del .env.
+   33. Portada: chips de tema filtran; ▲ votar un post lo sube a "Más votados (7 días)".
+   34. /donaciones/ muestra barra y objetivo; registra 5 € en Panel→Donaciones → el banner de cabecera crece y "faltan X €" baja.
+   35. /api/v1/claims/ devuelve JSON con licencia CC-BY-SA.
+   36. El logo SVG se ve en cabecera en ambos dominios (quemado abajo-izquierda).
+   37. Al agotar presupuesto (bajar budget_base_eur en panel para probar) llega email de alerta a ADMIN_ALERT_EMAIL.

@@ -143,7 +143,7 @@ Diseño fusionado, confirmado punto por punto por David:
 
 - **VPS XL IONOS**: Ubuntu 24.04, 8 vCores, 16 GB RAM, 480 GB NVMe, 1 Gbit/s. En el HOST ya corren: Nginx, PostgreSQL, Postfix+Dovecot (mail personal), Grafana, Prometheus. **Intocables.**
 - Despliegue: usuario de servicio **`i`** (`nologin`, sin SSH, grupo docker); `sudo -u i docker compose ...`. SSH del administrador de David SE CONSERVA. Backdoors: cero.
-- Stack Docker solo en `127.0.0.1:8090`; Nginx del host = proxy de los 3 subdominios (metáfora del portero). Certbot HTTPS. (Nota 2026-08-05: era 8080, pero ese puerto lo ocupa ntfy en el host; se congela 8090.)
+- Stack Docker solo en `127.0.0.1:8080`; Nginx del host = proxy de los 3 subdominios (metáfora del portero). Certbot HTTPS.
 - Homelab: Khadas VIM3 = NAS (1 TiB, 400 GiB libres en `/mnt/server`, ~30 Mbps); VIM3L (Home Assistant + Zigbee + Transmission); BananaPi OpenWrt; Mullvad en todo; EliteBook 840 G5 (i5-8350U, 32 GB, Win11, WSL2 + Docker Desktop) = desarrollo; Xiaomi Redmi Note 13 5G; 5 TiB en Google Drive.
 
 ## 14. Backups (esquema cerrado)
@@ -234,3 +234,40 @@ Diseño fusionado, confirmado punto por punto por David:
 - **Claude Codigo (app Windows de Claude) es el operador de Git y despliegue**, con supervision de David. Archivo **CLAUDE.md** creado en la raiz con comandos, ritual CI→espejo→produccion y lineas rojas (no .env, no host, no Telegram, no biometria, no subir presupuestos sin orden). Toda entrega futura debe mantener CLAUDE.md al dia.
 - **ALERTA de posible errata sin resolver**: David escribio el registro del espejo como "stagins" (sin g) tras haber acordado "stagings". El proyecto esta cableado a **stagings.xyztserver.com**. Verificar con ping cual resuelve; si el DNS real es "stagins", cambiar proyecto o (mejor) corregir el registro DNS.
 - **Donaciones (diseño Fase 3 aprobandose)**: Bizum entre particulares exige mostrar telefono (David lo rechaza); Bizum de empresa requiere pasarela/banco de negocio; **Bizum ONG** requiere asociacion constituida → decision propuesta: lanzar SOLO con PayPal (datos pendientes de David) y activar Bizum ONG tras constituir la asociacion. **Presupuesto vivo**: techo mensual = budget_base_eur (60) + donaciones del mes registradas (a mano en el panel al inicio; webhook PayPal como mejora), diario = techo/dias del mes, con TECHO DURO absoluto (propuesto 200 €) porque el limite de la consola Anthropic es fijo y solo David puede subirlo a mano. Banner publico refleja el techo vivo.
+
+## 23. PRIMER DESPLIEGUE REAL (2026-08-05) y Fase 3 entregada
+
+**PRODUCCION VIVA**: isthistrue/escierto/wikitrue con HTTPS. Desplegado por Claude Codigo. 5 bugs
+MIOS arreglados en main (leccion: no entregar sin ejecutar): label forum_local (8950236), machina
+urls nueva API (211eefe), related_name analysis_posts (15d16cb), VectorExtension en wiki/0001
+(a5e7656), config/__init__ celery canonico (f4bc829). Entorno real: **puerto produccion 8090**
+(8080 = ntfy del host), migraciones COMMITEADAS (generar nuevas encima), Django 5.0.14 +
+machina 1.3.1. El nginx real del host lo gestiona certbot (el del repo es referencia).
+DNS del espejo RESUELTO: David corrigio el registro a **stagings** (alias staging tolerado);
+pendiente certbot del espejo. fail2ban reinstalado (confirmar con David). CI pendiente de token
+GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
+
+**Fase 3 entregada en este ZIP** (unico ZIP grande, decidido): 
+- **Auth definitivo**: email UNICO + nickname unico + verificacion por email OBLIGATORIA
+  (token firmado 72h, reenvio disponible); login por email O nickname (backend propio);
+  **superusuario desde .env** (ADMIN_EMAIL/ADMIN_PASSWORD + comando ensure_superuser en cada
+  despliegue — nunca mas contraseñas por chat). Esto responde al "no puedo iniciar sesion" de David.
+- **Diseño v1**: logos SVG es/en con el efecto de luz quemada abajo-izquierda (v1 del diseño
+  congelado; el dibujado a mano fino puede iterarse), CSS minimalista completo (tarjetas, sticky
+  header, chips de tema, responsive, contraste AA). David dijo "la web es feisima": esta es la respuesta.
+- **Portada por secciones**: Recientes / Mas votados (ventana 7 dias, voto ▲ solo positivo) /
+  Reincidentes (umbral 5/10/5) / filtro por los 12 temas cerrados + tags libres en el submit /
+  Off-Topic quinta seccion.
+- **Donaciones + presupuesto vivo**: techo mensual = budget_base_eur(60) + donaciones del mes,
+  techo duro budget_hard_ceiling_eur(200), diario = techo/dias del mes; candado try_spend usa el
+  vivo; pagina publica /donaciones/ con barra de progreso y boton PayPal (SystemSetting
+  paypal_url — ALTA PAYPAL.ME PENDIENTE de David); contador regresivo en cabecera ("faltan X €");
+  pestaña panel Donaciones (registro manual; el deposito crece al instante). Bizum ONG: tras asociacion.
+- **Alertas admin por email** (alert_admin, anti-spam 6h) al agotar deposito diario y corte mensual.
+- **API publica v1** solo lectura CC-BY-SA: /api/v1/claims/ y /api/v1/claims/<slug>/.
+- **Asociacion**: docs/asociacion/ con acta fundacional + estatutos plantilla (validos para
+  Registro Nacional O Xunta, eleccion en art. 2) + guion-abogado.md de 1 pagina (pension,
+  ISD Galicia, momento de constituir, traspaso, honor). Socios previstos: David + su madre + su
+  pareja. En markdown imprimible; PDFs maquetados si David los pide.
+- Deuda del informe atendida: /panel/ y /wiki/ redirigen; CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP;
+  docs con --noinput. Deuda aceptada sin tocar: worker como root en contenedor (mejorable con USER).

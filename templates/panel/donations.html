@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Panel · Donaciones</h1>
+<p class="hint">Registra aquí cada donación recibida: el depósito del mes crece al instante (hasta el techo duro).</p>
+<form method="post">{% csrf_token %}
+  <label>Importe (€)<input name="amount" required placeholder="5.00"></label>
+  <label>Método<select name="method"><option value="PAYPAL">PayPal</option><option value="BIZUM">Bizum</option><option value="OTHER">Otro</option></select></label>
+  <label>Nota<input name="note" placeholder="opcional"></label>
+  <button>Registrar</button>
+</form>
+<h2>Historial</h2>
+<table><tr><th>Fecha</th><th>Importe</th><th>Método</th><th>Nota</th></tr>
+{% for d in items %}<tr><td>{{ d.created_at|date:'d/m/Y' }}</td><td>{{ d.amount_eur }} €</td><td>{{ d.get_method_display }}</td><td>{{ d.note }}</td></tr>{% endfor %}</table>
+{% endblock %}

@@ -15,7 +15,7 @@
 </head>
 <body>
 <header>
-  <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}</a>
+  <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
   <nav>
     <a href="/">{% trans "Portada" %}</a>
     <a href="/foro/">{% trans "Foro" %}</a>
@@ -36,7 +36,9 @@
 <div class="quota-banner">
   {% trans "Hoy" %}: {{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} € ·
   {% trans "Este mes" %}: {{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} € —
-  {% trans "Si donas, estos cupos suben. Proyecto open source (AGPL) sin ánimo de lucro, dedicado a la comunidad." %}
+  {% trans "Si donas, estos cupos suben." %}
+  {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
+  — {% trans "open source (AGPL), sin ánimo de lucro" %}
 </div>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
@@ -48,6 +50,8 @@
   <a href="{% url 'privacy' %}">{% trans "Privacidad" %}</a> ·
   <a href="{% url 'cookies' %}">Cookies</a> ·
   <a href="{% url 'terms' %}">{% trans "Condiciones" %}</a> ·
+  <a href="{% url 'donations' %}">{% trans "Donaciones" %}</a> ·
+  <a href="/api/v1/claims/">API</a> ·
   <a href="{% url 'rss_verdicts' %}">RSS</a> ·
   <a href="https://github.com/nulltimed/isthistrue" rel="noopener">AGPL-3.0</a>
 </footer>

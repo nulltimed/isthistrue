@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 64" width="340" height="64" role="img" aria-label="escierto.">
+  <defs>
+    <clipPath id="burnES"><polygon points="0,64 0,26 150,64"/></clipPath>
+    <clipPath id="soundES"><polygon points="0,0 340,0 340,64 150,64 0,26"/></clipPath>
+  </defs>
+  <!-- zona intacta: relleno solido -->
+  <text x="8" y="46" clip-path="url(#soundES)"
+        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-size="44" fill="#111" letter-spacing="1">escierto.</text>
+  <!-- zona quemada por la luz (abajo-izquierda): solo contorno grueso -->
+  <text x="8" y="46" clip-path="url(#burnES)"
+        font-family="'Courier Prime','Courier New',monospace" font-weight="700"
+        font-size="44" fill="none" stroke="#111" stroke-width="2.4" letter-spacing="1">escierto.</text>
+</svg>

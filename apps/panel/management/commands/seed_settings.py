@@ -11,6 +11,9 @@ DEFAULTS = {
     'startup_mode_min_users': '50',
     'mod_vote_weight': '5',
     'name_confirm_points': '5',
+    'budget_base_eur': '60',
+    'budget_hard_ceiling_eur': '200',
+    'paypal_url': '',
     'donation_goal_eur': '50',
     'lang_es': '1', 'lang_en': '1',
 }

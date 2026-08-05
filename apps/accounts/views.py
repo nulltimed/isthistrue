@@ -16,8 +16,11 @@ def register(request):
             messages.error(request, 'Verificación anti-bots fallida.')
         elif form.is_valid():
             user = form.save()
-            login(request, user)
-            return redirect('/')
+            from .verification import send_verification_email
+            send_verification_email(user)
+            messages.success(request, 'Cuenta creada. Revisa tu email y pulsa el '
+                                      'enlace de verificación para poder entrar.')
+            return redirect('login')
     else:
         form = RegisterForm()
     from django.conf import settings as dj_settings
@@ -118,3 +121,28 @@ def friends(request):
     accepted = Friendship.objects.filter(status='ACCEPTED').filter(
         models.Q(requester=me) | models.Q(addressee=me))
     return render(request, 'accounts/friends.html', {'pending': pending, 'accepted': accepted})
+
+
+def verify_email(request, token):
+    from .verification import verify_token
+    user = verify_token(token)
+    if user:
+        user.email_verified = True
+        user.save(update_fields=['email_verified'])
+        messages.success(request, 'Email verificado: ya puedes iniciar sesión.')
+    else:
+        messages.error(request, 'Enlace de verificación no válido o caducado.')
+    return redirect('login')
+
+
+def resend_verification(request):
+    if request.method == 'POST':
+        from .models import User
+        from .verification import send_verification_email
+        u = User.objects.filter(email__iexact=request.POST.get('email', '').strip(),
+                                email_verified=False).first()
+        if u:
+            send_verification_email(u)
+        messages.success(request, 'Si la cuenta existe y está sin verificar, '
+                                  'hemos reenviado el enlace.')
+    return redirect('login')

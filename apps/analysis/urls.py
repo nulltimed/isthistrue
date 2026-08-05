@@ -11,6 +11,8 @@ urlpatterns = [
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
     path('buscar/', views.search, name='search'),
     path('hablante/votar/<int:proposal_id>/', views.vote_speaker_name, name='vote_speaker_name'),
+    path('post/<int:pk>/upvote/', views.upvote, name='post_upvote'),
+    path('donaciones/', views.donations_page, name='donations'),
     path('reclamaciones/', complaint_form, name='complaint_form'),
     path('metodologia/', TemplateView.as_view(template_name='legal/metodologia.html'), name='methodology'),
     path('legal/aviso/', TemplateView.as_view(template_name='legal/aviso_legal.html'), name='legal_notice'),

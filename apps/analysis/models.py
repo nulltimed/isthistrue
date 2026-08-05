@@ -7,6 +7,10 @@ from django.db import models, transaction
 from django.utils import timezone
 
 CATEGORIES = [('MAIN', 'Foro principal'), ('OFFTOPIC', 'Off-Topic')]
+TOPICS = [('politica', 'Política'), ('salud', 'Salud'), ('ciencia', 'Ciencia'),
+          ('economia', 'Economía'), ('sucesos', 'Sucesos'), ('internacional', 'Internacional'),
+          ('tecnologia', 'Tecnología'), ('medioambiente', 'Medioambiente'), ('deporte', 'Deporte'),
+          ('cultura', 'Cultura'), ('sociedad', 'Sociedad'), ('otros', 'Otros')]
 STATUSES = [
     ('NEW', 'Nuevo'),
     ('CHEAP_RUNNING', 'Fase barata en curso'),
@@ -50,7 +54,7 @@ class Channel(models.Model):
 
 
 class Post(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analysis_posts')  # 'posts' choca con machina forum_conversation.Post.poster
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analysis_posts')
     channel = models.ForeignKey(Channel, null=True, blank=True, on_delete=models.SET_NULL, related_name='posts')
     url = models.URLField(max_length=500)
     platform = models.CharField(max_length=20, default='unknown')
@@ -64,6 +68,8 @@ class Post(models.Model):
     adult_flag_source = models.CharField(max_length=10, blank=True, default='')  # author|agent|mod
     manipulation_detected = models.BooleanField(default=False)
     relegation_reason = models.CharField(max_length=200, blank=True, default='')
+    topic = models.CharField(max_length=16, choices=TOPICS, default='otros')
+    tags = models.CharField(max_length=200, blank=True, default='')  # libres, separadas por comas
     validation_deadline = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -116,10 +122,12 @@ class DailyBudget(models.Model):
 
     @classmethod
     def try_spend(cls, amount_eur):
-        from django.conf import settings as s
+        from apps.panel.services import live_daily_budget, alert_admin
         with transaction.atomic():
             row, _ = cls.objects.select_for_update().get_or_create(date=timezone.localdate())
-            if float(row.spent_eur) + amount_eur > s.DAILY_BUDGET_EUR:
+            if float(row.spent_eur) + amount_eur > live_daily_budget():
+                alert_admin('Presupuesto diario agotado',
+                            f'Gasto de hoy: {row.spent_eur} EUR. La cola espera a mañana.')
                 return False
             if not MonthlyCap.try_spend(amount_eur):
                 return False
@@ -135,10 +143,13 @@ class MonthlyCap(models.Model):
 
     @classmethod
     def try_spend(cls, amount_eur):
-        from django.conf import settings as s
+        from apps.panel.services import live_monthly_cap, alert_admin
         ym = timezone.localdate().strftime('%Y-%m')
         row, _ = cls.objects.select_for_update().get_or_create(year_month=ym)
-        if float(row.spent_eur) + amount_eur > s.MONTHLY_CAP_EUR:
+        cap, _, _ = live_monthly_cap()
+        if float(row.spent_eur) + amount_eur > cap:
+            alert_admin('CORTE MENSUAL alcanzado',
+                        f'Gasto del mes: {row.spent_eur} EUR (techo vivo {cap}). Cola congelada hasta el dia 1.')
             return False
         row.spent_eur = models.F('spent_eur') + amount_eur
         row.save(update_fields=['spent_eur'])

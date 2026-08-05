@@ -14,15 +14,21 @@ ejecutar sus pasos directamente.
 - VPS IONOS Ubuntu 24.04 (8 vCores, 16 GB). En el HOST corren Nginx, PostgreSQL,
   Postfix+Dovecot (correo personal de David), Grafana, Prometheus: **INTOCABLES**.
   Jamás pares, reconfigures o actualices esos servicios del host.
-- El stack vive en Docker, solo loopback: producción 127.0.0.1:8090, espejo 127.0.0.1:8081.
+- El stack vive en Docker, solo loopback: producción **127.0.0.1:8090** (el 8080 lo ocupa ntfy, intocable), espejo 127.0.0.1:8081.
 - Producción: /opt/isthistrue · Espejo: /opt/isthistrue-staging
 - Operar SIEMPRE como usuario de servicio: `sudo -u i docker compose ...`
-- Dominios: isthistrue / escierto / wikitrue / stagings (.xyztserver.com), registros A al VPS.
+- Dominios: isthistrue / escierto / wikitrue / **stagings** (.xyztserver.com), registros A al VPS
+  (David corrigió el DNS: stagings YA existe; "staging" queda como alias tolerado). Pendiente una vez:
+  `sudo certbot --nginx -d stagings.xyztserver.com`.
+- La app propia del foro tiene **label 'forum_local'** (el label 'forum' es de machina):
+  makemigrations/migrate y referencias por string usan forum_local.
+- Las migraciones están COMMITEADAS en el repo: genera las nuevas encima (0002, 0003...) y
+  commitéalas; NUNCA regeneres ni borres las existentes (wiki/0001 lleva VectorExtension()).
 
 ## Comandos clave
 - Producción: `cd /opt/isthistrue && sudo -u i docker compose up --build -d`
 - Espejo (apagado por defecto): `cd /opt/isthistrue-staging && sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d` (y `down` al terminar)
-- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel && sudo -u i docker compose exec web python manage.py migrate`
+- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel && sudo -u i docker compose exec web python manage.py migrate`
 - Primera vez BD: `sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"` y luego `seed_settings` + `seed_forum` + `createsuperuser` + `collectstatic --noinput`
 - Tests: `sudo -u i docker compose exec web python manage.py test tests --settings=tests.settings_test`
 
@@ -44,6 +50,15 @@ ejecutar sus pasos directamente.
 - NUNCA subir los límites de gasto (DAILY_BUDGET_EUR / MONTHLY_CAP_EUR) sin orden explícita de David.
 - El espejo SIEMPRE con MOCK_AGENTS=true (jamás gasta presupuesto de API).
 - Backdoors: cero. El SSH de administrador de David se conserva; el usuario `i` no tiene shell.
+
+## Protocolo para ZIPs de la IA de desarrollo (Fable)
+Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
+1. Descomprimir en un directorio temporal y sincronizar archivos sobre el working tree
+   (rsync sin --delete), EXCLUYENDO apps/*/migrations/ (las commiteadas mandan).
+2. `git diff` y revisar que no se pierden los fixes de main (labels, related_name, puerto 8090...).
+3. `makemigrations` para los modelos nuevos → commitear las migraciones resultantes.
+4. Tests (`--settings=tests.settings_test --noinput`) → ritual normal (espejo → producción).
+5. Tras migrar en cada entorno: `manage.py ensure_superuser` (lee ADMIN_EMAIL/ADMIN_PASSWORD del .env).
 
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.

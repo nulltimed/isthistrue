@@ -3,8 +3,7 @@ from django.apps import AppConfig
 
 class ForumConfig(AppConfig):
     name = 'apps.forum'
-    # 'forum' choca con machina.apps.forum (labels duplicados rompen el arranque):
-    label = 'forum_local'
+    label = 'forum_local'  # 'forum' pertenece a machina (fix 8950236)
 
     def ready(self):
         from django.db.models.signals import post_save

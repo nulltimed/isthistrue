@@ -75,6 +75,7 @@
     </div>
   {% empty %}<p>Sin transcripción todavía.</p>{% endfor %}
   </div>
+  {% if user.is_authenticated %}<form method="post" action="{% url 'post_upvote' post.pk %}" style="display:inline">{% csrf_token %}<button class="mini">▲ Votar ({{ post.votes.count }})</button></form>{% endif %}
   <div class="share">
     Compartir:
     <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>

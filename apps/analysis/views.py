@@ -10,10 +10,23 @@ from .tasks import run_cheap_phase
 
 
 def index(request):
-    """Portada. Off-Topic = quinta seccion (las otras cuatro llegan en Fase 3)."""
-    recent = Post.objects.filter(category='MAIN').order_by('-created_at')[:20]
+    """Portada Fase 3: Recientes / Mas votados (7 dias) / Reincidentes / Por tema / Off-Topic."""
+    from django.db.models import Count, Q
+    from django.utils import timezone as tz
+    from .models import TOPICS, Channel
+    topic = request.GET.get('tema', '')
+    base = Post.objects.filter(category='MAIN')
+    if topic:
+        base = base.filter(topic=topic)
+    recent = base.order_by('-created_at')[:20]
+    window = tz.now() - tz.timedelta(days=7)
+    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
+    repeat_channels = [c for c in Channel.objects.order_by('-created_at')[:50]
+                       if c.meets_threshold()][:10]
     offtopic = Post.objects.filter(category='OFFTOPIC').order_by('-created_at')[:20]
-    return render(request, 'analysis/index.html', {'recent': recent, 'offtopic': offtopic})
+    return render(request, 'analysis/index.html', {
+        'recent': recent, 'top': top, 'repeat_channels': repeat_channels,
+        'offtopic': offtopic, 'topics': TOPICS, 'active_topic': topic})
 
 
 @login_required
@@ -21,6 +34,8 @@ def submit(request):
     if request.method != 'POST':
         return render(request, 'analysis/submit.html')
     url = request.POST.get('url', '').strip()
+    topic = request.POST.get('topic', 'otros')
+    tags = request.POST.get('tags', '').strip()[:200]
     voluntary_offtopic = request.POST.get('offtopic') == 'on'
     author_adult_flag = request.POST.get('is_adult') == 'on'
     platform, external_id = detect_platform(url)
@@ -33,6 +48,7 @@ def submit(request):
             url=url, defaults={'author': request.user, 'platform': platform,
                                'external_id': external_id or '',
                                'voluntary_offtopic': voluntary_offtopic,
+                               'topic': topic, 'tags': tags,
                                'is_adult': author_adult_flag,
                                'adult_flag_source': 'author' if author_adult_flag else ''})
         AnalysisRequest.objects.create(post=post, user=request.user,
@@ -138,3 +154,27 @@ def vote_speaker_name(request, proposal_id):
     ok, msg = vote_proposal(prop, request.user)
     (messages.success if ok else messages.error)(request, msg)
     return redirect('post_detail', pk=prop.post_id)
+
+
+@login_required
+def upvote(request, pk):
+    """Voto positivo (los negativos no existen: decision congelada)."""
+    from apps.forum.models import Vote
+    post = get_object_or_404(Post, pk=pk)
+    obj, created = Vote.objects.get_or_create(post=post, user=request.user)
+    if not created:
+        obj.delete()
+    return redirect('post_detail', pk=pk)
+
+
+def donations_page(request):
+    """Pagina publica de donaciones: objetivo, progreso, PayPal (Bizum ONG llegara con la asociacion)."""
+    from apps.panel.models import Donation, SystemSetting
+    from apps.panel.services import live_monthly_cap
+    cap, donated, base = live_monthly_cap()
+    goal = SystemSetting.get_int('donation_goal_eur', 60)
+    paypal = SystemSetting.objects.filter(key='paypal_url').first()
+    return render(request, 'analysis/donations.html', {
+        'donated': donated, 'goal': goal, 'base': base, 'cap': cap,
+        'paypal_url': paypal.value if paypal else '',
+        'count': Donation.objects.count()})

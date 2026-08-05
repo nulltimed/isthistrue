@@ -2,4 +2,9 @@
 {% block content %}
 <h1>Entrar</h1>
 <form method="post">{% csrf_token %}{{ form.as_p }}<button>Entrar</button></form>
+<p class="hint">Puedes entrar con tu email o con tu nombre de usuario.</p>
+<details><summary>¿No te llegó el email de verificación?</summary>
+<form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}
+<label>Tu email<input type="email" name="email" required></label><button>Reenviar</button></form>
+</details>
 {% endblock %}

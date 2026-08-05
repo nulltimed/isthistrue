@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block content %}
+<h1>{% trans "Donaciones" %}</h1>
+<p>{% trans "isthistrue./escierto. es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito." %}</p>
+<p><strong>{% trans "Este mes" %}:</strong> {{ donated|floatformat:2 }} € {% trans "donados de un objetivo de" %} {{ goal }} € · {% trans "Depósito vivo" %}: {{ cap|floatformat:0 }} €</p>
+<div class="progress"><div style="width:{% widthratio donated goal 100 %}%"></div></div>
+{% if paypal_url %}<p style="margin-top:1rem"><a href="{{ paypal_url }}" rel="noopener" target="_blank"><button>{% trans "Donar por PayPal" %}</button></a></p>
+{% else %}<p class="hint">{% trans "El enlace de PayPal se activará muy pronto." %}</p>{% endif %}
+<p class="hint">{% trans "Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera." %}</p>
+{% endblock %}
