@@ -4,6 +4,7 @@ import django.db.models.deletion
 import pgvector.django.vector
 from django.conf import settings
 from django.db import migrations, models
+from pgvector.django import VectorExtension
 
 
 class Migration(migrations.Migration):
@@ -16,6 +17,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Garantiza pgvector tambien en BDs nuevas (test_*, CI) sin paso manual:
+        VectorExtension(),
         migrations.CreateModel(
             name='Claim',
             fields=[
