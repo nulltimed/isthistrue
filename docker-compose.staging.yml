@@ -11,7 +11,7 @@ services:
     environment:
       STAGING_MODE: "true"
       MOCK_AGENTS: "true"
-      ALLOWED_HOSTS: "stagings.xyztserver.com,localhost,127.0.0.1"
+      ALLOWED_HOSTS: "stagings.xyztserver.com,staging.xyztserver.com,localhost,127.0.0.1"
     volumes: [ "./media-staging:/app/media" ]
     depends_on: [ db, redis ]
     ports: [ "127.0.0.1:8081:8000" ]
