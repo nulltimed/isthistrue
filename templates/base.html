@@ -40,12 +40,33 @@
   </nav>
 </header>
 {% if quota_banner %}
-<div class="quota-banner">
-  {% trans "Hoy" %}: {{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} € ·
-  {% trans "Este mes" %}: {{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} € —
-  {% trans "Si donas, estos cupos suben." %}
-  {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
+<div class="quota-banner quota-banner-xl">
+  <div class="qb-numbers">
+    <span>{% trans "Hoy" %}: <strong>{{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} €</strong></span>
+    <span>{% trans "Este mes" %}: <strong>{{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} €</strong></span>
+  </div>
+  <div class="qb-message">
+    {% trans "Si donas, estos cupos suben." %}
+    {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
+  </div>
+  <div id="paypal-banner-btn" class="paypal-banner-btn"></div>
+  <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
+<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+<script>
+if (window.paypal && document.getElementById('paypal-banner-btn')) {
+  paypal.Buttons({
+    style: { shape: 'pill', color: 'blue', layout: 'horizontal', label: 'subscribe', height: 35, tagline: false },
+    createSubscription: function(data, actions) {
+      return actions.subscription.create({ plan_id: 'P-3K755405C1414303ENJZZBAI' });
+    },
+    onApprove: function(data, actions) {
+      var m = document.querySelector('.qb-message');
+      if (m) { m.innerHTML = '🎉 ¡Suscripción completada — gracias, Patrono!'; }
+    }
+  }).render('#paypal-banner-btn');
+}
+</script>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main>{% block content %}{% endblock %}</main>

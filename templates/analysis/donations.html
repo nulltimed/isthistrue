@@ -4,7 +4,28 @@
 <p>{% trans "isthistrue./escierto. es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito." %}</p>
 <p><strong>{% trans "Este mes" %}:</strong> {{ donated|floatformat:2 }} € {% trans "donados de un objetivo de" %} {{ goal }} € · {% trans "Depósito vivo" %}: {{ cap|floatformat:0 }} €</p>
 <div class="progress"><div style="width:{% widthratio donated goal 100 %}%"></div></div>
-{% if paypal_url %}<p style="margin-top:1rem"><a href="{{ paypal_url }}" rel="noopener" target="_blank"><button>{% trans "Donar por PayPal" %}</button></a></p>
-{% else %}<p class="hint">{% trans "El enlace de PayPal se activará muy pronto." %}</p>{% endif %}
-<p class="hint">{% trans "Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera." %}</p>
+
+<h2>{% trans "Hazte Patrono (aportación mensual)" %}</h2>
+<p class="hint">{% trans "Suscripción mensual vía PayPal: puedes cancelarla cuando quieras desde tu cuenta de PayPal." %}</p>
+<div id="paypal-button-container-P-3K755405C1414303ENJZZBAI" style="max-width:300px"></div>
+<p id="patron-gracias" class="hint" style="display:none">🎉 {% trans "¡Suscripción completada — gracias, Patrono! Tu apoyo agranda el depósito cada mes." %}</p>
+<!-- SDK de PayPal ya cargado por base.html (banner siempre visible) -->
+<script>
+  paypal.Buttons({
+      style: { shape: 'pill', color: 'blue', layout: 'horizontal', label: 'subscribe' },
+      createSubscription: function(data, actions) {
+        return actions.subscription.create({ plan_id: 'P-3K755405C1414303ENJZZBAI' });
+      },
+      onApprove: function(data, actions) {
+        document.getElementById('patron-gracias').style.display = 'block';
+      }
+  }).render('#paypal-button-container-P-3K755405C1414303ENJZZBAI');
+</script>
+
+{% if paypal_url %}
+<h2>{% trans "Donación puntual" %}</h2>
+<p><a href="{{ paypal_url }}" rel="noopener" target="_blank"><button>{% trans "Donar una vez por PayPal" %}</button></a></p>
+{% endif %}
+
+<p class="hint" style="margin-top:1.2rem">{% trans "Transparencia: la web carga el software del botón de PayPal en todas las páginas (banner de donaciones). Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera." %}</p>
 {% endblock %}

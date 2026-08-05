@@ -10,7 +10,7 @@ a{color:var(--ink)}
 /* Cabecera pegajosa */
 header{background:var(--paper);border-bottom:2px solid var(--ink);padding:1.1rem 1rem .5rem;text-align:center}
 .masthead{display:flex;flex-direction:column;align-items:center;gap:.3rem}
-.logo img{display:block;height:64px;max-width:92vw}
+.logo img{display:block;height:96px;max-width:94vw}
 .lang-switch{font-size:.8rem;color:var(--grey)}
 .lang-switch a{text-decoration:none;font-weight:600;color:var(--grey);padding:0 .3rem}
 .lang-switch a.active{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
@@ -94,4 +94,11 @@ th{background:var(--paper)}
 .progress > div{background:var(--green);height:100%}
 footer{border-top:2px solid var(--ink);margin-top:3rem;padding:1.1rem;font-size:.8rem;text-align:center;color:var(--grey)}
 footer a{color:var(--grey);margin:0 .25rem}
-@media (max-width:640px){.logo img{height:44px}header nav{gap:.7rem;font-size:.88rem}main{margin-top:1rem}}
+@media (max-width:640px){.logo img{height:56px}header nav{gap:.7rem;font-size:.88rem}main{margin-top:1rem}}
+
+/* Banner XL (100% mas grande) con boton PayPal real siempre visible (decision de David) */
+.quota-banner-xl{font-size:1.05rem;padding:1rem 1.2rem;display:flex;flex-direction:column;align-items:center;gap:.45rem}
+.quota-banner-xl .qb-numbers{display:flex;gap:1.6rem;flex-wrap:wrap;justify-content:center}
+.quota-banner-xl .qb-message a{font-weight:700}
+.paypal-banner-btn{min-height:38px;max-width:260px;width:100%}
+@media (max-width:640px){.quota-banner-xl{font-size:.95rem}.quota-banner-xl .qb-numbers{gap:.8rem}}

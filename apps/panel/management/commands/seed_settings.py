@@ -17,7 +17,7 @@ DEFAULTS = {
     'opus_rescan_percent': '40',
     'opus_rescan_min_users': '50',
     'opus_rescan_percent': '40',
-    'donation_goal_eur': '50',
+    'donation_goal_eur': '100',
     'lang_es': '1', 'lang_en': '1',
 }
 
