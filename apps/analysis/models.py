@@ -50,7 +50,7 @@ class Channel(models.Model):
 
 
 class Post(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='posts')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analysis_posts')  # 'posts' choca con machina forum_conversation.Post.poster
     channel = models.ForeignKey(Channel, null=True, blank=True, on_delete=models.SET_NULL, related_name='posts')
     url = models.URLField(max_length=500)
     platform = models.CharField(max_length=20, default='unknown')
