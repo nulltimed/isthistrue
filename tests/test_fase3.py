@@ -82,6 +82,12 @@ class LoginEmailONick(TestCase):
 
 
 class AlertasAntiSpam(TestCase):
+    def setUp(self):
+        # La cache LocMem sobrevive entre tests: otro test que dispare la misma
+        # alerta dejaria el anti-spam armado y este test veria outbox=0.
+        from django.core.cache import cache
+        cache.clear()
+
     def test_segunda_alerta_en_6h_no_envia(self):
         from django.core import mail
         alert_admin('Presupuesto diario agotado', 'x')
