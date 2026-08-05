@@ -101,3 +101,14 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Estado del reescaneo Opus tras la limpieza: una sola puerta (`maybe_trigger_opus_rescan`, candado min_users=50 + percent 40 + una vez), llamada desde `upvote`. `opus_rescan_min_votes` ya no existe en seeds; el README §25 quedó consolidado (una sola sección; avatares=Haiku confirmado por David).
 - ensure_superuser corre ahora en el arranque del web (command del compose): la incidencia de credenciales .env queda estructuralmente cerrada.
 - **DNS**: al cierre del pase, isthistrue.xyztserver.com apuntaba a Brevo (CNAME brand.brevosend.com) en vez de al VPS — no es cosa del código; David debe restaurar el A en IONOS. Si algún checklist tuyo falla solo en un dominio, comprueba `dig` antes de sospechar del código.
+
+---
+
+## 12. Pase 3.6 aplicado (2026-08-05, sesión de cierre) — addendum del operador
+
+- Paquete mínimo sobre main, otra vez limpio: **cero arreglos de código necesarios**. Dos pases seguidos sin reintroducciones — el formato queda consagrado.
+- Nota de numeración: el 3.5 nunca se entregó como paquete; el 3.6 lo sustituyó explícitamente. Los informes saltan de docs/10 (3.4) a docs/11 (3.6): no busques un informe del 3.5.
+- Aplicado: banner XL con botón PayPal real (client-id de David en base.html — SDK cargado UNA vez para toda la web; /donaciones/ NO lo recarga), logo 96px/56px, cookies.html declara el SDK, donation_goal_eur=100 (seed default + update en BDs existentes — mismo patrón create-if-missing de siempre).
+- El DNS de isthistrue quedó restaurado por David y verificado sirviendo la web. El episodio Brevo/CNAME está documentado en guia-cerrar-brevo.md (regla: solo TXT).
+- Backups: `backup.sh` definitivo con `REPO="rclone:isthistrue:isthistrue"` (el remoto rclone real se llama `isthistrue`, NO `gdrive` — actualiza cualquier doc futura). Programación: cron de root a las 00:00 con RESTIC_PASSWORD inline (decisión aceptada por diseño), retención 7d+3s, `restic check` los lunes.
+- Recordatorio vigente para tu próxima entrega: tests SIEMPRE incluidos si los prometes, paquete mínimo sobre main, y grep de usos (incluidos tests/) antes de borrar cualquier símbolo.
