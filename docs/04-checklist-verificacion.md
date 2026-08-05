@@ -7,7 +7,7 @@
    - Sí debes cambiar: `SECRET_KEY` (cualquier cadena larga) y `POSTGRES_PASSWORD`.
 3. **Levantar el stack**: `docker compose up --build -d`. Primera vez: 5-10 min.
    - Si ves "port already allocated": otro servicio usa el 8080 → cámbialo en compose.
-4. **Migraciones**: `docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel` y luego `docker compose exec web python manage.py migrate`.
+4. **Migraciones**: `docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel` y luego `docker compose exec web python manage.py migrate`.
    - Si falla con "type vector does not exist": `docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"` y repite migrate.
 5. **Sembrar umbrales y foros**: `docker compose exec web python manage.py seed_settings` y `docker compose exec web python manage.py seed_forum`.
    - **Permisos del foro (roce esperado de machina)**: entra en /admin/ → Forum permissions y concede al grupo por defecto los permisos de leer y responder en Principal y Off-Topic. Si los hilos no dejan comentar, es esto.

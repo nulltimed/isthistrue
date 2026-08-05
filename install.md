@@ -104,7 +104,7 @@ $ cd /opt/isthistrue
 $ sudo -u i docker compose up --build -d
 $ sudo -u i docker compose ps
 $ sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"
-$ sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel
+$ sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel
 $ sudo -u i docker compose exec web python manage.py migrate
 $ sudo -u i docker compose exec web python manage.py seed_settings
 $ sudo -u i docker compose exec web python manage.py createsuperuser
@@ -274,7 +274,7 @@ $ sudo certbot --nginx -d stagings.xyztserver.com
 $ cd /opt/isthistrue-staging
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"
-$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py makemigrations accounts analysis wiki forum panel
+$ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py makemigrations accounts analysis wiki forum_local panel
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py migrate
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_settings
 $ sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_forum

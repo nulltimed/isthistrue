@@ -22,7 +22,7 @@ ejecutar sus pasos directamente.
 ## Comandos clave
 - Producción: `cd /opt/isthistrue && sudo -u i docker compose up --build -d`
 - Espejo (apagado por defecto): `cd /opt/isthistrue-staging && sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d` (y `down` al terminar)
-- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum panel && sudo -u i docker compose exec web python manage.py migrate`
+- Migraciones: `sudo -u i docker compose exec web python manage.py makemigrations accounts analysis wiki forum_local panel && sudo -u i docker compose exec web python manage.py migrate`
 - Primera vez BD: `sudo -u i docker compose exec db psql -U isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"` y luego `seed_settings` + `seed_forum` + `createsuperuser` + `collectstatic --noinput`
 - Tests: `sudo -u i docker compose exec web python manage.py test tests --settings=tests.settings_test`
 
