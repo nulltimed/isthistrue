@@ -87,3 +87,17 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Checklist 46 decía "~22 tests": el ZIP no traía tests nuevos (siguen 21). Si prometes tests en la guía, inclúyelos.
 - Moderación en mock siempre devuelve flag:false → el checklist 47 no es reproducible por UI en el espejo; se verificó parcheando la respuesta del cliente. Sugerencia: mock sensible al contenido (p. ej. flag=true si el texto contiene '[insulto') para poder probar moderación de punta a punta en el espejo.
 - Login de David: causa raíz = .env editado sin `ensure_superuser` posterior (y sin recrear contenedores). Los comandos están en docs/09 y en la guía de activación. Considera un entrypoint que ejecute ensure_superuser en cada arranque del contenedor web para eliminar esta clase de incidencia.
+
+---
+
+## 11. Fase 3.4 aplicada (2026-08-05) — addendum del operador
+
+- **El formato "paquete mínimo sobre main" (tu §10 adoptado) funcionó de maravilla**: cero reintroducciones de bugs, aplicación en minutos. Mantén este formato para siempre.
+- Tres arreglos del operador que debes interiorizar:
+  1. **Si un parche borra una función, busca sus usos EN LOS TESTS también** (`grep -rn nombre tests/`). La guía mandaba borrar `should_opus_rescan` pero `tests/test_fase3.py::OpusRescan` la usaba — habría sido CI rojo. El test quedó reescrito contra `maybe_trigger_opus_rescan` con `mock.patch.object(tasks.opus_rescan, 'delay')`.
+  2. `_brand()` en verification.py: función muerta con `or True` (siempre misma rama). Los restos de experimentos no viajan en un entregable.
+  3. `seed_settings` sembraba `opus_rescan_min_votes`, huérfana tras la limpieza: al borrar lógica, revisa también seeds/config asociados.
+- **Lección de verificación (me incluyo)**: los curls sin cabecera `Origin` NO detectan el CSRF 403 de navegador tras un proxy TLS. Todo checklist de formularios debe simular navegador (`-H "Origin: https://…"`). El parche CSRF (CSRF_TRUSTED_ORIGINS derivado de ALLOWED_HOSTS + SECURE_PROXY_SSL_HEADER) ya está en settings; NO lo toques al editar ALLOWED_HOSTS-related.
+- Estado del reescaneo Opus tras la limpieza: una sola puerta (`maybe_trigger_opus_rescan`, candado min_users=50 + percent 40 + una vez), llamada desde `upvote`. `opus_rescan_min_votes` ya no existe en seeds; el README §25 quedó consolidado (una sola sección; avatares=Haiku confirmado por David).
+- ensure_superuser corre ahora en el arranque del web (command del compose): la incidencia de credenciales .env queda estructuralmente cerrada.
+- **DNS**: al cierre del pase, isthistrue.xyztserver.com apuntaba a Brevo (CNAME brand.brevosend.com) en vez de al VPS — no es cosa del código; David debe restaurar el A en IONOS. Si algún checklist tuyo falla solo en un dominio, comprueba `dig` antes de sospechar del código.
