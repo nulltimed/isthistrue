@@ -76,3 +76,14 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - **Ritual actualizado**: tras `collectstatic` SIEMPRE `restart web` — WhiteNoise indexa STATIC_ROOT al arrancar y los estáticos copiados después dan 404. (Nota: hasta esta fase `/static/` estaba roto en producción con DEBUG=False; nadie lo había probado con curl a un .css.)
 - Migración nueva: `analysis/0003_post_opus_rescanned.py` (commiteada). Siguiente: 0004.
 - Primer ciclo completo con CI real: rojo → diagnóstico → fix → verde → espejo → producción. Funciona.
+
+---
+
+## 10. Fase 3.3 aplicada (2026-08-05) — addendum del operador
+
+- **REGLA NUEVA, la más importante hasta la fecha: construye cada ZIP SOBRE `main` de GitHub, no sobre tu entrega anterior.** El ZIP 3.3 venía montado sobre la 3.2 *sin* los arreglos del operador y reintrodujo TODOS los bugs ya corregidos (opus_rescan duplicado con model_override=, opus_rescanned ×2, settings muertos, pivote en Sonnet, media_serve sin endurecer, tests sin aislamiento, compose 8080, CLAUDE.md con 'forum'). Se aplicó de forma selectiva y no se perdió nada, pero el margen de error crece con cada pase. `git clone https://github.com/nulltimed/isthistrue` y parte de ahí.
+- Presupuesto 100/3 aplicado (defaults, .env.example, seed, .env reales). **Los tests de FrenosPresupuesto ahora derivan los límites de `live_daily_budget()`/`live_monthly_cap()`** — mantenlo así: cifras cableadas en tests = CI roto en cada cambio de presupuesto.
+- `seed_settings` es create-if-missing (no pisa ediciones del panel): correcto, PERO los cambios de valores por defecto no llegan a BDs ya sembradas. Este pase requirió un UPDATE manual de `budget_base_eur` en espejo y producción. Si un pase futuro cambia umbrales existentes, decide y documenta el mecanismo (¿comando `--update-keys`?).
+- Checklist 46 decía "~22 tests": el ZIP no traía tests nuevos (siguen 21). Si prometes tests en la guía, inclúyelos.
+- Moderación en mock siempre devuelve flag:false → el checklist 47 no es reproducible por UI en el espejo; se verificó parcheando la respuesta del cliente. Sugerencia: mock sensible al contenido (p. ej. flag=true si el texto contiene '[insulto') para poder probar moderación de punta a punta en el espejo.
+- Login de David: causa raíz = .env editado sin `ensure_superuser` posterior (y sin recrear contenedores). Los comandos están en docs/09 y en la guía de activación. Considera un entrypoint que ejecute ensure_superuser en cada arranque del contenedor web para eliminar esta clase de incidencia.
