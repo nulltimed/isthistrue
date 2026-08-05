@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Panel · Códigos canjeables</h1>
+<form method="post">{% csrf_token %}
+  <label>Nivel
+    <select name="level"><option value="CONTRIB">Contribuidor</option>
+    <option value="VERIF">Verificador</option><option value="VET">Veterano</option></select>
+  </label>
+  <label>Cantidad (1 a 1.000.000)<input type="number" name="count" min="1" max="1000000" value="10"></label>
+  <button>Generar lote (txt)</button>
+</form>
+<h2>Lotes</h2>
+<table><tr><th>Fecha</th><th>Nivel</th><th>Cantidad</th><th>Estado</th><th>Descarga</th></tr>
+{% for b in batches %}<tr><td>{{ b.created_at|date:'d/m H:i' }}</td><td>{{ b.level }}</td>
+<td>{{ b.count }}</td><td>{{ b.status }}</td>
+<td>{% if b.file %}<a href="{{ b.file.url }}">txt</a>{% else %}—{% endif %}</td></tr>{% endfor %}
+</table>
+<h2>Canjeados</h2>
+<table><tr><th>Código</th><th>Usuario</th><th>Fecha</th><th></th></tr>
+{% for c in redeemed %}<tr><td>{{ c.code }}</td><td>{{ c.redeemed_by }}</td>
+<td>{{ c.redeemed_at|date:'d/m H:i' }}</td>
+<td><form method="post">{% csrf_token %}<input type="hidden" name="revoke" value="{{ c.pk }}">
+<button class="danger">Revocar (silencioso)</button></form></td></tr>{% endfor %}
+</table>
+{% endblock %}

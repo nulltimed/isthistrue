@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block og %}
+<meta property="og:site_name" content="isthistrue.">
+<meta property="og:title" content="{{ post.title|default:post.url }}">
+<meta property="og:description" content="{% if post.category == 'OFFTOPIC' %}Off-Topic (opinión){% else %}Análisis con fuentes en isthistrue.{% endif %}">
+<meta property="og:url" content="https://{{ request.get_host }}{{ request.path }}">
+<meta name="twitter:card" content="summary">
+{% endblock %}
+{% block content %}
+<article class="post">
+  <h1>{{ post.title|default:post.url }}</h1>
+  <div class="embed">{{ embed|safe }}</div>
+
+  <div id="status" hx-get="{% url 'post_status' post.pk %}" hx-trigger="every 4s" hx-swap="outerHTML">
+    {% include 'partials/post_status.html' %}
+  </div>
+
+  {% if post.status == 'PENDING_VALIDATION' %}
+    <div class="validation">
+      <p><strong>Pendiente de validación:</strong> {{ votes_validate }} voto(s). Se necesitan votos de usuarios Contribuidor+ antes de {{ post.validation_deadline|date:'d/m H:i' }}.</p>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'post_vote' post.pk 'validate' %}">{% csrf_token %}
+        <button>✔ Es factual</button></form>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if post.category == 'OFFTOPIC' %}
+    <div class="validation">
+      <p><strong>Off-Topic.</strong> {{ votes_rescue }}/10 votos de rescate.
+      {% if post.relegation_reason %}Motivo: {{ post.relegation_reason }}.{% endif %}</p>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'post_vote' post.pk 'rescue' %}">{% csrf_token %}
+        <button>⤴ Rescatar al foro principal</button></form>
+      {% endif %}
+      <p class="disclaimer">Las señales de esta página no son veredictos verificados: no incluyen búsqueda de fuentes.</p>
+    </div>
+  {% endif %}
+  {% if post.manipulation_detected %}
+    <p class="warning">⚠ Retórica manipulativa detectada en el barrido previo.</p>
+  {% endif %}
+
+  {% if name_proposals %}
+  <h2>¿Quién habla?</h2>
+  <p class="hint">Identificación participativa: vota al candidato correcto (Contribuidor+). El voto de moderador pesa más. Solo figuras públicas tendrán página propia.</p>
+  <div class="speakers">
+  {% regroup name_proposals by speaker_label as speaker_groups %}
+  {% for group in speaker_groups %}
+    <div class="speaker-block">
+      <strong>{{ group.grouper }}</strong>
+      {% for prop in group.list %}
+        <div class="candidate {% if prop.confirmed %}confirmed{% endif %}">
+          {% if prop.photo_url %}<img src="{{ prop.photo_url }}" alt="" width="48" height="48" loading="lazy">{% endif %}
+          {{ prop.candidate_name }}
+          {% if prop.confirmed %}✔{% elif user.is_authenticated %}
+          <form method="post" action="{% url 'vote_speaker_name' prop.pk %}" style="display:inline">{% csrf_token %}<button class="mini">Votar</button></form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  </div>
+  {% endif %}
+  <h2>Transcripción sincronizada</h2>
+  <div class="transcript">
+  {% for s in segments %}
+    <div class="segment {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
+         data-start="{{ s.start_seconds }}">
+      <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.speaker_label %}<span class="speaker-tag">{{ s.speaker_label }}</span>{% endif %}
+      <span class="text">{{ s.text }}</span>
+      {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
+      {% if hide_opinions and s.signal == 'OPINION' %}
+        <div class="blur-overlay" onclick="this.parentElement.classList.remove('blurred')">
+          Esto es una opinión — clic para verla</div>
+      {% endif %}
+    </div>
+  {% empty %}<p>Sin transcripción todavía.</p>{% endfor %}
+  </div>
+  <div class="share">
+    Compartir:
+    <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>
+    <a href="https://twitter.com/intent/tweet?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">X</a>
+    <a href="https://wa.me/?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">WhatsApp</a>
+    <a href="https://t.me/share/url?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Telegram</a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Facebook</a>
+    <a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a>
+  </div>
+</article>
+<script>
+function seekTo(s){ /* deep-link del embed: recargar iframe con ?start= */
+  const f=document.querySelector('.embed iframe');
+  if(f && f.src.includes('youtube')){ f.src=f.src.replace(/([?&])start=\d+/, '$1start='+Math.floor(s)); }
+}
+</script>
+{% endblock %}

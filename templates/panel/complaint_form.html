@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Canal de reclamaciones</h1>
+<p class="hint">Recibirás un número de referencia y acuse por email. Si eres el autor del contenido analizado, indícalo: tu reclamación entra en cola prioritaria (respuesta en 7 días).</p>
+<form method="post">{% csrf_token %}
+  <label>Tu email<input type="email" name="email" required></label>
+  <label>Enlace al contenido reclamado<input name="content_url" required placeholder="https://..."></label>
+  <label>Motivo<select name="reason">
+    <option value="ERROR">Error factual</option>
+    <option value="DEFAMATION">Considero que me difama</option>
+    <option value="COPYRIGHT">Propiedad intelectual</option>
+    <option value="PRIVACY">Privacidad</option>
+    <option value="OTHER">Otro</option></select></label>
+  <label>Explica tu reclamación<textarea name="body" rows="6" required></textarea></label>
+  <button>Enviar reclamación</button>
+</form>
+{% endblock %}

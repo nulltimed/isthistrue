@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Mi cuenta</h1>
+<p>Nivel: {{ u.effective_level }} · Karma: {{ u.karma }} · Cupo hoy: {{ u.credits_used_today }}/{{ u.daily_quota }}</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+  {% if u.is_adult %}
+  <label><input type="checkbox" name="hide_adult" {% if u.hide_adult %}checked{% endif %}> Ocultar contenido para adultos</label>
+  {% endif %}
+  <label><input type="checkbox" name="hide_opinions" {% if u.hide_opinions %}checked{% endif %}> Ocultar opiniones (se muestran difuminadas, clic para ver)</label>
+  <label>Notificaciones
+    <select name="notify_mode">
+      <option value="WEB" {% if u.notify_mode == 'WEB' %}selected{% endif %}>Solo campana</option>
+      <option value="INSTANT" {% if u.notify_mode == 'INSTANT' %}selected{% endif %}>Email inmediato</option>
+      <option value="DAILY" {% if u.notify_mode == 'DAILY' %}selected{% endif %}>Resumen diario</option>
+    </select></label>
+  <label><input type="checkbox" name="allow_friend_requests" {% if u.allow_friend_requests %}checked{% endif %}> Permitir solicitudes de amistad</label>
+  <label>Avatar<input type="file" name="avatar" accept="image/*"></label>
+  <button>Guardar</button>
+</form>
+<p><a href="{% url 'delete_account' %}">Eliminar mi cuenta</a> (derecho de supresión)</p>
+<p><a href="{% url 'claim_code' %}">Canjear un código</a></p>
+{% endblock %}

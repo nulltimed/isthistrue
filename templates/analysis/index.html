@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Recientes</h1>
+<ul class="post-list">
+{% for p in recent %}
+  <li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
+      <span class="badge">{{ p.get_status_display }}</span></li>
+{% empty %}<li>Nada todavía. Sé el primero en analizar algo.</li>{% endfor %}
+</ul>
+
+<h1 id="offtopic">Off-Topic</h1>
+<p class="hint">Opiniones y contenidos sin suficientes afirmaciones verificables. 10 votos de la comunidad los rescatan al foro principal.</p>
+<ul class="post-list">
+{% for p in offtopic %}
+  <li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a></li>
+{% empty %}<li>Vacío por ahora.</li>{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Crear cuenta</h1>
+<form method="post">{% csrf_token %}{{ form.as_p }}
+{% if not debug %}<div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
+<button>Registrarme</button></form>
+{% endblock %}

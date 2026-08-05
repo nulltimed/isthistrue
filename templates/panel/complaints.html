@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Panel · Reclamaciones (DSA)</h1>
+<table><tr><th>#</th><th>Fecha</th><th>Motivo</th><th>URL</th><th>Estado</th><th></th></tr>
+{% for c in items %}<tr><td>{{ c.pk }}</td><td>{{ c.created_at|date:'d/m' }}</td>
+<td>{{ c.get_reason_display }}</td><td>{{ c.content_url|truncatechars:40 }}</td><td>{{ c.status }}</td>
+<td><form method="post">{% csrf_token %}<input type="hidden" name="id" value="{{ c.pk }}">
+<select name="status"><option>OPEN</option><option>RESOLVED</option><option>REJECTED</option></select>
+<button>OK</button></form></td></tr>{% endfor %}</table>
+{% endblock %}

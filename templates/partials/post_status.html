@@ -1,0 +1,3 @@
+<div id="status" {% if post.status == 'CHEAP_RUNNING' or post.status == 'FULL_RUNNING' or post.status == 'FULL_QUEUED' or post.status == 'NEW' %}hx-get="{% url 'post_status' post.pk %}" hx-trigger="every 4s" hx-swap="outerHTML"{% endif %}>
+  <span class="badge status-{{ post.status }}">{{ post.get_status_display }}</span>
+</div>

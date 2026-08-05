@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Panel · Espejo de pruebas</h1>
+<p class="hint">Invita por email a quien deba poder entrar en stagings.xyztserver.com. El espejo funciona SIEMPRE en modo simulado: no gasta presupuesto.</p>
+<form method="post">{% csrf_token %}
+  <label>Email<input type="email" name="email" required></label>
+  <label><input type="checkbox" name="can_admin"> Permitir acceso al panel del espejo</label>
+  <button>Enviar invitación</button>
+</form>
+<h2>Invitaciones</h2>
+<table><tr><th>Email</th><th>Fecha</th><th>Panel</th></tr>
+{% for i in invites %}<tr><td>{{ i.email }}</td><td>{{ i.created_at|date:'d/m H:i' }}</td><td>{{ i.can_admin|yesno:'sí,no' }}</td></tr>{% endfor %}</table>
+{% endblock %}

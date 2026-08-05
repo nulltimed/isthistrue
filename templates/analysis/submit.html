@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Analizar contenido</h1>
+<form method="post">{% csrf_token %}
+  <label>URL del contenido<input type="url" name="url" required placeholder="https://..."></label>
+  <label><input type="checkbox" name="offtopic"> Subir directamente a Off-Topic (opinión; no consume crédito)</label>
+  <label><input type="checkbox" name="is_adult"> Este contenido es para mayores de 18</label>
+  <button>Analizar</button>
+</form>
+<p class="hint">El análisis pasa primero un barrido rápido; si el contenido es factual, la comunidad lo valida (5 votos en 3 días) y entonces se verifica con fuentes. Un crédito por tramo de 20 minutos; sin devolución.</p>
+{% endblock %}

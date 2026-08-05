@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block og %}
+<meta property="og:title" content="{{ claim.get_color_display }} — {{ claim.text_original|truncatechars:90 }}">
+<meta property="og:description" content="{{ claim.what_evidence_says|truncatechars:150 }}">
+<meta property="og:image" content="https://{{ request.get_host }}/wiki/claim/{{ claim.slug }}/tarjeta.png">
+<meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+{% block content %}
+<article class="claim color-{{ claim.color }}">
+  <h1>{{ claim.get_color_display }} — {{ claim.text_original|truncatechars:120 }}</h1>
+  <section><h2>Qué se afirma</h2><p>{{ claim.what_is_claimed }}</p></section>
+  <section><h2>Qué dice la evidencia</h2><p>{% if linked_evidence %}{{ linked_evidence|safe }}{% else %}{{ claim.what_evidence_says }}{% endif %}</p></section>
+  <section><h2>La diferencia</h2><p>{{ claim.the_difference }}</p></section>
+  {% if claim.sensitive %}<p class="warning">Tema sensible: consulta siempre fuentes y recursos oficiales.</p>{% endif %}
+  <h2>Fuentes</h2>
+  <ul>{% for s in claim.sources.all %}<li><a href="{{ s.url }}" rel="noopener">{{ s.title|default:s.url }}</a></li>{% endfor %}</ul>
+  <h2>Apariciones</h2>
+  <ul>{% for a in claim.appearances.all %}<li>{{ a.segment.post.title|default:a.segment.post.url }} — min {{ a.segment.start_seconds|floatformat:0 }}s: «{{ a.quote|truncatechars:160 }}»</li>{% endfor %}</ul>
+  <p class="hint">Historial: {{ claim.versions.count }} versión(es). <a href="#">Reportar error</a></p>
+  {% if user.is_authenticated %}<p><a href="/wiki/claim/{{ claim.slug }}/seguir/">🔔 Seguir este claim</a> (aviso si cambia de color o reaparece)</p>{% endif %}
+  <div class="share">Compartir:
+    <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>
+    <a href="https://twitter.com/intent/tweet?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">X</a>
+    <a href="https://wa.me/?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">WhatsApp</a>
+    <a href="https://t.me/share/url?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Telegram</a>
+  </div>
+</article>
+{% endblock %}

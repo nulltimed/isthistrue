@@ -1,0 +1,18 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Amigos</h1>
+<p class="hint">La amistad da visibilidad de actividad, no mensajería (no existe chat privado).</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="request">
+  <label>Enviar solicitud a<input name="username" placeholder="nombre de usuario"></label>
+  <button>Enviar</button></form>
+<h2>Solicitudes pendientes</h2>
+<ul>{% for fr in pending %}<li>{{ fr.requester.username }}
+  <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ fr.pk }}">
+  <button name="action" value="accept">Aceptar</button>
+  <button name="action" value="decline">Rechazar</button></form>
+  <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ fr.requester.pk }}">
+  <button name="action" value="block" class="danger">Bloquear</button></form></li>
+{% empty %}<li>Ninguna.</li>{% endfor %}</ul>
+<h2>Amigos</h2>
+<ul>{% for fr in accepted %}<li>{% if fr.requester == user %}{{ fr.addressee.username }}{% else %}{{ fr.requester.username }}{% endif %}</li>
+{% empty %}<li>Todavía nadie.</li>{% endfor %}</ul>
+{% endblock %}

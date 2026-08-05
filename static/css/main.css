@@ -1,0 +1,39 @@
+/* isthistrue. / escierto. — interfaz Inter, identidad maquina de escribir */
+:root{--ink:#111;--paper:#fafaf7;--green:#1a7f37;--amber:#b8860b;--red:#b3261e;--grey:#666}
+*{box-sizing:border-box}
+body{font-family:Inter,system-ui,sans-serif;color:var(--ink);background:var(--paper);margin:0}
+header{display:flex;justify-content:space-between;align-items:center;padding:.8rem 1.2rem;border-bottom:2px solid var(--ink)}
+.logo{font-family:'Courier Prime','Courier New',monospace;font-weight:700;font-size:1.4rem;color:var(--ink);text-decoration:none}
+nav a{margin-left:1rem;color:var(--ink)}
+main{max-width:860px;margin:1.5rem auto;padding:0 1rem}
+.badge{font-size:.75rem;border:1px solid var(--ink);padding:.1rem .4rem;border-radius:3px;margin-left:.4rem}
+.embed iframe{width:100%;aspect-ratio:16/9;border:0}
+.transcript .segment{position:relative;padding:.35rem .5rem;border-left:3px solid #ddd;margin:.25rem 0}
+.ts{font-family:monospace;color:var(--grey);margin-right:.5rem;text-decoration:none}
+.signal{display:inline-block;font-size:.72rem;margin-left:.5rem;padding:.05rem .35rem;border-radius:3px;background:#eee}
+.signal-OPINION{background:#eee;color:var(--grey)}
+.signal-FACTUAL_UNVERIFIED{background:#e8f0fe}
+.signal-CONTRADICTS_MODEL{background:#fdecea;color:var(--red)}
+/* Difuminado de opiniones estilo Reddit (slider hide_opinions) */
+.segment.blurred .text,.segment.blurred .signal{filter:blur(6px);user-select:none}
+.blur-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;color:var(--grey);cursor:pointer;background:rgba(250,250,247,.55)}
+.warning{border:1px solid var(--amber);background:#fff8e6;padding:.5rem .8rem;border-radius:4px}
+.disclaimer,.hint{color:var(--grey);font-size:.85rem}
+.color-GREEN h1{color:var(--green)}.color-AMBER h1{color:var(--amber)}
+.color-RED h1{color:var(--red)}.color-GREY h1{color:var(--grey)}
+button{background:var(--ink);color:#fff;border:0;padding:.45rem .9rem;border-radius:4px;cursor:pointer}
+button.danger{background:var(--red)}button.linklike{background:none;color:var(--ink);text-decoration:underline;padding:0}
+label{display:block;margin:.6rem 0}input,select{display:block;margin-top:.2rem;padding:.4rem;width:100%;max-width:420px}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:.35rem;text-align:left}
+.messages{list-style:none;padding:0}.messages li{padding:.5rem .8rem;border-radius:4px;margin:.3rem 0}
+.messages .success{background:#e6f4ea}.messages .error{background:#fdecea}.messages .info{background:#e8f0fe}
+.link-card{border:1px dashed var(--ink);padding:1rem;border-radius:6px}
+.quota-banner{background:#fff8e6;border-bottom:1px solid var(--amber);padding:.4rem 1rem;font-size:.85rem;text-align:center}
+.share{margin-top:1rem;font-size:.9rem}.share a{margin-right:.6rem}
+footer{border-top:2px solid var(--ink);margin-top:2rem;padding:1rem;font-size:.8rem;text-align:center;color:var(--grey)}
+footer a{color:var(--grey);margin:0 .2rem}
+.speaker-tag{font-size:.68rem;background:#e8f0fe;border-radius:3px;padding:0 .3rem;margin-left:.3rem}
+.speakers{display:flex;gap:1rem;flex-wrap:wrap}.speaker-block{border:1px solid #ddd;border-radius:6px;padding:.6rem}
+.candidate{display:flex;align-items:center;gap:.4rem;margin:.3rem 0}.candidate img{border-radius:50%;object-fit:cover}
+.candidate.confirmed{font-weight:700}button.mini{padding:.15rem .5rem;font-size:.75rem}

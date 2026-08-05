@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Canjear código</h1>
+<form method="post">{% csrf_token %}
+  <label>Código<input name="code" placeholder="ISTT-XXXX-XXXX" required
+    style="text-transform:uppercase" maxlength="14"></label>
+  <button>Canjear</button>
+</form>
+{% endblock %}

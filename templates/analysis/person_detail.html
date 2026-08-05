@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}
+<h1>{{ person.name }}</h1>
+<p class="hint">Recuento estrictamente factual de afirmaciones verificadas atribuidas a esta figura pública mediante identificación participativa. Toda atribución es reclamable en el <a href="{% url 'complaint_form' %}">canal de reclamaciones</a>.</p>
+<ul>
+{% for a in appearances %}
+  <li>{{ a.claim.get_color_display }} — <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:120 }}</a>
+      <span class="hint">({{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}, min {{ a.segment.start_seconds|floatformat:0 }}s)</span></li>
+{% empty %}<li>Sin afirmaciones atribuidas todavía.</li>{% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,120 @@
+from django.contrib import messages
+from django.contrib.auth import login
+from django.db import models
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .forms import RegisterForm
+from .models import RedeemCode
+from . import turnstile
+
+
+def register(request):
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
+        token = request.POST.get('cf-turnstile-response', '')
+        if not turnstile.verify(token, request.META.get('REMOTE_ADDR')):
+            messages.error(request, 'Verificación anti-bots fallida.')
+        elif form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('/')
+    else:
+        form = RegisterForm()
+    from django.conf import settings as dj_settings
+    return render(request, 'accounts/register.html', {'form': form, 'debug': dj_settings.DEBUG, 'turnstile_site_key': dj_settings.TURNSTILE_SITE_KEY})
+
+
+@login_required
+def settings_view(request):
+    """Panel de cuenta unico (foro+wiki): sliders +18 y opiniones."""
+    u = request.user
+    if request.method == 'POST':
+        if u.is_adult:  # 14-17: el slider +18 ni aparece ni se procesa
+            u.hide_adult = request.POST.get('hide_adult') == 'on'
+        u.hide_opinions = request.POST.get('hide_opinions') == 'on'
+        u.notify_mode = request.POST.get('notify_mode', u.notify_mode)
+        u.allow_friend_requests = request.POST.get('allow_friend_requests') == 'on'
+        if request.FILES.get('avatar'):
+            u.avatar = request.FILES['avatar']
+            u.avatar_approved = True
+        u.save()
+        if request.FILES.get('avatar'):
+            from .tasks import check_avatar
+            check_avatar.delay(u.pk)
+        messages.success(request, 'Preferencias guardadas.')
+        return redirect('account_settings')
+    return render(request, 'accounts/settings.html', {'u': u})
+
+
+@login_required
+def claim_code(request):
+    """/claim/ — canje de codigos ISTT-XXXX-XXXX."""
+    if request.method == 'POST':
+        raw = request.POST.get('code', '').strip().upper()
+        code = RedeemCode.objects.filter(code=raw).first()
+        if code and code.redeem(request.user):
+            messages.success(request, f'Código canjeado: ahora eres {code.get_grants_level_display()}.')
+            return redirect('/')
+        messages.error(request, 'Código no válido o ya utilizado.')
+    return render(request, 'accounts/claim.html')
+
+
+@login_required
+def delete_account(request):
+    """Autoborrado RGPD con confirmacion de contraseña."""
+    from django.contrib.auth import logout
+    from .services import anonymize_user
+    if request.method == 'POST':
+        if request.user.check_password(request.POST.get('password', '')):
+            anonymize_user(request.user)
+            logout(request)
+            messages.success(request, 'Tu cuenta ha sido eliminada.')
+            return redirect('/')
+        messages.error(request, 'Contraseña incorrecta.')
+    return render(request, 'accounts/delete_account.html')
+
+
+@login_required
+def notifications(request):
+    notes = request.user.notifications.all()[:50]
+    request.user.notifications.filter(read=False).update(read=True)
+    return render(request, 'accounts/notifications.html', {'notes': notes})
+
+
+@login_required
+def friends(request):
+    from .models import Friendship, User, UserBlock
+    from .services import notify
+    me = request.user
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'request':
+            target = User.objects.filter(username=request.POST.get('username', '').strip(),
+                                         is_active=True).first()
+            blocked = target and (UserBlock.objects.filter(blocker=target, blocked=me).exists()
+                                  or UserBlock.objects.filter(blocker=me, blocked=target).exists())
+            if target and target != me and target.allow_friend_requests and not blocked:
+                _, created = Friendship.objects.get_or_create(requester=me, addressee=target)
+                if created:
+                    notify(target, f'{me.username} te ha enviado una solicitud de amistad',
+                           url='/accounts/amigos/')
+                messages.success(request, 'Solicitud enviada.')
+            else:
+                messages.error(request, 'No se pudo enviar la solicitud.')
+        elif action in ('accept', 'decline'):
+            fr = Friendship.objects.filter(pk=request.POST.get('id'), addressee=me,
+                                           status='PENDING').first()
+            if fr:
+                fr.status = 'ACCEPTED' if action == 'accept' else 'DECLINED'
+                fr.save(update_fields=['status'])
+        elif action == 'block':
+            target = User.objects.filter(pk=request.POST.get('id')).first()
+            if target and target != me:
+                UserBlock.objects.get_or_create(blocker=me, blocked=target)
+                Friendship.objects.filter(requester=target, addressee=me).delete()
+                messages.success(request, 'Usuario bloqueado.')
+        return redirect('friends')
+    pending = Friendship.objects.filter(addressee=me, status='PENDING')
+    accepted = Friendship.objects.filter(status='ACCEPTED').filter(
+        models.Q(requester=me) | models.Q(addressee=me))
+    return render(request, 'accounts/friends.html', {'pending': pending, 'accepted': accepted})

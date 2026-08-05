@@ -1,0 +1,54 @@
+{% load static i18n %}<!doctype html>
+<html lang="{{ request.LANGUAGE_CODE|default:'es' }}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}{% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}{% endblock %}</title>
+{% block og %}
+<meta property="og:site_name" content="isthistrue.">
+<meta property="og:title" content="isthistrue. / escierto.">
+<meta property="og:description" content="{% trans 'Verificación comunitaria con fuentes reproducibles.' %}">
+<meta name="twitter:card" content="summary">
+{% endblock %}
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="alternate" type="application/rss+xml" title="Veredictos" href="{% url 'rss_verdicts' %}">
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+<header>
+  <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}</a>
+  <nav>
+    <a href="/">{% trans "Portada" %}</a>
+    <a href="/foro/">{% trans "Foro" %}</a>
+    <a href="{% url 'recent_changes' %}">Wiki</a>
+    <a href="{% url 'search' %}">🔍</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'submit' %}">+ {% trans "Analizar" %}</a>
+      <a href="{% url 'notifications' %}">🔔</a>
+      <a href="{% url 'account_settings' %}">{{ user.username }}</a>
+      {% if user.is_staff %}<a href="{% url 'panel_codes' %}">Panel</a>{% endif %}
+      <form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button class="linklike">{% trans "Salir" %}</button></form>
+    {% else %}
+      <a href="{% url 'login' %}">{% trans "Entrar" %}</a><a href="{% url 'register' %}">{% trans "Registro" %}</a>
+    {% endif %}
+  </nav>
+</header>
+{% if quota_banner %}
+<div class="quota-banner">
+  {% trans "Hoy" %}: {{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} € ·
+  {% trans "Este mes" %}: {{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} € —
+  {% trans "Si donas, estos cupos suben. Proyecto open source (AGPL) sin ánimo de lucro, dedicado a la comunidad." %}
+</div>
+{% endif %}
+{% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+<main>{% block content %}{% endblock %}</main>
+<footer>
+  <a href="{% url 'methodology' %}">{% trans "Cómo verificamos" %}</a> ·
+  <a href="{% url 'complaint_form' %}">{% trans "Reclamaciones" %}</a> ·
+  <a href="{% url 'legal_notice' %}">{% trans "Aviso legal" %}</a> ·
+  <a href="{% url 'privacy' %}">{% trans "Privacidad" %}</a> ·
+  <a href="{% url 'cookies' %}">Cookies</a> ·
+  <a href="{% url 'terms' %}">{% trans "Condiciones" %}</a> ·
+  <a href="{% url 'rss_verdicts' %}">RSS</a> ·
+  <a href="https://github.com/nulltimed/isthistrue" rel="noopener">AGPL-3.0</a>
+</footer>
+</body></html>

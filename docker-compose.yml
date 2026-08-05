@@ -1,0 +1,43 @@
+# Stack isthistrue — SOLO loopback 8090; el Nginx del host es el portero.
+# NOTA (2026-08-05): el puerto planificado 8080 estaba ocupado en el host por ntfy
+# (127.0.0.1:8080, servicio INTOCABLE). Se usa 8090. Cambiado tambien en
+# nginx/isthistrue-host.conf, README.md, CLAUDE.md e install.md.
+services:
+  web:
+    build: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    env_file: .env
+    volumes: [ "./media:/app/media" ]
+    depends_on: [ db, redis ]
+    ports: [ "127.0.0.1:8090:8000" ]
+    restart: unless-stopped
+  worker:
+    build: .
+    command: celery -A config worker -l info --concurrency 2
+    env_file: .env
+    volumes: [ "./media:/app/media" ]
+    depends_on: [ db, redis ]
+    restart: unless-stopped
+  beat:
+    build: .
+    command: celery -A config beat -l info
+    env_file: .env
+    depends_on: [ redis ]
+    restart: unless-stopped
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+  searxng:
+    image: searxng/searxng:latest
+    environment: { SEARXNG_BASE_URL: "http://searxng:8080/" }
+    restart: unless-stopped
+volumes:
+  pgdata:

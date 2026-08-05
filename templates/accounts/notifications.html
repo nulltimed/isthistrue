@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Notificaciones</h1>
+<ul>{% for n in notes %}<li>{{ n.created_at|date:'d/m H:i' }} — {% if n.url %}<a href="{{ n.url }}">{{ n.text }}</a>{% else %}{{ n.text }}{% endif %}</li>
+{% empty %}<li>Nada por aquí.</li>{% endfor %}</ul>
+{% endblock %}
