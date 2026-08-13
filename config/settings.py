@@ -94,6 +94,15 @@ MACHINA_MARKUP_LANGUAGE = ('markdown2.markdown', {'safe_mode': 'escape'})  # Mar
 MACHINA_MARKUP_WIDGET = 'django.forms.Textarea'
 
 AUTH_USER_MODEL = 'accounts.User'
+# Sin esto, Django acepta '1234' como contraseña (faltaba desde el Hito 2A;
+# detectado en el checklist 64 del pase 3.7 — el formulario "mudo" era doble:
+# ni mostraba errores NI habia validadores que los generasen):
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
 AUTHENTICATION_BACKENDS = ['apps.accounts.backends.EmailOrUsernameBackend',
                            'django.contrib.auth.backends.ModelBackend']
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
