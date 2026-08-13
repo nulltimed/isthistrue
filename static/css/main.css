@@ -114,3 +114,14 @@ button.wide{width:100%;margin-top:.9rem;padding:.7rem}
 padding:.7rem .9rem;margin-bottom:1rem;font-size:.9rem}
 .form-errors ul{margin:.4rem 0 0 1.1rem;padding:0}
 .auth-card details{margin-top:.8rem;font-size:.88rem}
+/* Medidor de contraseña en vivo (3.8) */
+.pw-meter{height:7px;background:var(--line);border-radius:999px;overflow:hidden;margin-top:.4rem;max-width:460px}
+#pw-bar{height:100%;width:0;transition:width .25s ease, background .25s ease}
+#pw-bar.weak{background:var(--red)}#pw-bar.mid{background:var(--amber)}#pw-bar.strong{background:var(--green)}
+.pw-rules{list-style:none;margin:.45rem 0 0;padding:0;font-size:.78rem;color:var(--grey);font-weight:400}
+.pw-rules li{padding-left:1.15rem;position:relative;margin:.12rem 0}
+.pw-rules li::before{content:'○';position:absolute;left:0}
+.pw-rules li.ok{color:var(--green)}.pw-rules li.ok::before{content:'✓'}
+.pw-rules li.bad{color:var(--red)}.pw-rules li.bad::before{content:'✗'}
+.help.good{color:var(--green)}.help.bad-text{color:var(--red)}
+button.wide:disabled{background:#9a9a94;cursor:not-allowed;opacity:.75}

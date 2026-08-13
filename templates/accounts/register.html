@@ -11,18 +11,78 @@
     </ul>
   </div>
   {% endif %}
-  <form method="post">{% csrf_token %}
+  <form method="post" id="register-form">{% csrf_token %}
     {% for field in form %}
       <label>{{ field.label }}{{ field }}
-        {% if field.help_text %}<span class="help">{{ field.help_text|safe }}</span>{% endif %}
+        {% if field.name == 'password1' %}
+        <div class="pw-meter"><div id="pw-bar"></div></div>
+        <ul class="pw-rules" id="pw-rules">
+          <li data-rule="len">{% trans "Mínimo 8 caracteres" %}</li>
+          <li data-rule="digits">{% trans "No puede ser solo números" %}</li>
+          <li data-rule="similar">{% trans "Distinta de tu nombre de usuario y email" %}</li>
+          <li data-rule="common">{% trans "No puede ser una contraseña típica (123456789, qwerty...)" %}</li>
+        </ul>
+        {% elif field.name == 'password2' %}
+        <span class="help" id="pw-match"></span>
+        {% elif field.help_text %}<span class="help">{{ field.help_text|safe }}</span>{% endif %}
       </label>
     {% endfor %}
     {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     {% endif %}
-    <button class="wide">{% trans "Registrarme" %}</button>
+    {# Sin 'disabled' cableado: con JS apagado el boton funciona y el servidor juzga (guia 3.8 §73) #}
+    <button class="wide" id="register-btn">{% trans "Registrarme" %}</button>
+    <p class="hint" id="btn-hint">{% trans "El botón se activará cuando la contraseña cumpla todas las condiciones." %}</p>
   </form>
   <p class="hint">{% trans "¿Ya tienes cuenta?" %} <a href="{% url 'login' %}">{% trans "Entrar" %}</a></p>
 </div>
+<script>
+(function () {
+  // Comprobacion EN VIVO (cortesia para el usuario). El juez sigue siendo el servidor:
+  // la validacion de Django se ejecuta igualmente al enviar — esto no la sustituye.
+  var COMMON = ['12345678','123456789','1234567890','password','contraseña','qwerty123',
+    'qwertyuiop','11111111','abc12345','password1','iloveyou','00000000','12341234',
+    'aa123456','qwer1234','1q2w3e4r','admin123','88888888','87654321','contrasena'];
+  var p1 = document.getElementById('id_password1'), p2 = document.getElementById('id_password2'),
+      un = document.getElementById('id_username'), em = document.getElementById('id_email'),
+      btn = document.getElementById('register-btn'), bar = document.getElementById('pw-bar'),
+      hint = document.getElementById('btn-hint'), match = document.getElementById('pw-match'),
+      rules = document.getElementById('pw-rules');
+  if (!p1 || !btn) return;
+  function similar(pw, ref) {
+    if (!ref || ref.length < 4) return false;
+    pw = pw.toLowerCase(); ref = ref.toLowerCase().split('@')[0];
+    return pw.indexOf(ref) !== -1 || ref.indexOf(pw) !== -1;
+  }
+  function check() {
+    var v = p1.value, ok = {};
+    ok.len = v.length >= 8;
+    ok.digits = !(v.length > 0 && /^[0-9]+$/.test(v));
+    ok.similar = v.length > 0 && !similar(v, un ? un.value : '') && !similar(v, em ? em.value : '');
+    ok.common = v.length > 0 && COMMON.indexOf(v.toLowerCase()) === -1;
+    var passed = 0;
+    Array.prototype.forEach.call(rules.children, function (li) {
+      var good = ok[li.getAttribute('data-rule')];
+      li.className = good ? 'ok' : (v.length ? 'bad' : '');
+      if (good) passed++;
+    });
+    // Fuerza: reglas + variedad de caracteres + longitud extra
+    var variety = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^a-zA-Z0-9]/].filter(function (r) { return r.test(v); }).length;
+    var score = Math.min(100, passed * 15 + variety * 8 + Math.min(20, Math.max(0, v.length - 8) * 2.5));
+    bar.style.width = (v.length ? Math.max(8, score) : 0) + '%';
+    bar.className = score >= 80 ? 'strong' : score >= 55 ? 'mid' : 'weak';
+    var same = p2 && p2.value.length > 0 ? v === p2.value : null;
+    if (match) {
+      match.textContent = same === null ? '' : (same ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden');
+      match.className = 'help ' + (same ? 'good' : 'bad-text');
+    }
+    var all = ok.len && ok.digits && ok.similar && ok.common && same === true;
+    btn.disabled = !all;
+    hint.style.display = all ? 'none' : 'block';
+  }
+  [p1, p2, un, em].forEach(function (el) { if (el) el.addEventListener('input', check); });
+  check();  // estado inicial: con JS activo el boton arranca desactivado hasta que todo este en verde
+})();
+</script>
 {% endblock %}
