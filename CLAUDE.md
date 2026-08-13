@@ -75,5 +75,14 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
 - Reparto de modelos (README §25): clasificador=Sonnet, veredictos=Sonnet, moderacion=SOLO
   Haiku, reescaneo 40%=Opus. Nueva migracion pendiente al aplicar: analysis (opus_rescanned).
 
+## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
+**Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
+`curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
+y `curl -s https://<dominio>/ | grep -c masthead`. Éxito: CSS=200 con >5 KB y masthead ≥1.
+Si falla: `collectstatic --noinput` + `restart web` y repetir. Adjuntar el resultado al informe.
+Un despliegue "funcional pero feo" es un despliegue ROTO a ojos del usuario.
+(Defensa estructural: el command del web ejecuta collectstatic en cada arranque, porque
+/app/staticfiles vive en el fs del contenedor y cualquier recreación lo vacía.)
+
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.

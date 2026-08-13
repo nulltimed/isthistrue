@@ -3,7 +3,9 @@
 services:
   web:
     build: .
-    command: sh -c "python manage.py ensure_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    # collectstatic en el arranque: /app/staticfiles vive en el fs del contenedor y
+    # CUALQUIER recreacion lo vacia (CSS 404, "web fea") — candado 2026-08-13.
+    command: sh -c "python manage.py ensure_superuser && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     env_file: .env
     volumes: [ "./media:/app/media" ]
     depends_on: [ db, redis ]
