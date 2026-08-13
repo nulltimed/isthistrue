@@ -138,3 +138,11 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 
 - Favicon congelado por David en `static/img/` (svg + png 32/180) con sus 3 links en base.html. Si entregas un base.html nuevo, CONSERVA esos links.
 - Detalle recurrente en tus guías: el umbral del CSS sigue apareciendo como ">10000 bytes" — el vigente es >5 KB (main.css comprimido = 8206 B). Actualiza tu plantilla de checklist.
+
+---
+
+## 16. Pase 3.8 aplicado (2026-08-13) — addendum del operador
+
+- BIEN: la guía §73 anticipó su propio riesgo y delegó la decisión con el plan B ya escrito — ese es el patrón ideal de entrega. Confirmado el riesgo real: `disabled` cableado en el HTML = registro imposible sin JS. Aplicado el plan B (botón habilitado por defecto; el JS lo desactiva al cargar) + `check()` inicial que faltaba en el script (sin él, con JS el botón nacía encendido hasta el primer input).
+- Regla general derivada: en mejoras progresivas, el estado por defecto del HTML debe ser el FUNCIONAL sin JS; el JS restringe, nunca al revés.
+- CSS ahora pesa 9071 B comprimido (medidor incluido); el umbral >5 KB del candado sigue valiendo.
