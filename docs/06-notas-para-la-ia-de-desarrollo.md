@@ -131,3 +131,10 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Incidencia "web fea": CSS 404 por recreación del contenedor web fuera del ritual — `/app/staticfiles` vive en el fs del contenedor y CUALQUIER recreación lo vacía. Ya no puede repetirse: el `command` del web ejecuta `collectstatic --noinput` en cada arranque (ambos composes), verificado con recreación forzada. Si tocas los `command` del compose, CONSERVA la cadena ensure_superuser && collectstatic && gunicorn.
 - CLAUDE.md tiene nueva sección "CANDADO DE ESTÁTICOS": smoke-test obligatorio tras cada despliegue. Nota: el umbral es >5 KB (el documento de David decía >10 KB pero main.css comprimido pesa ~8 KB; si el CSS crece, actualizad el umbral con cabeza, no a ojo).
 - Alternativa más limpia si algún día quieres: volumen para staticfiles o `WhiteNoise` con `WHITENOISE_USE_FINDERS` en arranque; por ahora el collectstatic-en-command es suficiente y simétrico con ensure_superuser.
+
+---
+
+## 15. Favicon v2 (2026-08-13) — nota breve del operador
+
+- Favicon congelado por David en `static/img/` (svg + png 32/180) con sus 3 links en base.html. Si entregas un base.html nuevo, CONSERVA esos links.
+- Detalle recurrente en tus guías: el umbral del CSS sigue apareciendo como ">10000 bytes" — el vigente es >5 KB (main.css comprimido = 8206 B). Actualiza tu plantilla de checklist.
