@@ -1,10 +1,18 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<h1>Entrar</h1>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button>Entrar</button></form>
-<p class="hint">Puedes entrar con tu email o con tu nombre de usuario.</p>
-<details><summary>¿No te llegó el email de verificación?</summary>
-<form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}
-<label>Tu email<input type="email" name="email" required></label><button>Reenviar</button></form>
-</details>
+<div class="auth-card">
+  <h1>{% trans "Entrar" %}</h1>
+  {% if form.errors %}
+  <div class="form-errors"><strong>{% trans "No se pudo iniciar sesión:" %}</strong>
+    <ul>{% for e in form.non_field_errors %}<li>{{ e }}</li>{% empty %}<li>{% trans "Usuario o contraseña incorrectos." %}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form method="post">{% csrf_token %}{{ form.as_p }}<button class="wide">{% trans "Entrar" %}</button></form>
+  <p class="hint">{% trans "Puedes entrar con tu email o con tu nombre de usuario." %}</p>
+  <details><summary>{% trans "¿No te llegó el email de verificación?" %}</summary>
+  <form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}
+  <label>{% trans "Tu email" %}<input type="email" name="email" required></label><button>{% trans "Reenviar" %}</button></form>
+  </details>
+  <p class="hint">{% trans "¿Sin cuenta?" %} <a href="{% url 'register' %}">{% trans "Regístrate" %}</a></p>
+</div>
 {% endblock %}

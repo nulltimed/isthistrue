@@ -4,7 +4,11 @@ from django.conf import settings
 
 def verify(token, ip=None):
     if not settings.TURNSTILE_SECRET_KEY:
-        return settings.DEBUG  # sin claves: solo pasa en desarrollo
+        # Sin claves: Turnstile desactivado (antes devolvia settings.DEBUG y en
+        # produccion bloqueaba TODO registro en silencio — Fase 3.7 §2).
+        import logging
+        logging.getLogger('accounts').warning('Turnstile DESACTIVADO (sin claves en .env)')
+        return True
     try:
         r = requests.post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
                           data={'secret': settings.TURNSTILE_SECRET_KEY,

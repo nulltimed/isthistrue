@@ -1,12 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 64" width="360" height="64" role="img" aria-label="isthistrue.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 319 72" width="319" height="72" role="img" aria-label="isthistrue.">
   <defs>
-    <clipPath id="burnEN"><polygon points="0,64 0,24 160,64"/></clipPath>
-    <clipPath id="soundEN"><polygon points="0,0 360,0 360,64 160,64 0,24"/></clipPath>
+    <radialGradient id="glowen" cx="0" cy="1" r="1.05">
+      <stop offset="0" stop-color="#f4e8c8" stop-opacity="0.9"/>
+      <stop offset="0.55" stop-color="#f7f0da" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#f7f0da" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <text x="8" y="46" clip-path="url(#soundEN)"
-        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
-        font-size="44" fill="#111" letter-spacing="1">isthistrue.</text>
-  <text x="8" y="46" clip-path="url(#burnEN)"
-        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
-        font-size="44" fill="none" stroke="#111" stroke-width="2.4" letter-spacing="1">isthistrue.</text>
+  <rect x="0" y="0" width="319" height="72" fill="url(#glowen)"/>
+  <text x="8" y="52" font-family="'Courier Prime','Courier New',ui-monospace,monospace" font-weight="700" font-size="46"><tspan fill="none" stroke="#111" stroke-width="2.4">isthis</tspan><tspan fill="#111" stroke="none">true.</tspan></text>
 </svg>

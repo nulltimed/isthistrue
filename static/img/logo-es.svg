@@ -1,14 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 64" width="340" height="64" role="img" aria-label="escierto.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 264 72" width="264" height="72" role="img" aria-label="escierto.">
   <defs>
-    <clipPath id="burnES"><polygon points="0,64 0,26 150,64"/></clipPath>
-    <clipPath id="soundES"><polygon points="0,0 340,0 340,64 150,64 0,26"/></clipPath>
+    <radialGradient id="glowes" cx="0" cy="1" r="1.05">
+      <stop offset="0" stop-color="#f4e8c8" stop-opacity="0.9"/>
+      <stop offset="0.55" stop-color="#f7f0da" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#f7f0da" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <!-- zona intacta: relleno solido -->
-  <text x="8" y="46" clip-path="url(#soundES)"
-        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
-        font-size="44" fill="#111" letter-spacing="1">escierto.</text>
-  <!-- zona quemada por la luz (abajo-izquierda): solo contorno grueso -->
-  <text x="8" y="46" clip-path="url(#burnES)"
-        font-family="ui-monospace,'Courier New',monospace" font-weight="700"
-        font-size="44" fill="none" stroke="#111" stroke-width="2.4" letter-spacing="1">escierto.</text>
+  <rect x="0" y="0" width="264" height="72" fill="url(#glowes)"/>
+  <text x="8" y="52" font-family="'Courier Prime','Courier New',ui-monospace,monospace" font-weight="700" font-size="46"><tspan fill="none" stroke="#111" stroke-width="2.4">es</tspan><tspan fill="#111" stroke="none">cierto.</tspan></text>
 </svg>

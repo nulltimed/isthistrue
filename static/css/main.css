@@ -102,3 +102,15 @@ footer a{color:var(--grey);margin:0 .25rem}
 .quota-banner-xl .qb-message a{font-weight:700}
 .paypal-banner-btn{min-height:38px;max-width:260px;width:100%}
 @media (max-width:640px){.quota-banner-xl{font-size:.95rem}.quota-banner-xl .qb-numbers{gap:.8rem}}
+/* Paginas de autenticacion (3.7): tarjeta centrada, misma familia que la landing */
+.auth-card{max-width:440px;margin:1.5rem auto;background:var(--card);border:1px solid var(--line);
+border-radius:var(--radius);box-shadow:var(--shadow);padding:1.6rem 1.8rem;text-align:left}
+.auth-card h1{text-align:center;border-bottom:none;margin-top:0}
+.auth-card input{max-width:100%}
+.auth-card .help{display:block;font-weight:400;font-size:.78rem;color:var(--grey);margin-top:.2rem}
+.auth-card .help ul{margin:.2rem 0 0 1rem;padding:0}
+button.wide{width:100%;margin-top:.9rem;padding:.7rem}
+.form-errors{background:#fdecea;border:1px solid var(--red);color:#7a1712;border-radius:8px;
+padding:.7rem .9rem;margin-bottom:1rem;font-size:.9rem}
+.form-errors ul{margin:.4rem 0 0 1.1rem;padding:0}
+.auth-card details{margin-top:.8rem;font-size:.88rem}

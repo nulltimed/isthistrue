@@ -1,8 +1,28 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<h1>Crear cuenta</h1>
-<form method="post">{% csrf_token %}{{ form.as_p }}
-{% if not debug %}<div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
-<button>Registrarme</button></form>
+<div class="auth-card">
+  <h1>{% trans "Crear cuenta" %}</h1>
+  {% if form.errors %}
+  <div class="form-errors">
+    <strong>{% trans "No se pudo crear la cuenta. Revisa:" %}</strong>
+    <ul>
+    {% for field in form %}{% for e in field.errors %}<li><b>{{ field.label }}:</b> {{ e }}</li>{% endfor %}{% endfor %}
+    {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  <form method="post">{% csrf_token %}
+    {% for field in form %}
+      <label>{{ field.label }}{{ field }}
+        {% if field.help_text %}<span class="help">{{ field.help_text|safe }}</span>{% endif %}
+      </label>
+    {% endfor %}
+    {% if turnstile_site_key %}
+      <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
+    <button class="wide">{% trans "Registrarme" %}</button>
+  </form>
+  <p class="hint">{% trans "¿Ya tienes cuenta?" %} <a href="{% url 'login' %}">{% trans "Entrar" %}</a></p>
+</div>
 {% endblock %}
