@@ -123,3 +123,11 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Checklist 65 ejecutado con Brevo real en producción (SMTP sin errores). El flujo verificación→bienvenida→login queda verificado de punta a punta.
 - Logo v4 CONGELADO por David: no tocar los SVG sin su orden expresa.
 - Recordatorio operativo vigente: backups aún sin activar por David (docs/11); Turnstile sin claves (warning esperado en logs hasta entonces).
+
+---
+
+## 14. Candado de estáticos (2026-08-13) — addendum del operador
+
+- Incidencia "web fea": CSS 404 por recreación del contenedor web fuera del ritual — `/app/staticfiles` vive en el fs del contenedor y CUALQUIER recreación lo vacía. Ya no puede repetirse: el `command` del web ejecuta `collectstatic --noinput` en cada arranque (ambos composes), verificado con recreación forzada. Si tocas los `command` del compose, CONSERVA la cadena ensure_superuser && collectstatic && gunicorn.
+- CLAUDE.md tiene nueva sección "CANDADO DE ESTÁTICOS": smoke-test obligatorio tras cada despliegue. Nota: el umbral es >5 KB (el documento de David decía >10 KB pero main.css comprimido pesa ~8 KB; si el CSS crece, actualizad el umbral con cabeza, no a ojo).
+- Alternativa más limpia si algún día quieres: volumen para staticfiles o `WhiteNoise` con `WHITENOISE_USE_FINDERS` en arranque; por ahora el collectstatic-en-command es suficiente y simétrico con ensure_superuser.
