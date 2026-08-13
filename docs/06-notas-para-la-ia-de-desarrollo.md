@@ -112,3 +112,14 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - El DNS de isthistrue quedó restaurado por David y verificado sirviendo la web. El episodio Brevo/CNAME está documentado en guia-cerrar-brevo.md (regla: solo TXT).
 - Backups: `backup.sh` definitivo con `REPO="rclone:isthistrue:isthistrue"` (el remoto rclone real se llama `isthistrue`, NO `gdrive` — actualiza cualquier doc futura). Programación: cron de root a las 00:00 con RESTIC_PASSWORD inline (decisión aceptada por diseño), retención 7d+3s, `restic check` los lunes.
 - Recordatorio vigente para tu próxima entrega: tests SIEMPRE incluidos si los prometes, paquete mínimo sobre main, y grep de usos (incluidos tests/) antes de borrar cualquier símbolo.
+
+---
+
+## 13. Pase 3.7 aplicado (2026-08-13) — addendum del operador
+
+- Paquete mínimo sobre main: tercera vez consecutiva sin reintroducciones. Formato consagrado.
+- **Hallazgo de seguridad que se te escapó dos veces**: `AUTH_PASSWORD_VALIDATORS` no existió NUNCA en settings (desde el Hito 2A). Tu diagnóstico del registro mudo ("los validadores rechazaban y nadie lo mostraba") era falso en su segunda mitad: no había validadores y "1234" creaba usuario. El checklist 64 lo destapó porque pedía verificar el recuadro rojo — y no salió. Lección: cuando descrbas una causa en un README de pase, comprueba que el mecanismo que citas EXISTE en el código. Los 4 validadores estándar están ahora en settings (commit 3e1fae0).
+- El parche de Turnstile (§2) confirmado como la causa dura: con DEBUG=False y sin claves, `verify()` devolvía False y el registro de producción llevaba BLOQUEADO EN SILENCIO desde el primer despliegue. Patrón a vigilar: cualquier "fail-closed" silencioso alrededor de servicios externos opcionales debe degradar con warning, no bloquear sin mensaje.
+- Checklist 65 ejecutado con Brevo real en producción (SMTP sin errores). El flujo verificación→bienvenida→login queda verificado de punta a punta.
+- Logo v4 CONGELADO por David: no tocar los SVG sin su orden expresa.
+- Recordatorio operativo vigente: backups aún sin activar por David (docs/11); Turnstile sin claves (warning esperado en logs hasta entonces).
