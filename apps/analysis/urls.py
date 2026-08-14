@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 urlpatterns = [
     path('', views.index, name='index'),
     path('submit/', views.submit, name='submit'),
+    path('analizar/', views.submit),  # alias en español (guia 3.9 lo nombra asi)
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/status/', views.post_status, name='post_status'),
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
