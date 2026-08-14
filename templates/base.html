@@ -18,13 +18,13 @@
 </head>
 <body>
 <header>
+  <form action="{% url 'set_language' %}" method="post" class="lang-switch-top">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
+  </form>
   <div class="masthead">
     <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
-    <div class="lang-switch">
-      <a href="https://escierto.xyztserver.com{{ request.path }}" {% if request.LANGUAGE_CODE != 'en' %}class="active"{% endif %}>ES</a>
-      <span>·</span>
-      <a href="https://isthistrue.xyztserver.com{{ request.path }}" {% if request.LANGUAGE_CODE == 'en' %}class="active"{% endif %}>EN</a>
-    </div>
+
   </div>
   <nav>
     <a href="/">{% trans "Portada" %}</a>
@@ -32,7 +32,7 @@
     <a href="{% url 'recent_changes' %}">Wiki</a>
     <a href="{% url 'search' %}">{% trans "Buscar" %}</a>
     {% if user.is_authenticated %}
-      <a href="{% url 'submit' %}">+ {% trans "Analizar" %}</a>
+      <a href="{% url 'submit' %}" class="primary">🔍 {% trans "Analizar un vídeo" %}</a>
       <a href="{% url 'notifications' %}">🔔</a>
       <a href="{% url 'account_settings' %}">{{ user.username }}</a>
       {% if user.is_staff %}<a href="{% url 'panel_codes' %}">Panel</a>{% endif %}

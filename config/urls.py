@@ -11,6 +11,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('i18n/', include('django.conf.urls.i18n')),      # selector de idioma (set_language)
     path('', include('django_prometheus.urls')),          # /metrics para tu Grafana
     path('accounts/', include('apps.accounts.urls')),
     path('claim/', include('apps.accounts.claim_urls')),  # canje de codigos

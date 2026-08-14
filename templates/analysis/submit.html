@@ -1,20 +1,24 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<h1>Analizar contenido</h1>
-<form method="post">{% csrf_token %}
-  <label>URL del contenido<input type="url" name="url" required placeholder="https://..."></label>
-  <label>Tema<select name="topic">
-    <option value="politica">Política</option><option value="salud">Salud</option>
-    <option value="ciencia">Ciencia</option><option value="economia">Economía</option>
-    <option value="sucesos">Sucesos</option><option value="internacional">Internacional</option>
-    <option value="tecnologia">Tecnología</option><option value="medioambiente">Medioambiente</option>
-    <option value="deporte">Deporte</option><option value="cultura">Cultura</option>
-    <option value="sociedad">Sociedad</option><option value="otros" selected>Otros</option>
-  </select></label>
-  <label>Etiquetas libres (separadas por comas)<input name="tags" placeholder="vacunas, 5G"></label>
-  <label><input type="checkbox" name="offtopic"> Subir directamente a Off-Topic (opinión; no consume crédito)</label>
-  <label><input type="checkbox" name="is_adult"> Este contenido es para mayores de 18</label>
-  <button>Analizar</button>
-</form>
-<p class="hint">El análisis pasa primero un barrido rápido; si el contenido es factual, la comunidad lo valida (5 votos en 3 días) y entonces se verifica con fuentes. Un crédito por tramo de 20 minutos; sin devolución.</p>
+<div class="auth-card">
+  <h1>🔍 {% trans "Analizar un vídeo" %}</h1>
+  <p class="hint">{% trans "Pega el enlace del contenido. Plataformas soportadas: YouTube, TikTok, Twitch y Spotify (pódcast). El vídeo nunca se almacena: solo se transcribe y analiza." %}</p>
+  <form method="post">{% csrf_token %}
+    <label>{% trans "Enlace del vídeo (obligatorio)" %}
+      <input type="url" name="url" required placeholder="https://www.youtube.com/watch?v=...">
+    </label>
+    <label>{% trans "Tema" %}<select name="topic">
+      <option value="politica">Política</option><option value="salud">Salud</option>
+      <option value="ciencia">Ciencia</option><option value="economia">Economía</option>
+      <option value="sucesos">Sucesos</option><option value="internacional">Internacional</option>
+      <option value="tecnologia">Tecnología</option><option value="medioambiente">Medioambiente</option>
+      <option value="deporte">Deporte</option><option value="cultura">Cultura</option>
+      <option value="sociedad">Sociedad</option><option value="otros" selected>Otros</option>
+    </select></label>
+    <label>{% trans "Etiquetas libres (opcional, separadas por comas)" %}<input name="tags" placeholder="vacunas, 5G"></label>
+    <label class="inline"><input type="checkbox" name="offtopic"> {% trans "Es opinión/entretenimiento: mandarlo directamente a Off-Topic" %}</label>
+    <button class="wide">{% trans "Analizar" %}</button>
+  </form>
+  <p class="hint">{% trans "La fase inicial es automática y barata; la verificación a fondo con fuentes llega cuando la comunidad valida el análisis." %}</p>
+</div>
 {% endblock %}

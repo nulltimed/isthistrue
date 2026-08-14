@@ -54,7 +54,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'machina.apps.forum_permission.middleware.ForumPermissionMiddleware',
-    'config.middleware.HostLanguageMiddleware',
+    # HostLanguageMiddleware eliminado (Fase 3.9): idioma = cookie del selector →
+    # Accept-Language del navegador → 'es' (LocaleMiddleware, ya arriba en la cadena).
     'config.middleware.StagingAccessMiddleware',  # espejo: solo invitados
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
@@ -111,7 +112,7 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 
 LANGUAGE_CODE = 'es'
-LANGUAGES = [('es', 'Castellano'), ('en', 'English')]
+LANGUAGES = [('es', 'Español'), ('en', 'English')]
 LOCALE_PATHS = [BASE_DIR / 'locale']  # i18n real: makemessages / compilemessages
 TIME_ZONE = 'Europe/Madrid'
 USE_I18N = True

@@ -1,5 +1,16 @@
 {% extends 'base.html' %}{% load i18n %}
 {% block content %}
+<div class="cta-hero">
+  <h2>{% trans "¿Es cierto lo que acabas de ver?" %}</h2>
+  <p>{% trans "Pega el enlace de un vídeo y el sistema extraerá sus afirmaciones, las clasificará y la comunidad decidirá qué se verifica a fondo con fuentes." %}</p>
+  {% if user.is_authenticated %}
+    <a href="{% url 'submit' %}"><button class="big">🔍 {% trans "Analizar un vídeo" %}</button></a>
+  {% else %}
+    <a href="{% url 'register' %}"><button class="big">{% trans "Crea tu cuenta y analiza tu primer vídeo" %}</button></a>
+    <p class="hint">{% trans "¿Ya tienes cuenta?" %} <a href="{% url 'login' %}">{% trans "Entrar" %}</a></p>
+  {% endif %}
+</div>
+
 <div class="topics">
   <a href="/" class="{% if not active_topic %}active{% endif %}">{% trans "Todos" %}</a>
   {% for key, name in topics %}<a href="/?tema={{ key }}" class="{% if active_topic == key %}active{% endif %}">{{ name }}</a>{% endfor %}

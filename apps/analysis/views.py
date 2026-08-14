@@ -1,4 +1,5 @@
 from django.contrib import messages
+import re
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,8 +30,16 @@ def index(request):
         'offtopic': offtopic, 'topics': TOPICS, 'active_topic': topic})
 
 
+VIDEO_RX = re.compile(r'(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv|spotify\.com)', re.I)
+
+
 @login_required
 def submit(request):
+    # Puerta abierta (Fase 3.9 §4): SOLO login + email verificado. Los niveles
+    # limitan la CUOTA diaria y los votos, nunca la capacidad de analizar.
+    if not request.user.email_verified:
+        messages.error(request, 'Verifica tu email para poder analizar (revisa tu buzón o pide un reenvío).')
+        return redirect('index')
     if request.method != 'POST':
         return render(request, 'analysis/submit.html')
     url = request.POST.get('url', '').strip()
@@ -38,6 +47,9 @@ def submit(request):
     tags = request.POST.get('tags', '').strip()[:200]
     voluntary_offtopic = request.POST.get('offtopic') == 'on'
     author_adult_flag = request.POST.get('is_adult') == 'on'
+    if not VIDEO_RX.search(url):
+        messages.error(request, 'El enlace debe ser de una plataforma soportada: YouTube, TikTok, Twitch o Spotify.')
+        return render(request, 'analysis/submit.html')
     platform, external_id = detect_platform(url)
     if not platform:
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')

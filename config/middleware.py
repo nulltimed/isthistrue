@@ -1,23 +1,6 @@
-"""Decide idioma y seccion por subdominio (el 'portero' de la app)."""
-from django.utils import translation
-
-HOST_LANG = {'isthistrue': 'en', 'escierto': 'es', 'wikitrue': None}
-
-class HostLanguageMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        host = request.get_host().split(':')[0].split('.')[0]
-        request.site_section = 'wiki' if host == 'wikitrue' else 'forum'
-        lang = HOST_LANG.get(host)
-        if lang is None:  # wikitrue o entrada neutra: Accept-Language
-            lang = translation.get_language_from_request(request)
-        translation.activate(lang)
-        request.LANGUAGE_CODE = lang
-        response = self.get_response(request)
-        response.headers.setdefault('Content-Language', lang)
-        return response
+"""Middlewares propios. (HostLanguageMiddleware eliminado en Fase 3.9: el idioma
+lo decide LocaleMiddleware — cookie del selector → Accept-Language → 'es'.
+Nada usaba request.site_section fuera de aquel middleware: verificado con grep.)"""
 
 
 class StagingAccessMiddleware:
