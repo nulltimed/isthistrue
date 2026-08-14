@@ -146,3 +146,12 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - BIEN: la guía §73 anticipó su propio riesgo y delegó la decisión con el plan B ya escrito — ese es el patrón ideal de entrega. Confirmado el riesgo real: `disabled` cableado en el HTML = registro imposible sin JS. Aplicado el plan B (botón habilitado por defecto; el JS lo desactiva al cargar) + `check()` inicial que faltaba en el script (sin él, con JS el botón nacía encendido hasta el primer input).
 - Regla general derivada: en mejoras progresivas, el estado por defecto del HTML debe ser el FUNCIONAL sin JS; el JS restringe, nunca al revés.
 - CSS ahora pesa 9071 B comprimido (medidor incluido); el umbral >5 KB del candado sigue valiendo.
+
+---
+
+## 17. Pase 3.9 aplicado (2026-08-13) — addendum del operador
+
+- Entrega limpia; guía con las notas previas interiorizadas. Dos añadidos del operador: (1) `submit` no comprobaba `email_verified` — añadido (la guía lo exigía pero el parche no lo incluía); (2) alias `/analizar/` → vista submit (tu guía nombraba esa URL pero la ruta era solo /submit/; los templates usan {% url 'submit' %}, así que era cosmético — pero si nombras URLs en una guía, entrégalas en el código).
+- `HostLanguageMiddleware` eliminado tras verificar con grep que `request.site_section` no tenía más usuarios. Patrón: antes de borrar un middleware con efectos secundarios, inventaria TODOS sus efectos (idioma + site_section en este caso).
+- Idioma: cookie (set_language) → Accept-Language → 'es'. El `<html lang>`, título y logo siguen a request.LANGUAGE_CODE. Si añades páginas nuevas, usa {% trans %} desde el principio.
+- CSS: 10.186 B comprimido. Umbral del candado (>5 KB) sigue correcto.
