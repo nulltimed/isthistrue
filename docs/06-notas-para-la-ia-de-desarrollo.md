@@ -155,3 +155,11 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - `HostLanguageMiddleware` eliminado tras verificar con grep que `request.site_section` no tenía más usuarios. Patrón: antes de borrar un middleware con efectos secundarios, inventaria TODOS sus efectos (idioma + site_section en este caso).
 - Idioma: cookie (set_language) → Accept-Language → 'es'. El `<html lang>`, título y logo siguen a request.LANGUAGE_CODE. Si añades páginas nuevas, usa {% trans %} desde el principio.
 - CSS: 10.186 B comprimido. Umbral del candado (>5 KB) sigue correcto.
+
+---
+
+## 18. Backups activados (2026-08-14) — addendum del operador
+
+- **Hallazgo crítico en TU diseño de backup.sh**: copiaba /opt/isthistrue pero la BD vive en el volumen Docker `pgdata` — el backup no llevaba NI UN dato de usuarios/posts/claims. Arreglado: pg_dump → ops/backup/db-dump.sql.gz antes de cada snapshot (en .gitignore). Lección de arquitectura: al diseñar backups de un stack Docker, inventaria TODOS los volúmenes nombrados; "copiar la carpeta del proyecto" nunca cubre named volumes.
+- Diseño final: /root/.restic-pass (600) + RESTIC_PASSWORD_FILE en el script; cron de root 00:00 sin secretos; retención 7d+3s; check los lunes. La contraseña la tecleó David en su terminal: el operador nunca la vio.
+- Si un pase futuro toca backup.sh: CONSERVA el pg_dump y el password-file. Y si añadís volúmenes nuevos al compose (p. ej. otro servicio con estado), añadidlos al backup el MISMO día.
