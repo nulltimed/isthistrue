@@ -74,7 +74,9 @@ def notify_post_event(post, kind, text):
     from apps.accounts.services import notify
     from .models import PostSubscription
     url = f'/post/{post.pk}/'
-    recipients = {post.author_id: post.author} if kind == 'analysis' else {}
+    # El autor recibe SIEMPRE los avisos de analisis y de Trending (D4: "aviso a
+    # autor/suscritos"); en 'messages' el aviso lo gestiona add_reply directamente.
+    recipients = {} if kind == 'messages' else {post.author_id: post.author}
     field = {'analysis': 'on_analysis', 'messages': 'on_messages',
              'trending': 'on_trending'}[kind]
     for sub in (PostSubscription.objects.filter(post=post, **{field: True})

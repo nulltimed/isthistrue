@@ -91,7 +91,9 @@ class Codigos(TestCase):
 
 
 class Relegacion(TestCase):
-    def test_validacion_caducada_va_a_offtopic(self):
+    def test_validacion_caducada_se_marca_pero_no_se_relega(self):
+        # 4.2 A2 (decision de David): NINGUN post se relega solo. La caducidad
+        # marca VALIDATION_EXPIRED + sugerencia; relegar es accion de moderador.
         from apps.analysis.tasks import relegate_expired_validations
         author = make_user('autor2')
         p = Post.objects.create(author=author, url='https://x/2', platform='youtube',
@@ -99,7 +101,9 @@ class Relegacion(TestCase):
                                 validation_deadline=timezone.now() - timezone.timedelta(hours=1))
         relegate_expired_validations()
         p.refresh_from_db()
-        self.assertEqual(p.category, 'OFFTOPIC')
+        self.assertEqual(p.category, 'MAIN')  # sigue en Principal
+        self.assertEqual(p.status, 'VALIDATION_EXPIRED')
+        self.assertTrue(p.offtopic_suggested)
 
 
 class Edad(TestCase):

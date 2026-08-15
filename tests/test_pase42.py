@@ -49,10 +49,12 @@ class RelegacionSoloManual(TestCase):
         self.assertEqual(post.relegation_reason, 'es opinión')
 
 
-@override_settings(MOCK_AGENTS=False)
 class BusquedaRuidosa(TestCase):
-    """C1: un fallo de SearXNG JAMAS es mudo y viaja como sources_ok=False."""
+    """C1: un fallo de SearXNG JAMAS es mudo y viaja como sources_ok=False.
+    (MOCK off SOLO en el test del 403: con el override a nivel de clase,
+    upsert_claim intentaba el pivote EN contra la API real — CI rojo.)"""
 
+    @override_settings(MOCK_AGENTS=False)
     def test_403_devuelve_ok_false_y_avisa(self):
         from apps.agents import search
         fake = mock.Mock(status_code=403)

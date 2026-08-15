@@ -35,6 +35,10 @@ def create_topic_for_post(analysis_post):
                or f'Discusión del análisis: /post/{analysis_post.pk}/')
     MPost.objects.create(topic=topic, poster=analysis_post.author,
                          subject=topic.subject, content=content, approved=True)
+    # CUIDADO (bug cazado por CI): Topic.save() de machina REGENERA el slug desde
+    # el subject y pisa nuestro 'post-<pk>' (todo C4 depende de el). Se fuerza con
+    # update() DESPUES del primer MPost (cuyo save tambien re-guarda el topic).
+    Topic.objects.filter(pk=topic.pk).update(slug=f'post-{analysis_post.pk}')
 
 
 def get_topic_for_post(analysis_post):
@@ -76,4 +80,6 @@ def move_topic(analysis_post):
     topic = Topic.objects.filter(slug=f'post-{analysis_post.pk}').first()
     if topic:
         topic.forum = off if analysis_post.category == 'OFFTOPIC' else main
-        topic.save()
+        topic.save()  # mantiene los contadores de machina...
+        # ...pero su save() pisa el slug: re-forzarlo SIEMPRE tras un save de Topic.
+        Topic.objects.filter(pk=topic.pk).update(slug=f'post-{analysis_post.pk}')
