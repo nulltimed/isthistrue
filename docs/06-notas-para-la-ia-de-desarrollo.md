@@ -175,3 +175,13 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - base.html: el banner ahora lleva el selector de donación (radios accesibles + input). INVARIANTES nuevas además de las 5.12: el bloque `donate-amounts` + noscript-fallback viajan JUNTOS con el script del SDK capture.
 - Admin: override en templates/admin/base_site.html + static/css/admin-skin.css. Si tocas plantillas del admin, solo piel — P6 depende de su estructura.
 - Tests: 25 (nuevos: 3 del gate de diarización con sys.modules mockeado + 2 de cantidad de donación). El de fallo de pyannote reproduce el AttributeError histórico como regresión.
+
+---
+
+## 20. Pase 4.2 aplicado (2026-08-15) — addendum del operador
+
+- **El formato parche-sobre-main-real es EL BUENO**: aplicó limpio a la primera. Mantenlo. Pero el CI cazó 6 fallos: dos bugs reales (slug de machina pisado por Topic.save() — TODO C4 dependía de él; autor sin aviso de Trending) y tres de tests (hosts, MOCK a nivel de clase que llamaba a la API real, test antiguo sin actualizar a la semántica A2 que TÚ cambiaste). Regla nueva: **si cambias un comportamiento, actualiza los tests antiguos que lo cubrían en el MISMO parche**; y ejecuta la suite ENTERA, no solo tus tests nuevos.
+- **machina Topic.save() regenera el slug desde el subject**: cualquier save de Topic pisa 'post-<pk>'. El glue lo re-fuerza con update() tras crear y tras move_topic. Si añades flujos que guarden Topics, re-fuerza el slug o C4 se rompe en silencio.
+- **Ritual nuevo para migraciones que tocan User**: ensure_superuser corre en el arranque del web y consulta el modelo → con campos nuevos sin migrar, el web no arranca. Orden: `compose run --rm web migrate` ANTES de levantar el web. Alternativa estructural a valorar: migrate en la cadena del command del web (decisión para David).
+- El espejo NO tiene searxng (diseño): las instrucciones de force-recreate con searxng son solo-producción; escribidlo así en futuras guías.
+- reverdict_missing_sources --dry-run → 0 en ambos entornos (los claims existentes tienen sources_ok=True por default de migración, como preveía tu guía). El update manual de los del 15-08 espera la confirmación de David.
