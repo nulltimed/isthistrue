@@ -19,6 +19,7 @@ STATUSES = [
     ('FULL_RUNNING', 'Análisis completo en curso'),
     ('DONE', 'Analizado'),
     ('OFFTOPIC_SIGNALED', 'Off-Topic con señales'),
+    ('VALIDATION_EXPIRED', 'Validación expirada (a criterio de moderación)'),
     ('OFFTOPIC_RAW', 'Off-Topic sin analizar (voluntario)'),
     ('HELD_FOR_REVIEW', 'Retenido (anti-acoso)'),
     ('FAILED', 'Error'),
@@ -68,14 +69,49 @@ class Post(models.Model):
     adult_flag_source = models.CharField(max_length=10, blank=True, default='')  # author|agent|mod
     manipulation_detected = models.BooleanField(default=False)
     relegation_reason = models.CharField(max_length=200, blank=True, default='')
+    # 4.2 A2 (decision de David): NINGUN post va solo a Off-Topic. El clasificador
+    # solo SUGIERE; relegar es accion manual de moderador.
+    offtopic_suggested = models.BooleanField(default=False)
+    # 4.2 A5: texto "Opina" del autor -> primer mensaje del hilo del foro.
+    author_opinion = models.TextField(blank=True, default='')
     topic = models.CharField(max_length=16, choices=TOPICS, default='otros')
     tags = models.CharField(max_length=200, blank=True, default='')  # libres, separadas por comas
     validation_deadline = models.DateTimeField(null=True, blank=True)
     opus_rescanned = models.BooleanField(default=False)  # candado: UNA vez por post
+    # 4.2 D4: aviso de Trending enviado (se rearma al salir del umbral).
+    trending_notified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def trending_votes(self):
+        """Votos dentro de la ventana viva (SystemSetting trending_window_days)."""
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.panel.models import SystemSetting
+        days = SystemSetting.get_int('trending_window_days', 7)
+        return self.votes.filter(created_at__gte=timezone.now() - timedelta(days=days)).count()
+
+    def is_trending(self):
+        """4.2 D4: Trending mientras los votos de la ventana alcanzan el umbral
+        (SystemSetting trending_votes_threshold; los dos ajustables desde BD/panel)."""
+        from apps.panel.models import SystemSetting
+        return self.trending_votes() >= SystemSetting.get_int('trending_votes_threshold', 5)
 
     def distinct_validation_votes(self, kind):
         return self.validation_votes.filter(kind=kind).values('user').distinct().count()
+
+
+class PostSubscription(models.Model):
+    """4.2 D3: campanita del post. El usuario elige a QUE se suscribe."""
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='subscriptions')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='post_subscriptions')
+    on_analysis = models.BooleanField(default=True)   # cambios en el analisis (fases)
+    on_messages = models.BooleanField(default=False)  # nuevos mensajes del hilo
+    on_trending = models.BooleanField(default=False)  # el post entra en Trending
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
 
 
 class AnalysisRequest(models.Model):
@@ -111,9 +147,24 @@ class TranscriptSegment(models.Model):
                ('CONTRADICTS_MODEL', '⚠️ Contradice conocimiento general del modelo, sin verificar')]
     signal = models.CharField(max_length=24, choices=SIGNALS, blank=True, default='')
     speaker_label = models.CharField(max_length=20, blank=True, default='')  # 'SPEAKER_1' (diarizacion 2B)
+    opus_rescanned = models.BooleanField(default=False)  # 4.2 H5: UNA vez por oracion
 
     class Meta:
         ordering = ['start_seconds']
+
+
+class SegmentVote(models.Model):
+    """4.2 H5 (decision de David): tras los veredictos, cada ORACION se puede votar
+    arriba o abajo. Umbral de abajos (SystemSetting segment_opus_downvotes, 5,
+    editable por mods/superusuario) -> esa oracion se re-analiza con Opus."""
+    segment = models.ForeignKey(TranscriptSegment, on_delete=models.CASCADE,
+                                related_name='sentence_votes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    value = models.SmallIntegerField()  # +1 / -1
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('segment', 'user')
 
 
 class DailyBudget(models.Model):

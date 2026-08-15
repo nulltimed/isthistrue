@@ -37,6 +37,7 @@ def settings_view(request):
         u.hide_opinions = request.POST.get('hide_opinions') == 'on'
         u.notify_mode = request.POST.get('notify_mode', u.notify_mode)
         u.allow_friend_requests = request.POST.get('allow_friend_requests') == 'on'
+        u.accept_private_messages = request.POST.get('accept_private_messages') == 'on'
         if request.FILES.get('avatar'):
             u.avatar = request.FILES['avatar']
             u.avatar_approved = True
@@ -82,6 +83,74 @@ def notifications(request):
     notes = request.user.notifications.all()[:50]
     request.user.notifications.filter(read=False).update(read=True)
     return render(request, 'accounts/notifications.html', {'notes': notes})
+
+
+@login_required
+def pm_inbox(request):
+    """4.2 H8: buzon de mensajes privados (los mios, enviados y recibidos)."""
+    from .models import PrivateMessage
+    received = PrivateMessage.objects.filter(recipient=request.user)[:50]
+    sent = PrivateMessage.objects.filter(sender=request.user)[:20]
+    PrivateMessage.objects.filter(recipient=request.user, read=False).update(read=True)
+    return render(request, 'accounts/pm_inbox.html', {'received': received, 'sent': sent})
+
+
+@login_required
+def pm_send(request, user_id):
+    """4.2 H8: enviar MP. Reglas: buzon del destinatario abierto O remitente mod/root;
+    los bloqueos mandan; el texto es Markdown con HTML escapado al mostrarse."""
+    from .models import User, UserBlock, PrivateMessage
+    from .services import notify
+    target = User.objects.filter(pk=user_id, is_active=True).first()
+    if not target or target == request.user:
+        return redirect('pm_inbox')
+    is_mod = request.user.is_staff or request.user.level == 'MOD'
+    if not (target.accept_private_messages or is_mod):
+        messages.error(request, 'Este usuario no acepta mensajes privados.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    if UserBlock.objects.filter(blocker=target, blocked=request.user).exists() and not is_mod:
+        messages.error(request, 'No puedes enviar mensajes a este usuario.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    if request.method == 'POST':
+        body = request.POST.get('body', '').strip()[:8000]
+        if body:
+            PrivateMessage.objects.create(sender=request.user, recipient=target, body=body)
+            notify(target, f'Mensaje privado de {request.user.username}', '/accounts/mensajes/')
+            messages.success(request, 'Mensaje enviado.')
+            return redirect('pm_inbox')
+    return render(request, 'accounts/pm_send.html', {'target': target})
+
+
+@login_required
+def pm_report(request, pm_id):
+    """4.2 H8 (salvaguarda de la factura): el destinatario eleva un MP a los mods."""
+    from .models import PrivateMessage, User
+    from .services import notify
+    pm = PrivateMessage.objects.filter(pk=pm_id, recipient=request.user).first()
+    if pm and request.method == 'POST' and not pm.reported:
+        pm.reported = True
+        pm.save(update_fields=['reported'])
+        for mod in User.objects.filter(level='MOD', is_active=True) |                    User.objects.filter(is_superuser=True, is_active=True):
+            notify(mod, f'MP reportado de {pm.sender.username} a {pm.recipient.username}: '
+                        f'«{pm.body[:120]}»', '/accounts/mensajes/')
+        messages.success(request, 'Mensaje reportado a moderación.')
+    return redirect('pm_inbox')
+
+
+@login_required
+def notifications_poll(request):
+    """4.2 D2: sondeo ligero de static/js/notify.js — no leidas mas nuevas que
+    ?after=<id>, para el numerito de la campana y las notificaciones del NAVEGADOR
+    (permiso opcional del usuario). No marca nada como leido."""
+    from django.http import JsonResponse
+    try:
+        after = int(request.GET.get('after', 0))
+    except ValueError:
+        after = 0
+    unread = request.user.notifications.filter(read=False)
+    items = [{'id': n.pk, 'text': n.text, 'url': n.url}
+             for n in unread.filter(pk__gt=after).order_by('pk')[:10]]
+    return JsonResponse({'unread': unread.count(), 'items': items})
 
 
 @login_required

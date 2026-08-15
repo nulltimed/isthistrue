@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n static istt_icons %}
 {% block og %}
 <meta property="og:site_name" content="isthistrue.">
 <meta property="og:title" content="{{ post.title|default:post.url }}">
@@ -8,8 +8,24 @@
 {% endblock %}
 {% block content %}
 <article class="post">
+  <div class="post-topbar">
+    {% if is_trending %}<span class="trending-badge">{% icon 'flame' 14 %} Trending</span>{% endif %}
+    {% if user.is_authenticated %}
+    <details class="subscribe-box">
+      <summary title="{% trans 'Suscribirse a este post' %}">{% if my_subscription %}{% icon 'bell' 20 %}{% else %}{% icon 'bell_off' 20 %}{% endif %}</summary>
+      <form method="post" action="{% url 'post_subscribe' post.pk %}">{% csrf_token %}
+        <label><input type="checkbox" name="on_analysis" {% if not my_subscription or my_subscription.on_analysis %}checked{% endif %}> {% trans "Cambios en el análisis" %}</label>
+        <label><input type="checkbox" name="on_messages" {% if my_subscription.on_messages %}checked{% endif %}> {% trans "Nuevos mensajes" %}</label>
+        <label><input type="checkbox" name="on_trending" {% if my_subscription.on_trending %}checked{% endif %}> Trending</label>
+        <button class="mini">{% trans "Guardar" %}</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
   <h1>{{ post.title|default:post.url }}</h1>
   <div class="embed">{{ embed|safe }}</div>
+  <p class="hint source-link"><a href="{{ post.url }}" rel="noopener" target="_blank">↗ {% trans "Ver en la plataforma de origen" %}</a></p>
+  <p class="hint source-link">{% trans "Fuente" %}: <a href="{{ post.url }}" rel="noopener" target="_blank">{{ post.url|truncatechars:70 }} ↗</a></p>
 
   <div id="status" hx-get="{% url 'post_status' post.pk %}" hx-trigger="every 4s" hx-swap="outerHTML">
     {% include 'partials/post_status.html' %}
@@ -38,6 +54,23 @@
   {% if post.manipulation_detected %}
     <p class="warning">⚠ Retórica manipulativa detectada en el barrido previo.</p>
   {% endif %}
+  {% if is_mod %}
+    <div class="mod-actions">
+      {% if post.offtopic_suggested and post.category != 'OFFTOPIC' %}
+        <p class="hint">🛈 {% trans "El clasificador sugiere Off-Topic (mayoría de opinión). La decisión es tuya." %}</p>
+      {% endif %}
+      {% if post.category != 'OFFTOPIC' %}
+        <form method="post" action="{% url 'post_relegate' post.pk %}">{% csrf_token %}
+          <input name="reason" maxlength="200" placeholder="{% trans 'Motivo (opcional)' %}">
+          <button class="mini">⤵ {% trans "Relegar a Off-Topic" %}</button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'post_unrelegate' post.pk %}">{% csrf_token %}
+          <button class="mini">⤴ {% trans "Devolver a Principal" %}</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
 
   {% if name_proposals %}
   <h2>¿Quién habla?</h2>
@@ -61,13 +94,21 @@
   </div>
   {% endif %}
   <h2>Transcripción sincronizada</h2>
-  <div class="transcript">
+  <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}</p>
+  <div class="transcript transcript-box" data-platform="{{ post.platform }}">
   {% for s in segments %}
-    <div class="segment {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
+    <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
          data-start="{{ s.start_seconds }}">
-      <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.speaker_label %}<span class="speaker-tag">{{ s.speaker_label }}</span>{% endif %}
+      <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% trans "Hablante" %} {{ s.spk_idx|add:1 }}</span>{% endif %}
       <span class="text">{{ s.text }}</span>
       {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
+      {% if post.status == 'DONE' and user.is_authenticated %}
+      <span class="seg-votes" id="seg-{{ s.pk }}">
+        <form method="post" action="{% url 'segment_vote' s.pk 'up' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'La verificación de esta oración es correcta' %}">{% icon 'up' 14 %}{{ s.ups }}</button></form>
+        <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Discuto esta verificación' %}">{% icon 'down' 14 %}{{ s.downs }}</button></form>
+        {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
+      </span>
+      {% endif %}
       {% if hide_opinions and s.signal == 'OPINION' %}
         <div class="blur-overlay" onclick="this.parentElement.classList.remove('blurred')">
           Esto es una opinión — clic para verla</div>
@@ -76,6 +117,37 @@
   {% empty %}<p>Sin transcripción todavía.</p>{% endfor %}
   </div>
   {% if user.is_authenticated %}<form method="post" action="{% url 'post_upvote' post.pk %}" style="display:inline">{% csrf_token %}<button class="mini">▲ Votar ({{ post.votes.count }})</button></form>{% endif %}
+  <section id="hilo" class="thread">
+    <h2>{% trans "Conversación" %}</h2>
+    {% for m in thread_messages %}
+      <div class="thread-msg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}">
+        <div class="thread-meta"><strong>{{ m.poster.username }}</strong> · {{ m.created|date:'d/m/Y H:i' }}
+          <span class="msg-tools">
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'message_hide' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.hidden_by_me %}{% trans 'Mostrar de nuevo' %}{% else %}{% trans 'Difuminar para mí' %}{% endif %}">{% if m.hidden_by_me %}{% icon 'eye' 15 %}{% else %}{% icon 'eye_off' 15 %}{% endif %}</button></form>
+            <form method="post" action="{% url 'message_report' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar como inadecuado' %}">{% icon 'flag' 15 %}</button></form>
+            {% if m.pm_allowed %}<a class="ibtn" href="{% url 'pm_send' m.poster.pk %}" title="{% trans 'Mensaje privado' %}">{% icon 'mail' 15 %}</a>{% endif %}
+            {% if is_mod %}<form method="post" action="{% url 'message_sensitive' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.is_sensitive %}{% trans 'Quitar difuminado para todos' %}{% else %}{% trans 'Difuminar para todos' %}{% endif %}">{% icon 'shield' 15 %}</button></form>{% endif %}
+            {% endif %}
+          </span>
+        </div>
+        <div class="thread-body-wrap">
+          <div class="thread-body">{{ m.content.rendered|safe }}</div>
+          {% if m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Este contenido puede ser sensible. Clic para verlo." %}</button>{% endif %}
+          {% if m.hidden_by_me and not m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Ocultado por ti. Clic para verlo." %}</button>{% endif %}
+        </div>
+      </div>
+    {% empty %}<p class="hint">{% trans "Nadie ha opinado todavía. Abre tú la conversación." %}</p>{% endfor %}
+    {% if user.is_authenticated %}
+      <form method="post" action="{% url 'post_reply' post.pk %}" class="thread-reply">{% csrf_token %}
+        <textarea name="content" rows="4" required data-mdtoolbar maxlength="8000"
+          placeholder="{% trans 'Responde con Markdown: **negrita**, *cursiva*, > cita…' %}"></textarea>
+        <button>{% trans "Responder" %}</button>
+      </form>
+    {% else %}
+      <p class="hint"><a href="{% url 'login' %}">{% trans "Entra" %}</a> {% trans "para participar." %}</p>
+    {% endif %}
+  </section>
   <div class="share">
     Compartir:
     <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>
@@ -86,10 +158,7 @@
     <a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a>
   </div>
 </article>
-<script>
-function seekTo(s){ /* deep-link del embed: recargar iframe con ?start= */
-  const f=document.querySelector('.embed iframe');
-  if(f && f.src.includes('youtube')){ f.src=f.src.replace(/([?&])start=\d+/, '$1start='+Math.floor(s)); }
-}
-</script>
+{# 4.2 A4: transcript.js define seekTo() con la IFrame API de YouTube (salto sin #}
+{# recargar). El fallback de recarga vive DENTRO del propio script (mejora progresiva). #}
+<script src="{% static 'js/transcript.js' %}" defer></script>
 {% endblock %}

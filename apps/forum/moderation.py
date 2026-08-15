@@ -53,6 +53,11 @@ def moderate_machina_post(machina_post_id):
         kind, outcome = 'NOVICE_DECIDED', ('' if mods else 'AUTO_FINAL')
     else:
         kind, outcome = 'WARNING', ''
+        # 4.2 H1: el veterano marcado queda publicado PERO difuminado para todos
+        # ("puede ser sensible") mientras el expediente vive; el mod puede restaurar.
+        from apps.forum.models import MessageSensitive
+        MessageSensitive.objects.get_or_create(machina_post_id=post.pk,
+                                               defaults={'auto': True})
     ModerationCase.objects.create(machina_post_id=post.pk, user=post.poster, kind=kind,
         agent_action='BLOCK' if novato else 'WARN',
         agent_reason=haiku.get('reason', '')[:300],

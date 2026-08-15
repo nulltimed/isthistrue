@@ -118,3 +118,53 @@ def donations_panel(request):
         return redirect('panel_donations')
     items = Donation.objects.order_by('-created_at')[:100]
     return render(request, 'panel/donations.html', {'items': items})
+
+
+@staff_member_required
+def moderators_panel(request):
+    """4.2 H6: nombrar y retirar moderadores por nickname O email (solo superusuario)."""
+    from apps.accounts.models import User
+    if not request.user.is_superuser:
+        return redirect('panel_codes')
+    if request.method == 'POST':
+        ident = request.POST.get('ident', '').strip()
+        action = request.POST.get('action', 'add')
+        target = (User.objects.filter(username__iexact=ident).first()
+                  or User.objects.filter(email__iexact=ident).first())
+        if not target:
+            messages.error(request, f'No existe ningún usuario con «{ident}».')
+        elif target.is_superuser:
+            messages.error(request, 'El superusuario ya es moderador supremo por definición.')
+        elif action == 'add':
+            target.level = 'MOD'
+            target.save(update_fields=['level'])
+            messages.success(request, f'{target.username} nombrado moderador.')
+        else:
+            target.level = 'CONTRIB'  # al retirar conserva confianza, no el mando
+            target.save(update_fields=['level'])
+            messages.success(request, f'{target.username} ya no es moderador.')
+        return redirect('panel_moderators')
+    from apps.accounts.models import User as U
+    mods = U.objects.filter(level='MOD', is_active=True).order_by('username')
+    return render(request, 'panel/moderators.html', {'mods': mods})
+
+
+@staff_member_required
+def moderator_settings_panel(request):
+    """4.2 H7: subseccion «Moderador» del panel — el superusuario tambien es
+    moderador supremo. Aloja los ajustes de moderacion independientes del resto;
+    los mods la veran cuando llegue su panel (4.4). Hoy: los umbrales vivos."""
+    from apps.panel.models import SystemSetting
+    KEYS = [('segment_opus_downvotes', 'Votos ▼ por oración para re-análisis Opus'),
+            ('message_sensitive_reports', 'Reportes para difuminar un mensaje'),
+            ('trending_votes_threshold', 'Votos para Trending'),
+            ('trending_window_days', 'Ventana de Trending (días)')]
+    if request.method == 'POST':
+        for key, _label in KEYS:
+            raw = request.POST.get(key, '').strip()
+            if raw.isdigit() and int(raw) > 0:
+                SystemSetting.objects.update_or_create(key=key, defaults={'value': raw})
+        messages.success(request, 'Ajustes de moderación guardados.')
+        return redirect('panel_moderator_settings')
+    values = [(key, label, SystemSetting.get_int(key, 5)) for key, label in KEYS]
+    return render(request, 'panel/moderator_settings.html', {'values': values})

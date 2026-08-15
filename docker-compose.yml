@@ -40,6 +40,9 @@ services:
   searxng:
     image: searxng/searxng:latest
     environment: { SEARXNG_BASE_URL: "http://searxng:8080/" }
+    # 4.2 C1: sin este settings.yml, SearXNG rechaza format=json con 403 y los
+    # veredictos salen SIN FUENTES (ocurrio en produccion el 2026-08-15).
+    volumes: [ "./ops/searxng:/etc/searxng" ]
     restart: unless-stopped
 volumes:
   pgdata:

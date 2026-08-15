@@ -12,5 +12,9 @@ urlpatterns = [
     path('settings/', views.settings_view, name='account_settings'),
     path('delete/', views.delete_account, name='delete_account'),
     path('notifications/', views.notifications, name='notifications'),
+    path('notifications/poll/', views.notifications_poll, name='notifications_poll'),
+    path('mensajes/', views.pm_inbox, name='pm_inbox'),
+    path('mensajes/enviar/<int:user_id>/', views.pm_send, name='pm_send'),
+    path('mensajes/reportar/<int:pm_id>/', views.pm_report, name='pm_report'),
     path('amigos/', views.friends, name='friends'),
 ]

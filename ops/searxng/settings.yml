@@ -1,0 +1,17 @@
+# SearXNG del stack isthistrue (pase 4.2 C1).
+# CAUSA del 403 masivo del 2026-08-15: la imagen por defecto NO sirve format=json
+# (solo html) y ademas trae limitador de bots; el worker recibia 403 en TODAS las
+# busquedas y los veredictos salian SIN FUENTES. Este archivo habilita JSON y
+# desactiva el limitador (el servicio solo escucha dentro de la red del compose:
+# ningun puerto publicado; el "portero" Nginx del host ni lo conoce).
+use_default_settings: true
+server:
+  # La clave la inyecta el arranque de SearXNG via SEARXNG_SECRET si existe;
+  # este valor es el fallback para un servicio SOLO-interno sin cookies de sesion.
+  secret_key: "istt-searxng-interno-sin-exposicion-publica"
+  limiter: false
+  public_instance: false
+search:
+  formats:
+    - html
+    - json

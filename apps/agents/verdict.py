@@ -22,14 +22,14 @@ def run(post, model=None):
             # gris: solo genera wiki en flujo completo (post ya validado como FACTUAL)
             pass
         n = search.budget_for_claim(c)
-        results = search.search(c['text'], max_results=n)
+        results, sources_ok = search.search_with_status(c['text'], max_results=n)
         context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                             for r in results)
         payload = f"CLAIM: {c['text']}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"
         v = client.call_json(model or settings.MODEL_VERDICT, prompts.VERDICT_SYSTEM,
                              payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
         if 'error' not in v:
-            upsert_claim(post, c, v)
+            upsert_claim(post, c, v, sources_ok=sources_ok)
 
 
 def _claims_from_segments(post):

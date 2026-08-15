@@ -1,4 +1,4 @@
-{% load static i18n %}<!doctype html>
+{% load static i18n istt_icons %}<!doctype html>
 <html lang="{{ request.LANGUAGE_CODE|default:'es' }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -23,7 +23,8 @@
     <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
   </form>
   <div class="masthead">
-    <a class="logo" href="/">{% if request.LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
+    {# 4.2 C6: el logo sigue al DOMINIO (logo_variant), no al idioma. #}
+    <a class="logo" href="/">{% if logo_variant == 'escierto' %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% else %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% endif %}</a>
 
   </div>
   <nav>
@@ -32,8 +33,9 @@
     <a href="{% url 'recent_changes' %}">Wiki</a>
     <a href="{% url 'search' %}">{% trans "Buscar" %}</a>
     {% if user.is_authenticated %}
-      <a href="{% url 'submit' %}" class="primary">🔍 {% trans "Analizar un vídeo" %}</a>
-      <a href="{% url 'notifications' %}">🔔</a>
+      <a href="{% url 'submit' %}" class="primary">{% icon 'search' 15 %} {% trans "Analizar un vídeo" %}</a>
+      <a href="{% url 'notifications' %}" id="bell" class="bell" title="{% trans 'Notificaciones' %}">{% icon 'bell' 18 %}{% if unread_notifications %}<span class="bell-count">{{ unread_notifications }}</span>{% endif %}</a>
+      <a href="{% url 'pm_inbox' %}" class="bell" title="{% trans 'Mensajes privados' %}">{% icon 'mail' 18 %}</a>
       <a href="{% url 'account_settings' %}">{{ user.username }}</a>
       {% if user.is_staff %}<a href="{% url 'panel_codes' %}">Panel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button class="linklike">{% trans "Salir" %}</button></form>
@@ -115,6 +117,10 @@
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main>{% block content %}{% endblock %}</main>
+{# 4.2 A5: herramientas de formato SIEMPRE disponibles en todo el foro (tambien
+   en las paginas machina via board_base): el script se auto-acopla a los textarea. #}
+<script src="{% static 'js/mdtoolbar.js' %}" defer></script>
+{% if user.is_authenticated %}<script src="{% static 'js/notify.js' %}" defer></script>{% endif %}
 <footer>
   <a href="{% url 'methodology' %}">{% trans "Cómo verificamos" %}</a> ·
   <a href="{% url 'complaint_form' %}">{% trans "Reclamaciones" %}</a> ·

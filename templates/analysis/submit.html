@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% load i18n %}
+{% extends 'base.html' %}{% load i18n static %}
 {% block content %}
 <div class="auth-card">
   <h1>🔍 {% trans "Analizar un vídeo" %}</h1>
@@ -17,6 +17,9 @@
     </select></label>
     <label>{% trans "Etiquetas libres (opcional, separadas por comas)" %}<input name="tags" placeholder="vacunas, 5G"></label>
     <label class="inline"><input type="checkbox" name="offtopic"> {% trans "Es opinión/entretenimiento: mandarlo directamente a Off-Topic" %}</label>
+    <label>{% trans "Opina (opcional): tu comentario abrirá el hilo del foro, debajo de la transcripción" %}
+      <textarea name="opinion" rows="5" data-mdtoolbar maxlength="8000" placeholder="{% trans 'Markdown: **negrita**, *cursiva*, > cita, enlaces…' %}"></textarea>
+    </label>
     <button class="wide">{% trans "Analizar" %}</button>
   </form>
   <p class="hint">{% trans "La fase inicial es automática y barata; la verificación a fondo con fuentes llega cuando la comunidad valida el análisis." %}</p>

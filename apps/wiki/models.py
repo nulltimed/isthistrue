@@ -26,6 +26,10 @@ class Claim(models.Model):
     what_evidence_says = models.TextField(blank=True)
     the_difference = models.TextField(blank=True)
     sensitive = models.CharField(max_length=10, blank=True, default='')
+    # 4.2 C1: False = el veredicto se emitio con las busquedas de fuentes CAIDAS
+    # (el 403 masivo de SearXNG del 2026-08-15). Reanalizable con
+    # `manage.py reverdict_missing_sources`.
+    sources_ok = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

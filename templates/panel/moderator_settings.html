@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block content %}
+<h1>{% icon 'sliders' 22 %} {% trans "Panel · Moderador" %}</h1>
+<p class="hint">{% trans "El superusuario también es moderador supremo: esta subsección reúne los ajustes de moderación independientes del resto del panel. Los moderadores la verán cuando llegue su panel (4.4)." %}</p>
+<form method="post">{% csrf_token %}
+  {% for key, label, value in values %}
+  <div class="setting-row">
+    <span class="setting-control">{% icon 'gauge' 18 %}</span>
+    <div class="setting-text"><label for="{{ key }}"><strong>{{ label }}</strong></label>
+      <input id="{{ key }}" name="{{ key }}" type="number" min="1" value="{{ value }}" style="max-width:110px">
+    </div>
+  </div>
+  {% endfor %}
+  <button class="wide">{% trans "Guardar" %}</button>
+</form>
+{% endblock %}

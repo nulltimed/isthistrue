@@ -27,19 +27,27 @@ def build_embed(post, start_seconds=0):
     s = int(start_seconds)
     p, vid = post.platform, post.external_id
     if p == 'youtube' and vid:
-        return (f'<iframe src="https://www.youtube-nocookie.com/embed/{vid}?start={s}" '
-                f'frameborder="0" allowfullscreen loading="lazy"></iframe>')
+        # enablejsapi: lo consume static/js/transcript.js (clic en frase -> seekTo).
+        # referrerpolicy en el PROPIO iframe: cinturon ademas del SECURE_REFERRER_POLICY
+        # global (YouTube sin Referer = error 153). Pase 4.2 A1/A4.
+        return (f'<iframe id="istt-player" '
+                f'src="https://www.youtube-nocookie.com/embed/{vid}?start={s}&enablejsapi=1" '
+                f'frameborder="0" allowfullscreen loading="lazy" '
+                f'referrerpolicy="strict-origin-when-cross-origin" '
+                f'allow="autoplay; encrypted-media; picture-in-picture"></iframe>')
     if p == 'tiktok' and vid:
         return (f'<blockquote class="tiktok-embed" cite="{post.url}" data-video-id="{vid}">'
                 f'<a href="{post.url}">Ver en TikTok</a></blockquote>'
                 f'<script async src="https://www.tiktok.com/embed.js"></script>')
     if p == 'spotify' and vid:
         return (f'<iframe src="https://open.spotify.com/embed/episode/{vid}" '
-                f'frameborder="0" loading="lazy" height="152"></iframe>')
+                f'frameborder="0" loading="lazy" height="152" '
+                f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
     if p == 'twitch' and vid:
         return (f'<iframe src="https://player.twitch.tv/?video={vid}&parent=isthistrue.xyztserver.com'
                 f'&parent=escierto.xyztserver.com&autoplay=false&time={s}s" '
-                f'frameborder="0" allowfullscreen loading="lazy"></iframe>')
+                f'frameborder="0" allowfullscreen loading="lazy" '
+                f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
     # Tarjeta-enlace para plataformas sin adaptador:
     return (f'<div class="link-card"><a href="{post.url}" rel="noopener" target="_blank">'
             f'▶ Reproducir en origen — {post.title or post.url}</a>'

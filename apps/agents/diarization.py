@@ -29,22 +29,18 @@ def diarize(audio_path):
             from pyannote.audio import Pipeline
             _pipeline = Pipeline.from_pretrained(
                 'pyannote/speaker-diarization-3.1', use_auth_token=settings.HF_TOKEN)
+        import time
+        t0 = time.monotonic()
         result = _pipeline(audio_path)
-        return [(turn.start, turn.end, f'SPEAKER_{label}')
-                for turn, _, label in result.itertracks(yield_label=True)]
+        turns = [(turn.start, turn.end, f'SPEAKER_{label}')
+                 for turn, _, label in result.itertracks(yield_label=True)]
+        logger.info('Diarización completada en %.1f s (%d turnos, %d hablantes)',
+                    time.monotonic() - t0, len(turns), len({t[2] for t in turns}))
+        return turns
     except Exception as exc:  # la diarizacion no tumba el analisis, pero AVISA
         logger.warning('Diarización omitida: %r', exc)
         return []
 
-
-def label_segments(segments, turns):
-    """Asigna a cada segmento de transcripcion el hablante con mas solape temporal."""
-    for seg in segments:
-        best, best_overlap = '', 0.0
-        for (ts, te, label) in turns:
-            overlap = min(seg.end_seconds, te) - max(seg.start_seconds, ts)
-            if overlap > best_overlap:
-                best, best_overlap = label, overlap
-        if best:
-            seg.speaker_label = best
-            seg.save(update_fields=['speaker_label'])
+# label_segments eliminada en 4.2 D1: la asignacion de hablante ocurre ahora en
+# tasks.merge_into_sentences (la frase completa es la unidad; grep verifico cero
+# usos restantes, tests incluidos).

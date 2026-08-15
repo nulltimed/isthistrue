@@ -18,6 +18,12 @@ DEFAULTS = {
     'opus_rescan_min_users': '50',
     'opus_rescan_percent': '40',
     'donation_goal_eur': '100',
+    # 4.2 D4 — Trending (propuesta pactada con David; ajustable sin tocar codigo):
+    'trending_votes_threshold': '5',
+    'trending_window_days': '7',
+    # 4.2 H5/H1 (editables por mods y superusuario en su panel):
+    'segment_opus_downvotes': '5',
+    'message_sensitive_reports': '5',
     'lang_es': '1', 'lang_en': '1',
 }
 

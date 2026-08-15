@@ -151,3 +151,124 @@ label.inline input{width:auto}
 #donate-other{width:5.2rem;padding:.3rem .5rem;border:1.5px solid #111;border-radius:8px;font-weight:700}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 /* ---- 4.1 B4: admin con la piel de la web (se aplica via admin/base_site.html) ---- */
+
+/* ==================== PASE 4.2 ==================== */
+/* C5: logo al DOBLE (decision de David 2026-08-15; antes 96/56) */
+.logo img{height:192px}
+@media (max-width:640px){.logo img{height:112px}}
+
+/* A3: caja de transcripcion compacta — ~15 frases visibles, scroll nativo */
+.transcript-box{max-height:calc(15 * 2.05em + 1rem);overflow-y:auto;line-height:1.35;
+  border:1px solid var(--line);border-radius:8px;padding:.4rem .5rem;background:#fff}
+.transcript-box .segment{margin:.15rem 0;padding:.25rem .5rem}
+
+/* A4: affordance de clic solo donde el salto existe (YouTube/Twitch) */
+.transcript.seekable .segment{cursor:pointer}
+.transcript.seekable .segment:hover{outline:1px solid var(--line)}
+.transcript.no-seek .segment{cursor:default}
+
+/* C2: colores CLAROS por hablante (ciclo de 8; el color ACOMPAÑA a la etiqueta
+   "Hablante N" visible — nunca es el unico indicador, accesibilidad). */
+.segment.spk-0{background:#eef4fb}.segment.spk-1{background:#fbf3e7}
+.segment.spk-2{background:#eefaf0}.segment.spk-3{background:#faeef3}
+.segment.spk-4{background:#f3eefa}.segment.spk-5{background:#f7f9e8}
+.segment.spk-6{background:#e8f7f9}.segment.spk-7{background:#f9f0e8}
+.speaker-tag{display:inline-block;font-size:.72rem;font-weight:600;padding:0 .45rem;
+  margin:0 .35rem;border-radius:9px;border:1px solid rgba(0,0,0,.12);color:#333}
+
+/* A2: acciones de moderacion en el post */
+.mod-actions{border:1px dashed var(--line);border-radius:8px;padding:.5rem .8rem;
+  margin:.6rem 0;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.mod-actions form{display:flex;gap:.4rem;align-items:center;margin:0}
+.mod-actions input{max-width:220px}
+
+/* A5: barra Markdown (submit "Opina", respuestas del hilo, formularios machina) */
+.md-toolbar{display:flex;gap:.25rem;margin:.3rem 0 .15rem}
+.md-toolbar button{font-size:.8rem;padding:.1rem .5rem;border:1px solid var(--line);
+  background:var(--paper);border-radius:5px;cursor:pointer}
+.md-toolbar button:hover{background:#fff}
+
+/* C4: hilo del foro dentro de la pagina del analisis */
+.thread{margin-top:1.4rem;border-top:2px solid var(--line);padding-top:.8rem}
+.thread-msg{border:1px solid var(--line);border-radius:8px;padding:.55rem .8rem;margin:.5rem 0;background:#fff}
+.thread-meta{font-size:.8rem;color:#666;margin-bottom:.25rem}
+.thread-body p{margin:.3rem 0}
+.thread-reply textarea{width:100%;box-sizing:border-box}
+
+/* C3: FORO — piel del sitio sobre el marcado de machina (sin Bootstrap).
+   Reglas minimas y defensivas: tablas-tarjeta, migas, paginacion, botones. */
+.forum-actions-block,.forum-list-wrapper,.topic-list-wrapper{margin:.6rem 0}
+main table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+main table th{background:var(--paper);text-align:left;padding:.5rem .7rem;font-size:.85rem}
+main table td{padding:.5rem .7rem;border-top:1px solid var(--line);vertical-align:top}
+.breadcrumb{list-style:none;display:flex;gap:.4rem;padding:0;margin:.4rem 0;font-size:.85rem;flex-wrap:wrap}
+.breadcrumb li+li::before{content:"›";margin-right:.4rem;color:#888}
+.pagination{list-style:none;display:flex;gap:.3rem;padding:0;justify-content:center}
+.pagination a,.pagination span{padding:.15rem .55rem;border:1px solid var(--line);border-radius:5px;text-decoration:none}
+main .btn,main input[type=submit]{display:inline-block;padding:.3rem .8rem;border:1px solid var(--line);
+  border-radius:6px;background:var(--paper);cursor:pointer;text-decoration:none;color:inherit}
+main .btn:hover{background:#fff}
+main .badge{font-size:.72rem;padding:0 .4rem;border-radius:9px;background:var(--paper);border:1px solid var(--line)}
+
+/* 4.2 D2-D4: campana, suscripcion y Trending */
+.bell{position:relative}
+.bell-count{position:absolute;top:-6px;right:-10px;background:#c0392b;color:#fff;
+  font-size:.62rem;font-weight:700;border-radius:9px;padding:0 .32rem;line-height:1.3}
+.post-topbar{float:right;display:flex;gap:.5rem;align-items:flex-start}
+.subscribe-box{position:relative}
+.subscribe-box summary{cursor:pointer;list-style:none;font-size:1.25rem}
+.subscribe-box[open] form{position:absolute;right:0;z-index:30;background:#fff;
+  border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;min-width:220px;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:.35rem}
+.subscribe-box label{font-size:.85rem;display:flex;gap:.4rem;align-items:center}
+.trending-badge{background:#fff3e0;border:1px solid #f0c48a;color:#8a5200;
+  border-radius:9px;padding:0 .45rem;font-size:.75rem;font-weight:600}
+
+/* 4.2 E1: Mi cuenta — secciones izquierda / ajustes derecha, con TOGGLES.
+   El toggle es un checkbox real (accesible, funciona sin JS): la pista se pinta
+   con CSS sobre el label contiguo; control a la IZQUIERDA, explicacion a la DERECHA. */
+.settings-layout{display:grid;grid-template-columns:190px 1fr;gap:1.2rem;align-items:start}
+.settings-nav{position:sticky;top:1rem;display:flex;flex-direction:column;gap:.15rem;
+  border:1px solid var(--line);border-radius:8px;padding:.5rem;background:#fff}
+.settings-nav a{padding:.4rem .55rem;border-radius:6px;text-decoration:none;color:inherit;font-size:.92rem}
+.settings-nav a:hover{background:var(--paper)}
+.settings-section{border:1px solid var(--line);border-radius:8px;background:#fff;
+  padding:.7rem 1rem;margin:.7rem 0}
+.settings-section:target{outline:2px solid #8a5200;outline-offset:2px}
+.settings-section h2{margin:.2rem 0 .5rem;font-size:1.05rem}
+.setting-row{display:flex;gap:.8rem;align-items:flex-start;padding:.55rem 0;
+  border-top:1px solid var(--paper)}
+.setting-row:first-of-type{border-top:0}
+.setting-control{flex:0 0 46px;display:flex;justify-content:center;padding-top:.15rem;font-size:1.1rem}
+.setting-text{flex:1}
+.setting-text .hint{margin:.15rem 0 0}
+/* El interruptor: input accesible + pista dibujada */
+input.toggle{position:absolute;opacity:0;width:1px;height:1px}
+.toggle-track{display:inline-block;width:42px;height:24px;border-radius:12px;
+  background:#cfd5db;position:relative;cursor:pointer;transition:background .15s}
+.toggle-track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;
+  border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+input.toggle:checked + .toggle-track{background:#5c6470} /* H3: gris (decision de David) */
+input.toggle:checked + .toggle-track::after{left:21px}
+input.toggle:focus-visible + .toggle-track{outline:2px solid #8a5200;outline-offset:2px}
+@media (max-width:700px){.settings-layout{grid-template-columns:1fr}
+  .settings-nav{position:static;flex-direction:row;flex-wrap:wrap}}
+
+/* 4.2 F1: la fuente original, discreta bajo el reproductor */
+.source-link{margin:.25rem 0 .6rem;font-size:.8rem}
+
+/* 4.2 H: iconos de contorno, herramientas por mensaje, difuminados, votos por oracion */
+.icon{vertical-align:-3px}
+.ibtn{background:none;border:0;padding:.1rem .25rem;cursor:pointer;color:#141414;
+  display:inline-flex;align-items:center;gap:.2rem;font-size:.78rem;text-decoration:none}
+.ibtn:hover{color:#000;background:var(--paper);border-radius:5px}
+.msg-tools{float:right;display:inline-flex;gap:.25rem;align-items:center}
+.msg-tools form{margin:0;display:inline}
+.thread-body-wrap{position:relative}
+.msg-sensitive .thread-body,.msg-hidden-own .thread-body{filter:blur(7px);user-select:none}
+.thread-body-wrap.revealed .thread-body{filter:none;user-select:auto}
+.blur-cover{position:absolute;inset:0;width:100%;border:0;cursor:pointer;
+  background:rgba(255,255,255,.55);font:inherit;color:#141414;font-weight:600}
+.thread-body-wrap.revealed .blur-cover{display:none}
+.seg-votes{display:inline-flex;gap:.15rem;margin-left:.4rem;vertical-align:middle}
+.seg-votes form{display:inline;margin:0}

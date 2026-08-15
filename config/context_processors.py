@@ -3,6 +3,25 @@ from django.conf import settings
 from django.utils import timezone
 
 
+def unread_notifications(request):
+    """4.2 D2: numerito rojo de la campana de la cabecera."""
+    try:
+        if request.user.is_authenticated:
+            return {'unread_notifications':
+                    request.user.notifications.filter(read=False).count()}
+    except Exception:
+        pass
+    return {'unread_notifications': 0}
+
+
+def logo_variant(request):
+    """4.2 C6 (decision de David): el LOGO sigue al DOMINIO; el idioma de la
+    interfaz sigue mandandolo el selector ES-EN. wikitrue y cualquier otro host
+    -> isthistrue (documentado en README de operador)."""
+    host = request.get_host().split(':')[0].lower()
+    return {'logo_variant': 'escierto' if host.startswith('escierto') else 'isthistrue'}
+
+
 def quota_banner(request):
     try:
         from apps.analysis.models import DailyBudget, MonthlyCap

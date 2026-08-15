@@ -1,22 +1,90 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n istt_icons %}
 {% block content %}
-<h1>Mi cuenta</h1>
-<p>Nivel: {{ u.effective_level }} · Karma: {{ u.karma }} · Cupo hoy: {{ u.credits_used_today }}/{{ u.daily_quota }}</p>
-<form method="post" enctype="multipart/form-data">{% csrf_token %}
-  {% if u.is_adult %}
-  <label><input type="checkbox" name="hide_adult" {% if u.hide_adult %}checked{% endif %}> Ocultar contenido para adultos</label>
-  {% endif %}
-  <label><input type="checkbox" name="hide_opinions" {% if u.hide_opinions %}checked{% endif %}> Ocultar opiniones (se muestran difuminadas, clic para ver)</label>
-  <label>Notificaciones
-    <select name="notify_mode">
-      <option value="WEB" {% if u.notify_mode == 'WEB' %}selected{% endif %}>Solo campana</option>
-      <option value="INSTANT" {% if u.notify_mode == 'INSTANT' %}selected{% endif %}>Email inmediato</option>
-      <option value="DAILY" {% if u.notify_mode == 'DAILY' %}selected{% endif %}>Resumen diario</option>
-    </select></label>
-  <label><input type="checkbox" name="allow_friend_requests" {% if u.allow_friend_requests %}checked{% endif %}> Permitir solicitudes de amistad</label>
-  <label>Avatar<input type="file" name="avatar" accept="image/*"></label>
-  <button>Guardar</button>
-</form>
-<p><a href="{% url 'delete_account' %}">Eliminar mi cuenta</a> (derecho de supresión)</p>
-<p><a href="{% url 'claim_code' %}">Canjear un código</a></p>
+{# Pase 4.2 E1 (decision de David): secciones a la izquierda, ajustes a la derecha,
+   interruptores (toggle) con el control a la IZQUIERDA y la explicacion a la
+   DERECHA. Navegacion por anclas + resaltado :target — funciona SIN JavaScript.
+   Las opciones NUEVAS del quiz de 50 llegaran en el pase 4.3 sobre esta rejilla. #}
+<div class="settings-layout">
+  <nav class="settings-nav" aria-label="{% trans 'Secciones de Mi cuenta' %}">
+    <a href="#perfil">{% icon 'user' 18 %} {% trans "Perfil" %}</a>
+    <a href="#contenido">{% icon 'shield' 18 %} {% trans "Contenido" %}</a>
+    <a href="#notificaciones">{% icon 'bell' 18 %} {% trans "Notificaciones" %}</a>
+    <a href="#comunidad">{% icon 'users' 18 %} {% trans "Comunidad" %}</a>
+    <a href="#cuenta">{% icon 'key' 18 %} {% trans "Cuenta y datos" %}</a>
+  </nav>
+  <div class="settings-main">
+    <h1>{% trans "Mi cuenta" %}</h1>
+    <p class="hint">{% trans "Nivel" %}: {{ u.effective_level }} · Karma: {{ u.karma }} · {% trans "Cupo hoy" %}: {{ u.credits_used_today }}/{{ u.daily_quota }}</p>
+    <form method="post" enctype="multipart/form-data">{% csrf_token %}
+
+      <section id="perfil" class="settings-section">
+        <h2>{% icon 'user' 18 %} {% trans "Perfil" %}</h2>
+        <div class="setting-row">
+          <label class="setting-control" for="avatar-input">{% icon 'image' 18 %}</label>
+          <div class="setting-text">
+            <label for="avatar-input"><strong>{% trans "Avatar" %}</strong></label>
+            <p class="hint">{% trans "Imagen libre; un chequeo automático puede retirarla si incumple las normas." %}</p>
+            <input id="avatar-input" type="file" name="avatar" accept="image/*">
+          </div>
+        </div>
+      </section>
+
+      <section id="contenido" class="settings-section">
+        <h2>{% icon 'shield' 18 %} {% trans "Contenido" %}</h2>
+        {% if u.is_adult %}
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-adult" name="hide_adult" {% if u.hide_adult %}checked{% endif %}><label class="toggle-track" for="t-adult" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-adult"><strong>{% trans "Ocultar contenido para adultos" %}</strong></label>
+          <p class="hint">{% trans "El contenido +18 se difumina estilo Reddit; clic para verlo." %}</p></div>
+        </div>
+        {% endif %}
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-op" name="hide_opinions" {% if u.hide_opinions %}checked{% endif %}><label class="toggle-track" for="t-op" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-op"><strong>{% trans "Difuminar opiniones" %}</strong></label>
+          <p class="hint">{% trans "Las frases marcadas como opinión se muestran difuminadas en las transcripciones; clic para revelarlas." %}</p></div>
+        </div>
+      </section>
+
+      <section id="notificaciones" class="settings-section">
+        <h2>{% icon 'bell' 18 %} {% trans "Notificaciones" %}</h2>
+        <div class="setting-row">
+          <span class="setting-control">{% icon 'mail' 18 %}</span>
+          <div class="setting-text"><label for="nm"><strong>{% trans "Cómo avisarte" %}</strong></label>
+            <p class="hint">{% trans "La campana siempre funciona; elige si además quieres email." %}</p>
+            <select id="nm" name="notify_mode">
+              <option value="WEB" {% if u.notify_mode == 'WEB' %}selected{% endif %}>{% trans "Solo campana" %}</option>
+              <option value="INSTANT" {% if u.notify_mode == 'INSTANT' %}selected{% endif %}>{% trans "Email inmediato" %}</option>
+              <option value="DAILY" {% if u.notify_mode == 'DAILY' %}selected{% endif %}>{% trans "Resumen diario" %}</option>
+            </select></div>
+        </div>
+      </section>
+
+      <section id="comunidad" class="settings-section">
+        <h2>{% icon 'users' 18 %} {% trans "Comunidad" %}</h2>
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-pm" name="accept_private_messages" {% if u.accept_private_messages %}checked{% endif %}><label class="toggle-track" for="t-pm" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-pm"><strong>{% trans "Aceptar mensajes privados" %}</strong></label>
+          <p class="hint">{% trans "Con el buzón cerrado, solo moderación puede escribirte. Los bloqueos mandan siempre." %}</p></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-fr" name="allow_friend_requests" {% if u.allow_friend_requests %}checked{% endif %}><label class="toggle-track" for="t-fr" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-fr"><strong>{% trans "Permitir solicitudes de amistad" %}</strong></label>
+          <p class="hint">{% trans "La amistad solo da visibilidad mutua; no existe mensajería privada." %}</p></div>
+        </div>
+      </section>
+
+      <button class="wide">{% trans "Guardar" %}</button>
+
+      <section id="cuenta" class="settings-section">
+        <h2>{% icon 'key' 18 %} {% trans "Cuenta y datos" %}</h2>
+        <div class="setting-row"><span class="setting-control">{% icon 'ticket' 18 %}</span>
+          <div class="setting-text"><a href="{% url 'claim_code' %}"><strong>{% trans "Canjear un código" %}</strong></a>
+          <p class="hint">{% trans "Los códigos ISTT otorgan nivel de confianza." %}</p></div></div>
+        <div class="setting-row"><span class="setting-control">{% icon 'trash' 18 %}</span>
+          <div class="setting-text"><a href="{% url 'delete_account' %}"><strong>{% trans "Eliminar mi cuenta" %}</strong></a>
+          <p class="hint">{% trans "Derecho de supresión (RGPD): la cuenta desaparece; tus mensajes quedan anónimos." %}</p></div></div>
+      </section>
+    </form>
+  </div>
+</div>
 {% endblock %}

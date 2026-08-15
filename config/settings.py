@@ -16,6 +16,9 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost').spli
 CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in ALLOWED_HOSTS
                         if h not in ('localhost', '127.0.0.1')]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# YouTube exige Referer en el embed (error 153 sin el): enviamos SOLO el origen
+# a terceros (equilibrio privacidad/compatibilidad; jamas 'unsafe-url'). Pase 4.2 A1.
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 INSTALLED_APPS = [
     'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
@@ -71,6 +74,8 @@ TEMPLATES = [{
         'django.contrib.messages.context_processors.messages',
         'machina.core.context_processors.metadata',
         'config.context_processors.quota_banner',  # cupos publicos + donaciones
+        'config.context_processors.logo_variant',   # logo por DOMINIO (4.2 C6)
+        'config.context_processors.unread_notifications',  # campana (4.2 D2)
     ]},
 }]
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -110,6 +115,7 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'  # salir -> portada, nunca la pantalla de Django (4.2 A6)
 
 LANGUAGE_CODE = 'es'
 LANGUAGES = [('es', 'Español'), ('en', 'English')]

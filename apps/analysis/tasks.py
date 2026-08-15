@@ -2,7 +2,7 @@
 Pipeline Celery en DOS fases (README v2 §5):
   fase barata (transcripcion + Haiku + algoritmo) -> validacion -> fase cara (Sonnet).
 """
-import os, shutil, tempfile
+import os, re, shutil, tempfile
 from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
@@ -29,12 +29,18 @@ def run_cheap_phase(self, post_id):
 
     tmpdir = tempfile.mkdtemp(prefix='istt_audio_')
     try:
+        # 4.2 F1: _transcribe_first_tranche guarda titulo y duracion del video
+        # (extract_info) — el titulo sustituye al enlace en bruto en pagina, foro,
+        # portada y campana ("suscrito a 10 posts, saber cual habla de un plumazo").
         segments, audio_path = _transcribe_first_tranche(post, tmpdir)
-        objs = [TranscriptSegment.objects.create(post=post, **seg) for seg in segments]
-        # Diarizacion local (2B): hablantes sin identidades; el nombrado es participativo
-        from apps.agents.diarization import diarize, label_segments
-        if audio_path or settings.MOCK_AGENTS:
-            label_segments(objs, diarize(audio_path))
+        # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
+        from apps.agents.diarization import diarize
+        turns = diarize(audio_path) if (audio_path or settings.MOCK_AGENTS) else []
+        # 4.2 D1 (decision de David): la unidad de transcripcion y de ANALISIS es la
+        # FRASE COMPLETA por hablante; el timestamp es el inicio de esa frase.
+        merged = merge_into_sentences(segments, turns)
+        for seg in merged:
+            TranscriptSegment.objects.create(post=post, **seg)
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
     generate_name_proposals.delay(post.pk)  # OCR de rotulos + contexto -> candidatos
@@ -47,14 +53,10 @@ def run_cheap_phase(self, post_id):
     post.manipulation_detected = result['manipulation']
 
     verdict = algorithm.classify(post, result)  # 'FACTUAL' | 'OPINION'
+    # 4.2 A2 (decision de David): el clasificador YA NO relega. Solo sugiere;
+    # el post nace SIEMPRE en Principal y relegar es accion manual de moderador.
     if verdict == 'OPINION':
-        post.category = 'OFFTOPIC'
-        post.status = 'OFFTOPIC_SIGNALED'
-        post.save()
-        from apps.forum.machina_glue import create_topic_for_post
-        create_topic_for_post(post)
-        archive_wayback.delay(post.pk)
-        return 'relegated'
+        post.offtopic_suggested = True
 
     post.save()
     from .services import open_validation_window
@@ -62,7 +64,25 @@ def run_cheap_phase(self, post_id):
     from apps.forum.machina_glue import create_topic_for_post
     create_topic_for_post(post)
     archive_wayback.delay(post.pk)  # preservacion: TODO post (decidido)
+    notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
     return 'pending_validation'
+
+
+def notify_post_event(post, kind, text):
+    """4.2 D2/D3: una notificacion de campana (y navegador via sondeo) para el
+    autor y para los suscriptores del tipo que toque. kind: analysis|messages|trending."""
+    from apps.accounts.services import notify
+    from .models import PostSubscription
+    url = f'/post/{post.pk}/'
+    recipients = {post.author_id: post.author} if kind == 'analysis' else {}
+    field = {'analysis': 'on_analysis', 'messages': 'on_messages',
+             'trending': 'on_trending'}[kind]
+    for sub in (PostSubscription.objects.filter(post=post, **{field: True})
+                .select_related('user')):
+        recipients[sub.user_id] = sub.user
+    title = (post.title or post.url)[:80]
+    for user in recipients.values():
+        notify(user, f'{text}: {title}', url)
 
 
 def launch_full_analysis(post):
@@ -100,27 +120,71 @@ def run_full_analysis(self, post_id):
     verdict_agent.run(post)  # crea/actualiza claims wiki, fuentes, colores
     post.status = 'DONE'
     post.save(update_fields=['status'])
+    notify_post_event(post, 'analysis', 'Veredictos publicados')
     return 'done'
 
 
 @shared_task
 def relegate_expired_validations():
-    """Beat horario: sin 5 votos en 3 dias -> Off-Topic conservando señales."""
+    """Beat horario. 4.2 A2: YA NO relega — marca la sugerencia para moderadores
+    (relegar es siempre accion humana). El nombre se conserva: beat lo referencia."""
     from .models import Post
     expired = Post.objects.filter(status='PENDING_VALIDATION',
                                   validation_deadline__lt=timezone.now())
+    n = expired.count()
     for post in expired:
-        post.category = 'OFFTOPIC'
-        post.status = 'OFFTOPIC_SIGNALED'
+        post.status = 'VALIDATION_EXPIRED'
+        post.offtopic_suggested = True
         post.relegation_reason = 'Sin validación comunitaria en plazo'
-        post.save(update_fields=['category', 'status', 'relegation_reason'])
-    return expired.count()
+        post.save(update_fields=['status', 'offtopic_suggested', 'relegation_reason'])
+    return n
+
+
+_SENTENCE_END = re.compile(r'[.!?…]["»›)\]]?\s*$')
+
+
+def merge_into_sentences(raw_segments, turns, max_chars=600):
+    """4.2 D1: agrupa los fragmentos de whisper en FRASES COMPLETAS por hablante.
+    Corta cuando: (a) la frase termina en . ! ? …, (b) cambia el hablante, o
+    (c) se supera max_chars (candado anti-parrafada). El timestamp del grupo es
+    el inicio del PRIMER fragmento: clic-para-saltar aterriza donde empezo la frase."""
+    def speaker_of(seg):
+        best, best_overlap = '', 0.0
+        for (ts, te, label) in turns:
+            overlap = min(seg['end_seconds'], te) - max(seg['start_seconds'], ts)
+            if overlap > best_overlap:
+                best, best_overlap = label, overlap
+        return best
+
+    merged, current = [], None
+    for seg in raw_segments:
+        spk = speaker_of(seg)
+        text = seg['text'].strip()
+        if not text:
+            continue
+        if (current is not None and current['speaker_label'] == spk
+                and not _SENTENCE_END.search(current['text'])
+                and len(current['text']) + len(text) < max_chars):
+            current['text'] = f"{current['text']} {text}"
+            current['end_seconds'] = seg['end_seconds']
+        else:
+            if current is not None:
+                merged.append(current)
+            current = {'start_seconds': seg['start_seconds'],
+                       'end_seconds': seg['end_seconds'],
+                       'text': text, 'speaker_label': spk}
+    if current is not None:
+        merged.append(current)
+    return merged
 
 
 def _transcribe_first_tranche(post, tmpdir):
     """yt-dlp audio -> faster-whisper small-int8 (CPU) del primer tramo de 20 min.
     En MOCK_AGENTS devuelve segmentos ficticios para probar sin descargar nada."""
     if settings.MOCK_AGENTS:
+        if not post.title:  # 4.2 F1: tambien el espejo enseña titulo, no enlace
+            post.title = '[SIMULADO] Vídeo de prueba del espejo'
+            post.save(update_fields=['title'])
         return ([
             {'start_seconds': 0.0, 'end_seconds': 8.0,
              'text': '[SIMULADO] Hoy os voy a contar la verdad que nadie quiere que sepais.'},
@@ -136,7 +200,19 @@ def _transcribe_first_tranche(post, tmpdir):
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
             'download_ranges': yt_dlp.utils.download_range_func(None, [(0, 1200)])}
     with yt_dlp.YoutubeDL(opts) as ydl:
-        ydl.download([post.url])
+        # 4.2 F1 (decision de David): el TITULO sustituye al enlace en bruto en la
+        # pagina, el foro y las notificaciones. extract_info descarga Y devuelve
+        # metadatos; antes se tiraban a la basura y post.title quedaba vacio siempre.
+        info = ydl.extract_info(post.url, download=True) or {}
+    updates = []
+    if info.get('title') and not post.title:
+        post.title = str(info['title'])[:300]
+        updates.append('title')
+    if info.get('duration') and not post.duration_seconds:
+        post.duration_seconds = int(info['duration'])
+        updates.append('duration_seconds')
+    if updates:
+        post.save(update_fields=updates)
     audio = next((os.path.join(tmpdir, f) for f in os.listdir(tmpdir)), None)
     model = WhisperModel('small', device='cpu', compute_type='int8')
     segs, _info = model.transcribe(audio, vad_filter=True)
@@ -190,6 +266,36 @@ def generate_name_proposals(post_id):
 
 
 COST_OPUS_RESCAN_EUR = 0.40  # estimacion conservadora; pasa por los candados como todo
+
+
+@shared_task
+def opus_rescan_segment(segment_id):
+    """4.2 H5: una ORACION muy downvoteada se re-analiza con Opus (MODEL_PREMIUM).
+    Candados: una vez por oracion, solo posts DONE, y presupuesto (try_spend)."""
+    from .models import TranscriptSegment, DailyBudget
+    seg = TranscriptSegment.objects.select_related('post').get(pk=segment_id)
+    if seg.opus_rescanned or seg.post.status != 'DONE':
+        return 'skip'
+    if not DailyBudget.try_spend(0.10):  # una oracion, no el post entero
+        return 'budget_exhausted'
+    seg.opus_rescanned = True
+    seg.save(update_fields=['opus_rescanned'])
+    from apps.agents import search, client, prompts
+    from apps.agents.verdict import MOCK_VERDICT
+    from apps.wiki.services import upsert_claim
+    results, sources_ok = search.search_with_status(seg.text, max_results=5)
+    context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
+                        for r in results)
+    payload = f"CLAIM: {seg.text}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"
+    v = client.call_json(settings.MODEL_PREMIUM, prompts.VERDICT_SYSTEM,
+                         payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
+    if 'error' not in v:
+        idx = list(seg.post.transcript_segments.all()).index(seg)
+        upsert_claim(seg.post, {'text': seg.text, 'segment_index': idx},
+                     v, sources_ok=sources_ok)
+        notify_post_event(seg.post, 'analysis',
+                          'Una oración muy discutida fue re-verificada con el modelo premium')
+    return 'rescanned'
 
 
 @shared_task

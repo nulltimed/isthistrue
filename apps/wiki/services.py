@@ -5,8 +5,9 @@ from .models import Claim, ClaimAppearance, ClaimVersion, Source, HAS_PGVECTOR
 SIMILARITY_THRESHOLD = 0.88  # coseno sobre pivote EN
 
 
-def upsert_claim(post, claim_data, verdict):
-    """Crea o actualiza la pagina wiki del claim y ancla la aparicion."""
+def upsert_claim(post, claim_data, verdict, sources_ok=True):
+    """Crea o actualiza la pagina wiki del claim y ancla la aparicion.
+    sources_ok=False (4.2 C1): el veredicto se emitio sin busquedas de fuentes."""
     existing = find_similar_claim(claim_data['text'])
     if existing:
         claim = existing
@@ -25,6 +26,7 @@ def upsert_claim(post, claim_data, verdict):
     claim.what_evidence_says = verdict.get('what_evidence_says', '')
     claim.the_difference = verdict.get('the_difference', '')
     claim.sensitive = verdict.get('sensitive') or ''
+    claim.sources_ok = sources_ok
     claim.save()
     ClaimVersion.objects.create(claim=claim, color=claim.color, body_snapshot=verdict)
     claim.sources.all().delete()

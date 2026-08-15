@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block content %}
+<div class="auth-card">
+  <h1>{% icon 'mail' 20 %} {% trans "Mensaje privado a" %} {{ target.username }}</h1>
+  <form method="post">{% csrf_token %}
+    <textarea name="body" rows="6" required data-mdtoolbar maxlength="8000"
+      placeholder="{% trans 'Markdown: **negrita**, *cursiva*, > cita, enlaces…' %}"></textarea>
+    <button class="wide">{% trans "Enviar" %}</button>
+  </form>
+  <p class="hint">{% trans "El destinatario puede reportar cualquier mensaje a moderación." %}</p>
+</div>
+{% endblock %}

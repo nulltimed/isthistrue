@@ -13,7 +13,8 @@ def submit_verdict_batch(post, claims):
     requests = []
     for i, c in enumerate(claims):
         n = search.budget_for_claim(c)
-        results = search.search(c['text'], max_results=n)
+        results, sources_ok = search.search_with_status(c['text'], max_results=n)
+        c['sources_ok'] = sources_ok  # viaja en claims_json hasta poll_verdict_batch
         context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                             for r in results)
         requests.append({
@@ -49,7 +50,10 @@ def poll_verdict_batch(self, batch_id, post_id, claims_json):
             verdict = json.loads(text)
         except json.JSONDecodeError:
             continue
-        upsert_claim(post, claims[idx], verdict)
+        upsert_claim(post, claims[idx], verdict,
+                     sources_ok=claims[idx].get('sources_ok', True))
     post.status = 'DONE'
     post.save(update_fields=['status'])
+    from apps.analysis.tasks import notify_post_event
+    notify_post_event(post, 'analysis', 'Veredictos publicados')
     return 'done'

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block content %}
+<h1>{% icon 'mail' 22 %} {% trans "Mensajes privados" %}</h1>
+<p class="hint">{% trans "Buzón cerrado por defecto: se abre en Mi cuenta → Comunidad. Moderación siempre puede escribirte. El botón de reporte eleva un mensaje a los moderadores." %}</p>
+<h2>{% trans "Recibidos" %}</h2>
+{% for pm in received %}
+  <div class="thread-msg">
+    <div class="thread-meta"><strong>{{ pm.sender.username }}</strong> · {{ pm.created_at|date:'d/m/Y H:i' }}
+      <span class="msg-tools">
+        <a class="ibtn" href="{% url 'pm_send' pm.sender.pk %}" title="{% trans 'Responder' %}">{% icon 'mail' 15 %}</a>
+        {% if not pm.reported %}<form method="post" action="{% url 'pm_report' pm.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar a moderación' %}">{% icon 'flag' 15 %}</button></form>{% endif %}
+      </span></div>
+    <div class="thread-body">{{ pm.body|md }}</div>
+  </div>
+{% empty %}<p class="hint">{% trans "Nada por aquí todavía." %}</p>{% endfor %}
+<h2>{% trans "Enviados" %}</h2>
+{% for pm in sent %}
+  <div class="thread-msg"><div class="thread-meta">{% trans "Para" %} <strong>{{ pm.recipient.username }}</strong> · {{ pm.created_at|date:'d/m/Y H:i' }}</div>
+  <div class="thread-body">{{ pm.body|md }}</div></div>
+{% empty %}<p class="hint">—</p>{% endfor %}
+{% endblock %}

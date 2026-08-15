@@ -16,6 +16,37 @@ class ModerationCase(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class MessageSensitive(models.Model):
+    """4.2 H1: mensaje difuminado PARA TODOS ("puede ser sensible; clic para verlo").
+    Origen: moderador/superusuario a mano, expediente Haiku, o umbral de reportes."""
+    machina_post_id = models.IntegerField(unique=True)
+    marked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                  on_delete=models.SET_NULL)
+    auto = models.BooleanField(default=False)  # True = Haiku o umbral de reportes
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MessageReport(models.Model):
+    """4.2 H1: la "puntuacion" comunitaria — reportes de inadecuado. Al superar el
+    umbral (SystemSetting message_sensitive_reports, 5) el mensaje se difumina solo."""
+    machina_post_id = models.IntegerField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('machina_post_id', 'user')
+
+
+class HiddenMessage(models.Model):
+    """4.2 H2: difuminado PERSONAL — cada usuario esconde para si lo que quiera."""
+    machina_post_id = models.IntegerField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('machina_post_id', 'user')
+
+
 class Vote(models.Model):
     """Voto positivo de post (contador SOLO positivo, decision congelada)."""
     post = models.ForeignKey('analysis.Post', on_delete=models.CASCADE, related_name='votes')

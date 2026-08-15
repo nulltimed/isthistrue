@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block content %}
+<h1>{% icon 'shield' 22 %} {% trans "Moderadores" %}</h1>
+<form method="post" class="search-form">{% csrf_token %}
+  <input name="ident" required placeholder="{% trans 'nickname o email' %}">
+  <button name="action" value="add">{% trans "Nombrar moderador" %}</button>
+</form>
+<h2>{% trans "Actuales" %}</h2>
+<ul>{% for m in mods %}
+  <li>{{ m.username }} <span class="hint">({{ m.email }})</span>
+    <form method="post" style="display:inline">{% csrf_token %}
+      <input type="hidden" name="ident" value="{{ m.username }}">
+      <button class="mini" name="action" value="remove">{% trans "Retirar" %}</button></form></li>
+{% empty %}<li class="hint">{% trans "Sin moderadores nombrados (modo arranque: tú eres el moderador supremo)." %}</li>{% endfor %}</ul>
+<p><a href="{% url 'panel_moderator_settings' %}">{% icon 'sliders' 15 %} {% trans "Ajustes de moderación" %}</a></p>
+{% endblock %}

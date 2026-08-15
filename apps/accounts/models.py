@@ -36,6 +36,9 @@ class User(AbstractUser):
     # Espejo de pruebas: invitado por David desde el panel
     staging_invited = models.BooleanField(default=False)
     allow_friend_requests = models.BooleanField(default=True)  # desactivable (candado)
+    # 4.2 H8: buzon de mensajes privados. CERRADO por defecto (factura vista: canal
+    # invisible a la moderacion comunitaria); mods/superusuario siempre pueden escribir.
+    accept_private_messages = models.BooleanField(default=False)
 
     @property
     def age(self):
@@ -138,6 +141,20 @@ class Notification(models.Model):
     text = models.CharField(max_length=300)
     url = models.CharField(max_length=300, blank=True, default='')
     read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class PrivateMessage(models.Model):
+    """4.2 H8: MP simple con texto enriquecido (Markdown, HTML escapado).
+    Salvaguardas: buzon opt-in, bloqueos mandan, boton Reportar eleva a mods."""
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pm_sent')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pm_received')
+    body = models.TextField(max_length=8000)
+    read = models.BooleanField(default=False)
+    reported = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
