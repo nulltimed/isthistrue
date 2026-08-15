@@ -20,6 +20,9 @@ def quota_banner(request):
             'monthly_cap': cap,
             'donated': donated,
             'goal_missing': max(0, goal - donated),
+            # Enlace de donacion clasico: fallback SIN JavaScript del banner (4.1 B3)
+            'paypal_url': (SystemSetting.objects.filter(key='paypal_url')
+                           .values_list('value', flat=True).first() or ''),
         }}
     except Exception:
         return {'quota_banner': None}

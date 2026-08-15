@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}{% load static i18n %}
+{# 4.1 B4: SOLO piel — cero cambios de estructura o permisos del admin. #}
+{% block title %}{{ title }} · {% if LANGUAGE_CODE == 'en' %}isthistrue. — administration{% else %}escierto. — administración{% endif %}{% endblock %}
+{% block branding %}
+<div id="site-name" class="admin-brand">
+  <a href="{% url 'admin:index' %}">{% if LANGUAGE_CODE == 'en' %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% else %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% endif %}</a>
+  <span class="admin-sub">{% if LANGUAGE_CODE == 'en' %}administration{% else %}administración{% endif %}</span>
+  <a class="back-to-site" href="/">← {% trans "Volver a la web" %}</a>
+</div>
+{% endblock %}
+{% block extrastyle %}
+<link rel="stylesheet" href="{% static 'css/admin-skin.css' %}">
+<link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+<link rel="apple-touch-icon" href="{% static 'img/favicon-180.png' %}">
+{% endblock %}

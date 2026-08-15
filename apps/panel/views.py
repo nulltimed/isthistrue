@@ -106,6 +106,8 @@ def donations_panel(request):
     if request.method == 'POST':
         amt = request.POST.get('amount', '').replace(',', '.')
         try:
+            if float(amt) <= 0:
+                raise ValueError('importe no positivo')  # 4.1 B3: cantidad valida obligatoria
             Donation.objects.create(amount_eur=float(amt),
                 method=request.POST.get('method', 'PAYPAL'),
                 note=request.POST.get('note', '')[:200])

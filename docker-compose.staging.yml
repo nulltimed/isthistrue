@@ -19,8 +19,8 @@ services:
     build: .
     command: celery -A config worker -l info --concurrency 1
     env_file: .env
-    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true" }
-    volumes: [ "./media-staging:/app/media" ]
+    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true", HF_HOME: /hfcache }
+    volumes: [ "./media-staging:/app/media", "hfcache_staging:/hfcache" ]
     depends_on: [ db, redis ]
   beat:
     build: .
@@ -39,3 +39,4 @@ services:
     image: redis:7-alpine
 volumes:
   pgdata_staging:
+  hfcache_staging:

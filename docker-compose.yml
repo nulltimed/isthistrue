@@ -15,7 +15,9 @@ services:
     build: .
     command: celery -A config worker -l info --concurrency 2
     env_file: .env
-    volumes: [ "./media:/app/media" ]
+    environment:
+      HF_HOME: /hfcache   # cache persistente de modelos pyannote (4.1 B1)
+    volumes: [ "./media:/app/media", "hfcache:/hfcache" ]
     depends_on: [ db, redis ]
     restart: unless-stopped
   beat:
@@ -41,3 +43,6 @@ services:
     restart: unless-stopped
 volumes:
   pgdata:
+  # hfcache: modelos de HuggingFace re-descargables — EXCLUIDO del backup a
+  # proposito (regla 5.17 por la via de la exclusion justificada, pase 4.1).
+  hfcache:

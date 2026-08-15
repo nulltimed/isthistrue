@@ -1,3 +1,11 @@
+# torch/torchaudio CPU-only FIJADOS (pase 4.1 B1): el VPS no tiene GPU y el
+# torchaudio moderno retiro AudioMetaData, que pyannote.audio 3.1 aun referencia.
+# Pareja validada: torch 2.2.2 + torchaudio 2.2.2 + pyannote.audio 3.1.1.
+# NO subir sueltos: cambiar los tres a la vez y validar `import pyannote.audio`.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.2.2+cpu
+torchaudio==2.2.2+cpu
+numpy==1.26.4
 Django==5.0.*
 celery[redis]==5.4.*
 redis==5.*
@@ -17,7 +25,7 @@ django-haystack==3.*
 Pillow==10.*
 sentence-transformers==3.*
 django-prometheus==2.*
-pyannote.audio==3.*
+pyannote.audio==3.1.1
 pytesseract==0.3.*
 markdown2==2.*
 whitenoise==6.*

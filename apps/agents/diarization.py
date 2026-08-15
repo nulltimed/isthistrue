@@ -4,16 +4,24 @@ NUNCA se almacenan huellas de voz (clausula congelada: solo con visto bueno
 ESCRITO del abogado de David; no esta construido). Sin HF_TOKEN: se omite y
 todo funciona igual, sin etiquetas de hablante.
 """
+import logging
+
 from django.conf import settings
+
+logger = logging.getLogger('agents.diarization')
 
 _pipeline = None
 
 
 def diarize(audio_path):
-    """Devuelve lista [(start, end, 'SPEAKER_1'), ...] o [] si no hay token/mock."""
+    """Devuelve lista [(start, end, 'SPEAKER_1'), ...] o [] si se omite.
+    Regla 5.7: la omision NUNCA es silenciosa — siempre un WARNING con la causa
+    (2ª reincidencia tras Turnstile; el except mudo de aqui escondio durante
+    semanas el AttributeError torchaudio/pyannote en produccion)."""
     if settings.MOCK_AGENTS:
         return [(0.0, 12.0, 'SPEAKER_1'), (12.0, 24.0, 'SPEAKER_2')]
     if not settings.HF_TOKEN:
+        logger.warning('Diarización omitida: HF_TOKEN ausente en .env')
         return []
     global _pipeline
     try:
@@ -24,8 +32,9 @@ def diarize(audio_path):
         result = _pipeline(audio_path)
         return [(turn.start, turn.end, f'SPEAKER_{label}')
                 for turn, _, label in result.itertracks(yield_label=True)]
-    except Exception:
-        return []  # la diarizacion nunca debe tumbar el analisis
+    except Exception as exc:  # la diarizacion no tumba el analisis, pero AVISA
+        logger.warning('Diarización omitida: %r', exc)
+        return []
 
 
 def label_segments(segments, turns):

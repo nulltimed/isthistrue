@@ -52,23 +52,65 @@
     {% trans "Si donas, estos cupos suben." %}
     {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
   </div>
-  <div id="paypal-banner-btn" class="paypal-banner-btn"></div>
+  <div class="donate-inline">
+    <fieldset class="donate-amounts">
+      <legend class="sr-only">{% trans "Cantidad a donar" %}</legend>
+      <label><input type="radio" name="donate-amount" value="5" checked><span>5 €</span></label>
+      <label><input type="radio" name="donate-amount" value="10"><span>10 €</span></label>
+      <label><input type="radio" name="donate-amount" value="other"><span>{% trans "Otra cantidad" %}</span></label>
+      <input type="number" id="donate-other" min="1" step="0.01" inputmode="decimal" placeholder="€" aria-label="{% trans 'Otra cantidad en euros (mínimo 1)' %}" hidden>
+    </fieldset>
+    <div id="paypal-banner-btn" class="paypal-banner-btn"></div>
+  </div>
+  <noscript>
+    {% if quota_banner.paypal_url %}<a class="hint" href="{{ quota_banner.paypal_url }}" rel="noopener">{% trans "Donar por PayPal (la cantidad se elige en PayPal)" %}</a>
+    {% else %}<a class="hint" href="{% url 'donations' %}">{% trans "Donar" %}</a>{% endif %}
+  </noscript>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+{# PayPal OPCION B (pase 4.1, decision congelada de David): donacion puntual con #}
+{# selector de cantidad. SDK cargado UNA sola vez para toda la web (invariante). #}
+<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture"></script>
 <script>
-if (window.paypal && document.getElementById('paypal-banner-btn')) {
+(function () {
+  if (!window.paypal || !document.getElementById('paypal-banner-btn')) return;
+  var other = document.getElementById('donate-other');
+  var radios = document.querySelectorAll('input[name="donate-amount"]');
+  Array.prototype.forEach.call(radios, function (r) {
+    r.addEventListener('change', function () {
+      var sel = document.querySelector('input[name="donate-amount"]:checked').value;
+      other.hidden = (sel !== 'other');
+      if (!other.hidden) other.focus();
+    });
+  });
+  function amount() {
+    var v = document.querySelector('input[name="donate-amount"]:checked').value;
+    if (v === 'other') v = (other.value || '').replace(',', '.');
+    var n = parseFloat(v);
+    return (isFinite(n) && n >= 1) ? n.toFixed(2) : null;
+  }
   paypal.Buttons({
-    style: { shape: 'pill', color: 'blue', layout: 'horizontal', label: 'subscribe', height: 35, tagline: false },
-    createSubscription: function(data, actions) {
-      return actions.subscription.create({ plan_id: 'P-3K755405C1414303ENJZZBAI' });
+    style: { shape: 'pill', color: 'blue', layout: 'horizontal', label: 'donate', height: 35, tagline: false },
+    onClick: function (data, actions) {
+      if (!amount()) {
+        other.hidden = false; other.focus();
+        other.setCustomValidity('{% trans "Cantidad mínima: 1 €" %}'); other.reportValidity();
+        return actions.reject();
+      }
+      other.setCustomValidity('');
+      return actions.resolve();
     },
-    onApprove: function(data, actions) {
-      var m = document.querySelector('.qb-message');
-      if (m) { m.innerHTML = '🎉 ¡Suscripción completada — gracias, Patrono!'; }
+    createOrder: function (data, actions) {
+      return actions.order.create({ purchase_units: [{ amount: { value: amount(), currency_code: 'EUR' } }] });
+    },
+    onApprove: function (data, actions) {
+      return actions.order.capture().then(function () {
+        var m = document.querySelector('.qb-message');
+        if (m) { m.innerHTML = '🎉 {% trans "¡Donación recibida — gracias! Se sumará al depósito del mes." %}'; }
+      });
     }
   }).render('#paypal-banner-btn');
-}
+})();
 </script>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}

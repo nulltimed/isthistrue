@@ -1,0 +1,28 @@
+/* Piel del admin (4.1 B4): paleta y tipografia de la web sobre el admin de Django.
+   Sin forks ni cambios funcionales: solo variables CSS + retoques. */
+:root{
+  --font-family-primary:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-family-monospace:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --primary:#111; --secondary:#111; --accent:#c9a86a;
+  --header-bg:#fff; --header-color:#111; --header-link-color:#111;
+  --header-branding-color:#111;
+  --breadcrumbs-bg:#f4efe4; --breadcrumbs-fg:#333; --breadcrumbs-link-fg:#111;
+  --link-fg:#1a4f8b; --link-hover-color:#0d3a6e;
+  --button-bg:#111; --button-hover-bg:#333; --button-fg:#fff;
+  --default-button-bg:#111; --default-button-hover-bg:#333;
+  --module-header-bg:#111; --module-header-fg:#fff;
+  --selected-row:#f4efe4;
+}
+#header{background:var(--header-bg);color:var(--header-color);border-bottom:2px solid #111}
+.admin-brand{display:flex;align-items:center;gap:.9rem;flex-wrap:wrap}
+.admin-brand img{height:42px;display:block}
+.admin-brand .admin-sub{font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:.72rem;color:#666}
+.admin-brand .back-to-site{font-size:.85rem;font-weight:700;color:#111;border:1.5px solid #111;border-radius:999px;padding:.2rem .7rem;text-decoration:none}
+.admin-brand .back-to-site:hover{background:#111;color:#fff}
+#user-tools a{color:#111;font-weight:600}
+div.breadcrumbs{background:var(--breadcrumbs-bg);color:var(--breadcrumbs-fg)}
+.module h2,.module caption,.inline-group h2{background:var(--module-header-bg);color:var(--module-header-fg)}
+/* Login del admin: la misma tarjeta centrada que las paginas auth del sitio */
+.login #container{max-width:420px;border:1.5px solid #111;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.08);padding:1.4rem}
+.login #header{background:#fff;border-bottom:0;text-align:center}
+.login .submit-row input{width:100%;border-radius:999px}
