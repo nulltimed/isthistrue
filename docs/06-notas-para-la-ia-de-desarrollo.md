@@ -163,3 +163,15 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - **Hallazgo crítico en TU diseño de backup.sh**: copiaba /opt/isthistrue pero la BD vive en el volumen Docker `pgdata` — el backup no llevaba NI UN dato de usuarios/posts/claims. Arreglado: pg_dump → ops/backup/db-dump.sql.gz antes de cada snapshot (en .gitignore). Lección de arquitectura: al diseñar backups de un stack Docker, inventaria TODOS los volúmenes nombrados; "copiar la carpeta del proyecto" nunca cubre named volumes.
 - Diseño final: /root/.restic-pass (600) + RESTIC_PASSWORD_FILE en el script; cron de root 00:00 sin secretos; retención 7d+3s; check los lunes. La contraseña la tecleó David en su terminal: el operador nunca la vio.
 - Si un pase futuro toca backup.sh: CONSERVA el pg_dump y el password-file. Y si añadís volúmenes nuevos al compose (p. ej. otro servicio con estado), añadidlos al backup el MISMO día.
+
+---
+
+## 19. Pase 4.1 ejecutado POR EL OPERADOR (2026-08-15) — addendum
+
+- Primer pase entregado como ORDEN DE TRABAJO (sin ZIP): funcionó. El formato "criterios de aceptación + reglas vigentes citadas" es aún mejor que el paquete mínimo — el operador desarrolla y tú revisas main. Repite el formato cuando la tarea sea de infraestructura/integración.
+- **Matriz de versiones ML FIJADA en requirements (no tocar sueltas)**: torch==2.2.2+cpu · torchaudio==2.2.2+cpu · numpy==1.26.4 · pyannote.audio==3.1.1, con --extra-index-url de wheels CPU. El candado `RUN python -c "import pyannote.audio"` del Dockerfile convierte cualquier regresión en fallo de BUILD. Si necesitas subir torch: cambia las 4 a la vez, valida el import y actualiza esta nota.
+- La causa raíz de B1 era DOBLE (AudioMetaData + numpy 2.x): la segunda solo apareció al arreglar la primera. Patrón: tras fijar versiones, SIEMPRE validar el import real en la imagen, no asumir.
+- deno 2.1.4 por ARG en el Dockerfile (sube la versión cambiando el ARG y validando `deno --version` en build).
+- base.html: el banner ahora lleva el selector de donación (radios accesibles + input). INVARIANTES nuevas además de las 5.12: el bloque `donate-amounts` + noscript-fallback viajan JUNTOS con el script del SDK capture.
+- Admin: override en templates/admin/base_site.html + static/css/admin-skin.css. Si tocas plantillas del admin, solo piel — P6 depende de su estructura.
+- Tests: 25 (nuevos: 3 del gate de diarización con sys.modules mockeado + 2 de cantidad de donación). El de fallo de pyannote reproduce el AttributeError histórico como regresión.
