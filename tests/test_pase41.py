@@ -37,7 +37,9 @@ class GateDiarizacion(TestCase):
         diarization._pipeline = None
         turn = mock.MagicMock(start=0.0, end=3.5)
         result = mock.MagicMock()
-        result.itertracks.return_value = [(turn, None, '00'), (turn, None, '01')]
+        # 4.3-A I7: pyannote ya entrega 'SPEAKER_00'; diarize() usa el label TAL CUAL
+        # (el f'SPEAKER_{label}' antiguo fabricaba SPEAKER_SPEAKER_00 en produccion).
+        result.itertracks.return_value = [(turn, None, 'SPEAKER_00'), (turn, None, 'SPEAKER_01')]
         fake = mock.MagicMock()
         fake.Pipeline.from_pretrained.return_value = mock.MagicMock(return_value=result)
         with mock.patch.dict('sys.modules', {'pyannote.audio': fake, 'pyannote': mock.MagicMock(audio=fake)}):
