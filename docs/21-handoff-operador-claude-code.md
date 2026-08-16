@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A.5 en producción (ver git log; este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A.6 en producción (ver git log; este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§25: TODA la historia técnica) y el informe del último pase (`docs/27`).
+> (§1-§26: TODA la historia técnica) y el informe del último pase (`docs/28`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -153,9 +153,9 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-15, tras pase 4.2)
 
-- **Producción**: pase 4.3-A.5 (transcripción en orden cronológico, frase activa en negro,
-  reanalizar-con-IA para mods, registro destacado en el panel), 6 contenedores Up,
-  62/62 tests, logs limpios. Espejo: mismo commit, APAGADO.
+- **Producción**: pase 4.3-A.6 (panel con cabecera y 7 pestañas —/panel/ y el menú van a
+  Ajustes—, píldora del hablante legible sobre la frase negra), 6 contenedores Up,
+  67/67 tests, logs limpios. Espejo: mismo commit, APAGADO.
 - **Funcional**: MOCK_AGENTS=true (David aún sin poner ANTHROPIC_API_KEY → todo [SIMULADO]
   y sin gasto), Brevo REAL activo (emails de verificación/bienvenida salen), Turnstile sin
   claves (warning esperado en logs), HF_TOKEN presente y la diarización YA funciona

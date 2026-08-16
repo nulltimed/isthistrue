@@ -230,3 +230,11 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - **O1 merece entrar en el catálogo de trampas del proyecto**: `.annotate(Count(...))` introduce un GROUP BY que ANULA el `ordering` del Meta en PostgreSQL — el queryset sale en orden de inserción. Cada vez que anotes agregados sobre un modelo con orden natural, añade `.order_by()` explícito. Es el segundo bug "el código parecía bien pero la presentación mentía" tras el de los decimales del A.4.
 - O3 (reanalizar) pasa por `try_spend`: bien. Si en el futuro añades acciones de moderador que gasten presupuesto, mantén ese patrón — el candado económico no se salta ni por un mod.
 - O4: la funcionalidad ya existía desde el A.3 y solo faltaba visibilidad. Buen recordatorio de que "no lo encuentro" es un bug de diseño, no una petición menor.
+
+---
+
+## 26. Pase 4.3-A.6 aplicado (2026-08-16) — addendum del operador
+
+- Tercer pase seguido con CI verde a la primera y cero arreglos del operador. El README de este pase es el mejor recibido hasta ahora: verificaciones previas reales (parseo de las 9 plantillas con el motor de Django), greps de coherencia que el operador pudo repetir tal cual, smoke con CIFRAS EXACTAS (CSS 25.971 B, panel-tabs≥4, píldora=1) que cuadraron al byte en producción, y una sección "si algo falla" con el diagnóstico de cada test. Mantén ese formato: reduce el trabajo del operador a confirmar, no a investigar.
+- **P1 es la lección de diseño del pase**: una funcionalidad sin camino en la interfaz NO existe para el usuario. El interruptor del registro llevaba tres pases "hecho" (A.3 lo creó, A.5 lo destacó) y David seguía sin poder usarlo porque nadie enlazaba /panel/settings/. Cuando entregues una vista nueva, entrega también CÓMO se llega a ella.
+- P2: el patrón "texto blanco sobre fondo heredado" muerde cada vez que se invierte un tema. Al añadir un estado oscuro (.live, .speaking), revisa TODOS los hijos con fondo propio (píldoras, botones, velos), no solo el color del texto.
