@@ -25,6 +25,29 @@
     };
   }
 
+  /* 4.3-A.3 M2 (decision de David): transcripcion con SEGUIMIENTO EN VIVO.
+   * Cada medio segundo, si el video esta reproduciendose, la frase actual se
+   * ilumina (.live) y la columna derecha la sigue con scroll suave interno. */
+  var liveSeg = null;
+  setInterval(function () {
+    if (!ytReady || !ytPlayer || !ytPlayer.getCurrentTime) return;
+    if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) return;
+    var t = ytPlayer.getCurrentTime();
+    var segs = document.querySelectorAll('.transcript .segment[data-start]');
+    var actual = null;
+    for (var i = 0; i < segs.length; i++) {
+      var ini = parseFloat(segs[i].getAttribute('data-start'));
+      var fin = parseFloat(segs[i].getAttribute('data-end'));
+      if (isFinite(ini) && t >= ini && (!isFinite(fin) || t < fin)) { actual = segs[i]; break; }
+    }
+    if (actual && actual !== liveSeg) {
+      if (liveSeg) liveSeg.classList.remove('live');
+      actual.classList.add('live');
+      actual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      liveSeg = actual;
+    }
+  }, 500);
+
   // seekTo global: los timestamps [12s] ya la invocan desde la plantilla.
   window.seekTo = function (s) {
     var t = target(s);

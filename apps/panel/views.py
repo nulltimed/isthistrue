@@ -38,23 +38,49 @@ def codes(request):
     return render(request, 'panel/codes.html', {'batches': batches, 'redeemed': redeemed})
 
 
+SETTINGS_DEF = [
+    # 4.3-A.3 M3 (decision de David): los ajustes del panel con nombre y apellidos.
+    # kind: 'bool' = toggle (guarda 1/0); 'num' = campo numerico.
+    ('registration_open', 'Permitir registro de nuevos usuarios',
+     'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
+    ('opinion_ratio_percent', 'Umbral de opinión (%)',
+     'Porcentaje de frases de opinión a partir del cual el clasificador sugiere Off-Topic.', 'num'),
+    ('minutes_per_factual_claim', 'Minutos por claim factual',
+     'Densidad mínima: un claim verificable por cada X minutos de vídeo.', 'num'),
+    ('votes_to_validate', 'Votos para validar',
+     'Votos de la comunidad que sacan un post de la cuarentena.', 'num'),
+    ('votes_to_rescue', 'Votos para rescatar',
+     'Votos que devuelven un post de Off-Topic a Principal.', 'num'),
+    ('validation_window_days', 'Ventana de validación (días)',
+     'Días de plazo antes de que la validación caduque.', 'num'),
+    ('startup_mode_min_users', 'Modo arranque hasta N usuarios',
+     'Con menos usuarios que esto, un solo voto de moderador valida.', 'num'),
+    ('donation_goal_eur', 'Meta de donaciones (€)',
+     'El objetivo que muestra el termómetro del banner.', 'num'),
+]
+
+
 @staff_member_required
 def settings_panel(request):
-    """Umbrales vivos: algoritmo, votaciones, modo arranque."""
-    keys = ['opinion_ratio_percent', 'minutes_per_factual_claim', 'votes_to_validate',
-            'votes_to_rescue', 'validation_window_days', 'startup_mode_min_users',
-            'donation_goal_eur',
-            'registration_open']  # 4.3-A.1 K6: 1 abierto / 0 cerrado
+    """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro."""
     if request.method == 'POST':
-        for k in keys:
-            if k in request.POST:
-                SystemSetting.objects.update_or_create(key=k,
-                    defaults={'value': request.POST[k].strip()})
+        for key, _label, _hint, kind in SETTINGS_DEF:
+            if kind == 'bool':
+                value = '1' if request.POST.get(key) == 'on' else '0'
+            elif key in request.POST and request.POST[key].strip():
+                value = request.POST[key].strip()
+            else:
+                continue
+            SystemSetting.objects.update_or_create(key=key, defaults={'value': value})
         AuditLog.objects.create(user=request.user, action='update_settings')
         messages.success(request, 'Ajustes guardados.')
         return redirect('panel_settings')
-    current = {k: SystemSetting.objects.filter(key=k).first() for k in keys}
-    return render(request, 'panel/settings.html', {'current': current})
+    rows = []
+    for key, label, hint, kind in SETTINGS_DEF:
+        obj = SystemSetting.objects.filter(key=key).first()
+        rows.append({'key': key, 'label': label, 'hint': hint, 'kind': kind,
+                     'value': obj.value if obj else ''})
+    return render(request, 'panel/settings.html', {'rows': rows})
 
 
 @staff_member_required

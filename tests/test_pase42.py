@@ -390,3 +390,31 @@ class Pase43A1(TestCase):
         self.assertTrue(user.wants('mentions'))
         r = self.client.get('/')
         self.assertContains(r, 'data-toast-sound="1"')
+
+
+class Pase43A3(TestCase):
+    """4.3-A.3: página ancha de verdad, panel con nombres y registro como toggle."""
+
+    def test_panel_muestra_permitir_registro(self):
+        admin = make_user(username='root1', email='root1@example.org')
+        admin.is_staff = admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        r = self.client.get('/panel/settings/')
+        self.assertContains(r, 'Permitir registro de nuevos usuarios')
+        # apagar el toggle (checkbox ausente en el POST) cierra el registro
+        self.client.post('/panel/settings/', {'votes_to_validate': '5'})
+        from apps.panel.models import SystemSetting
+        self.assertEqual(SystemSetting.get_int('registration_open', 1), 0)
+        self.client.post('/panel/settings/', {'registration_open': 'on'})
+        self.assertEqual(SystemSetting.get_int('registration_open', 1), 1)
+
+    def test_pagina_del_post_es_ancha(self):
+        user = make_user()
+        post = Post.objects.create(author=user, url='https://youtu.be/abc136x',
+                                   title='Ancho total')
+        r = self.client.get(f'/post/{post.pk}/')
+        self.assertContains(r, '<main class="wide">')
+        self.assertContains(r, 'data-end=')
+        css = open('static/css/main.css').read()
+        self.assertNotIn('100vw', css)   # el contenedor cutre, extinto con test

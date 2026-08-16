@@ -79,7 +79,7 @@
   <div class="transcript transcript-box" data-platform="{{ post.platform }}">
   {% for s in segments %}
     <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
-         data-start="{{ s.start_seconds }}">
+         data-start="{{ s.start_seconds }}" data-end="{{ s.end_seconds }}">
       <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% trans "Hablante" %} {{ s.spk_idx|add:1 }}</span>{% endif %}
       <span class="text">{{ s.text }}</span>
       {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}

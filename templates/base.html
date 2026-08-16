@@ -113,7 +113,7 @@
 </script>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
-<main>{% block content %}{% endblock %}</main>
+<main class="{% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
 <script src="{% static 'js/mdtoolbar.js' %}" defer></script>
 <script src="{% static 'js/toasts.js' %}" defer></script>
 {% if user.is_authenticated %}<script src="{% static 'js/notify.js' %}" defer></script>{% endif %}

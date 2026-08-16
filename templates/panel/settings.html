@@ -1,11 +1,21 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n istt_icons %}
 {% block content %}
-<h1>Panel · Ajustes vivos</h1>
+<h1>{% icon 'sliders' 22 %} {% trans "Panel · Ajustes vivos" %}</h1>
 <form method="post">{% csrf_token %}
-{% for key, row in current.items %}
-  <label>{{ key }}<input name="{{ key }}" value="{{ row.value|default:'' }}" placeholder="(por defecto)"></label>
-{% endfor %}
-<button>Guardar</button>
+  {% for r in rows %}
+  <div class="setting-row">
+    {% if r.kind == 'bool' %}
+    <span class="setting-control"><input type="checkbox" class="toggle" id="s-{{ r.key }}" name="{{ r.key }}" {% if r.value != '0' %}checked{% endif %}><label class="toggle-track" for="s-{{ r.key }}" aria-hidden="true"></label></span>
+    <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
+      <p class="hint">{{ r.hint }}</p></div>
+    {% else %}
+    <span class="setting-control">{% icon 'gauge' 18 %}</span>
+    <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
+      <p class="hint">{{ r.hint }}</p>
+      <input id="s-{{ r.key }}" name="{{ r.key }}" value="{{ r.value }}" inputmode="numeric" style="max-width:130px" placeholder="(por defecto)"></div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <button class="wide">{% trans "Guardar" %}</button>
 </form>
-<p class="hint">opinion_ratio_percent=70 · minutes_per_factual_claim=5 · votes_to_validate=5 · votes_to_rescue=10 · validation_window_days=3 · startup_mode_min_users=50</p>
 {% endblock %}
