@@ -94,6 +94,12 @@
           <button class="mini">⤴ {% trans "Devolver a Principal" %}</button>
         </form>
       {% endif %}
+      {% if post.status == 'DONE' or post.status == 'PENDING_VALIDATION' %}
+      <form method="post" action="{% url 'post_reanalyze' post.pk %}" class="reanalyze-form"
+            onsubmit="return confirm('{% trans "Esto borra la transcripción actual y la regenera con IA (tiene coste). ¿Reanalizar?" %}');">{% csrf_token %}
+        <button class="mini" title="{% trans 'Relanza transcripción y análisis con IA. Úsalo si la sincronización vino mal.' %}">↻ {% trans "Reanalizar con IA" %}</button>
+      </form>
+      {% endif %}
     </div>
   {% endif %}
 

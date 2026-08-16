@@ -336,6 +336,25 @@ main.wide .post{width:100%}
 /* 4.3-A.3 M2 + 4.3-A.4 N3: seguimiento EN VIVO. La frase que suena se ilumina (ámbar
    suave) y su columna la sigue; y la FICHA del hablante activo (columna izquierda) se
    resalta en GRISÁCEO —así, al pausar el vídeo, se ve de un vistazo quién estaba hablando. */
-.segment.live{background:#fdf3e3;border-left:3px solid #f0c48a;border-radius:4px}
-.speaker-block.speaking{background:#e9ecef;border-color:#9aa2ac;
-  box-shadow:inset 3px 0 0 #6c757d;transition:background .15s,box-shadow .15s}
+/* 4.3-A.5 O2 (decisión de David): la intervención que suena va en NEGRO, con su texto
+   y su marca de tiempo en BLANCO — el resto de frases quedan en su color claro por
+   hablante. Así se sigue el hilo de la conversación de un vistazo. */
+.segment.live{background:#141414;border-left:3px solid #141414;border-radius:4px;
+  transition:background .12s,color .12s}
+.segment.live,.segment.live .text{color:#fff}
+.segment.live .ts{color:#fff;font-weight:700}
+.segment.live .speaker-tag{color:#fff;opacity:.95}
+/* la ficha del hablante activo (columna izquierda), también en negro con texto blanco */
+.speaker-block.speaking{background:#141414;border-color:#141414;color:#fff;
+  box-shadow:inset 3px 0 0 #000;transition:background .15s,color .15s}
+.speaker-block.speaking .speaker-tag{color:#fff}
+
+/* 4.3-A.5 O4 (petición imperativa de David): el toggle de registro de nuevos usuarios,
+   destacado arriba del panel en su propio recuadro. Verde=abierto, rojo=cerrado. */
+.reg-gate{border:1px solid var(--line);border-radius:10px;padding:.9rem 1.1rem;margin:.4rem 0 1.2rem;
+  background:#fff;border-left:5px solid #5c6470}
+.reg-gate.reg-open{border-left-color:#2e7d4f;background:#f4fbf6}
+.reg-gate.reg-closed{border-left-color:#b23b3b;background:#fdf4f4}
+.reg-gate .reg-state{margin:.35rem 0 0;font-size:.86rem;font-weight:600}
+.settings-sub{font-size:1.02rem;margin:.4rem 0 .5rem;color:#555;
+  border-top:1px solid var(--line);padding-top:.8rem}

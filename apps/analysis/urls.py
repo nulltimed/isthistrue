@@ -14,6 +14,7 @@ urlpatterns = [
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
     path('post/<int:pk>/relegate/', views.relegate, name='post_relegate'),
     path('post/<int:pk>/unrelegate/', views.unrelegate, name='post_unrelegate'),
+    path('post/<int:pk>/reanalizar/', views.reanalyze, name='post_reanalyze'),
     path('post/<int:pk>/reply/', views.reply, name='post_reply'),
     path('post/<int:pk>/subscribe/', views.subscribe, name='post_subscribe'),
     path('oracion/<int:pk>/votar/<str:direction>/', views.segment_vote, name='segment_vote'),

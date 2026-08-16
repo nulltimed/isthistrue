@@ -80,7 +80,11 @@ def settings_panel(request):
         obj = SystemSetting.objects.filter(key=key).first()
         rows.append({'key': key, 'label': label, 'hint': hint, 'kind': kind,
                      'value': obj.value if obj else ''})
-    return render(request, 'panel/settings.html', {'rows': rows})
+    # 4.3-A.5 O4 (petición imperativa de David): el toggle de registro se saca a una
+    # sección DESTACADA arriba del panel, aparte de los umbrales técnicos.
+    reg = next((r for r in rows if r['key'] == 'registration_open'), None)
+    others = [r for r in rows if r['key'] != 'registration_open']
+    return render(request, 'panel/settings.html', {'rows': others, 'reg': reg})
 
 
 @staff_member_required

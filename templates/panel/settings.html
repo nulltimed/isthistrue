@@ -2,6 +2,22 @@
 {% block content %}
 <h1>{% icon 'sliders' 22 %} {% trans "Panel · Ajustes vivos" %}</h1>
 <form method="post">{% csrf_token %}
+
+  {% if reg %}
+  {% comment %} 4.3-A.5 O4: el registro de nuevos usuarios, destacado y a mano. {% endcomment %}
+  <div class="reg-gate {% if reg.value == '0' %}reg-closed{% else %}reg-open{% endif %}">
+    <div class="setting-row">
+      <span class="setting-control"><input type="checkbox" class="toggle" id="s-{{ reg.key }}" name="{{ reg.key }}" {% if reg.value != '0' %}checked{% endif %}><label class="toggle-track" for="s-{{ reg.key }}" aria-hidden="true"></label></span>
+      <div class="setting-text"><label for="s-{{ reg.key }}"><strong>{{ reg.label }}</strong></label>
+        <p class="hint">{{ reg.hint }}</p>
+        <p class="reg-state">{% if reg.value == '0' %}🔴 {% trans "Ahora mismo el registro está CERRADO: nadie nuevo puede crear cuenta." %}{% else %}🟢 {% trans "Ahora mismo el registro está ABIERTO: cualquiera puede crear cuenta." %}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if rows %}
+  <h2 class="settings-sub">{% icon 'gauge' 18 %} {% trans "Umbrales del sistema" %}</h2>
   {% for r in rows %}
   <div class="setting-row">
     {% if r.kind == 'bool' %}
@@ -16,6 +32,8 @@
     {% endif %}
   </div>
   {% endfor %}
+  {% endif %}
+
   <button class="wide">{% trans "Guardar" %}</button>
 </form>
 {% endblock %}

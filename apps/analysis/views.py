@@ -114,9 +114,13 @@ def _post_context(request, post):
     cuando el analisis termina."""
     u = request.user if request.user.is_authenticated else None
     from django.db.models import Count, Q
+    # 4.3-A.5 O1 (fallo de raíz): SIN order_by la BD devolvía los segmentos en orden
+    # de inserción, no cronológico — la conversación aparecía descolocada. Se ordena
+    # por tiempo de inicio para que el diálogo tenga continuidad real.
     segments = list(post.transcript_segments.annotate(
         ups=Count('sentence_votes', filter=Q(sentence_votes__value=1)),
-        downs=Count('sentence_votes', filter=Q(sentence_votes__value=-1))))
+        downs=Count('sentence_votes', filter=Q(sentence_votes__value=-1)))
+        .order_by('start_seconds', 'pk'))
     # 4.2 C2: indice estable por hablante -> color claro ciclable en la plantilla.
     labels = sorted({s.speaker_label for s in segments if s.speaker_label})
     idx = {label: i for i, label in enumerate(labels)}
@@ -298,6 +302,27 @@ def relegate(request, pk):
     from apps.forum.machina_glue import move_topic
     move_topic(post)
     messages.success(request, 'Post relegado a Off-Topic.')
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+def reanalyze(request, pk):
+    """4.3-A.5 O3 (decisión de David): reanálisis manual de un post cuando la
+    transcripción/diarización viene mal de origen. Solo moderador. Borra los
+    segmentos actuales y relanza el pipeline barato→caro; pasa por el presupuesto
+    (try_spend dentro de las tareas) como cualquier análisis. NO es gratis: cuesta
+    lo mismo que un análisis nuevo, así que es acción deliberada, no automática."""
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect('post_detail', pk=pk)
+    # limpieza: fuera segmentos, candidatos automáticos y flag de reescaneo premium
+    post.transcript_segments.all().delete()
+    post.status = 'NEW'
+    post.opus_rescanned = False
+    post.save(update_fields=['status', 'opus_rescanned'])
+    from .tasks import run_cheap_phase
+    run_cheap_phase.delay(post.pk)
+    messages.success(request, 'Reanálisis lanzado: la transcripción se regenerará en unos minutos.')
     return redirect('post_detail', pk=pk)
 
 

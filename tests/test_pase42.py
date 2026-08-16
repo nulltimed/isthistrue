@@ -454,3 +454,70 @@ class Pase43A4(TestCase):
         css = open('static/css/main.css').read()
         bloque = css.split('.media-grid{')[1][:80]
         self.assertNotIn('position:sticky', bloque)
+
+
+class Pase43A5(TestCase):
+    """4.3-A.5: segmentos en orden cronológico (fallo de raíz del desorden),
+    intervención activa en negro con texto blanco, y reanálisis manual de moderador."""
+
+    def test_segmentos_en_orden_cronologico(self):
+        from apps.analysis.models import TranscriptSegment
+        user = make_user()
+        post = Post.objects.create(author=user, url='https://youtu.be/abc138x',
+                                   title='Orden')
+        # se crean DESORDENADOS a propósito, como venían del pipeline
+        for start in (194.21, 17.25, 22.25, 5.01, 91.29):
+            TranscriptSegment.objects.create(post=post, start_seconds=start,
+                                             end_seconds=start + 2, text=f'f{start}')
+        r = self.client.get(f'/post/{post.pk}/')
+        segs = r.context['segments']
+        tiempos = [s.start_seconds for s in segs]
+        self.assertEqual(tiempos, sorted(tiempos))          # cronológico, no de inserción
+        self.assertEqual(tiempos[0], 5.01)
+
+    def test_frase_activa_en_negro_texto_blanco(self):
+        css = open('static/css/main.css').read()
+        self.assertIn('.segment.live{background:#141414', css)
+        self.assertIn('.segment.live,.segment.live .text{color:#fff}', css)
+
+    def test_reanalizar_solo_moderador(self):
+        from apps.analysis.models import TranscriptSegment
+        author = make_user()
+        post = Post.objects.create(author=author, url='https://youtu.be/abc139x',
+                                   title='Rean', status='DONE')
+        TranscriptSegment.objects.create(post=post, start_seconds=1.0,
+                                         end_seconds=3.0, text='vieja')
+        # un usuario normal NO puede reanalizar
+        self.client.force_login(author)
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as m:
+            self.client.post(f'/post/{post.pk}/reanalizar/')
+            m.assert_not_called()
+        self.assertEqual(post.transcript_segments.count(), 1)  # intacto
+        # un moderador SÍ: borra segmentos y lanza el pipeline
+        mod = make_user(username='modx', email='modx@example.org')
+        mod.is_staff = True
+        mod.save()
+        self.client.force_login(mod)
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as m:
+            self.client.post(f'/post/{post.pk}/reanalizar/')
+            m.assert_called_once()
+        post.refresh_from_db()
+        self.assertEqual(post.transcript_segments.count(), 0)  # limpiado
+        self.assertEqual(post.status, 'NEW')
+
+    def test_toggle_registro_destacado_en_panel(self):
+        admin = make_user(username='root9', email='root9@example.org')
+        admin.is_staff = admin.is_superuser = True
+        admin.save()
+        self.client.force_login(admin)
+        r = self.client.get('/panel/settings/')
+        # el registro va en su sección destacada (reg-gate), separado de los umbrales
+        self.assertContains(r, 'reg-gate')
+        self.assertContains(r, 'Permitir registro de nuevos usuarios')
+        self.assertContains(r, 'name="registration_open"')
+        # y sigue guardando 1/0 con el toggle
+        self.client.post('/panel/settings/', {'votes_to_validate': '5'})
+        from apps.panel.models import SystemSetting
+        self.assertEqual(SystemSetting.get_int('registration_open', 1), 0)
+        self.client.post('/panel/settings/', {'registration_open': 'on'})
+        self.assertEqual(SystemSetting.get_int('registration_open', 1), 1)
