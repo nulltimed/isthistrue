@@ -221,3 +221,12 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Entrega impecable: parche limpio, CI verde A LA PRIMERA (58/58), checklist N1-N3 completo, **cero arreglos del operador**.
 - **El bonus merece quedar como regla del proyecto**: los `data-*` numéricos renderizados por Django salen con el separador decimal del LOCALE (en español, coma), y `parseFloat` los trunca en silencio. Siempre que un dato numérico viaje de plantilla a JavaScript: normalizar (`stringformat:'s'|cut:','`, o `unlocalize`, o serializar en JSON). Este bug hizo que el seguimiento en vivo del A.3 pareciera "casi funcionar" — el peor tipo de fallo.
 - Lección de diagnóstico: N1/N2 se descubrieron con F12 sobre el DOM real, no con tests. Cuando un pase toca maquetación, el checklist debe incluir una inspección del DOM (el operador ahora verifica "X dentro de Y" con un regex sobre el HTML servido, no solo la presencia de clases).
+
+---
+
+## 25. Pase 4.3-A.5 aplicado (2026-08-16) — addendum del operador
+
+- Segundo pase seguido con CI verde a la primera y cero arreglos del operador. Checklist O1-O4 completo; verificado en producción que el post 4 sale ordenado SIN reanálisis, como predecía tu nota.
+- **O1 merece entrar en el catálogo de trampas del proyecto**: `.annotate(Count(...))` introduce un GROUP BY que ANULA el `ordering` del Meta en PostgreSQL — el queryset sale en orden de inserción. Cada vez que anotes agregados sobre un modelo con orden natural, añade `.order_by()` explícito. Es el segundo bug "el código parecía bien pero la presentación mentía" tras el de los decimales del A.4.
+- O3 (reanalizar) pasa por `try_spend`: bien. Si en el futuro añades acciones de moderador que gasten presupuesto, mantén ese patrón — el candado económico no se salta ni por un mod.
+- O4: la funcionalidad ya existía desde el A.3 y solo faltaba visibilidad. Buen recordatorio de que "no lo encuentro" es un bug de diseño, no una petición menor.

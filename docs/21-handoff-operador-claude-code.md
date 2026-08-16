@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A.4 en producción (ver git log; este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A.5 en producción (ver git log; este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§24: TODA la historia técnica) y el informe del último pase (`docs/26`).
+> (§1-§25: TODA la historia técnica) y el informe del último pase (`docs/27`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -128,6 +128,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | YAML | Comentarios FUERA de las comillas |
 | Borrar símbolos | grep de usos ANTES, incluidos tests/ y seeds |
 | Números template→JS | Django los renderiza con el decimal del LOCALE (coma en ES) y parseFloat los TRUNCA: normalizar siempre (`stringformat:'s'|cut:','`) |
+| `annotate` + orden | El GROUP BY que introduce `.annotate(Count(...))` ANULA el `ordering` del Meta en PostgreSQL: añade `.order_by()` explícito o la lista sale por orden de inserción |
 | Degradación | Un servicio externo opcional que falla DEGRADA CON WARNING, jamás en silencio (Turnstile y diarización reincidieron) |
 
 ## 8. Informes y preferencias de David
@@ -152,9 +153,9 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-15, tras pase 4.2)
 
-- **Producción**: pase 4.3-A.4 (rejilla real ¿quién habla?|vídeo|transcripción, scroll
-  desacoplado, hablante activo iluminado, tiempos con punto decimal), 6 contenedores Up,
-  58/58 tests, logs limpios. Espejo: mismo commit, APAGADO.
+- **Producción**: pase 4.3-A.5 (transcripción en orden cronológico, frase activa en negro,
+  reanalizar-con-IA para mods, registro destacado en el panel), 6 contenedores Up,
+  62/62 tests, logs limpios. Espejo: mismo commit, APAGADO.
 - **Funcional**: MOCK_AGENTS=true (David aún sin poner ANTHROPIC_API_KEY → todo [SIMULADO]
   y sin gasto), Brevo REAL activo (emails de verificación/bienvenida salen), Turnstile sin
   claves (warning esperado en logs), HF_TOKEN presente y la diarización YA funciona
