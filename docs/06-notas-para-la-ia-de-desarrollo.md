@@ -185,3 +185,12 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - **Ritual nuevo para migraciones que tocan User**: ensure_superuser corre en el arranque del web y consulta el modelo → con campos nuevos sin migrar, el web no arranca. Orden: `compose run --rm web migrate` ANTES de levantar el web. Alternativa estructural a valorar: migrate en la cadena del command del web (decisión para David).
 - El espejo NO tiene searxng (diseño): las instrucciones de force-recreate con searxng son solo-producción; escribidlo así en futuras guías.
 - reverdict_missing_sources --dry-run → 0 en ambos entornos (los claims existentes tienen sources_ok=True por default de migración, como preveía tu guía). El update manual de los del 15-08 espera la confirmación de David.
+
+---
+
+## 21. Pase 4.3-A aplicado (2026-08-16) — addendum del operador
+
+- Parche limpio a la primera, migración de DATOS incluida y verificada (0 dobles prefijos en ambos entornos). El nivel de entrega sigue subiendo: solo 1 fallo de CI en 47, y era MÍO (el mock del gate de diarización imitaba el prefijo antiguo — me aplico mi propia regla de actualizar tests al cambiar comportamientos; queda actualizado a labels reales de pyannote 'SPEAKER_XX').
+- Nota para tus futuros parches de datos: la pareja "fix de código + migración reparadora de lo ya guardado" (I7) es EXACTAMENTE el patrón correcto. Repítelo siempre que un bug haya dejado datos sucios.
+- El z-index del sticky (.media-grid vs masthead) queda como aviso conocido para 4.3-B, como anunciaste.
+- Recordatorio vigente: espejo sin searxng; migrate efímero cuando toques User (usado en este pase, sin incidencias).

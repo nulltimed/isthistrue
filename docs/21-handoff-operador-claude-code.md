@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-15 · Estado del repo: pase 4.2 en producción (ver cabecera de git log; este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A en producción (ver git log; este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§20: TODA la historia técnica) y el informe del último pase (`docs/20`).
+> (§1-§21: TODA la historia técnica) y el informe del último pase (`docs/22`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -151,8 +151,9 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-15, tras pase 4.2)
 
-- **Producción**: commit `2dde671`, 6 contenedores Up (web/worker/beat/db/redis/searxng),
-  HTTPS en 3 dominios, 42/42 tests, logs limpios. Espejo: mismo commit, APAGADO.
+- **Producción**: pase 4.3-A (4.2.1 incluido), 6 contenedores Up, HTTPS en 3 dominios,
+  47/47 tests, logs limpios. Espejo: mismo commit, APAGADO. Migración de datos del
+  doble prefijo SPEAKER_ aplicada y verificada (0 residuos).
 - **Funcional**: MOCK_AGENTS=true (David aún sin poner ANTHROPIC_API_KEY → todo [SIMULADO]
   y sin gasto), Brevo REAL activo (emails de verificación/bienvenida salen), Turnstile sin
   claves (warning esperado en logs), HF_TOKEN presente y la diarización YA funciona
@@ -160,8 +161,9 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 - **Pendiente inmediato del pase 4.2**: David debe confirmar (o no) el marcado
   `sources_ok=False` de los claims del 15-08 para re-veredicto (~0,07 €/post; comando
   `reverdict_missing_sources`); dry-run actual: 0. Y su paseo visual (campana, MP, Mi cuenta).
-- **Anunciado por Fable**: pase 4.3 = identificación participativa de hablantes (el hueco
-  visual ya existe; NO construir nada ahí) + los 87 ajustes de Mi cuenta por trozos.
+- **Anunciado por Fable**: 4.3-B (identificación participativa de hablantes — el hueco ya
+  existe; NO construir ahí — y el z-index del sticky .media-grid) + los 87 ajustes de Mi
+  cuenta por trozos sobre la rejilla E1.
   El pase 4.0 (referrer, relegación manual…) fue absorbido de facto por el 4.2 — si llegara
   un "4.0" suelto, ojo: probablemente obsoleto, pregunta antes de aplicar.
 - **Backups**: cron root 00:00 → `/var/log/isthistrue-backup.log`; test de restauración
