@@ -413,6 +413,10 @@ class Pase43A3(TestCase):
         user = make_user()
         post = Post.objects.create(author=user, url='https://youtu.be/abc136x',
                                    title='Ancho total')
+        # M2: los data-start/data-end los emite CADA frase — sin transcripcion no
+        # hay atributos que comprobar (el test original creaba el post vacio).
+        post.transcript_segments.create(start_seconds=0, end_seconds=4.5,
+                                        text='Frase de prueba para el seguimiento en vivo.')
         r = self.client.get(f'/post/{post.pk}/')
         self.assertContains(r, '<main class="wide">')
         self.assertContains(r, 'data-end=')
