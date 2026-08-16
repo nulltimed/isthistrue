@@ -10,6 +10,7 @@ LINEA ROJA (congelada §4.7): aqui no hay NADA de voz. Solo texto y fotos public
 la diarizacion sigue produciendo etiquetas genericas SPEAKER_XX por video y jamas
 se persisten huellas ni embeddings de voz, ni se comparan hablantes entre videos.
 """
+import hashlib
 import logging
 
 import httpx
@@ -70,7 +71,9 @@ def search_people(query, lang='es', limit=6):
     query = ' '.join((query or '').split())
     if len(query) < 3:
         return []
-    key = f'wd:people:{lang}:{query.lower()}'
+    # Clave hasheada: los nombres traen espacios y tildes, y eso rompe con
+    # memcached (CacheKeyWarning). Con LocMem funciona, pero no dejamos trampas.
+    key = 'wd:people:%s:%s' % (lang, hashlib.sha1(query.lower().encode()).hexdigest())
     cached = cache.get(key)
     if cached is not None:
         return cached
