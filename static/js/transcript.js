@@ -28,7 +28,21 @@
   /* 4.3-A.3 M2 (decision de David): transcripcion con SEGUIMIENTO EN VIVO.
    * Cada medio segundo, si el video esta reproduciendose, la frase actual se
    * ilumina (.live) y la columna derecha la sigue con scroll suave interno. */
-  var liveSeg = null;
+  var liveSeg = null, liveSpk = null;
+  /* 4.3-A.4 N3: además de la frase, ilumina en grisáceo la FICHA del hablante
+   * activo en la columna izquierda (data-spk). Al pausar, se ve quién hablaba. */
+  function iluminarHablante(spk) {
+    if (spk === liveSpk) return;
+    if (liveSpk !== null) {
+      var prev = document.querySelector('.speaker-block[data-spk="' + liveSpk + '"]');
+      if (prev) prev.classList.remove('speaking');
+    }
+    if (spk !== null) {
+      var cur = document.querySelector('.speaker-block[data-spk="' + spk + '"]');
+      if (cur) cur.classList.add('speaking');
+    }
+    liveSpk = spk;
+  }
   setInterval(function () {
     if (!ytReady || !ytPlayer || !ytPlayer.getCurrentTime) return;
     if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) return;
@@ -46,6 +60,8 @@
       actual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       liveSeg = actual;
     }
+    // la ficha del hablante sigue a la frase activa (o se apaga si no hay ninguna)
+    iluminarHablante(actual ? actual.getAttribute('data-spk') : null);
   }, 500);
 
   // seekTo global: los timestamps [12s] ya la invocan desde la plantilla.

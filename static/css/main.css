@@ -282,17 +282,22 @@ input.toggle:focus-visible + .toggle-track{outline:2px solid #8a5200;outline-off
    redimensionandose con la ventana. Sin desbordes artificiales de ventana. */
 main.wide{max-width:none;padding:0 1.6rem}
 main.wide .post{width:100%}
-.media-grid{position:sticky;top:0;z-index:20;background:#fff;
-  border-bottom:1px solid var(--line);padding:.6rem 0;
-  display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr) minmax(340px,460px);
+/* 4.3-A.4 N2: rejilla de tres columnas REAL — hablantes | vídeo | transcripción.
+   La rejilla NO es sticky (eso acoplaba el scroll de la página al de la transcripción).
+   Cada columna lateral scrollea por dentro, independiente; el vídeo se queda sticky
+   por su cuenta para no perderlo de vista al leer. Altura de columna atada al viewport. */
+.media-grid{background:#fff;border-bottom:1px solid var(--line);padding:.6rem 0;margin-bottom:1rem;
+  display:grid;grid-template-columns:minmax(230px,300px) minmax(360px,1fr) minmax(360px,480px);
   gap:1.1rem;align-items:start}
+.media-col{position:sticky;top:.6rem}
 .media-col .embed{margin:0}
-.media-col .embed iframe{width:100%;aspect-ratio:16/9;height:auto;min-height:300px;border-radius:8px}
-.speakers-col{max-height:min(60vh,520px);overflow-y:auto;font-size:.85rem}
-.speakers-col h2{margin:.1rem 0 .25rem;font-size:.98rem}
-.speakers-col .hint{font-size:.76rem;margin:.1rem 0 .3rem}
-.transcript-col h2{margin:.1rem 0 .25rem;font-size:.98rem}
-.transcript-col .transcript-box{max-height:min(60vh,520px)}
+.media-col .embed iframe{width:100%;aspect-ratio:16/9;height:auto;min-height:260px;border-radius:8px}
+/* cada lateral: su propio scroll, desacoplado del de la página */
+.speakers-col,.transcript-col{max-height:calc(100vh - 5rem);overflow-y:auto;
+  overscroll-behavior:contain;font-size:.85rem}
+.speakers-col h2,.transcript-col h2{margin:.1rem 0 .25rem;font-size:.98rem}
+.speakers-col .hint,.transcript-col .hint{font-size:.76rem;margin:.1rem 0 .3rem}
+.transcript-col .transcript-box{max-height:none;overflow:visible;border:0;padding:0}
 .speaker-block{border:1px solid var(--line);border-radius:8px;padding:.35rem .5rem;margin:.35rem 0;background:#fff}
 .candidate{display:flex;align-items:center;gap:.35rem;padding:.15rem 0;flex-wrap:wrap}
 .candidate img{border-radius:50%;width:28px;height:28px}
@@ -300,9 +305,9 @@ main.wide .post{width:100%}
 .propose-form{display:flex;gap:.3rem;margin-top:.25rem}
 .propose-form input[name=name]{flex:1;min-width:0;font-size:.85rem;padding:.25rem .4rem}
 @media (max-width:1100px){
-  .media-grid{position:static;grid-template-columns:1fr;width:auto;margin-left:0;padding:.4rem 0}
-  .media-col{order:-1}
-  .speakers-col,.transcript-col .transcript-box{max-height:none}
+  .media-grid{grid-template-columns:1fr;width:auto;margin-left:0;padding:.4rem 0}
+  .media-col{order:-1;position:static}
+  .speakers-col,.transcript-col{max-height:none;overflow:visible}
 }}
 
 /* 4.3-A: foro clasico — separador de no leidos, firma */
@@ -328,5 +333,9 @@ main.wide .post{width:100%}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 
 
-/* 4.3-A.3 M2: seguimiento EN VIVO — la frase que suena se ilumina y la columna la sigue */
+/* 4.3-A.3 M2 + 4.3-A.4 N3: seguimiento EN VIVO. La frase que suena se ilumina (ámbar
+   suave) y su columna la sigue; y la FICHA del hablante activo (columna izquierda) se
+   resalta en GRISÁCEO —así, al pausar el vídeo, se ve de un vistazo quién estaba hablando. */
 .segment.live{background:#fdf3e3;border-left:3px solid #f0c48a;border-radius:4px}
+.speaker-block.speaking{background:#e9ecef;border-color:#9aa2ac;
+  box-shadow:inset 3px 0 0 #6c757d;transition:background .15s,box-shadow .15s}

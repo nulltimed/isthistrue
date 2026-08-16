@@ -5,7 +5,7 @@
     <h2>{% trans "¿Quién habla?" %}</h2>
     <p class="hint">{% trans "Propón o vota. El voto de moderador confirma en solitario. Solo figuras públicas tendrán página propia." %}</p>
     {% for label, num in speaker_names.items %}
-      <div class="speaker-block">
+      <div class="speaker-block" data-spk="{{ num|add:-1 }}">
         <strong class="speaker-tag spk-{{ num|add:-1 }}">{% trans "Hablante" %} {{ num }}</strong>
         {% for group in speaker_groups %}{% if group.grouper == label %}{% for prop in group.list %}
           <div class="candidate {% if prop.confirmed %}confirmed{% endif %}">
@@ -28,6 +28,29 @@
     </aside>
     <div class="media-col"><div class="embed">{{ embed|safe }}</div></div>
     <aside class="transcript-col">
+      <h2>{% trans "Transcripción sincronizada" %}</h2>
+      <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}</p>
+      <div class="transcript transcript-box" data-platform="{{ post.platform }}">
+      {% for s in segments %}
+        <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
+             data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}">
+          <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% trans "Hablante" %} {{ s.spk_idx|add:1 }}</span>{% endif %}
+          <span class="text">{{ s.text }}</span>
+          {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
+          {% if post.status == 'DONE' and user.is_authenticated %}
+          <span class="seg-votes" id="seg-{{ s.pk }}">
+            <form method="post" action="{% url 'segment_vote' s.pk 'up' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'La verificación de esta oración es correcta' %}">{% icon 'up' 14 %}{{ s.ups }}</button></form>
+            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Discuto esta verificación' %}">{% icon 'down' 14 %}{{ s.downs }}</button></form>
+            {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
+          </span>
+          {% endif %}
+          {% if hide_opinions and s.signal == 'OPINION' %}
+            <div class="blur-overlay" onclick="this.parentElement.classList.remove('blurred')">
+              Esto es una opinión — clic para verla</div>
+          {% endif %}
+        </div>
+      {% empty %}<p>Sin transcripción todavía.</p>{% endfor %}
+      </div>
     </aside>
   </div>
 
@@ -74,27 +97,5 @@
     </div>
   {% endif %}
 
-  <h2>Transcripción sincronizada</h2>
-  <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}</p>
-  <div class="transcript transcript-box" data-platform="{{ post.platform }}">
-  {% for s in segments %}
-    <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
-         data-start="{{ s.start_seconds }}" data-end="{{ s.end_seconds }}">
-      <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% trans "Hablante" %} {{ s.spk_idx|add:1 }}</span>{% endif %}
-      <span class="text">{{ s.text }}</span>
-      {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
-      {% if post.status == 'DONE' and user.is_authenticated %}
-      <span class="seg-votes" id="seg-{{ s.pk }}">
-        <form method="post" action="{% url 'segment_vote' s.pk 'up' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'La verificación de esta oración es correcta' %}">{% icon 'up' 14 %}{{ s.ups }}</button></form>
-        <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Discuto esta verificación' %}">{% icon 'down' 14 %}{{ s.downs }}</button></form>
-        {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
-      </span>
-      {% endif %}
-      {% if hide_opinions and s.signal == 'OPINION' %}
-        <div class="blur-overlay" onclick="this.parentElement.classList.remove('blurred')">
-          Esto es una opinión — clic para verla</div>
-      {% endif %}
-    </div>
-  {% empty %}<p>Sin transcripción todavía.</p>{% endfor %}
-  </div>
+  {% comment %} La transcripción vive ahora en la columna derecha de la rejilla (arriba). {% endcomment %}
   {% if user.is_authenticated %}<form method="post" action="{% url 'post_upvote' post.pk %}" style="display:inline">{% csrf_token %}<button class="mini">▲ Votar ({{ post.votes.count }})</button></form>{% endif %}

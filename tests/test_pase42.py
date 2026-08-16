@@ -422,3 +422,35 @@ class Pase43A3(TestCase):
         self.assertContains(r, 'data-end=')
         css = open('static/css/main.css').read()
         self.assertNotIn('100vw', css)   # el contenedor cutre, extinto con test
+
+
+class Pase43A4(TestCase):
+    """4.3-A.4: tres columnas reales (transcripción a la derecha, no debajo),
+    scroll desacoplado, y la ficha del hablante activo iluminada en grisáceo."""
+
+    def test_transcripcion_dentro_de_la_columna_derecha(self):
+        user = make_user()
+        post = Post.objects.create(author=user, url='https://youtu.be/abc137x',
+                                   title='Tres columnas')
+        r = self.client.get(f'/post/{post.pk}/')
+        html = r.content.decode()
+        # la caja de transcripción debe estar DENTRO de la aside derecha, no suelta debajo
+        i_col = html.find('transcript-col')
+        i_box = html.find('transcript transcript-box')
+        i_close = html.find('</aside>', i_col)
+        self.assertTrue(i_col != -1 and i_box != -1)
+        self.assertLess(i_col, i_box)          # la columna abre antes que la caja
+        self.assertLess(i_box, i_close)        # y la caja está antes de que cierre la columna
+        self.assertEqual(html.count('transcript transcript-box'), 1)  # sin duplicar
+
+    def test_ficha_de_hablante_marcada_para_iluminar(self):
+        css = open('static/css/main.css').read()
+        js = open('static/js/transcript.js').read()
+        self.assertIn('.speaker-block.speaking', css)   # el grisáceo existe
+        self.assertIn('iluminarHablante', js)           # y el JS lo activa
+
+    def test_grid_no_es_sticky_global(self):
+        # la rejilla entera dejó de ser sticky (eso acoplaba el scroll)
+        css = open('static/css/main.css').read()
+        bloque = css.split('.media-grid{')[1][:80]
+        self.assertNotIn('position:sticky', bloque)
