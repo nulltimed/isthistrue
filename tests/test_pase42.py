@@ -577,10 +577,15 @@ class AutocompletadoHablantes(TestCase):
     """Identificación unívoca de hablantes con Wikidata (2026-08-17, David).
     La diarización pone SPEAKER_XX; el usuario pone NOMBRE con identidad (QID)."""
 
+    _n = 0
+
     def _post_con_hablante(self):
-        post = Post.objects.create(author=make_user(username='autorwd',
-                                                    email='autorwd@example.org'),
-                                   url='https://youtu.be/abcwd01', status='DONE')
+        # Usuario y URL únicos por llamada: el test de homónimos crea DOS posts.
+        type(self)._n += 1
+        n = type(self)._n
+        post = Post.objects.create(author=make_user(username=f'autorwd{n}',
+                                                    email=f'autorwd{n}@example.org'),
+                                   url=f'https://youtu.be/abcwd{n:03d}', status='DONE')
         post.transcript_segments.create(start_seconds=0, end_seconds=4,
                                         text='Frase del hablante.',
                                         speaker_label='SPEAKER_00')
