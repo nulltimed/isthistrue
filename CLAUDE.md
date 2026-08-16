@@ -86,3 +86,8 @@ Un despliegue "funcional pero feo" es un despliegue ROTO a ojos del usuario.
 
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.
+**Y actualiza el handoff (`docs/21-handoff-operador-claude-code.md`) en CADA iteración de
+despliegue** (orden de David, 2026-08-15): fecha y commit de cabecera, sección §10 "Estado
+EXACTO" y cualquier regla/trampa nueva de la iteración. Se commitea y sube a GitHub junto
+con el informe del pase. El handoff debe permitir SIEMPRE que otra instancia de Claude Code
+continúe el trabajo sin explicaciones adicionales.

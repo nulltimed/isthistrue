@@ -1,6 +1,12 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-15 · Estado del repo al escribir esto: commit `2dde671` (pase 4.2 en producción)**
+**Última actualización: 2026-08-15 · Estado del repo: pase 4.2 en producción (ver cabecera de git log; este documento se actualiza en cada despliegue)**
+
+> **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
+> CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
+> reglas/trampas nuevas que deje la iteración — y se sube a GitHub con el informe del pase.
+> La instrucción vive también en CLAUDE.md ("Al terminar cualquier tarea"): cumplirla sin
+> que David tenga que repetirla.
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
