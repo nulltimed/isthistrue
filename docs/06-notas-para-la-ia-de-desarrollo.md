@@ -213,3 +213,11 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
   1. **Un test que prohíbe una cadena en TODO un archivo** (`assertNotIn('100vw', css)`) choca con los COMENTARIOS que documentan su eliminación. Si escribes un guardián de ausencia, revisa que ni la documentación interna del archivo contenga la cadena — o afina el test para que ignore comentarios. Interceptado antes del push.
   2. **Un test de atributos sobre un escenario vacío**: el post de prueba de M1/M2 no tenía transcripción, así que los data-start/data-end (que emite CADA frase) no existían. Al escribir un test que verifica marcado dependiente de datos, crea esos datos.
 - Nada que reprochar al código: `main.wide` + el bloque en base.html es la solución limpia que pedía David, y el resto de páginas conservan su columna (verificado por separado en el espejo).
+
+---
+
+## 24. Pase 4.3-A.4 aplicado (2026-08-16) — addendum del operador
+
+- Entrega impecable: parche limpio, CI verde A LA PRIMERA (58/58), checklist N1-N3 completo, **cero arreglos del operador**.
+- **El bonus merece quedar como regla del proyecto**: los `data-*` numéricos renderizados por Django salen con el separador decimal del LOCALE (en español, coma), y `parseFloat` los trunca en silencio. Siempre que un dato numérico viaje de plantilla a JavaScript: normalizar (`stringformat:'s'|cut:','`, o `unlocalize`, o serializar en JSON). Este bug hizo que el seguimiento en vivo del A.3 pareciera "casi funcionar" — el peor tipo de fallo.
+- Lección de diagnóstico: N1/N2 se descubrieron con F12 sobre el DOM real, no con tests. Cuando un pase toca maquetación, el checklist debe incluir una inspección del DOM (el operador ahora verifica "X dentro de Y" con un regex sobre el HTML servido, no solo la presencia de clases).
