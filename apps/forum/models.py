@@ -16,6 +16,18 @@ class ModerationCase(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class TopicRead(models.Model):
+    """4.3-A J4: hasta donde leyo cada usuario en cada hilo — alimenta el separador
+    «nuevos desde tu ultima visita» y el boton de saltar al ultimo no leido."""
+    topic_id = models.IntegerField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    last_post_id = models.IntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('topic_id', 'user')
+
+
 class MessageSensitive(models.Model):
     """4.2 H1: mensaje difuminado PARA TODOS ("puede ser sensible; clic para verlo").
     Origen: moderador/superusuario a mano, expediente Haiku, o umbral de reportes."""

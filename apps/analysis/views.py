@@ -65,6 +65,12 @@ def submit(request):
                                'author_opinion': author_opinion,
                                'is_adult': author_adult_flag,
                                'adult_flag_source': 'author' if author_adult_flag else ''})
+        if created and not post.title:
+            from apps.embeds.adapters import fetch_title
+            title = fetch_title(url, platform)  # I2: titulo inmediato (oEmbed, 4 s max)
+            if title:
+                post.title = title
+                post.save(update_fields=['title'])
         AnalysisRequest.objects.create(post=post, user=request.user,
                                        served_from_cache=not created)
         if not created:
@@ -113,14 +119,14 @@ def post_detail(request, pk):
     for s in segments:
         s.spk_idx = idx.get(s.speaker_label)          # None si sin hablante
         s.spk_color = (s.spk_idx % 8) if s.spk_idx is not None else None
+    # 4.2.1 I7: la MISMA numeracion "Hablante N" en transcripcion y "¿Quien habla?"
+    speaker_names = {label: i + 1 for label, i in idx.items()}
     hide_opinions = bool(u and u.hide_opinions)
     # 4.2 C4: el analisis y su hilo del foro son UNA sola pagina.
     from apps.forum.machina_glue import get_topic_for_post
     topic_obj = get_topic_for_post(post)
-    thread_messages = (topic_obj.posts.filter(approved=True)
-                       .select_related('poster').order_by('created')
-                       if topic_obj else [])
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
+    thread_messages, page_obj, first_unread_pk = _thread_page(topic_obj, u, request)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
     from apps.forum.models import MessageSensitive, HiddenMessage
     msg_ids = [m.pk for m in thread_messages]
@@ -140,6 +146,8 @@ def post_detail(request, pk):
         'votes_rescue': post.distinct_validation_votes('RESCUE'),
         'name_proposals': post.name_proposals.select_related('interlocutor')
                               .order_by('speaker_label', '-confirmed'),
+        'speaker_names': speaker_names, 'page_obj': page_obj,
+        'first_unread_pk': first_unread_pk,
         'topic_obj': topic_obj, 'thread_messages': thread_messages,
         'is_mod': is_mod, 'is_trending': post.is_trending(),
         'my_subscription': (post.subscriptions.filter(user=u).first() if u else None),
@@ -153,6 +161,10 @@ def post_status(request, pk):
                                'PENDING_VALIDATION', 'HELD_FOR_REVIEW',
                                'VALIDATION_EXPIRED')
     resp = render(request, 'partials/post_status.html', {'post': post})
+    # 4.2.1 I3: cuando el analisis alcanza un estado terminal, htmx recarga la
+    # pagina completa — la transcripcion aparece sin que nadie pulse F5.
+    if terminal:
+        resp['HX-Refresh'] = 'true'
     if terminal:
         resp['HX-Reswap'] = 'outerHTML'
         resp.status_code = 286  # HTMX: stop polling
@@ -161,6 +173,64 @@ def post_status(request, pk):
 
 def _require_mod(user):
     return user.is_authenticated and (user.is_staff or user.level == 'MOD')
+
+
+def _thread_page(topic_obj, u, request, per_page=20):
+    """4.3-A J4: pagina del hilo (foro clasico: 20/pagina) + primer no leido.
+    Registra el punto de lectura del usuario (TopicRead) al servir la pagina."""
+    from django.core.paginator import Paginator
+    if not topic_obj:
+        return [], None, None
+    qs = topic_obj.posts.filter(approved=True).select_related('poster').order_by('created')
+    paginator = Paginator(qs, per_page)
+    first_unread_pk = None
+    if u:
+        from apps.forum.models import TopicRead
+        tr, _ = TopicRead.objects.get_or_create(topic_id=topic_obj.pk, user=u)
+        unread = qs.filter(pk__gt=tr.last_post_id).first()
+        first_unread_pk = unread.pk if unread else None
+    raw = request.GET.get('pagina', '')
+    if raw.isdigit():
+        number = int(raw)
+    elif first_unread_pk:  # sin pagina pedida: aterrizar donde estan los nuevos
+        idx = list(qs.values_list('pk', flat=True)).index(first_unread_pk)
+        number = idx // per_page + 1
+    else:
+        number = paginator.num_pages  # convencion de foro: la ultima pagina
+    page_obj = paginator.get_page(number)
+    messages_list = list(page_obj.object_list)
+    for m in messages_list:
+        m.first_unread = (m.pk == first_unread_pk)
+    if u and messages_list:
+        from apps.forum.models import TopicRead
+        newest = qs.last()
+        TopicRead.objects.filter(topic_id=topic_obj.pk, user=u).update(
+            last_post_id=newest.pk if newest else 0)
+    return messages_list, page_obj, first_unread_pk
+
+
+def post_thread_fragment(request, pk):
+    """4.2.1 I3: los mensajes del hilo, como fragmento htmx (sondeo cada 12 s)."""
+    post = get_object_or_404(Post, pk=pk)
+    u = request.user if request.user.is_authenticated else None
+    is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
+    from apps.forum.machina_glue import get_topic_for_post
+    topic_obj = get_topic_for_post(post)
+    thread_messages, page_obj, _first = _thread_page(topic_obj, u, request)
+    from apps.forum.models import MessageSensitive, HiddenMessage
+    msg_ids = [m.pk for m in thread_messages]
+    sensitive_ids = set(MessageSensitive.objects.filter(
+        machina_post_id__in=msg_ids).values_list('machina_post_id', flat=True))
+    hidden_ids = (set(HiddenMessage.objects.filter(user=u, machina_post_id__in=msg_ids)
+                      .values_list('machina_post_id', flat=True)) if u else set())
+    for m in thread_messages:
+        m.is_sensitive = m.pk in sensitive_ids
+        m.hidden_by_me = m.pk in hidden_ids
+        m.pm_allowed = bool(u and m.poster and m.poster != u and
+                            (m.poster.accept_private_messages or is_mod))
+    return render(request, 'partials/thread_messages.html',
+                  {'post': post, 'thread_messages': thread_messages, 'is_mod': is_mod,
+                   'page_obj': page_obj})
 
 
 @login_required
@@ -201,6 +271,29 @@ def unrelegate(request, pk):
 
 
 @login_required
+def propose_speaker_name(request, pk):
+    """4.2.1 I7: caja interactiva — el usuario propone quien es el hablante.
+    Se crea como candidato (source=user) y entra en el voto participativo de
+    siempre (5 usuarios o 1 mod confirman). La normalizacion Haiku y el
+    autocompletado Wikidata llegan en 4.3."""
+    from apps.wiki.models import SpeakerNameProposal
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        label = request.POST.get('label', '').strip()[:20]
+        name = ' '.join(request.POST.get('name', '').split())[:160]
+        valid_labels = set(post.transcript_segments.exclude(speaker_label='')
+                           .values_list('speaker_label', flat=True))
+        if label in valid_labels and len(name) >= 3:
+            SpeakerNameProposal.objects.get_or_create(
+                post=post, speaker_label=label, candidate_name=name,
+                defaults={'source': 'user'})
+            messages.success(request, 'Candidato propuesto. Ahora, ¡a votar!')
+        else:
+            messages.error(request, 'Propuesta no válida.')
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
 def segment_vote(request, pk, direction):
     """4.2 H5: ▲/▼ por oracion. Repetir el mismo voto lo retira; el contrario lo cambia.
     Umbral de ▼ (SystemSetting segment_opus_downvotes) -> re-analisis Opus de ESA oracion."""
@@ -225,6 +318,33 @@ def segment_vote(request, pk, direction):
         opus_rescan_segment.delay(seg.pk)
         messages.info(request, 'Oración muy discutida: se re-analizará con el modelo premium.')
     return redirect(f"/post/{seg.post_id}/#seg-{seg.pk}")
+
+
+@login_required
+def message_edit(request, mpost_id):
+    """4.3-A J4: editar TU mensaje durante 15 minutos (estandar de foro).
+    La edicion de moderacion llegara con su registro en el 4.4."""
+    from django.utils import timezone
+    from machina.core.db.models import get_model
+    MPost = get_model('forum_conversation', 'Post')
+    m = get_object_or_404(MPost, pk=mpost_id)
+    if m.poster_id != request.user.pk:
+        return redirect('/')
+    if (timezone.now() - m.created).total_seconds() > 900:
+        messages.error(request, 'La ventana de edición (15 minutos) ha pasado.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()[:8000]
+        if content:
+            m.content = content
+            m.save()
+            messages.success(request, 'Mensaje editado.')
+        try:
+            pk = int(m.topic.slug.split('-')[1])
+            return redirect(f'/post/{pk}/#hilo')
+        except (IndexError, ValueError):
+            return redirect('/')
+    return render(request, 'analysis/message_edit.html', {'m': m})
 
 
 @login_required
@@ -374,6 +494,11 @@ def upvote(request, pk):
             post.trending_notified = False  # se rearma al caer del umbral
             post.save(update_fields=['trending_notified'])
     else:
+        from apps.accounts.services import notify as _notify
+        if post.author_id != request.user.pk:
+            _notify(post.author, f'{request.user.username} ha votado tu post: '
+                                 f'{(post.title or post.url)[:80]}',
+                    f'/post/{post.pk}/', kind='post_votes')
         # 4.2 D4: al CRUZAR el umbral (no en cada voto) avisa una sola vez.
         if not post.trending_notified and post.is_trending():
             post.trending_notified = True

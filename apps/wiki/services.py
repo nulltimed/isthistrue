@@ -25,9 +25,17 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     claim.what_is_claimed = verdict.get('what_is_claimed', '')
     claim.what_evidence_says = verdict.get('what_evidence_says', '')
     claim.the_difference = verdict.get('the_difference', '')
+    old_color = Claim.objects.filter(pk=claim.pk).values_list('color', flat=True).first()
     claim.sensitive = verdict.get('sensitive') or ''
     claim.sources_ok = sources_ok
     claim.save()
+    # 4.3-A J3: el semaforo de un claim seguido cambia -> aviso a sus seguidores
+    if old_color and old_color != claim.color:
+        from apps.accounts.services import notify
+        for f in claim.followers.select_related('user'):
+            notify(f.user, f'El semáforo de un claim que sigues ha cambiado: '
+                           f'«{claim.text_original[:70]}»',
+                   f'/wiki/claim/{claim.slug or claim.pk}/', kind='claim_color')
     ClaimVersion.objects.create(claim=claim, color=claim.color, body_snapshot=verdict)
     claim.sources.all().delete()
     for s in verdict.get('sources', []):

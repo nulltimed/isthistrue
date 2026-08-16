@@ -39,6 +39,16 @@ class User(AbstractUser):
     # 4.2 H8: buzon de mensajes privados. CERRADO por defecto (factura vista: canal
     # invisible a la moderacion comunitaria); mods/superusuario siempre pueden escribir.
     accept_private_messages = models.BooleanField(default=False)
+    # 4.3-A (J1): notificaciones afinadas por tipo + firma del foro
+    signature = models.CharField(max_length=200, blank=True, default='')
+    notify_prefs = models.JSONField(default=dict, blank=True)  # {'mentions': False, ...}
+    digest_hour = models.PositiveSmallIntegerField(default=8)  # hora del resumen
+    quiet_night = models.BooleanField(default=True)            # sin emails 23-8
+    notifications_paused_until = models.DateTimeField(null=True, blank=True)
+
+    def wants(self, key):
+        """Preferencia de aviso por tipo; sin registro = si (opt-out)."""
+        return bool(self.notify_prefs.get(key, True))
 
     @property
     def age(self):

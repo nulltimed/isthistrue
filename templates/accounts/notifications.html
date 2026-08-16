@@ -1,5 +1,12 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Notificaciones</h1>
-<ul>{% for n in notes %}<li>{{ n.created_at|date:'d/m H:i' }} — {% if n.url %}<a href="{{ n.url }}">{{ n.text }}</a>{% else %}{{ n.text }}{% endif %}</li>
-{% empty %}<li>Nada por aquí.</li>{% endfor %}</ul>
+{% extends 'base.html' %}{% load i18n istt_icons %}{% block content %}
+<h1>{% icon 'bell' 22 %} {% trans "Notificaciones" %}</h1>
+<form method="post" class="search-form">{% csrf_token %}
+  <button name="clear" value="1" class="mini">{% icon 'trash' 14 %} {% trans "Vaciar todo" %}</button>
+  {% if paused %}<button name="resume" value="1" class="mini">{% trans "Reanudar emails" %}</button>
+  {% else %}<button name="pause" value="1" class="mini">{% trans "Pausar emails 24 h" %}</button>{% endif %}
+</form>
+<ul>{% for g in grouped %}
+  <li>{{ g.n.created_at|date:'d/m H:i' }} — {% if g.n.url %}<a href="{{ g.n.url }}">{{ g.n.text }}</a>{% else %}{{ g.n.text }}{% endif %}
+  {% if g.count > 1 %}<span class="badge">×{{ g.count }}</span>{% endif %}</li>
+{% empty %}<li class="hint">{% trans "Nada por aquí." %}</li>{% endfor %}</ul>
 {% endblock %}

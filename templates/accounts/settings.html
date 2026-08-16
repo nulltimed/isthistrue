@@ -1,9 +1,5 @@
 {% extends 'base.html' %}{% load i18n istt_icons %}
 {% block content %}
-{# Pase 4.2 E1 (decision de David): secciones a la izquierda, ajustes a la derecha,
-   interruptores (toggle) con el control a la IZQUIERDA y la explicacion a la
-   DERECHA. Navegacion por anclas + resaltado :target — funciona SIN JavaScript.
-   Las opciones NUEVAS del quiz de 50 llegaran en el pase 4.3 sobre esta rejilla. #}
 <div class="settings-layout">
   <nav class="settings-nav" aria-label="{% trans 'Secciones de Mi cuenta' %}">
     <a href="#perfil">{% icon 'user' 18 %} {% trans "Perfil" %}</a>
@@ -27,6 +23,12 @@
             <input id="avatar-input" type="file" name="avatar" accept="image/*">
           </div>
         </div>
+        <div class="setting-row">
+          <span class="setting-control">{% icon 'chat' 18 %}</span>
+          <div class="setting-text"><label for="sig"><strong>{% trans "Firma" %}</strong></label>
+            <p class="hint">{% trans "Una línea corta bajo cada mensaje tuyo del foro. Vacía = sin firma." %}</p>
+            <input id="sig" name="signature" maxlength="200" value="{{ u.signature }}"></div>
+        </div>
       </section>
 
       <section id="contenido" class="settings-section">
@@ -47,6 +49,30 @@
 
       <section id="notificaciones" class="settings-section">
         <h2>{% icon 'bell' 18 %} {% trans "Notificaciones" %}</h2>
+        {% for key, label, hint, val in pref_rows %}
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="p-{{ key }}" name="pref_{{ key }}" {% if val %}checked{% endif %}><label class="toggle-track" for="p-{{ key }}" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="p-{{ key }}"><strong>{{ label }}</strong></label>
+          <p class="hint">{{ hint }}</p></div>
+        </div>
+        {% endfor %}
+        <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-qn" name="quiet_night" {% if u.quiet_night %}checked{% endif %}><label class="toggle-track" for="t-qn" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-qn"><strong>{% trans "Silencio nocturno" %}</strong></label>
+          <p class="hint">{% trans "Nada de emails entre las 23:00 y las 8:00. La campana no descansa." %}</p></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-control">{% icon 'gauge' 18 %}</span>
+          <div class="setting-text"><label for="dh"><strong>{% trans "Hora del resumen diario" %}</strong></label>
+            <p class="hint">{% trans "Si eliges resumen diario, llega a esta hora." %}</p>
+            <select id="dh" name="digest_hour">{% for h in hours %}<option value="{{ h }}" {% if u.digest_hour == h %}selected{% endif %}>{{ h }}:00</option>{% endfor %}</select></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-control">{% icon 'bell' 18 %}</span>
+          <div class="setting-text"><strong>{% trans "Notificaciones del navegador" %}</strong>
+            <p class="hint">{% trans "Permiso del sistema para avisos aunque la pestaña esté en segundo plano." %}</p>
+            <button type="button" class="mini" onclick="if('Notification' in window)Notification.requestPermission()">{% trans "Conceder permiso" %}</button></div>
+        </div>
         <div class="setting-row">
           <span class="setting-control">{% icon 'mail' 18 %}</span>
           <div class="setting-text"><label for="nm"><strong>{% trans "Cómo avisarte" %}</strong></label>

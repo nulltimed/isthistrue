@@ -38,6 +38,15 @@ def settings_view(request):
         u.notify_mode = request.POST.get('notify_mode', u.notify_mode)
         u.allow_friend_requests = request.POST.get('allow_friend_requests') == 'on'
         u.accept_private_messages = request.POST.get('accept_private_messages') == 'on'
+        # 4.3-A J5: avisos por tipo, firma, silencio nocturno y hora del resumen
+        PREF_KEYS = ['post_phase', 'thread_replies', 'mentions', 'claim_color',
+                     'trending', 'post_votes', 'project_news']
+        u.notify_prefs = {k: request.POST.get('pref_' + k) == 'on' for k in PREF_KEYS}
+        u.quiet_night = request.POST.get('quiet_night') == 'on'
+        u.signature = request.POST.get('signature', '').strip()[:200]
+        dh = request.POST.get('digest_hour', '')
+        if dh.isdigit() and 0 <= int(dh) <= 23:
+            u.digest_hour = int(dh)
         if request.FILES.get('avatar'):
             u.avatar = request.FILES['avatar']
             u.avatar_approved = True
@@ -47,7 +56,18 @@ def settings_view(request):
             check_avatar.delay(u.pk)
         messages.success(request, 'Preferencias guardadas.')
         return redirect('account_settings')
-    return render(request, 'accounts/settings.html', {'u': u})
+    PREF_ROWS = [
+        ('post_phase', 'Mi post cambia de fase', 'Transcripción lista, veredictos publicados…'),
+        ('thread_replies', 'Nuevos mensajes en posts suscritos', 'La conversación sigue sin ti: te avisa.'),
+        ('mentions', 'Menciones y citas (@tu-nombre)', 'Alguien te nombra o te cita en un hilo.'),
+        ('claim_color', 'Un claim que sigo cambia de semáforo', 'El color de la wiki se mueve.'),
+        ('trending', 'Un post suscrito entra en Trending', 'El fuego te llega a la campana.'),
+        ('post_votes', 'Votos a mis posts', 'Cada ▲ que recibes, si quieres saberlo.'),
+        ('project_news', 'Novedades del proyecto', 'Cuando la plataforma estrene algo.'),
+    ]
+    pref_rows = [(k, lbl, hint, u.wants(k)) for k, lbl, hint in PREF_ROWS]
+    return render(request, 'accounts/settings.html',
+                  {'u': u, 'pref_rows': pref_rows, 'hours': range(24)})
 
 
 @login_required
@@ -80,9 +100,35 @@ def delete_account(request):
 
 @login_required
 def notifications(request):
-    notes = request.user.notifications.all()[:50]
+    """4.3-A J5: avisos AGRUPADOS (mismo texto+destino = una linea con contador),
+    con botones de vaciar todo y de pausar 24 horas."""
+    from django.utils import timezone
+    if request.method == 'POST':
+        if 'clear' in request.POST:
+            request.user.notifications.all().delete()
+            messages.success(request, 'Avisos vaciados.')
+        elif 'pause' in request.POST:
+            request.user.notifications_paused_until = timezone.now() + timezone.timedelta(hours=24)
+            request.user.save(update_fields=['notifications_paused_until'])
+            messages.success(request, 'Emails de aviso en pausa 24 horas (la campana sigue).')
+        elif 'resume' in request.POST:
+            request.user.notifications_paused_until = None
+            request.user.save(update_fields=['notifications_paused_until'])
+            messages.success(request, 'Pausa retirada.')
+        return redirect('notifications')
+    grouped, seen = [], {}
+    for n in request.user.notifications.all()[:200]:
+        key = (n.text, n.url)
+        if key in seen:
+            seen[key]['count'] += 1
+        else:
+            seen[key] = {'n': n, 'count': 1}
+            grouped.append(seen[key])
     request.user.notifications.filter(read=False).update(read=True)
-    return render(request, 'accounts/notifications.html', {'notes': notes})
+    paused = (request.user.notifications_paused_until
+              and request.user.notifications_paused_until > timezone.now())
+    return render(request, 'accounts/notifications.html',
+                  {'grouped': grouped[:60], 'paused': paused})
 
 
 @login_required

@@ -83,8 +83,10 @@ def notify_post_event(post, kind, text):
                 .select_related('user')):
         recipients[sub.user_id] = sub.user
     title = (post.title or post.url)[:80]
+    pref_key = {'analysis': 'post_phase', 'messages': 'thread_replies',
+                'trending': 'trending'}[kind]
     for user in recipients.values():
-        notify(user, f'{text}: {title}', url)
+        notify(user, f'{text}: {title}', url, kind=pref_key)
 
 
 def launch_full_analysis(post):
@@ -140,6 +142,26 @@ def relegate_expired_validations():
         post.relegation_reason = 'Sin validación comunitaria en plazo'
         post.save(update_fields=['status', 'offtopic_suggested', 'relegation_reason'])
     return n
+
+
+_VTT_TIME = re.compile(r'(\d+):(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(\d+):(\d{2}):(\d{2})[.,](\d{3})')
+
+
+def _parse_vtt(text):
+    """4.2.1 I4: WebVTT -> segmentos {'start_seconds','end_seconds','text'}.
+    Formato simple: linea de tiempos + lineas de texto; cabecera y notas fuera."""
+    cues, cur = [], None
+    for raw in text.splitlines():
+        line = re.sub(r'<[^>]+>', '', raw).strip()
+        m = _VTT_TIME.match(line)
+        if m:
+            h1, m1, s1, ms1, h2, m2, s2, ms2 = map(int, m.groups())
+            cur = {'start_seconds': h1 * 3600 + m1 * 60 + s1 + ms1 / 1000,
+                   'end_seconds': h2 * 3600 + m2 * 60 + s2 + ms2 / 1000, 'text': ''}
+            cues.append(cur)
+        elif cur is not None and line and not line.startswith(('WEBVTT', 'NOTE', 'Kind:', 'Language:')):
+            cur['text'] = (cur['text'] + ' ' + line).strip()
+    return [c for c in cues if c['text']]
 
 
 _SENTENCE_END = re.compile(r'[.!?…]["»›)\]]?\s*$')
@@ -200,6 +222,12 @@ def _transcribe_first_tranche(post, tmpdir):
     outpath = os.path.join(tmpdir, 'audio.%(ext)s')
     opts = {'format': 'bestaudio/best', 'outtmpl': outpath, 'quiet': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
+            # 4.2.1 I4 (decision de David): si el video trae subtitulos HUMANOS,
+            # ellos mandan sobre el oido de whisper (pronunciaciones dificiles).
+            # Los automaticos NO (son otro ASR, sin ventaja). El audio se baja
+            # igual: la diarizacion lo necesita para separar voces.
+            'writesubtitles': True, 'writeautomaticsub': False,
+            'subtitleslangs': ['es', 'gl', 'en'], 'subtitlesformat': 'vtt',
             'download_ranges': yt_dlp.utils.download_range_func(None, [(0, 1200)])}
     with yt_dlp.YoutubeDL(opts) as ydl:
         # 4.2 F1 (decision de David): el TITULO sustituye al enlace en bruto en la
@@ -215,7 +243,16 @@ def _transcribe_first_tranche(post, tmpdir):
         updates.append('duration_seconds')
     if updates:
         post.save(update_fields=updates)
-    audio = next((os.path.join(tmpdir, f) for f in os.listdir(tmpdir)), None)
+    files = sorted(os.listdir(tmpdir))
+    audio = next((os.path.join(tmpdir, f) for f in files if not f.endswith('.vtt')), None)
+    vtt = next((os.path.join(tmpdir, f) for f in files if f.endswith('.vtt')), None)
+    if vtt:
+        with open(vtt, encoding='utf-8', errors='replace') as f:
+            cues = _parse_vtt(f.read())
+        if cues:
+            logger.info('Transcripción tomada de subtítulos oficiales (%d cues, %s)',
+                        len(cues), os.path.basename(vtt))
+            return (cues, audio)
     model = WhisperModel('small', device='cpu', compute_type='int8')
     segs, _info = model.transcribe(audio, vad_filter=True)
     return ([{'start_seconds': s.start, 'end_seconds': s.end, 'text': s.text.strip()}

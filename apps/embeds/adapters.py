@@ -14,6 +14,34 @@ PATTERNS = {
 }
 
 
+_OEMBED = {
+    'youtube': 'https://www.youtube.com/oembed?format=json&url=',
+    'tiktok': 'https://www.tiktok.com/oembed?url=',
+    'spotify': 'https://open.spotify.com/oembed?url=',
+}
+
+
+def fetch_title(url, platform):
+    """4.2.1 I2 (decision de David): el TITULO aparece desde el PRIMER momento del
+    post, no cuando la fase barata termina. oEmbed oficial de la plataforma,
+    sincrono con timeout corto; si falla, la fase barata lo completara despues."""
+    import httpx
+    from django.conf import settings as dj_settings
+    if dj_settings.MOCK_AGENTS:
+        return '[SIMULADO] Título inmediato de ejemplo'
+    base = _OEMBED.get(platform)
+    if not base:
+        return ''
+    try:
+        r = httpx.get(base + httpx.QueryParams({'u': url})['u'], timeout=4,
+                      follow_redirects=True)
+        if r.status_code == 200:
+            return (r.json().get('title') or '').strip()[:300]
+    except Exception:
+        pass
+    return ''
+
+
 def detect_platform(url):
     for platform, rx in PATTERNS.items():
         m = rx.search(url)

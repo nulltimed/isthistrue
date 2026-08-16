@@ -246,3 +246,67 @@ class BloqueH(TestCase):
         self.client.force_login(mod)
         self.client.post(f'/accounts/mensajes/enviar/{cerrado.pk}/', {'body': 'aviso de moderación'})
         self.assertEqual(PrivateMessage.objects.filter(recipient=cerrado).count(), 1)
+
+
+class Pase421(TestCase):
+    """4.2.1: parser de subtítulos, título inmediato y propuesta de hablante."""
+
+    def test_parse_vtt(self):
+        from apps.analysis.tasks import _parse_vtt
+        cues = _parse_vtt("WEBVTT\n\n00:00:01.000 --> 00:00:04.000\n<c>Buenas</c> noches\n"
+                          "\n00:00:04.000 --> 00:00:07.500\ny bienvenidos al debate.\n")
+        self.assertEqual(len(cues), 2)
+        self.assertEqual(cues[0]['text'], 'Buenas noches')
+        self.assertEqual(cues[1]['end_seconds'], 7.5)
+
+    def test_proponer_hablante(self):
+        from apps.wiki.models import SpeakerNameProposal
+        user = make_user()
+        post = Post.objects.create(author=user, url='https://youtu.be/abc131x')
+        post.transcript_segments.create(start_seconds=0, end_seconds=3,
+                                        text='Hola.', speaker_label='SPEAKER_00')
+        self.client.force_login(user)
+        self.client.post(f'/post/{post.pk}/hablante/proponer/',
+                         {'label': 'SPEAKER_00', 'name': 'Pedro Sánchez'})
+        self.assertTrue(SpeakerNameProposal.objects.filter(
+            post=post, candidate_name='Pedro Sánchez', source='user').exists())
+        self.client.post(f'/post/{post.pk}/hablante/proponer/',
+                         {'label': 'SPEAKER_99', 'name': 'Intruso'})
+        self.assertFalse(SpeakerNameProposal.objects.filter(candidate_name='Intruso').exists())
+
+    @override_settings(MOCK_AGENTS=True)
+    def test_titulo_inmediato_en_mock(self):
+        from apps.embeds.adapters import fetch_title
+        self.assertIn('SIMULADO', fetch_title('https://youtu.be/x', 'youtube'))
+
+
+class Pase43A(TestCase):
+    """4.3-A: preferencias por tipo, foro clasico (no leidos) y firma."""
+
+    def test_pref_apagada_silencia_el_tipo(self):
+        from apps.accounts.services import notify
+        from apps.accounts.models import Notification
+        user = make_user()
+        user.notify_prefs = {'post_votes': False}
+        user.save(update_fields=['notify_prefs'])
+        notify(user, 'te han votado', '/x/', kind='post_votes')
+        notify(user, 'veredictos listos', '/y/', kind='post_phase')
+        textos = list(Notification.objects.filter(user=user).values_list('text', flat=True))
+        self.assertEqual(textos, ['veredictos listos'])
+
+    def test_separador_de_no_leidos(self):
+        from apps.forum.machina_glue import create_topic_for_post, add_reply, get_topic_for_post
+        from apps.forum.models import TopicRead
+        lector = make_user()
+        autor = make_user(username='a2', email='a2@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/abc132x',
+                                   title='Hilo de prueba')
+        create_topic_for_post(post)
+        self.client.force_login(lector)
+        self.client.get(f'/post/{post.pk}/')          # primera visita: marca leido
+        add_reply(post, autor, 'mensaje nuevo tras tu visita')
+        r = self.client.get(f'/post/{post.pk}/')
+        self.assertContains(r, 'Nuevos desde tu última visita')
+        topic = get_topic_for_post(post)
+        tr = TopicRead.objects.get(user=lector, topic_id=topic.pk)
+        self.assertEqual(tr.last_post_id, topic.posts.order_by('created').last().pk)

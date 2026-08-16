@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}{% block content %}
+<div class="auth-card">
+  <h1>{% trans "Editar mensaje" %}</h1>
+  <form method="post">{% csrf_token %}
+    <textarea name="content" rows="7" required data-mdtoolbar maxlength="8000">{{ m.content.raw }}</textarea>
+    <button class="wide">{% trans "Guardar" %}</button>
+  </form>
+  <p class="hint">{% trans "Ventana de edición: 15 minutos desde la publicación." %}</p>
+</div>
+{% endblock %}

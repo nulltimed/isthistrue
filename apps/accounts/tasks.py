@@ -32,7 +32,10 @@ def check_avatar(user_id):
 def send_daily_digests():
     from django.core.mail import send_mail
     from .models import User
-    for user in User.objects.filter(notify_mode='DAILY', is_active=True).exclude(email=''):
+    from django.utils import timezone
+    hour = timezone.localtime().hour
+    for user in User.objects.filter(notify_mode='DAILY', is_active=True,
+                                    digest_hour=hour).exclude(email=''):
         pending = user.notifications.filter(read=False)[:20]
         if pending:
             body = '\n'.join(f'- {n.text}' for n in pending)

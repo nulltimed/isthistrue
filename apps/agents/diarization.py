@@ -32,7 +32,9 @@ def diarize(audio_path):
         import time
         t0 = time.monotonic()
         result = _pipeline(audio_path)
-        turns = [(turn.start, turn.end, f'SPEAKER_{label}')
+        # pyannote ya etiqueta como 'SPEAKER_00': usar tal cual (bug 4.2:
+        # f'SPEAKER_{label}' fabricaba 'SPEAKER_SPEAKER_00').
+        turns = [(turn.start, turn.end, str(label))
                  for turn, _, label in result.itertracks(yield_label=True)]
         logger.info('Diarización completada en %.1f s (%d turnos, %d hablantes)',
                     time.monotonic() - t0, len(turns), len({t[2] for t in turns}))

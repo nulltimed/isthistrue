@@ -32,3 +32,17 @@
     ta.parentNode.insertBefore(bar, ta);
   });
 })();
+
+/* 4.3-A J4: citar — el boton de cada mensaje vuelca el texto al cajon de respuesta
+ * como cita Markdown con @autor (la mencion avisa al citado). Sin JS: se copia a mano. */
+document.addEventListener('click', function (ev) {
+  var btn = ev.target.closest('.quote-btn');
+  if (!btn) return;
+  var msg = btn.closest('.thread-msg');
+  var body = msg && msg.querySelector('.thread-body');
+  var ta = document.querySelector('.thread-reply textarea');
+  if (!body || !ta) return;
+  var text = body.innerText.trim().split('\n').map(function (l) { return '> ' + l; }).join('\n');
+  ta.value += (ta.value ? '\n\n' : '') + '> **@' + btn.dataset.author + ' escribió:**\n' + text + '\n\n';
+  ta.focus(); ta.scrollIntoView({ block: 'center' });
+});
