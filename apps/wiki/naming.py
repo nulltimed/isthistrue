@@ -21,12 +21,30 @@ def vote_proposal(proposal, user):
     return True, f'Voto registrado ({points}/{needed} puntos).'
 
 
+def _person_for(proposal):
+    """Devuelve el Interlocutor de la propuesta. La identidad la manda el QID de
+    Wikidata cuando existe (2026-08-17): asi 'Pedro Sánchez (político)' y
+    'Pedro Sánchez (futbolista)' son DOS fichas, no una revuelta. Sin QID se cae
+    al comportamiento clasico por slug del nombre."""
+    name, qid = proposal.candidate_name, (proposal.wikidata_id or '')
+    if qid:
+        person = Interlocutor.objects.filter(wikidata_id=qid).first()
+        if person:
+            return person
+    base = slugify(name)[:150] or 'persona'
+    slug, n = base, 2
+    while Interlocutor.objects.filter(slug=slug).exists():
+        # Homonimo con otra ficha (otro QID o sin el): slug propio, jamas mezclar.
+        slug, n = f'{base}-{n}', n + 1
+    return Interlocutor.objects.create(
+        name=name, slug=slug, is_public_figure=None, wikidata_id=qid,
+        photo_url=proposal.photo_url or '', description=proposal.description or '')
+
+
 def _confirm(proposal):
     from apps.panel.models import AuditLog
     name = proposal.candidate_name
-    slug = slugify(name)[:160]
-    person, created = Interlocutor.objects.get_or_create(
-        slug=slug, defaults={'name': name, 'is_public_figure': None})
+    person = _person_for(proposal)
     # Un solo nombre confirmado por hablante y post:
     SpeakerNameProposal.objects.filter(post=proposal.post,
         speaker_label=proposal.speaker_label).update(confirmed=False, interlocutor=None)

@@ -82,6 +82,11 @@ class Interlocutor(models.Model):
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=170, unique=True)
     is_public_figure = models.BooleanField(null=True)  # agente clasifica, David revisa
+    # Identidad UNIVOCA (2026-08-17): el QID de Wikidata distingue homonimos
+    # ('Q3128751') — dos personas con el mismo nombre son dos fichas distintas.
+    wikidata_id = models.CharField(max_length=16, blank=True, default='', db_index=True)
+    photo_url = models.URLField(max_length=400, blank=True, default='')  # Commons, licencia libre
+    description = models.CharField(max_length=120, blank=True, default='')  # 'politico español'
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -101,6 +106,10 @@ class SpeakerNameProposal(models.Model):
     interlocutor = models.ForeignKey(Interlocutor, null=True, blank=True, on_delete=models.SET_NULL)
     photo_url = models.URLField(max_length=400, blank=True, default='')  # Wikidata/Commons (licencia libre)
     source = models.CharField(max_length=10, blank=True, default='')      # context|ocr|user
+    # QID elegido en el autocompletado: convierte "un nombre escrito" en
+    # "una persona identificada". Vacio = propuesta de texto libre (se acepta).
+    wikidata_id = models.CharField(max_length=16, blank=True, default='')
+    description = models.CharField(max_length=120, blank=True, default='')
     confirmed = models.BooleanField(default=False)
 
     class Meta:

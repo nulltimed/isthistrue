@@ -10,17 +10,24 @@
         {% for group in speaker_groups %}{% if group.grouper == label %}{% for prop in group.list %}
           <div class="candidate {% if prop.confirmed %}confirmed{% endif %}">
             {% if prop.photo_url %}<img src="{{ prop.photo_url }}" alt="" width="40" height="40" loading="lazy">{% endif %}
-            {{ prop.candidate_name }}
+            <span>{{ prop.candidate_name }}{% if prop.description %}<span class="who">{{ prop.description }}</span>{% endif %}</span>
             {% if prop.confirmed %}✔{% elif user.is_authenticated %}
             <form method="post" action="{% url 'vote_speaker_name' prop.pk %}" style="display:inline">{% csrf_token %}<button class="mini">{% trans "Votar" %}</button></form>
             {% endif %}
           </div>
         {% endfor %}{% endif %}{% endfor %}
         {% if user.is_authenticated %}
-        <form method="post" action="{% url 'propose_speaker_name' post.pk %}" class="propose-form">{% csrf_token %}
+        {# Autocompletado Wikidata (2026-08-17): sugerencias con foto y QID. #}
+        {# Sin JS el campo sigue siendo texto libre y el formulario funciona. #}
+        <form method="post" action="{% url 'propose_speaker_name' post.pk %}" class="propose-form speaker-suggest">{% csrf_token %}
           <input type="hidden" name="label" value="{{ label }}">
-          <input name="name" maxlength="160" required placeholder="{% trans '¿Quién crees que es?' %}">
+          <input type="hidden" name="qid" value="">
+          <input type="hidden" name="qdesc" value="">
+          <input name="name" class="speaker-q" maxlength="160" required autocomplete="off"
+                 placeholder="{% trans '¿Quién crees que es?' %}"
+                 aria-label="{% trans 'Nombre del hablante' %}">
           <button class="mini">＋</button>
+          <ul class="suggest-list" hidden></ul>
         </form>
         {% endif %}
       </div>

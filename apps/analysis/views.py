@@ -346,27 +346,41 @@ def unrelegate(request, pk):
 
 
 @login_required
+def speaker_search(request):
+    """Autocompletado de personas (2026-08-17): busca en Wikidata y devuelve
+    candidatos con QID, descripcion y foto. Requiere login (no es un proxy
+    abierto a Wikidata) y degrada a lista vacia si Wikidata no responde."""
+    from django.http import JsonResponse
+    from apps.agents.wikidata import search_people
+    q = request.GET.get('q', '')
+    lang = 'en' if getattr(request, 'LANGUAGE_CODE', 'es') == 'en' else 'es'
+    return JsonResponse({'results': search_people(q, lang=lang)})
+
+
+@login_required
 def propose_speaker_name(request, pk):
-    """4.2.1 I7: caja interactiva — el usuario propone quien es el hablante.
-    Se crea como candidato (source=user) y entra en el voto participativo de
-    siempre (5 usuarios o 1 mod confirman). La normalizacion Haiku y el
-    autocompletado Wikidata llegan en 4.3."""
+    """4.2.1 I7 + autocompletado (2026-08-17): el usuario propone quien es el
+    hablante. Si eligio una sugerencia, la propuesta viaja con su QID de Wikidata
+    (identidad univoca) + foto y descripcion; si escribio a mano, se acepta igual
+    como texto libre. Entra en el voto participativo de siempre."""
     from apps.wiki.models import SpeakerNameProposal
     post = get_object_or_404(Post, pk=pk)
     if request.method == 'POST':
         label = request.POST.get('label', '').strip()[:20]
         name = ' '.join(request.POST.get('name', '').split())[:160]
+        qid = request.POST.get('qid', '').strip()[:16]
+        desc = ' '.join(request.POST.get('qdesc', '').split())[:120]
+        if not re.fullmatch(r'Q\d{1,14}', qid or 'Q1'):
+            qid, desc = '', ''   # QID manipulado: se ignora, no se rompe nada
         valid_labels = set(post.transcript_segments.exclude(speaker_label='')
                            .values_list('speaker_label', flat=True))
         if label in valid_labels and len(name) >= 3:
-            try:
-                from apps.agents.wikidata import photo_for
-                photo = photo_for(name) or ''
-            except Exception:
-                photo = ''
+            from apps.agents.wikidata import entity_photo, photo_for
+            photo = entity_photo(qid) if qid else (photo_for(name) or '')
             SpeakerNameProposal.objects.get_or_create(
                 post=post, speaker_label=label, candidate_name=name,
-                defaults={'source': 'user', 'photo_url': photo})
+                defaults={'source': 'user', 'photo_url': photo,
+                          'wikidata_id': qid, 'description': desc})
             messages.success(request, 'Candidato propuesto. Ahora, ¡a votar!')
         else:
             messages.error(request, 'Propuesta no válida.')

@@ -571,3 +571,94 @@ class Pase43A6(TestCase):
     def test_botones_de_voto_visibles_en_la_frase_activa(self):
         css = open('static/css/main.css').read()
         self.assertIn('.segment.live .ibtn{color:#fff}', css)
+
+
+class AutocompletadoHablantes(TestCase):
+    """Identificación unívoca de hablantes con Wikidata (2026-08-17, David).
+    La diarización pone SPEAKER_XX; el usuario pone NOMBRE con identidad (QID)."""
+
+    def _post_con_hablante(self):
+        post = Post.objects.create(author=make_user(username='autorwd',
+                                                    email='autorwd@example.org'),
+                                   url='https://youtu.be/abcwd01', status='DONE')
+        post.transcript_segments.create(start_seconds=0, end_seconds=4,
+                                        text='Frase del hablante.',
+                                        speaker_label='SPEAKER_00')
+        return post
+
+    def test_busqueda_filtra_personas_y_degrada_con_aviso(self):
+        from apps.agents import wikidata
+        from django.core.cache import cache
+        cache.clear()
+        buscar = {'search': [{'id': 'Q3116471'}, {'id': 'Q27738'}]}
+        entidades = {'entities': {
+            'Q3116471': {'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q5'}}}}],
+                                    'P18': [{'mainsnak': {'datavalue': {'value': 'Foto.jpg'}}}]},
+                         'labels': {'es': {'value': 'Pedro Sánchez'}},
+                         'descriptions': {'es': {'value': 'político español'}}},
+            'Q27738': {'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q4830453'}}}}]},
+                       'labels': {'es': {'value': 'Empresa S.A.'}}, 'descriptions': {}}}}
+        respuestas = [mock.Mock(status_code=200, **{'json.return_value': buscar,
+                                                    'raise_for_status.return_value': None}),
+                      mock.Mock(status_code=200, **{'json.return_value': entidades,
+                                                    'raise_for_status.return_value': None})]
+        with mock.patch.object(wikidata.httpx, 'get', side_effect=respuestas):
+            res = wikidata.search_people('Pedro Sánchez')
+        self.assertEqual(len(res), 1)                      # la empresa se descarta
+        self.assertEqual(res[0]['qid'], 'Q3116471')
+        self.assertEqual(res[0]['description'], 'político español')
+        self.assertIn('Foto.jpg', res[0]['photo'])
+        cache.clear()
+        with mock.patch.object(wikidata.httpx, 'get', side_effect=OSError('sin red')):
+            with self.assertLogs('agents.wikidata', level='WARNING') as logs:
+                self.assertEqual(wikidata.search_people('Pedro Sánchez'), [])
+        self.assertTrue(any('Wikidata' in m for m in logs.output))
+
+    def test_endpoint_exige_login_y_devuelve_json(self):
+        from apps.agents import wikidata
+        post = self._post_con_hablante()
+        self.assertEqual(self.client.get('/hablante/buscar/?q=pedro').status_code, 302)
+        self.client.force_login(post.author)
+        with mock.patch.object(wikidata, 'search_people',
+                               return_value=[{'qid': 'Q1', 'name': 'X', 'description': 'y', 'photo': ''}]):
+            r = self.client.get('/hablante/buscar/?q=pedro')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['results'][0]['qid'], 'Q1')
+
+    def test_propuesta_guarda_el_qid_y_rechaza_uno_falso(self):
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.analysis import views as aviews
+        post = self._post_con_hablante()
+        self.client.force_login(post.author)
+        with mock.patch.object(aviews, 'Post', Post):  # no toca red: se mockea la foto
+            with mock.patch('apps.agents.wikidata.entity_photo', return_value='http://x/f.jpg'):
+                self.client.post(f'/post/{post.pk}/hablante/proponer/',
+                                 {'label': 'SPEAKER_00', 'name': 'Pedro Sánchez',
+                                  'qid': 'Q3116471', 'qdesc': 'político español'})
+        p = SpeakerNameProposal.objects.get(candidate_name='Pedro Sánchez')
+        self.assertEqual(p.wikidata_id, 'Q3116471')
+        self.assertEqual(p.description, 'político español')
+        with mock.patch('apps.agents.wikidata.photo_for', return_value=''):
+            self.client.post(f'/post/{post.pk}/hablante/proponer/',
+                             {'label': 'SPEAKER_00', 'name': 'Nombre Libre',
+                              'qid': '<script>', 'qdesc': 'x'})
+        self.assertEqual(SpeakerNameProposal.objects.get(
+            candidate_name='Nombre Libre').wikidata_id, '')      # QID falso: ignorado
+
+    def test_homonimos_son_dos_fichas_distintas(self):
+        """La prueba de fuego de la identidad unívoca."""
+        from apps.wiki.models import Interlocutor, SpeakerNameProposal
+        from apps.wiki.naming import _person_for
+        p1 = SpeakerNameProposal(post=self._post_con_hablante(), speaker_label='SPEAKER_00',
+                                 candidate_name='Pedro Sánchez', wikidata_id='Q3116471',
+                                 description='político español')
+        p2 = SpeakerNameProposal(post=self._post_con_hablante(), speaker_label='SPEAKER_00',
+                                 candidate_name='Pedro Sánchez', wikidata_id='Q9999999',
+                                 description='futbolista')
+        a, b = _person_for(p1), _person_for(p2)
+        self.assertNotEqual(a.pk, b.pk)                 # mismo nombre, DOS personas
+        self.assertNotEqual(a.slug, b.slug)
+        self.assertEqual(a.wikidata_id, 'Q3116471')
+        # El mismo QID SIEMPRE devuelve la misma ficha (idempotente):
+        self.assertEqual(_person_for(p1).pk, a.pk)
+        self.assertEqual(Interlocutor.objects.filter(name='Pedro Sánchez').count(), 2)

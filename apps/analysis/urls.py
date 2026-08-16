@@ -19,6 +19,7 @@ urlpatterns = [
     path('post/<int:pk>/subscribe/', views.subscribe, name='post_subscribe'),
     path('oracion/<int:pk>/votar/<str:direction>/', views.segment_vote, name='segment_vote'),
     path('post/<int:pk>/hablante/proponer/', views.propose_speaker_name, name='propose_speaker_name'),
+    path('hablante/buscar/', views.speaker_search, name='speaker_search'),  # autocompletado Wikidata
     path('mensaje/<int:mpost_id>/reportar/', views.message_report, name='message_report'),
     path('mensaje/<int:mpost_id>/editar/', views.message_edit, name='message_edit'),
     path('mensaje/<int:mpost_id>/ocultar/', views.message_hide_toggle, name='message_hide'),
