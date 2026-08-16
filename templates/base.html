@@ -36,7 +36,7 @@
       <a href="{% url 'notifications' %}" id="bell" class="bell" title="{% trans 'Notificaciones' %}">{% icon 'bell' 18 %}{% if unread_notifications %}<span class="bell-count">{{ unread_notifications }}</span>{% endif %}</a>
       <a href="{% url 'pm_inbox' %}" class="bell" title="{% trans 'Mensajes privados' %}">{% icon 'mail' 18 %}</a>
       <a href="{% url 'account_settings' %}">{{ user.username }}</a>
-      {% if user.is_staff %}<a href="{% url 'panel_codes' %}">Panel</a>{% endif %}
+      {% if user.is_staff %}<a href="{% url 'panel_settings' %}">Panel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button class="linklike">{% trans "Salir" %}</button></form>
     {% else %}
       <a href="{% url 'login' %}">{% trans "Entrar" %}</a><a href="{% url 'register' %}">{% trans "Registro" %}</a>

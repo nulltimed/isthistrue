@@ -1,6 +1,7 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Panel · Códigos" %}{% endblock %}
 {% block content %}
-<h1>Panel · Códigos canjeables</h1>
+{% include 'partials/panel_nav.html' %}
 <form method="post">{% csrf_token %}
   <label>Nivel
     <select name="level"><option value="CONTRIB">Contribuidor</option>

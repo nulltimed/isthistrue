@@ -1,6 +1,7 @@
 {% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Moderación" %}{% endblock %}
 {% block content %}
-<h1>{% icon 'sliders' 22 %} {% trans "Panel · Moderador" %}</h1>
+{% include 'partials/panel_nav.html' %}
 <p class="hint">{% trans "El superusuario también es moderador supremo: esta subsección reúne los ajustes de moderación independientes del resto del panel. Los moderadores la verán cuando llegue su panel (4.4)." %}</p>
 <form method="post">{% csrf_token %}
   {% for key, label, value in values %}

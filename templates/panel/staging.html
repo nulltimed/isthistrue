@@ -1,5 +1,7 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Panel · Espejo de pruebas</h1>
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Panel · Espejo de pruebas" %}{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
 <p class="hint">Invita por email a quien deba poder entrar en stagings.xyztserver.com. El espejo funciona SIEMPRE en modo simulado: no gasta presupuesto.</p>
 <form method="post">{% csrf_token %}
   <label>Email<input type="email" name="email" required></label>

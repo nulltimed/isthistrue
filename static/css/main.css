@@ -348,6 +348,17 @@ main.wide .post{width:100%}
 .speaker-block.speaking{background:#141414;border-color:#141414;color:#fff;
   box-shadow:inset 3px 0 0 #000;transition:background .15s,color .15s}
 .speaker-block.speaking .speaker-tag{color:#fff}
+/* 4.3-A.6 P2 (reporte de David): la pildora "Hablante N" seguia luciendo su fondo
+   azul palido heredado (#eef3fb) mientras su texto pasaba a blanco — blanco sobre
+   azul clarito NO se lee (contraste 1,1:1). Opcion elegida por David: pildora
+   BLANCA MACIZA con el texto en negro; se lee desde lejos sobre el fondo #141414.
+   De paso: los botones de voto eran negros sobre negro (invisibles) y el velo de
+   las opiniones difuminadas se aclaraba a gris ilegible. */
+.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag{
+  background:#fff;border-color:#fff;color:#141414;font-weight:700}
+.segment.live .ibtn{color:#fff}
+.segment.live .ibtn:hover{color:#141414;background:#fff}
+.segment.live .blur-overlay{background:rgba(20,20,20,.75);color:#fff}
 
 /* 4.3-A.5 O4 (petición imperativa de David): el toggle de registro de nuevos usuarios,
    destacado arriba del panel en su propio recuadro. Verde=abierto, rojo=cerrado. */
@@ -358,3 +369,15 @@ main.wide .post{width:100%}
 .reg-gate .reg-state{margin:.35rem 0 0;font-size:.86rem;font-weight:600}
 .settings-sub{font-size:1.02rem;margin:.4rem 0 .5rem;color:#555;
   border-top:1px solid var(--line);padding-top:.8rem}
+
+/* 4.3-A.6 P1 (decision de David: "Panel" y "Ajustes" se integran): UNA cabecera
+   para todo el panel y debajo las pestanas. El h1 pierde su raya inferior porque
+   la barra ya trae la suya: dos rayas seguidas parecian un error de maquetacion. */
+.panel-head{border-bottom:0;padding-bottom:0;margin:.4rem 0 .55rem}
+.panel-tabs{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 1.2rem;
+  border-bottom:1px solid var(--line);padding-bottom:.6rem}
+.panel-tabs a{display:inline-flex;align-items:center;gap:.3rem;font-size:.85rem;
+  font-weight:600;text-decoration:none;padding:.28rem .75rem;border-radius:999px;
+  border:1px solid var(--line);background:var(--card)}
+.panel-tabs a:hover{background:var(--paper)}
+.panel-tabs a.active{background:var(--ink);color:#fff;border-color:var(--ink)}

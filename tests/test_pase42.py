@@ -521,3 +521,53 @@ class Pase43A5(TestCase):
         self.assertEqual(SystemSetting.get_int('registration_open', 1), 0)
         self.client.post('/panel/settings/', {'registration_open': 'on'})
         self.assertEqual(SystemSetting.get_int('registration_open', 1), 1)
+
+
+class Pase43A6(TestCase):
+    """4.3-A.6: el panel deja de ser un archipiélago — cabecera INTEGRADA (un solo
+    <h1> "Panel" + pestañas), /panel/ y el menú aterrizan en Ajustes (donde vive la
+    puerta del registro), y la píldora "Hablante N" se lee sobre el fondo negro de
+    la intervención activa (blanca maciza con texto negro)."""
+
+    RUTAS = ['/panel/settings/', '/panel/codes/', '/panel/donaciones/',
+             '/panel/moderadores/', '/panel/moderador/',
+             '/panel/reclamaciones/', '/panel/staging/']
+
+    def setUp(self):
+        self.admin = make_user(username='rootA6', email='roota6@example.org')
+        self.admin.is_staff = self.admin.is_superuser = True
+        self.admin.save()
+        self.client.force_login(self.admin)
+
+    def test_todas_las_secciones_del_panel_llevan_pestanas(self):
+        for ruta in self.RUTAS:
+            r = self.client.get(ruta)
+            self.assertEqual(r.status_code, 200, ruta)
+            self.assertContains(r, 'panel-tabs')                # la barra existe
+            self.assertContains(r, 'href="/panel/settings/"')   # Ajustes a un clic
+            self.assertContains(r, 'href="/panel/codes/"')
+
+    def test_cabecera_del_panel_integrada(self):
+        """David: "Panel" y "Ajustes" se integran — un h1 para todo el panel."""
+        for ruta in self.RUTAS:
+            html = self.client.get(ruta).content.decode()
+            self.assertEqual(html.count('<h1'), 1, ruta)        # ni dos titulos ni cero
+            self.assertIn('panel-head', html)
+        r = self.client.get('/panel/settings/')
+        self.assertNotContains(r, 'Ajustes vivos')              # el titulo viejo, fuera
+        self.assertContains(r, 'aria-current="page"')           # la pestaña activa, marcada
+
+    def test_el_menu_y_barra_panel_aterrizan_en_ajustes(self):
+        r = self.client.get('/')
+        self.assertContains(r, 'href="/panel/settings/"')       # el masthead ya no va a Códigos
+        self.assertNotContains(r, 'href="/panel/codes/"')
+        self.assertRedirects(self.client.get('/panel/'), '/panel/settings/')
+
+    def test_pildora_de_hablante_legible_sobre_negro(self):
+        css = open('static/css/main.css').read()
+        self.assertIn('.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag{', css)
+        self.assertIn('background:#fff;border-color:#fff;color:#141414', css)
+
+    def test_botones_de_voto_visibles_en_la_frase_activa(self):
+        css = open('static/css/main.css').read()
+        self.assertIn('.segment.live .ibtn{color:#fff}', css)

@@ -15,7 +15,8 @@ urlpatterns = [
     path('', include('django_prometheus.urls')),          # /metrics para tu Grafana
     path('accounts/', include('apps.accounts.urls')),
     path('claim/', include('apps.accounts.claim_urls')),  # canje de codigos
-    path('panel/', RedirectView.as_view(url='/panel/codes/', permanent=False)),
+    # 4.3-A.6 P1: /panel/ aterriza en Ajustes — ahi vive la puerta del registro.
+    path('panel/', RedirectView.as_view(url='/panel/settings/', permanent=False)),
     path('panel/', include('apps.panel.urls')),
     path('wiki/', include('apps.wiki.urls')),
     path('api/v1/claims/', claims_list, name='api_claims'),

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Ajustes" %}{% endblock %}
 {% block content %}
-<h1>{% icon 'sliders' 22 %} {% trans "Panel · Ajustes vivos" %}</h1>
+{% include 'partials/panel_nav.html' %}
 <form method="post">{% csrf_token %}
 
   {% if reg %}

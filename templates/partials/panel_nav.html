@@ -1,0 +1,23 @@
+{% load i18n istt_icons %}
+{% comment %}
+4.3-A.6 P1 (reporte de David): el panel NO tenía navegación. El menú "Panel" entraba
+en Códigos y las demás secciones —entre ellas la PUERTA DEL REGISTRO— solo eran
+alcanzables escribiendo la URL a mano.
+Decisión de David: "Panel" y "Ajustes" se INTEGRAN. Una sola cabecera para todo el
+panel (este partial trae el <h1>) y debajo las siete pestañas; la sección en la que
+estás es la pestaña en negro. Nada de decir dos veces lo mismo ("Panel · Ajustes"
+en el título + pestaña "Ajustes"). Cada página conserva su nombre propio en el
+título de la ventana del navegador.
+{% endcomment %}
+{% with cur=request.resolver_match.url_name %}
+<h1 class="panel-head">{% icon 'sliders' 22 %} {% trans "Panel" %}</h1>
+<nav class="panel-tabs" aria-label="{% trans 'Secciones del panel' %}">
+  <a href="{% url 'panel_settings' %}"{% if cur == 'panel_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'sliders' 16 %} {% trans "Ajustes" %}</a>
+  <a href="{% url 'panel_codes' %}"{% if cur == 'panel_codes' %} class="active" aria-current="page"{% endif %}>{% icon 'ticket' 16 %} {% trans "Códigos" %}</a>
+  <a href="{% url 'panel_donations' %}"{% if cur == 'panel_donations' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Donaciones" %}</a>
+  <a href="{% url 'panel_moderators' %}"{% if cur == 'panel_moderators' %} class="active" aria-current="page"{% endif %}>{% icon 'users' 16 %} {% trans "Moderadores" %}</a>
+  <a href="{% url 'panel_moderator_settings' %}"{% if cur == 'panel_moderator_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'shield' 16 %} {% trans "Moderación" %}</a>
+  <a href="{% url 'panel_complaints' %}"{% if cur == 'panel_complaints' %} class="active" aria-current="page"{% endif %}>{% icon 'flag' 16 %} {% trans "Reclamaciones" %}</a>
+  <a href="{% url 'panel_staging' %}"{% if cur == 'panel_staging' %} class="active" aria-current="page"{% endif %}>{% icon 'eye' 16 %} {% trans "Espejo" %}</a>
+</nav>
+{% endwith %}
