@@ -310,3 +310,55 @@ class Pase43A(TestCase):
         topic = get_topic_for_post(post)
         tr = TopicRead.objects.get(user=lector, topic_id=topic.pk)
         self.assertEqual(tr.last_post_id, topic.posts.order_by('created').last().pk)
+
+
+class Pase43A1(TestCase):
+    """Hotfix 4.3-A.1: recarga solo en transición, plantillas sin {# #} rotos,
+    registro con candado y candidatos automáticos purgados de la vista."""
+
+    def test_guardia_sin_comentarios_multilinea(self):
+        # Los {# #} de Django son de UNA linea: uno multilinea se RENDERIZA como
+        # texto (paso dos veces en produccion). Este test rompe el CI a la tercera.
+        import pathlib, re
+        raiz = pathlib.Path(__file__).resolve().parent.parent / 'templates'
+        malos = []
+        for f in raiz.rglob('*.html'):
+            for i, line in enumerate(f.read_text(encoding='utf-8').splitlines(), 1):
+                if '{#' in line and '#}' not in line:
+                    malos.append(f'{f.name}:{i}')
+        self.assertEqual(malos, [], f'Comentarios multilínea {{# #}}: {malos}')
+
+    def test_refresh_solo_en_transicion(self):
+        post = Post.objects.create(author=make_user(), url='https://youtu.be/abc133x',
+                                   status='DONE')
+        r = self.client.get(f'/post/{post.pk}/status/?prev=CHEAP_RUNNING')
+        self.assertEqual(r.headers.get('HX-Refresh'), 'true')   # corriendo -> DONE
+        r = self.client.get(f'/post/{post.pk}/status/?prev=DONE')
+        self.assertIsNone(r.headers.get('HX-Refresh'))          # ya terminal: NUNCA
+        r = self.client.get(f'/post/{post.pk}/status/')
+        self.assertIsNone(r.headers.get('HX-Refresh'))          # sin prev: NUNCA
+
+    def test_registro_con_candado(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='registration_open',
+                                               defaults={'value': '0'})
+        r = self.client.get('/accounts/register/')
+        self.assertEqual(r.status_code, 302)                    # cerrado: a portada
+        SystemSetting.objects.update_or_create(key='registration_open',
+                                               defaults={'value': '1'})
+        self.assertEqual(self.client.get('/accounts/register/').status_code, 200)
+
+    def test_candidatos_automaticos_fuera_de_la_vista(self):
+        from apps.wiki.models import SpeakerNameProposal
+        user = make_user()
+        post = Post.objects.create(author=user, url='https://youtu.be/abc134x')
+        post.transcript_segments.create(start_seconds=0, end_seconds=3,
+                                        text='Hola.', speaker_label='SPEAKER_00')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Edición Daniel Castresana',
+                                           source='ocr')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Pedro Sánchez', source='user')
+        r = self.client.get(f'/post/{post.pk}/')
+        self.assertNotContains(r, 'Castresana')
+        self.assertContains(r, 'Pedro Sánchez')

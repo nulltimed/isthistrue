@@ -43,7 +43,8 @@ def settings_panel(request):
     """Umbrales vivos: algoritmo, votaciones, modo arranque."""
     keys = ['opinion_ratio_percent', 'minutes_per_factual_claim', 'votes_to_validate',
             'votes_to_rescue', 'validation_window_days', 'startup_mode_min_users',
-            'donation_goal_eur']
+            'donation_goal_eur',
+            'registration_open']  # 4.3-A.1 K6: 1 abierto / 0 cerrado
     if request.method == 'POST':
         for k in keys:
             if k in request.POST:

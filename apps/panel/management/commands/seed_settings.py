@@ -24,6 +24,8 @@ DEFAULTS = {
     # 4.2 H5/H1 (editables por mods y superusuario en su panel):
     'segment_opus_downvotes': '5',
     'message_sensitive_reports': '5',
+    # 4.3-A.1 K6: puerta del registro (1 abierto / 0 cerrado), toggle del panel
+    'registration_open': '1',
     'lang_es': '1', 'lang_en': '1',
 }
 

@@ -23,7 +23,6 @@
     <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
   </form>
   <div class="masthead">
-    {# 4.2 C6: el logo sigue al DOMINIO (logo_variant), no al idioma. #}
     <a class="logo" href="/">{% if logo_variant == 'escierto' %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% else %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% endif %}</a>
 
   </div>
@@ -70,8 +69,6 @@
   </noscript>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-{# PayPal OPCION B (pase 4.1, decision congelada de David): donacion puntual con #}
-{# selector de cantidad. SDK cargado UNA sola vez para toda la web (invariante). #}
 <script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture"></script>
 <script>
 (function () {
@@ -117,8 +114,6 @@
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main>{% block content %}{% endblock %}</main>
-{# 4.2 A5: herramientas de formato SIEMPRE disponibles en todo el foro (tambien
-   en las paginas machina via board_base): el script se auto-acopla a los textarea. #}
 <script src="{% static 'js/mdtoolbar.js' %}" defer></script>
 {% if user.is_authenticated %}<script src="{% static 'js/notify.js' %}" defer></script>{% endif %}
 <footer>

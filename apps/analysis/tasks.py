@@ -282,26 +282,11 @@ def generate_name_proposals(post_id):
     Foto SOLO de Wikipedia (licencia libre); sin ficha -> sin foto."""
     from .models import Post
     from apps.wiki.models import SpeakerNameProposal
-    from apps.agents.ocr import extract_names_from_video
-    from apps.agents.wikidata import photo_for
-    post = Post.objects.get(pk=post_id)
-    labels = list(post.transcript_segments.exclude(speaker_label='')
-                  .values_list('speaker_label', flat=True).distinct())
-    if not labels:
-        return 'no_speakers'
-    candidates = dict(extract_names_from_video(post.url, post.duration_seconds or 1200))
-    title_names = {}
-    from apps.agents.ocr import NAME_RX
-    for m in NAME_RX.findall(post.title or ''):
-        title_names[m] = title_names.get(m, 0) + 5  # el titulo pesa mas
-    for n, c in title_names.items():
-        candidates[n] = candidates.get(n, 0) + c
-    for label in labels:
-        for name in sorted(candidates, key=candidates.get, reverse=True)[:4]:
-            SpeakerNameProposal.objects.get_or_create(
-                post=post, speaker_label=label, candidate_name=name,
-                defaults={'photo_url': photo_for(name), 'source': 'ocr'})
-    return f'{len(candidates)} candidatos'
+    # 4.3-A.1 K3 (decision de David 2026-08-16): los candidatos AUTOMATICOS quedan
+    # DESACTIVADOS — el OCR pescaba creditos de edicion y ruido. Quien propone es
+    # la comunidad (caja "¿Quien crees que es?"); la foto de Wikipedia se busca al
+    # proponer. La funcion se conserva (la llama run_cheap_phase) como no-op.
+    return 'auto_candidates_disabled'
 
 
 COST_OPUS_RESCAN_EUR = 0.40  # estimacion conservadora; pasa por los candados como todo

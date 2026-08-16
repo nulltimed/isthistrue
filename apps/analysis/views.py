@@ -2,6 +2,7 @@ from django.contrib import messages
 import re
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.accounts.models import AnalysisCredit
 from apps.embeds.adapters import detect_platform, build_embed
@@ -144,7 +145,12 @@ def post_detail(request, pk):
         'hide_opinions': hide_opinions,
         'votes_validate': post.distinct_validation_votes('VALIDATE'),
         'votes_rescue': post.distinct_validation_votes('RESCUE'),
-        'name_proposals': post.name_proposals.select_related('interlocutor')
+        # 4.3-A.1 K3 (decision de David): SOLO propuestas de usuarios o confirmadas.
+        # Los candidatos automaticos (OCR/rotulos) producian basura tipo creditos
+        # de edicion y quedan desactivados; la migracion 0007 purga los existentes.
+        'name_proposals': post.name_proposals.filter(
+                              models.Q(source='user') | models.Q(confirmed=True))
+                              .select_related('interlocutor')
                               .order_by('speaker_label', '-confirmed'),
         'speaker_names': speaker_names, 'page_obj': page_obj,
         'first_unread_pk': first_unread_pk,
@@ -154,16 +160,20 @@ def post_detail(request, pk):
     })
 
 
+TERMINAL_STATUSES = ('DONE', 'OFFTOPIC_SIGNALED', 'OFFTOPIC_RAW', 'FAILED',
+                     'PENDING_VALIDATION', 'HELD_FOR_REVIEW', 'VALIDATION_EXPIRED')
+
+
 def post_status(request, pk):
     """Sondeo HTMX cada 4 s; se detiene solo cuando el estado es terminal."""
     post = get_object_or_404(Post, pk=pk)
-    terminal = post.status in ('DONE', 'OFFTOPIC_SIGNALED', 'OFFTOPIC_RAW', 'FAILED',
-                               'PENDING_VALIDATION', 'HELD_FOR_REVIEW',
-                               'VALIDATION_EXPIRED')
+    terminal = post.status in TERMINAL_STATUSES
     resp = render(request, 'partials/post_status.html', {'post': post})
-    # 4.2.1 I3: cuando el analisis alcanza un estado terminal, htmx recarga la
-    # pagina completa — la transcripcion aparece sin que nadie pulse F5.
-    if terminal:
+    # 4.3-A.1 K2: refrescar SOLO en la TRANSICION corriendo->terminal. El bug de la
+    # recarga cada 4 s: HX-Refresh disparaba en CADA sondeo terminal, y el
+    # envoltorio de la pagina sondeaba sin condicion — bucle infinito de recargas.
+    prev = request.GET.get('prev', '')
+    if terminal and prev and prev not in TERMINAL_STATUSES:
         resp['HX-Refresh'] = 'true'
     if terminal:
         resp['HX-Reswap'] = 'outerHTML'
@@ -284,9 +294,14 @@ def propose_speaker_name(request, pk):
         valid_labels = set(post.transcript_segments.exclude(speaker_label='')
                            .values_list('speaker_label', flat=True))
         if label in valid_labels and len(name) >= 3:
+            try:
+                from apps.agents.wikidata import photo_for
+                photo = photo_for(name) or ''
+            except Exception:
+                photo = ''
             SpeakerNameProposal.objects.get_or_create(
                 post=post, speaker_label=label, candidate_name=name,
-                defaults={'source': 'user'})
+                defaults={'source': 'user', 'photo_url': photo})
             messages.success(request, 'Candidato propuesto. Ahora, ¡a votar!')
         else:
             messages.error(request, 'Propuesta no válida.')

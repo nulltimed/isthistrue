@@ -23,8 +23,6 @@
     {% endif %}
   </div>
   <h1>{{ post.title|default:post.url }}</h1>
-  {# 4.2.1 I6 (decision de David): el multimedia SIEMPRE visible; hablantes a
-     la izquierda, transcripcion a la derecha, independientes del scroll. #}
   <div class="media-grid">
     <aside class="speakers-col">
     {% regroup name_proposals by speaker_label as speaker_groups %}
@@ -57,9 +55,7 @@
     </aside>
   </div>
 
-  <div id="status" hx-get="{% url 'post_status' post.pk %}" hx-trigger="every 4s" hx-swap="outerHTML">
-    {% include 'partials/post_status.html' %}
-  </div>
+  {% include 'partials/post_status.html' %}
 
   {% if post.status == 'PENDING_VALIDATION' %}
     <div class="validation">
@@ -153,7 +149,5 @@
     <a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a>
   </div>
 </article>
-{# 4.2 A4: transcript.js define seekTo() con la IFrame API de YouTube (salto sin #}
-{# recargar). El fallback de recarga vive DENTRO del propio script (mejora progresiva). #}
 <script src="{% static 'js/transcript.js' %}" defer></script>
 {% endblock %}

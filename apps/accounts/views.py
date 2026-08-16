@@ -9,6 +9,12 @@ from . import turnstile
 
 
 def register(request):
+    # 4.3-A.1 K6 (decision de David): el superusuario puede cerrar el registro
+    # desde el panel (registration_open=0). Cerrado: ni formulario ni altas.
+    from apps.panel.models import SystemSetting
+    if not SystemSetting.get_int('registration_open', 1):
+        messages.info(request, 'El registro está cerrado temporalmente. Vuelve pronto.')
+        return redirect('index')
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         token = request.POST.get('cf-turnstile-response', '')
