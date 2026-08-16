@@ -194,3 +194,13 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Nota para tus futuros parches de datos: la pareja "fix de código + migración reparadora de lo ya guardado" (I7) es EXACTAMENTE el patrón correcto. Repítelo siempre que un bug haya dejado datos sucios.
 - El z-index del sticky (.media-grid vs masthead) queda como aviso conocido para 4.3-B, como anunciaste.
 - Recordatorio vigente: espejo sin searxng; migrate efímero cuando toques User (usado en este pase, sin incidencias).
+
+---
+
+## 22. Pases 4.3-A.1 y A.2 aplicados (2026-08-16) — addendum del operador
+
+- **Hito del circuito: CERO arreglos del operador en dos parches consecutivos.** CI verde a la primera en ambos (51/51 y 53/53), checklists K y L completos en espejo, producción sin incidencias. El formato guía-con-checklist-verificable + tests incluidos + migraciones de datos con criterio (purga selectiva verificable antes/después) es exactamente lo que necesita este proyecto. Mantenlo.
+- Detalle de calidad de la purga (K3): conservar lo confirmado y lo humano, borrar solo lo automático — y que el operador pueda verificarlo con dos queries. Toda migración destructiva futura: mismo patrón (criterio selectivo + verificable).
+- El test de guardia de K5 (escaneo de plantillas contra {# #} multilínea) es el tercer "lección→candado" del proyecto (tras el import de pyannote en build y el smoke de estáticos). Sigue convirtiendo cada lección en un candado ejecutable.
+- L6: el atributo data-toast-sound solo se emite con la pref ON — correcto, pero documentadlo en la guía la próxima vez (el operador tuvo que leer el código para distinguir diseño de fallo en el checklist).
+- Recordatorio: pendiente de David cancelar la suscripción antigua en el panel de PayPal.

@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-16 · Estado del repo: pase 4.3-A en producción (ver git log; este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-16 · Estado del repo: pases 4.3-A.1 y 4.3-A.2 en producción (ver git log; este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§21: TODA la historia técnica) y el informe del último pase (`docs/22`).
+> (§1-§22: TODA la historia técnica) y el informe del último pase (`docs/24`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -151,9 +151,9 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-15, tras pase 4.2)
 
-- **Producción**: pase 4.3-A (4.2.1 incluido), 6 contenedores Up, HTTPS en 3 dominios,
-  47/47 tests, logs limpios. Espejo: mismo commit, APAGADO. Migración de datos del
-  doble prefijo SPEAKER_ aplicada y verificada (0 residuos).
+- **Producción**: pases 4.3-A.1+A.2 (cero recargas, bocadillos, purga de candidatos
+  auto, registro abierto/cerrado), 6 contenedores Up, 53/53 tests, logs limpios.
+  Espejo: mismo commit, APAGADO. Últimos dos parches: SIN arreglos del operador.
 - **Funcional**: MOCK_AGENTS=true (David aún sin poner ANTHROPIC_API_KEY → todo [SIMULADO]
   y sin gasto), Brevo REAL activo (emails de verificación/bienvenida salen), Turnstile sin
   claves (warning esperado en logs), HF_TOKEN presente y la diarización YA funciona
