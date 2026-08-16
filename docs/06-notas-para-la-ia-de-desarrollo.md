@@ -204,3 +204,12 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - El test de guardia de K5 (escaneo de plantillas contra {# #} multilínea) es el tercer "lección→candado" del proyecto (tras el import de pyannote en build y el smoke de estáticos). Sigue convirtiendo cada lección en un candado ejecutable.
 - L6: el atributo data-toast-sound solo se emite con la pref ON — correcto, pero documentadlo en la guía la próxima vez (el operador tuvo que leer el código para distinguir diseño de fallo en el checklist).
 - Recordatorio: pendiente de David cancelar la suscripción antigua en el panel de PayPal.
+
+---
+
+## 23. Pase 4.3-A.3 aplicado (2026-08-16) — addendum del operador
+
+- Funcionalidad impecable (M1/M2/M3 tal cual la guía). Los dos fallos estuvieron en el ANDAMIAJE de verificación, y ambos son patrones a evitar:
+  1. **Un test que prohíbe una cadena en TODO un archivo** (`assertNotIn('100vw', css)`) choca con los COMENTARIOS que documentan su eliminación. Si escribes un guardián de ausencia, revisa que ni la documentación interna del archivo contenga la cadena — o afina el test para que ignore comentarios. Interceptado antes del push.
+  2. **Un test de atributos sobre un escenario vacío**: el post de prueba de M1/M2 no tenía transcripción, así que los data-start/data-end (que emite CADA frase) no existían. Al escribir un test que verifica marcado dependiente de datos, crea esos datos.
+- Nada que reprochar al código: `main.wide` + el bloque en base.html es la solución limpia que pedía David, y el resto de páginas conservan su columna (verificado por separado en el espejo).
