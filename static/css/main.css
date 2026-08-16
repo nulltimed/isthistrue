@@ -305,3 +305,19 @@ input.toggle:focus-visible + .toggle-track{outline:2px solid #8a5200;outline-off
   border-top:2px dashed #f0c48a;margin:.7rem 0 .3rem;padding-top:.2rem}
 .signature{margin-top:.35rem;padding-top:.25rem;border-top:1px dotted var(--line);
   color:#777;font-size:.8rem;font-style:italic}
+
+/* 4.3-A.2: bocadillos (toasts) — rectangulares, arriba a la derecha, diseño de la casa */
+#toast-zone{position:fixed;top:14px;right:14px;z-index:200;display:flex;
+  flex-direction:column;gap:.5rem;max-width:340px}
+.toast{position:relative;background:#fff;border:1px solid var(--line);
+  border-left:4px solid #f0c48a;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.12);
+  padding:.6rem 1.9rem .6rem .8rem;font-size:.88rem;opacity:0;transform:translateY(-8px);
+  transition:opacity .18s,transform .18s}
+.toast.show{opacity:1;transform:none}
+.toast-link{cursor:pointer}
+.toast-link:hover{background:var(--paper)}
+.toast-group{border-left-color:#5c6470;font-weight:600}
+.toast-close{position:absolute;top:4px;right:6px;background:none;border:0;
+  cursor:pointer;color:#888;font-size:.85rem;line-height:1;padding:.15rem}
+.toast-close:hover{color:#141414}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}

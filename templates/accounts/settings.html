@@ -57,6 +57,11 @@
         </div>
         {% endfor %}
         <div class="setting-row">
+          <span class="setting-control"><input type="checkbox" class="toggle" id="t-ts" name="toast_sound" {% if u.notify_prefs.toast_sound %}checked{% endif %}><label class="toggle-track" for="t-ts" aria-hidden="true"></label></span>
+          <div class="setting-text"><label for="t-ts"><strong>{% trans "Sonido de los bocadillos" %}</strong></label>
+          <p class="hint">{% trans "Un toque suave cuando aparece un aviso en pantalla. Apagado, los bocadillos son mudos." %}</p></div>
+        </div>
+        <div class="setting-row">
           <span class="setting-control"><input type="checkbox" class="toggle" id="t-qn" name="quiet_night" {% if u.quiet_night %}checked{% endif %}><label class="toggle-track" for="t-qn" aria-hidden="true"></label></span>
           <div class="setting-text"><label for="t-qn"><strong>{% trans "Silencio nocturno" %}</strong></label>
           <p class="hint">{% trans "Nada de emails entre las 23:00 y las 8:00. La campana no descansa." %}</p></div>

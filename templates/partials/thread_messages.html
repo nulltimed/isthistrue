@@ -1,4 +1,5 @@
 {% load i18n istt_icons %}
+<input type="hidden" id="thread-last" name="ultimo" value="{{ newest_pk|default:0 }}">
     {% for m in thread_messages %}
       {% if m.first_unread %}<div class="unread-divider" id="nuevo">— {% trans "Nuevos desde tu última visita" %} —</div>{% endif %}
       <div class="thread-msg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}" id="msg-{{ m.pk }}">

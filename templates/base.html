@@ -16,7 +16,7 @@
 <link rel="alternate" type="application/rss+xml" title="Veredictos" href="{% url 'rss_verdicts' %}">
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
-<body>
+<body{% if user.is_authenticated and user.notify_prefs.toast_sound %} data-toast-sound="1"{% endif %}>
 <header>
   <form action="{% url 'set_language' %}" method="post" class="lang-switch-top">{% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
@@ -115,6 +115,7 @@
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main>{% block content %}{% endblock %}</main>
 <script src="{% static 'js/mdtoolbar.js' %}" defer></script>
+<script src="{% static 'js/toasts.js' %}" defer></script>
 {% if user.is_authenticated %}<script src="{% static 'js/notify.js' %}" defer></script>{% endif %}
 <footer>
   <a href="{% url 'methodology' %}">{% trans "Cómo verificamos" %}</a> ·

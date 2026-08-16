@@ -48,6 +48,8 @@ def settings_view(request):
         PREF_KEYS = ['post_phase', 'thread_replies', 'mentions', 'claim_color',
                      'trending', 'post_votes', 'project_news']
         u.notify_prefs = {k: request.POST.get('pref_' + k) == 'on' for k in PREF_KEYS}
+        # 4.3-A.2 L6 (quiz 78): sonido de los bocadillos — OFF por defecto
+        u.notify_prefs['toast_sound'] = request.POST.get('toast_sound') == 'on'
         u.quiet_night = request.POST.get('quiet_night') == 'on'
         u.signature = request.POST.get('signature', '').strip()[:200]
         dh = request.POST.get('digest_hour', '')

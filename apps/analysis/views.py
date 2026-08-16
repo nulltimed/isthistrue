@@ -103,13 +103,16 @@ def submit(request):
     return redirect('post_detail', pk=post.pk)
 
 
-def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
+def _adult_blocked(request, post):
     u = request.user if request.user.is_authenticated else None
-    if post.is_adult and (not u or not u.is_adult or u.hide_adult):
-        blocked = (not u) or (not u.is_adult)
-        if blocked:
-            return render(request, 'analysis/adult_blocked.html', status=403)
+    return post.is_adult and ((not u) or (not u.is_adult))
+
+
+def _post_context(request, post):
+    """4.3-A.2 L2: contexto del post — lo comparten la pagina completa y el
+    fragmento que se intercambia EN EL SITIO (sin recargar, sin mover el scroll)
+    cuando el analisis termina."""
+    u = request.user if request.user.is_authenticated else None
     from django.db.models import Count, Q
     segments = list(post.transcript_segments.annotate(
         ups=Count('sentence_votes', filter=Q(sentence_votes__value=1)),
@@ -127,7 +130,7 @@ def post_detail(request, pk):
     from apps.forum.machina_glue import get_topic_for_post
     topic_obj = get_topic_for_post(post)
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
-    thread_messages, page_obj, first_unread_pk = _thread_page(topic_obj, u, request)
+    thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(topic_obj, u, request)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
     from apps.forum.models import MessageSensitive, HiddenMessage
     msg_ids = [m.pk for m in thread_messages]
@@ -140,7 +143,7 @@ def post_detail(request, pk):
         m.hidden_by_me = m.pk in hidden_ids
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
-    return render(request, 'analysis/post_detail.html', {
+    return {
         'post': post, 'segments': segments, 'embed': build_embed(post),
         'hide_opinions': hide_opinions,
         'votes_validate': post.distinct_validation_votes('VALIDATE'),
@@ -153,11 +156,27 @@ def post_detail(request, pk):
                               .select_related('interlocutor')
                               .order_by('speaker_label', '-confirmed'),
         'speaker_names': speaker_names, 'page_obj': page_obj,
-        'first_unread_pk': first_unread_pk,
+        'first_unread_pk': first_unread_pk, 'newest_pk': newest_pk,
         'topic_obj': topic_obj, 'thread_messages': thread_messages,
         'is_mod': is_mod, 'is_trending': post.is_trending(),
         'my_subscription': (post.subscriptions.filter(user=u).first() if u else None),
-    })
+    }
+
+
+def post_detail(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if _adult_blocked(request, post):
+        return render(request, 'analysis/adult_blocked.html', status=403)
+    return render(request, 'analysis/post_detail.html', _post_context(request, post))
+
+
+def post_body_fragment(request, pk):
+    """4.3-A.2 L2: cuerpo del post (rejilla + señales + claims) como fragmento
+    htmx — el contenido nuevo aparece por arte de magia, sin recarga."""
+    post = get_object_or_404(Post, pk=pk)
+    if _adult_blocked(request, post):
+        return render(request, 'analysis/adult_blocked.html', status=403)
+    return render(request, 'partials/post_body.html', _post_context(request, post))
 
 
 TERMINAL_STATUSES = ('DONE', 'OFFTOPIC_SIGNALED', 'OFFTOPIC_RAW', 'FAILED',
@@ -169,12 +188,18 @@ def post_status(request, pk):
     post = get_object_or_404(Post, pk=pk)
     terminal = post.status in TERMINAL_STATUSES
     resp = render(request, 'partials/post_status.html', {'post': post})
-    # 4.3-A.1 K2: refrescar SOLO en la TRANSICION corriendo->terminal. El bug de la
-    # recarga cada 4 s: HX-Refresh disparaba en CADA sondeo terminal, y el
-    # envoltorio de la pagina sondeaba sin condicion — bucle infinito de recargas.
+    # 4.3-A.2 L3 (decision de David): CERO recargas. En la transicion
+    # corriendo->terminal se emiten dos eventos htmx: intercambiar el cuerpo del
+    # post EN EL SITIO (isttBodyRefresh) y cantar un bocadillo (isttToast).
     prev = request.GET.get('prev', '')
     if terminal and prev and prev not in TERMINAL_STATUSES:
-        resp['HX-Refresh'] = 'true'
+        import json
+        resp['HX-Trigger'] = json.dumps({
+            'isttBodyRefresh': {'url': f'/post/{post.pk}/fragmento/cuerpo/',
+                                'target': '#post-body'},
+            'isttToast': {'text': 'La transcripción y el análisis ya están aquí',
+                          'url': '#post-body'},
+        })
     if terminal:
         resp['HX-Reswap'] = 'outerHTML'
         resp.status_code = 286  # HTMX: stop polling
@@ -190,7 +215,7 @@ def _thread_page(topic_obj, u, request, per_page=20):
     Registra el punto de lectura del usuario (TopicRead) al servir la pagina."""
     from django.core.paginator import Paginator
     if not topic_obj:
-        return [], None, None
+        return [], None, None, 0
     qs = topic_obj.posts.filter(approved=True).select_related('poster').order_by('created')
     paginator = Paginator(qs, per_page)
     first_unread_pk = None
@@ -211,12 +236,13 @@ def _thread_page(topic_obj, u, request, per_page=20):
     messages_list = list(page_obj.object_list)
     for m in messages_list:
         m.first_unread = (m.pk == first_unread_pk)
+    newest = qs.last()
+    newest_pk = newest.pk if newest else 0
     if u and messages_list:
         from apps.forum.models import TopicRead
-        newest = qs.last()
         TopicRead.objects.filter(topic_id=topic_obj.pk, user=u).update(
-            last_post_id=newest.pk if newest else 0)
-    return messages_list, page_obj, first_unread_pk
+            last_post_id=newest_pk)
+    return messages_list, page_obj, first_unread_pk, newest_pk
 
 
 def post_thread_fragment(request, pk):
@@ -226,7 +252,7 @@ def post_thread_fragment(request, pk):
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
     from apps.forum.machina_glue import get_topic_for_post
     topic_obj = get_topic_for_post(post)
-    thread_messages, page_obj, _first = _thread_page(topic_obj, u, request)
+    thread_messages, page_obj, _first, newest_pk = _thread_page(topic_obj, u, request)
     from apps.forum.models import MessageSensitive, HiddenMessage
     msg_ids = [m.pk for m in thread_messages]
     sensitive_ids = set(MessageSensitive.objects.filter(
@@ -238,9 +264,23 @@ def post_thread_fragment(request, pk):
         m.hidden_by_me = m.pk in hidden_ids
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
-    return render(request, 'partials/thread_messages.html',
+    resp = render(request, 'partials/thread_messages.html',
                   {'post': post, 'thread_messages': thread_messages, 'is_mod': is_mod,
-                   'page_obj': page_obj})
+                   'page_obj': page_obj, 'newest_pk': newest_pk})
+    # 4.3-A.2 L3: si hay mensajes posteriores a los que el navegador conocia,
+    # ademas del intercambio silencioso, un bocadillo lo canta (SIEMPRE: es
+    # independiente de las suscripciones de la campana).
+    try:
+        conocido = int(request.GET.get('ultimo', 0))
+    except ValueError:
+        conocido = 0
+    if conocido and newest_pk > conocido:
+        import json
+        nuevos = sum(1 for m in thread_messages if m.pk > conocido)
+        texto = ('Nuevo mensaje en la conversación' if nuevos <= 1
+                 else f'{nuevos} mensajes nuevos en la conversación')
+        resp['HX-Trigger'] = json.dumps({'isttToast': {'text': texto, 'url': '#hilo'}})
+    return resp
 
 
 @login_required

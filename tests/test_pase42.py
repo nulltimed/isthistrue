@@ -328,15 +328,30 @@ class Pase43A1(TestCase):
                     malos.append(f'{f.name}:{i}')
         self.assertEqual(malos, [], f'Comentarios multilínea {{# #}}: {malos}')
 
-    def test_refresh_solo_en_transicion(self):
+    def test_transicion_emite_eventos_y_jamas_recarga(self):
         post = Post.objects.create(author=make_user(), url='https://youtu.be/abc133x',
                                    status='DONE')
         r = self.client.get(f'/post/{post.pk}/status/?prev=CHEAP_RUNNING')
-        self.assertEqual(r.headers.get('HX-Refresh'), 'true')   # corriendo -> DONE
+        self.assertIsNone(r.headers.get('HX-Refresh'))          # recargas: EXTINTAS
+        self.assertIn('isttBodyRefresh', r.headers.get('HX-Trigger', ''))
+        self.assertIn('isttToast', r.headers.get('HX-Trigger', ''))
         r = self.client.get(f'/post/{post.pk}/status/?prev=DONE')
-        self.assertIsNone(r.headers.get('HX-Refresh'))          # ya terminal: NUNCA
+        self.assertIsNone(r.headers.get('HX-Trigger'))          # ya terminal: silencio
         r = self.client.get(f'/post/{post.pk}/status/')
-        self.assertIsNone(r.headers.get('HX-Refresh'))          # sin prev: NUNCA
+        self.assertIsNone(r.headers.get('HX-Trigger'))          # sin prev: silencio
+
+    def test_bocadillo_de_mensajes_nuevos(self):
+        from apps.forum.machina_glue import create_topic_for_post, add_reply
+        autor = make_user()
+        post = Post.objects.create(author=autor, url='https://youtu.be/abc135x',
+                                   title='Hilo bocadillo')
+        create_topic_for_post(post)
+        primero = add_reply(post, autor, 'primero')
+        add_reply(post, autor, 'segundo, el nuevo')
+        r = self.client.get(f'/post/{post.pk}/fragmento/hilo/?ultimo={primero.pk}')
+        self.assertIn('isttToast', r.headers.get('HX-Trigger', ''))
+        r = self.client.get(f'/post/{post.pk}/fragmento/hilo/?ultimo=999999')
+        self.assertIsNone(r.headers.get('HX-Trigger'))
 
     def test_registro_con_candado(self):
         from apps.panel.models import SystemSetting
@@ -362,3 +377,16 @@ class Pase43A1(TestCase):
         r = self.client.get(f'/post/{post.pk}/')
         self.assertNotContains(r, 'Castresana')
         self.assertContains(r, 'Pedro Sánchez')
+
+    def test_sonido_de_bocadillos_configurable(self):
+        user = make_user()
+        self.client.force_login(user)
+        self.client.post('/accounts/settings/', {'toast_sound': 'on',
+                                                 'pref_mentions': 'on',
+                                                 'notify_mode': 'WEB',
+                                                 'digest_hour': '8'})
+        user.refresh_from_db()
+        self.assertTrue(user.notify_prefs.get('toast_sound'))
+        self.assertTrue(user.wants('mentions'))
+        r = self.client.get('/')
+        self.assertContains(r, 'data-toast-sound="1"')

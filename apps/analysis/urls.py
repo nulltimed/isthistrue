@@ -10,6 +10,7 @@ urlpatterns = [
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     path('post/<int:pk>/status/', views.post_status, name='post_status'),
     path('post/<int:pk>/fragmento/hilo/', views.post_thread_fragment, name='post_thread_fragment'),
+    path('post/<int:pk>/fragmento/cuerpo/', views.post_body_fragment, name='post_body_fragment'),
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
     path('post/<int:pk>/relegate/', views.relegate, name='post_relegate'),
     path('post/<int:pk>/unrelegate/', views.unrelegate, name='post_unrelegate'),
