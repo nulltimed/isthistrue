@@ -76,6 +76,9 @@ def settings_view(request):
         # identificar a los hablantes justo cuando el análisis va a dar veredictos.
         ('speakers_unnamed', 'Hablantes sin identificar',
          'Un análisis que sigues va a dar veredictos y aún no se sabe quién habla.'),
+        # 4.3-D: aviso de coste en vídeos que pasan del tramo gratuito.
+        ('long_video_cost', 'Coste de los vídeos largos',
+         'Un análisis que sigues supera los minutos gratuitos y te decimos lo que cuesta.'),
     ]
     pref_rows = [(k, lbl, hint, u.wants(k)) for k, lbl, hint in PREF_ROWS]
     return render(request, 'accounts/settings.html',

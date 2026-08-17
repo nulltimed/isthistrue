@@ -2,10 +2,19 @@
 Pipeline Celery en DOS fases (README v2 §5):
   fase barata (transcripcion + Haiku + algoritmo) -> validacion -> fase cara (Sonnet).
 """
+import logging
 import os, re, shutil, tempfile
 from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
+
+# 4.3-D — FALLO LATENTE EN PRODUCCION, corregido aqui: este modulo usaba
+# `logger.info(...)` en _transcribe_first_tranche (rama de subtitulos VTT
+# oficiales) SIN que `logger` existiera. Entro en el pase 4.3-A (c1887d3) y
+# nadie lo vio porque esa rama solo se pisa cuando el video TIENE subtitulos con
+# cues; en modo simulado no se ejecuta jamas. Un NameError ahi tumba la fase
+# barata entera y el post se queda en CHEAP_RUNNING tras agotar los reintentos.
+logger = logging.getLogger('analysis.tasks')
 
 # 4.3-A.8: estos dos numeros eran el coste FIJO de cualquier post, durase 3 min o
 # una hora. Se conservan como SUELO (un video corto no cuesta menos que esto) y el
@@ -31,17 +40,29 @@ def run_cheap_phase(self, post_id):
         return 'budget_exhausted'
 
     post.status = 'CHEAP_RUNNING'
-    post.save(update_fields=['status'])
+    # 4.3-D: cronometro. Sin esto, medir un video de una hora es un experimento
+    # suelto que no se puede repetir (peticion del operador, docs/33 C2).
+    post.cheap_started_at = timezone.now()
+    post.save(update_fields=['status', 'cheap_started_at'])
 
     tmpdir = tempfile.mkdtemp(prefix='istt_audio_')
     try:
         # 4.2 F1: _transcribe_first_tranche guarda titulo y duracion del video
         # (extract_info) — el titulo sustituye al enlace en bruto en pagina, foro,
         # portada y campana ("suscrito a 10 posts, saber cual habla de un plumazo").
+        import time as _time
+        _t0 = _time.monotonic()
         segments, audio_path = _transcribe_first_tranche(post, tmpdir)
+        post.transcribe_seconds = round(_time.monotonic() - _t0, 1)
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
         from apps.agents.diarization import diarize
+        _t1 = _time.monotonic()
         turns = diarize(audio_path) if (audio_path or settings.MOCK_AGENTS) else []
+        post.diarize_seconds = round(_time.monotonic() - _t1, 1)
+        post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
+        logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
+                    post.pk, post.transcribe_seconds, post.diarize_seconds,
+                    round((post.duration_seconds or 0) / 60))
         # 4.2 D1 (decision de David): la unidad de transcripcion y de ANALISIS es la
         # FRASE COMPLETA por hablante; el timestamp es el inicio de esa frase.
         merged = merge_into_sentences(segments, turns)
@@ -72,6 +93,8 @@ def run_cheap_phase(self, post_id):
     from apps.forum.machina_glue import create_topic_for_post
     create_topic_for_post(post)
     archive_wayback.delay(post.pk)  # preservacion: TODO post (decidido)
+    post.cheap_finished_at = timezone.now()
+    post.save(update_fields=['cheap_finished_at'])
     notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
     return 'pending_validation'
 
@@ -116,7 +139,8 @@ def run_full_analysis(self, post_id):
         return 'budget_exhausted'  # beat lo reintentara; cola congelada si corte mensual
 
     post.status = 'FULL_RUNNING'
-    post.save(update_fields=['status'])
+    post.full_started_at = timezone.now()
+    post.save(update_fields=['status', 'full_started_at'])
     if settings.USE_BATCH_API:
         import json as _json
         from apps.agents.batch import submit_verdict_batch, poll_verdict_batch
@@ -132,7 +156,8 @@ def run_full_analysis(self, post_id):
                 pass  # si el lote falla, caemos a llamadas directas
     verdict_agent.run(post)  # crea/actualiza claims wiki, fuentes, colores
     post.status = 'DONE'
-    post.save(update_fields=['status'])
+    post.full_finished_at = timezone.now()
+    post.save(update_fields=['status', 'full_finished_at'])
     notify_post_event(post, 'analysis', 'Veredictos publicados')
     return 'done'
 

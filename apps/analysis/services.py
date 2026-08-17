@@ -32,6 +32,7 @@ def cast_vote(post, user, kind):
             post.save(update_fields=['status'])
             launch_full_analysis(post)
             warn_unnamed_speakers(post)   # 4.3-C
+            warn_long_video(post)         # 4.3-D
             return True, 'Validado: análisis completo lanzado.'
         return True, 'Voto registrado.'
 
@@ -87,6 +88,33 @@ def warn_unnamed_speakers(post):
     destinatarios.add(post.author)
     for u in destinatarios:
         notify(u, texto, url=f'/post/{post.pk}/', kind='speakers_unnamed')
+    return len(destinatarios)
+
+
+def warn_long_video(post):
+    """4.3-D (decision A2 de docs/33): AVISO, nunca muro. Cuando el analisis caro
+    arranca sobre un video que pasa del tramo gratuito, se avisa a quienes votaron,
+    a los suscritos y al autor de lo que cuesta y de la donacion que lo sostiene.
+    El gasto entra en el presupuesto normal: nadie se queda sin analisis por esto,
+    y el aviso sale DESPUES de lanzarlo, para que se note que no es un peaje.
+    """
+    from apps.accounts.services import notify
+    from .models import ValidationVote
+    donacion = suggested_donation_eur(post)
+    if not donacion:
+        return 0
+    minutos = video_minutes(post)
+    coste = cost_cheap_eur(post) + cost_full_eur(post)
+    texto = (f'«{post.title or post.url}» dura {minutos} minutos y se analiza entero: '
+             f'cuesta unos {coste:.2f} € en total, con {free_minutes()} minutos '
+             f'gratuitos. Si puedes, una donación de {donacion:.2f} € cubre este '
+             f'análisis. Es voluntaria: el análisis ya está en marcha.')
+    destinatarios = {v.user for v in ValidationVote.objects.filter(post=post)
+                     .select_related('user')}
+    destinatarios |= {s.user for s in post.subscriptions.select_related('user')}
+    destinatarios.add(post.author)
+    for u in destinatarios:
+        notify(u, texto, url='/donaciones/', kind='long_video_cost')
     return len(destinatarios)
 
 

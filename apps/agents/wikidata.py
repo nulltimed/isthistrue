@@ -58,6 +58,41 @@ def _commons_thumb(filename, width=80):
             f'{quote(filename.replace(" ", "_"))}?width={width}')
 
 
+def _cirrus_ids(query, limit=20):
+    """Busqueda de TEXTO COMPLETO en Wikidata, restringida a personas.
+
+    Por que hace falta (caso real, 2026-08-17): `wbsearchentities` casa por
+    PREFIJO de etiqueta o alias. Escribir "abascal" NO encuentra a Santiago
+    Abascal, porque su etiqueta no EMPIEZA por "abascal" — y en castellano lo
+    natural al identificar a alguien es teclear el apellido. El buscador parecia
+    decir "esta persona no esta en Wikidata" cuando si estaba.
+
+    `action=query&list=search` usa CirrusSearch, que si hace texto completo, y
+    admite el filtro `haswbstatement:P31=Q5` (instancia de: ser humano) para no
+    devolver peliculas ni empresas homonimas. Devuelve titulos de pagina, que en
+    Wikidata SON los QID.
+    """
+    try:
+        r = httpx.get('https://www.wikidata.org/w/api.php', timeout=_TIMEOUT, headers=_UA,
+                      params={'action': 'query', 'list': 'search',
+                              'srsearch': f'{query} haswbstatement:P31=Q5',
+                              'srlimit': limit, 'srnamespace': 0, 'format': 'json'})
+        r.raise_for_status()
+        hits = ((r.json().get('query') or {}).get('search') or [])
+    except Exception as exc:
+        # Degradacion RUIDOSA: el respaldo puede caerse sin llevarse por delante
+        # la busqueda principal.
+        logger.warning('Búsqueda de texto completo en Wikidata no disponible (%r): %r',
+                       query, exc)
+        return []
+    ids = []
+    for h in hits:
+        titulo = (h.get('title') or '').split(':')[-1]   # 'Item:Q42' -> 'Q42'
+        if titulo.startswith('Q') and titulo[1:].isdigit():
+            ids.append(titulo)
+    return ids
+
+
 def search_people(query, lang='es', limit=6):
     """Busca PERSONAS en Wikidata y devuelve candidatos listos para la caja.
 
@@ -86,9 +121,22 @@ def search_people(query, lang='es', limit=6):
         r.raise_for_status()
         hits = r.json().get('search') or []
         ids = [h['id'] for h in hits][:20]
-        if not ids:
-            cache.set(key, [], _CACHE_SECONDS)
-            return []
+    except Exception as exc:
+        logger.warning('Búsqueda de personas en Wikidata no disponible (%r): %r', query, exc)
+        return []
+
+    # 4.3-D: el prefijo no basta. Se suman los resultados de texto completo (que
+    # SI encuentran por apellido) DETRAS de los del prefijo, que son mas precisos.
+    # Sin duplicados y respetando el orden de relevancia.
+    for qid in _cirrus_ids(query):
+        if qid not in ids:
+            ids.append(qid)
+    ids = ids[:40]        # wbgetentities admite hasta 50 por llamada
+    if not ids:
+        cache.set(key, [], _CACHE_SECONDS)
+        return []
+
+    try:
         # Segunda llamada: los datos completos dicen QUIEN es persona y su foto.
         r2 = httpx.get('https://www.wikidata.org/w/api.php', timeout=_TIMEOUT, headers=_UA,
                        params={'action': 'wbgetentities', 'ids': '|'.join(ids),
@@ -97,7 +145,7 @@ def search_people(query, lang='es', limit=6):
         r2.raise_for_status()
         entities = r2.json().get('entities') or {}
     except Exception as exc:
-        logger.warning('Búsqueda de personas en Wikidata no disponible (%r): %r', query, exc)
+        logger.warning('Datos de entidades de Wikidata no disponibles (%r): %r', query, exc)
         return []
 
     results = []

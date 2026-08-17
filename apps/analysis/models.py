@@ -80,7 +80,26 @@ class Post(models.Model):
     opus_rescanned = models.BooleanField(default=False)  # candado: UNA vez por post
     # 4.2 D4: aviso de Trending enviado (se rearma al salir del umbral).
     trending_notified = models.BooleanField(default=False)
+    # 4.3-D: cronometro del analisis (peticion del operador, docs/33 C2). Van aqui
+    # y no en AnalysisRequest porque el analisis ocurre UNA vez por post, mientras
+    # que solicitantes puede haber muchos: N relojes para un solo cronometraje.
+    cheap_started_at = models.DateTimeField(null=True, blank=True)
+    cheap_finished_at = models.DateTimeField(null=True, blank=True)
+    full_started_at = models.DateTimeField(null=True, blank=True)
+    full_finished_at = models.DateTimeField(null=True, blank=True)
+    transcribe_seconds = models.FloatField(default=0.0)   # faster-whisper
+    diarize_seconds = models.FloatField(default=0.0)      # pyannote
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def analysis_times(self):
+        """Resumen legible para el informe del operador."""
+        def dur(a, b):
+            return round((b - a).total_seconds(), 1) if (a and b) else None
+        return {'minutos_video': round((self.duration_seconds or 0) / 60.0, 1),
+                'transcribir_s': round(self.transcribe_seconds, 1),
+                'diarizar_s': round(self.diarize_seconds, 1),
+                'fase_barata_s': dur(self.cheap_started_at, self.cheap_finished_at),
+                'fase_completa_s': dur(self.full_started_at, self.full_finished_at)}
 
     def trending_votes(self):
         """Votos dentro de la ventana viva (SystemSetting trending_window_days)."""

@@ -1238,3 +1238,218 @@ class Pase43C(TestCase):
         self.assertIn('wiki_index_people', claves)
         self.assertEqual(s.SETTING_DEFAULTS['wiki_index_people'], '0')
         self.assertIn('WIKI_INDEX_PEOPLE', open('.env.example').read())
+
+
+class Pase43D(TestCase):
+    """4.3-D — buscar por apellido, fichas antiguas con QID, aviso de coste,
+    cronómetro del análisis y el candado del logger inexistente.
+
+    Contexto: David no encontraba a Santiago Abascal en el autocompletado, y sí
+    está en Wikidata. El informe del operador (docs/35 §3.1) señaló además que
+    dejar cerradas las fichas antiguas CON QID no se sostenía como regla.
+    """
+
+    # --- el fallo latente que podía tumbar la fase barata ---
+    def test_ningun_modulo_usa_un_logger_que_no_existe(self):
+        """Candado estructural (regla 12 de docs/34). `logger.info(...)` sin
+        `logger` definido es un NameError que solo salta en la rama que lo
+        ejecuta: en tasks.py vivió desde el pase 4.3-A porque esa rama solo se
+        pisa con vídeos que traen subtítulos oficiales.
+        """
+        import ast
+        import glob
+        malos = []
+        for path in (glob.glob('apps/**/*.py', recursive=True)
+                     + glob.glob('config/**/*.py', recursive=True)):
+            if '/migrations/' in path:
+                continue
+            src = open(path, encoding='utf-8').read()
+            if 'logger.' not in src:
+                continue
+            definidos = set()
+            for x in ast.walk(ast.parse(src)):
+                if isinstance(x, ast.Assign):
+                    for y in x.targets:
+                        if isinstance(y, ast.Name):
+                            definidos.add(y.id)
+                elif isinstance(x, (ast.Import, ast.ImportFrom)):
+                    for a in x.names:
+                        definidos.add((a.asname or a.name).split('.')[0])
+            if 'logger' not in definidos:
+                malos.append(path)
+        self.assertEqual(malos, [], f'usan logger sin definirlo: {malos}')
+
+    # --- D1: buscar por apellido ---
+    def test_el_respaldo_de_texto_completo_encuentra_por_apellido(self):
+        """`wbsearchentities` casa por PREFIJO: 'abascal' no encuentra a
+        'Santiago Abascal'. El respaldo de CirrusSearch sí."""
+        from apps.agents import wikidata
+
+        def falso_get(url, **kw):
+            params = kw.get('params', {})
+
+            class R:
+                status_code = 200
+
+                def raise_for_status(self):
+                    pass
+
+                def json(self):
+                    if params.get('action') == 'wbsearchentities':
+                        return {'search': []}          # el prefijo no encuentra nada
+                    if params.get('action') == 'query':
+                        assert 'haswbstatement:P31=Q5' in params['srsearch']
+                        return {'query': {'search': [{'title': 'Q11703587'}]}}
+                    return {'entities': {'Q11703587': {
+                        'labels': {'es': {'value': 'Santiago Abascal'}},
+                        'descriptions': {'es': {'value': 'político español'}},
+                        'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q5'}}}}]}}}}
+            return R()
+
+        with mock.patch.object(wikidata.httpx, 'get', falso_get):
+            r = wikidata.search_people('abascal')
+        self.assertEqual(len(r), 1)
+        self.assertEqual(r[0]['qid'], 'Q11703587')
+        self.assertEqual(r[0]['name'], 'Santiago Abascal')
+
+    def test_el_respaldo_no_duplica_lo_que_ya_trajo_el_prefijo(self):
+        from apps.agents import wikidata
+
+        def falso_get(url, **kw):
+            params = kw.get('params', {})
+
+            class R:
+                status_code = 200
+
+                def raise_for_status(self):
+                    pass
+
+                def json(self):
+                    if params.get('action') == 'wbsearchentities':
+                        return {'search': [{'id': 'Q1'}]}
+                    if params.get('action') == 'query':
+                        return {'query': {'search': [{'title': 'Q1'}, {'title': 'Q2'}]}}
+                    pedidos = params['ids'].split('|')
+                    assert pedidos == ['Q1', 'Q2'], pedidos      # sin duplicados
+                    return {'entities': {q: {
+                        'labels': {'es': {'value': f'Persona {q}'}}, 'descriptions': {},
+                        'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q5'}}}}]}}
+                        for q in pedidos}}
+            return R()
+
+        with mock.patch.object(wikidata.httpx, 'get', falso_get):
+            r = wikidata.search_people('persona')
+        self.assertEqual([x['qid'] for x in r], ['Q1', 'Q2'])
+
+    def test_si_el_respaldo_se_cae_la_busqueda_principal_sobrevive(self):
+        """Degradación ruidosa: el respaldo puede fallar sin llevarse por delante
+        lo que el prefijo sí encontró."""
+        from apps.agents import wikidata
+
+        def falso_get(url, **kw):
+            params = kw.get('params', {})
+            if params.get('action') == 'query':
+                raise RuntimeError('CirrusSearch caído')
+
+            class R:
+                status_code = 200
+
+                def raise_for_status(self):
+                    pass
+
+                def json(self):
+                    if params.get('action') == 'wbsearchentities':
+                        return {'search': [{'id': 'Q1'}]}
+                    return {'entities': {'Q1': {
+                        'labels': {'es': {'value': 'Alguien'}}, 'descriptions': {},
+                        'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q5'}}}}]}}}}
+            return R()
+
+        with mock.patch.object(wikidata.httpx, 'get', falso_get):
+            with self.assertLogs('agents.wikidata', level='WARNING'):
+                r = wikidata.search_people('alguien')
+        self.assertEqual(len(r), 1)
+
+    # --- D2: las fichas antiguas con QID se abren ---
+    def test_la_migracion_abre_las_fichas_antiguas_con_qid(self):
+        import importlib
+        m = importlib.import_module('apps.wiki.migrations.0005_abrir_fichas_con_qid')
+        from apps.wiki.models import Interlocutor
+
+        class FalsoApps:
+            def get_model(self, app, modelo):
+                return Interlocutor
+
+        con_qid = Interlocutor.objects.create(name='Ana Botella', slug='ana-botella-d',
+                                              base_slug='ana-botella-d',
+                                              wikidata_id='Q41266', is_public_figure=None)
+        sin_qid = Interlocutor.objects.create(name='Vecino', slug='vecino-d',
+                                              base_slug='vecino-d', is_public_figure=None)
+        m.abrir_las_que_tienen_qid(FalsoApps(), None)
+        con_qid.refresh_from_db()
+        sin_qid.refresh_from_db()
+        self.assertTrue(con_qid.is_public_figure)     # tenía QID: se abre
+        self.assertIsNone(sin_qid.is_public_figure)   # sin QID: sigue cerrada
+
+    # --- D3: aviso de coste por vídeo largo ---
+    def _post_largo(self, segundos=3600, n=0):
+        return Post.objects.create(
+            author=make_user(username=f'd_{n}', email=f'd_{n}@example.org'),
+            url=f'https://youtu.be/d{n}', duration_seconds=segundos,
+            status='PENDING_VALIDATION', title='Entrevista de una hora')
+
+    def test_un_video_largo_avisa_del_coste_a_quienes_votaron(self):
+        from apps.accounts.models import Notification
+        from apps.analysis.services import warn_long_video
+        post = self._post_largo(3600, 1)
+        votante = make_user(username='votD', email='votd@example.org', karma=100)
+        post.validation_votes.create(user=votante, kind='VALIDATE')
+        self.assertGreaterEqual(warn_long_video(post), 1)
+        aviso = Notification.objects.filter(user=votante).first()
+        self.assertIsNotNone(aviso)
+        self.assertIn('60 minutos', aviso.text)
+        self.assertIn('/donaciones/', aviso.url)
+
+    def test_un_video_corto_no_molesta_a_nadie(self):
+        from apps.analysis.services import warn_long_video
+        self.assertEqual(warn_long_video(self._post_largo(300, 2)), 0)
+
+    def test_el_aviso_de_coste_respeta_el_interruptor(self):
+        from apps.accounts.models import Notification
+        from apps.analysis.services import warn_long_video
+        post = self._post_largo(3600, 3)
+        mudo = make_user(username='mudoD', email='mudod@example.org',
+                         notify_prefs={'long_video_cost': False})
+        post.validation_votes.create(user=mudo, kind='VALIDATE')
+        warn_long_video(post)
+        self.assertFalse(Notification.objects.filter(user=mudo).exists())
+
+    def test_el_aviso_de_coste_no_es_un_muro(self):
+        """El análisis arranca igual: el aviso llega DESPUÉS de lanzarlo."""
+        codigo = open('apps/analysis/services.py').read()
+        self.assertLess(codigo.index('launch_full_analysis(post)'),
+                        codigo.index('warn_long_video(post)'))
+
+    def test_el_interruptor_de_coste_esta_en_mi_cuenta(self):
+        self.assertIn("'long_video_cost'", open('apps/accounts/views.py').read())
+
+    # --- D4: el cronómetro ---
+    def test_el_post_guarda_los_tiempos_del_analisis(self):
+        post = self._post_largo(3600, 4)
+        post.transcribe_seconds = 1200.0
+        post.diarize_seconds = 2400.0
+        post.cheap_started_at = timezone.now() - timedelta(minutes=70)
+        post.cheap_finished_at = timezone.now()
+        post.save()
+        t = post.analysis_times()
+        self.assertEqual(t['minutos_video'], 60.0)
+        self.assertEqual(t['transcribir_s'], 1200.0)
+        self.assertEqual(t['diarizar_s'], 2400.0)
+        self.assertGreater(t['fase_barata_s'], 4000)
+        self.assertIsNone(t['fase_completa_s'])     # aún no ha corrido
+
+    def test_las_dos_fases_marcan_su_reloj(self):
+        codigo = open('apps/analysis/tasks.py').read()
+        for campo in ('cheap_started_at', 'cheap_finished_at', 'full_started_at',
+                      'full_finished_at', 'transcribe_seconds', 'diarize_seconds'):
+            self.assertIn(campo, codigo)
