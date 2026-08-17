@@ -227,12 +227,14 @@ class BloqueH(TestCase):
         seg = post.transcript_segments.create(start_seconds=0, end_seconds=5,
                                               text='La luna es de queso.',
                                               signal='FACTUAL_UNVERIFIED')
-        voters = [make_user(username=f'd{i}', email=f'd{i}@example.org') for i in range(6)]
+        # 4.3-A.7: el umbral pasó a ser INCLUSIVO (>=), así que el QUINTO «Discuto»
+        # ya dispara (antes hacían falta 6: «llegar a 5» eran 6, ese era el bug).
+        voters = [make_user(username=f'd{i}', email=f'd{i}@example.org') for i in range(5)]
         with mock.patch.object(tasks.opus_rescan_segment, 'delay') as delay:
             for v in voters:
                 self.client.force_login(v)
                 self.client.post(f'/oracion/{seg.pk}/votar/down/')
-        delay.assert_called_once_with(seg.pk)  # el 6o ▼ supera el umbral (5), UNA vez... 
+        delay.assert_called_once_with(seg.pk)  # el 5o ▼ alcanza el umbral, UNA vez... 
         # (el 6o llama; el candado opus_rescanned de la tarea evita repeticiones reales)
 
     def test_mp_respeta_buzon_y_mods_pasan(self):
@@ -477,7 +479,8 @@ class Pase43A5(TestCase):
 
     def test_frase_activa_en_negro_texto_blanco(self):
         css = open('static/css/main.css').read()
-        self.assertIn('.segment.live{background:#141414', css)
+        # 4.3-A.7 fusiono .live y :hover en una regla: el negro se declara para ambas.
+        self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
         self.assertIn('.segment.live,.segment.live .text{color:#fff}', css)
 
     def test_reanalizar_solo_moderador(self):
@@ -565,12 +568,12 @@ class Pase43A6(TestCase):
 
     def test_pildora_de_hablante_legible_sobre_negro(self):
         css = open('static/css/main.css').read()
-        self.assertIn('.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag{', css)
+        self.assertIn('.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag,', css)
         self.assertIn('background:#fff;border-color:#fff;color:#141414', css)
 
     def test_botones_de_voto_visibles_en_la_frase_activa(self):
         css = open('static/css/main.css').read()
-        self.assertIn('.segment.live .ibtn{color:#fff}', css)
+        self.assertIn('.segment.live .ibtn,.transcript .segment:hover .ibtn{color:#fff}', css)
 
 
 class AutocompletadoHablantes(TestCase):
@@ -943,7 +946,7 @@ class Pase43A8(TestCase):
         d = suggested_donation_eur(self._post(3600, n=7))
         self.assertGreater(d, 0)
         self.assertEqual(d * 2, int(d * 2))      # múltiplo de 0,50
-        self.assertLess(d, 5)                    # sigue siendo una donación, no un peaje
+        self.assertLessEqual(d, 5)               # la tabla del pase fija 5,00 € para 60 min
 
     def test_la_donacion_solo_cobra_el_exceso(self):
         from apps.analysis.services import suggested_donation_eur
