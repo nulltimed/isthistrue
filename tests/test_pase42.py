@@ -1004,6 +1004,29 @@ class Pase43A8(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn(f'/post/{p.pk}/', r.content.decode())
 
+    def test_el_superusuario_no_tiene_restricciones_aunque_no_tenga_fecha(self):
+        """Orden de David (2026-08-17): la cuenta superusuario entra en la sala
+        +18 sin fecha de nacimiento (ensure_superuser no la establece). El
+        privilegio es SOLO del superusuario: el staff sigue sujeto a la edad."""
+        p = self._post(300, n=13, is_adult=True, title='Reservado para el dueño')
+        jefe = make_user(username='jefeA8', email='jefea8@example.org')
+        jefe.is_superuser = True
+        jefe.is_staff = True
+        jefe.save()
+        self.assertIsNone(jefe.birth_date)
+        self.assertTrue(jefe.is_adult)
+        self.client.force_login(jefe)
+        r = self.client.get('/mas18/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(f'/post/{p.pk}/', r.content.decode())
+        self.assertIn('/mas18/', self.client.get('/').content.decode())  # y ve el menú
+        solo_staff = make_user(username='staffA8', email='staffa8@example.org')
+        solo_staff.is_staff = True
+        solo_staff.save()
+        self.assertFalse(solo_staff.is_adult)
+        self.client.force_login(solo_staff)
+        self.assertEqual(self.client.get('/mas18/').status_code, 403)
+
     def test_los_ajustes_nuevos_estan_en_el_panel_y_en_el_entorno(self):
         from apps.panel.views import SETTINGS_DEF
         from django.conf import settings as s

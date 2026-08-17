@@ -60,6 +60,15 @@ class User(AbstractUser):
 
     @property
     def is_adult(self):
+        """Mayoria de edad segun la fecha de nacimiento del registro.
+
+        EXCEPCION (orden de David, 2026-08-17): la cuenta superusuario no tiene
+        restricciones. `ensure_superuser` no establece birth_date, asi que el
+        dueno de la plataforma se quedaba fuera de su propia sala +18; se le
+        reconoce la mayoria de edad sin exigirle la fecha. NO se extiende a
+        staff ni a moderadores: solo al superusuario."""
+        if self.is_superuser:
+            return True
         return self.age is not None and self.age >= 18
 
     def effective_level(self):
