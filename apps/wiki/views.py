@@ -42,20 +42,75 @@ def recent_changes(request):
     return render(request, 'analysis/recent_changes.html', {'versions': versions})
 
 
+# 4.3-C: los colores del semaforo, agrupados como los quiere David — "afirmaciones
+# verdaderas, opiniones o afirmaciones falsas de cada hablante de cada video".
+GRUPOS = [('GREEN', 'Afirmaciones verificadas'),
+          ('AMBER', 'Afirmaciones con matices'),
+          ('RED', 'Afirmaciones desmentidas'),
+          ('GREY', 'Opiniones y predicciones')]
+
+
+def people_indexable():
+    """Interruptor del panel: las fichas de persona salen (o no) en buscadores.
+    Por defecto APAGADO (decision de David, 4.3-C): existen y se pueden enlazar,
+    pero llevan noindex hasta que el se decida."""
+    from apps.panel.models import SystemSetting
+    return SystemSetting.get_int('wiki_index_people', 0) == 1
+
+
+def person_page_legacy(request, slug):
+    """4.3-C: /wiki/persona/<slug>/ se mudo a /persona/<slug>/. 301 permanente
+    para no romper enlaces ya publicados ni perder el posicionamiento."""
+    return redirect(f'/persona/{slug}/', permanent=True)
+
+
 def person_page(request, slug):
-    """Pagina de interlocutor: SOLO figuras publicas; redaccion estrictamente factual."""
-    person = Interlocutor.objects.filter(slug=slug, is_public_figure=True).first()
+    """La ficha de persona ES la wiki (4.3-C, decision de David).
+
+    Tres caminos posibles para un mismo slug:
+      1. Una sola figura publica con ese slug -> su ficha.
+      2. Varias personas comparten la raiz del nombre -> pagina de
+         DESAMBIGUACION: "aparecerán todos los personajes posibles indexados".
+      3. Slug antiguo -> 301 permanente (candado congelado).
+
+    Candado congelado: SOLO figuras publicas tienen pagina. Hoy eso significa
+    "identificada con QID de Wikidata" (P31=Q5) o aprobada a mano por moderacion.
+    Un nombre escrito a mano sin QID no abre pagina: podria ser un particular.
+    """
+    from django.http import Http404
+    from .models import InterlocutorSlugHistory
+    from .naming import claims_for_person
+
+    publicas = Interlocutor.objects.filter(is_public_figure=True)
+    person = publicas.filter(slug=slug).first()
+
+    # 2. Homonimos: la raiz del nombre lleva a mas de una ficha.
+    hermanos = list(publicas.filter(base_slug=slug).exclude(pk=person.pk if person else 0))
+    if hermanos:
+        candidatos = ([person] if person else []) + hermanos
+        return render(request, 'wiki/person_disambiguation.html',
+                      {'slug': slug, 'candidatos': candidatos,
+                       'indexable': people_indexable()})
+
     if not person:
-        from .models import InterlocutorSlugHistory
+        # 3. Slug antiguo.
         old = InterlocutorSlugHistory.objects.filter(old_slug=slug).first()
         if old and old.interlocutor.is_public_figure:
-            return redirect(f'/wiki/persona/{old.interlocutor.slug}/', permanent=True)
-        from django.http import Http404
+            return redirect('person_page', slug=old.interlocutor.slug, permanent=True)
         raise Http404
-    from .naming import claims_for_person
-    appearances = claims_for_person(person)[:100]
+
+    # 1. Su ficha, con las afirmaciones agrupadas por color.
+    appearances = list(claims_for_person(person)[:300])
+    grupos = []
+    for color, titulo in GRUPOS:
+        filas = [a for a in appearances if a.claim.color == color]
+        if filas:
+            grupos.append({'color': color, 'titulo': titulo, 'filas': filas})
+    sin_color = [a for a in appearances if a.claim.color not in dict(GRUPOS)]
     return render(request, 'analysis/person_detail.html',
-                  {'person': person, 'appearances': appearances})
+                  {'person': person, 'appearances': appearances, 'grupos': grupos,
+                   'sin_color': sin_color, 'total': len(appearances),
+                   'indexable': people_indexable()})
 
 
 def follow_claim(request, slug):

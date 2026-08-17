@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from apps.wiki import views as wiki_views  # 4.3-C: /persona/ vive en la raiz
 from apps.panel.dsa import complaint_form
 from django.views.generic import TemplateView
 
@@ -26,6 +27,9 @@ urlpatterns = [
     path('mensaje/<int:mpost_id>/sensible/', views.message_sensitive_toggle, name='message_sensitive'),
     path('buscar/', views.search, name='search'),
     path('mas18/', views.adult_room, name='adult_room'),  # 4.3-A.8: sala cerrada
+    # 4.3-C: la ficha de persona ES la wiki. Misma direccion en los tres dominios.
+    path('persona/<slug:slug>/', wiki_views.person_page, name='person_page'),
+    path('person/<slug:slug>/', wiki_views.person_page),   # alias EN
     path('hablante/votar/<int:proposal_id>/', views.vote_speaker_name, name='vote_speaker_name'),
     path('post/<int:pk>/upvote/', views.upvote, name='post_upvote'),
     path('donaciones/', views.donations_page, name='donations'),

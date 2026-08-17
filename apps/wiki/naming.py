@@ -9,15 +9,47 @@ from .models import (Interlocutor, InterlocutorSlugHistory,
 CONFIRM_POINTS = 'name_confirm_points'  # por defecto 5 puntos ponderados
 
 
+def points_of(proposal):
+    """Puntos ponderados de una propuesta. El voto de un MODERADOR o del
+    SUPERUSUARIO vale por 5 (SystemSetting mod_vote_weight): confirma en
+    solitario. Lo calcula SpeakerNameVote.weight()."""
+    return sum(v.weight() for v in proposal.votes.select_related('user'))
+
+
+def times_proposed(proposal):
+    """Cuantas veces se ha propuesto ESE MISMO nombre en toda la plataforma.
+    David: "por votación, wikidata sobre todo y repetición del nombre"."""
+    return SpeakerNameProposal.objects.filter(
+        candidate_name__iexact=proposal.candidate_name).count()
+
+
+def rank_key(proposal):
+    """Orden de mando para elegir el nombre de un hablante (4.3-C, decision de
+    David), de mayor a menor peso:
+      1. Tener QID de Wikidata. Una propuesta identificada gana SIEMPRE a una
+         escrita a mano, aunque empaten a puntos.
+      2. Los puntos ponderados (el moderador pesa 5).
+      3. La repeticion del nombre en la plataforma.
+    """
+    return (1 if proposal.wikidata_id else 0, points_of(proposal),
+            times_proposed(proposal))
+
+
 def vote_proposal(proposal, user):
     if not (user.is_contrib_plus() or user.is_superuser):
         return False, 'Necesitas nivel Contribuidor o superior.'
     SpeakerNameVote.objects.get_or_create(proposal=proposal, user=user)
-    points = sum(v.weight() for v in proposal.votes.select_related('user'))
     needed = SystemSetting.get_int(CONFIRM_POINTS, 5)
-    if points >= needed and not proposal.confirmed:
-        _confirm(proposal)
-        return True, f'Confirmado: {proposal.candidate_name}.'
+    # Gana la MEJOR propuesta de ese hablante, no necesariamente la votada: si
+    # una con QID iguala en puntos a una escrita a mano, se confirma la del QID.
+    hermanas = list(SpeakerNameProposal.objects.filter(
+        post=proposal.post, speaker_label=proposal.speaker_label))
+    mejor = max(hermanas, key=rank_key)
+    puntos_mejor = points_of(mejor)
+    if puntos_mejor >= needed and not mejor.confirmed:
+        _confirm(mejor)
+        return True, f'Confirmado: {mejor.candidate_name}.'
+    points = points_of(proposal)
     return True, f'Voto registrado ({points}/{needed} puntos).'
 
 
@@ -36,8 +68,15 @@ def _person_for(proposal):
     while Interlocutor.objects.filter(slug=slug).exists():
         # Homonimo con otra ficha (otro QID o sin el): slug propio, jamas mezclar.
         slug, n = f'{base}-{n}', n + 1
+    # 4.3-C — quien tiene pagina y quien no:
+    # Con QID, Wikidata ya certifico que es una PERSONA (filtro P31=Q5) y publica
+    # lo bastante para tener ficha: figura publica, pagina abierta.
+    # Sin QID es un nombre escrito a mano, que podria ser un particular: queda en
+    # revision (None) y NO genera pagina. El candado congelado manda: los
+    # particulares jamas tienen pagina ni nombre en la URL.
     return Interlocutor.objects.create(
-        name=name, slug=slug, is_public_figure=None, wikidata_id=qid,
+        name=name, slug=slug, base_slug=base, wikidata_id=qid,
+        is_public_figure=True if qid else None,
         photo_url=proposal.photo_url or '', description=proposal.description or '')
 
 
@@ -53,6 +92,41 @@ def _confirm(proposal):
     proposal.save(update_fields=['confirmed', 'interlocutor'])
     AuditLog.objects.create(action='speaker_confirmed',
                             detail=f'post {proposal.post_id} {proposal.speaker_label} -> {name}')
+    # 4.3-C (David): "hasta que esa persona/hablante se identifica: entonces se
+    # crea/actualiza la página de la persona". La ficha se arma en vivo desde
+    # claims_for_person(), asi que confirmar YA la actualiza; lo que falta es
+    # refrescar los datos de Wikidata si la propuesta traia foto o descripcion
+    # mejores, y avisar a quien sigue el post.
+    cambios = []
+    if proposal.photo_url and not person.photo_url:
+        person.photo_url = proposal.photo_url
+        cambios.append('photo_url')
+    if proposal.description and not person.description:
+        person.description = proposal.description
+        cambios.append('description')
+    if not person.base_slug:
+        person.base_slug = slugify(person.name)[:150]
+        cambios.append('base_slug')
+    if cambios:
+        person.save(update_fields=cambios)
+    _notify_person_page(proposal, person)
+    return person
+
+
+def _notify_person_page(proposal, person):
+    """Aviso a quien voto o sigue el post: ese hablante ya tiene ficha."""
+    from apps.accounts.services import notify
+    from apps.analysis.models import ValidationVote
+    post = proposal.post
+    if person.is_public_figure is not True:
+        return
+    destinatarios = {v.user for v in ValidationVote.objects.filter(post=post)
+                     .select_related('user')}
+    destinatarios |= {s.user for s in post.subscriptions.select_related('user')}
+    for u in destinatarios:
+        notify(u, f'{person.name} ya tiene ficha en la wiki: sus afirmaciones de '
+                  f'«{post.title or post.url}» ya están atribuidas.',
+               url=f'/persona/{person.slug}/', kind='speakers_unnamed')
 
 
 def rename_interlocutor(person, new_name):
@@ -60,6 +134,7 @@ def rename_interlocutor(person, new_name):
     old = person.slug
     person.name = new_name
     person.slug = slugify(new_name)[:160]
+    person.base_slug = slugify(new_name)[:150]   # 4.3-C: la raiz sigue al nombre
     person.save()
     InterlocutorSlugHistory.objects.get_or_create(old_slug=old, interlocutor=person)
 

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{{ slug }} — {% trans "varias personas" %}{% endblock %}
+{% block og %}
+<meta property="og:site_name" content="isthistrue.">
+<meta property="og:title" content="{{ slug }}">
+<meta name="twitter:card" content="summary">
+{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}
+{% endblock %}
+{% block content %}
+<h1>{% trans "Varias personas comparten este nombre" %}</h1>
+<p class="hint">{% trans "La identidad la manda Wikidata, no el nombre escrito. Estas son todas las personas indexadas bajo" %} <code>{{ slug }}</code>:</p>
+<ul class="disambig-list">
+  {% for p in candidatos %}
+    <li class="disambig-item">
+      {% if p.photo_url %}<img class="disambig-photo" src="{{ p.photo_url }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+      <div>
+        <a href="{% url 'person_page' p.slug %}"><strong>{{ p.name }}</strong></a>
+        {% if p.description %}<span class="hint"> — {{ p.description }}</span>{% endif %}
+        {% if p.wikidata_id %}<span class="hint"> · {{ p.wikidata_id }}</span>{% endif %}
+      </div>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

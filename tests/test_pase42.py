@@ -1038,3 +1038,203 @@ class Pase43A8(TestCase):
         for v in ('ANALYSIS_FREE_MINUTES', 'CENTS_PER_VIDEO_MINUTE',
                   'TRANSCRIBE_MAX_SECONDS'):
             self.assertIn(v, env)
+
+
+class Pase43C(TestCase):
+    """4.3-C — la wiki se puebla por PERSONAS, no por afirmaciones sueltas.
+
+    Decisiones de David (2026-08-17):
+      · "la wikitrue va de afirmaciones verdaderas, opiniones o afirmaciones
+        falsas de cada hablante de cada vídeo".
+      · sin hablante identificado no hay ficha; en cuanto se identifica, la
+        página se crea/actualiza.
+      · homónimos: la misma URL muestra a todos los personajes indexados.
+      · el nombre lo decide la votación: Wikidata sobre todo, y la repetición
+        del nombre desempata. El voto de moderador o superusuario vale 5.
+      · indexación en buscadores: interruptor del panel, apagado por defecto.
+    """
+
+    def _persona(self, nombre, qid='', **kw):
+        from django.utils.text import slugify
+        from apps.wiki.models import Interlocutor
+        base = slugify(nombre)[:150]
+        slug, n = base, 2
+        while Interlocutor.objects.filter(slug=slug).exists():
+            slug, n = f'{base}-{n}', n + 1
+        datos = dict(name=nombre, slug=slug, base_slug=base, wikidata_id=qid,
+                     is_public_figure=True)
+        datos.update(kw)
+        return Interlocutor.objects.create(**datos)
+
+    def _post_con_hablantes(self, n=1, etiquetas=('SPEAKER_00',)):
+        post = Post.objects.create(
+            author=make_user(username=f'c_{n}', email=f'c_{n}@example.org'),
+            url=f'https://youtu.be/c{n}', status='PENDING_VALIDATION')
+        for i, etq in enumerate(etiquetas):
+            post.transcript_segments.create(start_seconds=i * 5.0, end_seconds=i * 5.0 + 4,
+                                            text=f'Frase de {etq}', speaker_label=etq)
+        return post
+
+    # --- la ficha vive en la raíz, igual en los tres dominios ---
+    def test_la_ficha_esta_en_la_raiz_y_la_antigua_redirige(self):
+        p = self._persona('Pedro Sánchez', 'Q3128751')
+        self.assertEqual(self.client.get(f'/persona/{p.slug}/').status_code, 200)
+        r = self.client.get(f'/wiki/persona/{p.slug}/')
+        self.assertEqual(r.status_code, 301)          # permanente, no rompe enlaces
+        self.assertIn(f'/persona/{p.slug}/', r['Location'])
+
+    def test_la_ficha_agrupa_por_color_del_semaforo(self):
+        from apps.wiki.models import Claim, ClaimAppearance, SpeakerNameProposal
+        post = self._post_con_hablantes(1)
+        persona = self._persona('Ana Ejemplo', 'Q1')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Ana Ejemplo', confirmed=True,
+                                           interlocutor=persona, wikidata_id='Q1')
+        seg = post.transcript_segments.first()
+        for color, texto in (('GREEN', 'Dato cierto'), ('RED', 'Dato falso'),
+                             ('GREY', 'Pura opinión')):
+            c = Claim.objects.create(text_original=texto, color=color)
+            ClaimAppearance.objects.create(claim=c, segment=seg, quote=texto)
+        html = self.client.get(f'/persona/{persona.slug}/').content.decode()
+        for texto in ('Dato cierto', 'Dato falso', 'Pura opinión'):
+            self.assertIn(texto, html)
+        self.assertIn('Afirmaciones verificadas', html)
+        self.assertIn('Afirmaciones desmentidas', html)
+        self.assertIn('Opiniones y predicciones', html)
+
+    # --- homónimos: la misma URL los enseña a todos ---
+    def test_los_homonimos_aparecen_todos_en_la_misma_pagina(self):
+        a = self._persona('Pedro Sánchez', 'Q1', description='político español')
+        b = self._persona('Pedro Sánchez', 'Q2', description='futbolista')
+        self.assertNotEqual(a.slug, b.slug)           # dos fichas, jamás mezcladas
+        self.assertEqual(a.base_slug, b.base_slug)
+        html = self.client.get(f'/persona/{a.base_slug}/').content.decode()
+        self.assertIn('político español', html)
+        self.assertIn('futbolista', html)
+        self.assertIn(f'/persona/{b.slug}/', html)
+
+    # --- sin nombre no hay ficha ---
+    def test_un_nombre_a_mano_sin_wikidata_no_abre_pagina(self):
+        """Candado congelado: los particulares JAMÁS tienen página."""
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.wiki.naming import _person_for
+        post = self._post_con_hablantes(2)
+        prop = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='Vecino Del Quinto')
+        persona = _person_for(prop)
+        self.assertIsNone(persona.is_public_figure)   # queda en revisión
+        self.assertEqual(self.client.get(f'/persona/{persona.slug}/').status_code, 404)
+
+    def test_con_qid_la_pagina_se_abre_al_confirmar(self):
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.wiki.naming import _person_for
+        post = self._post_con_hablantes(3)
+        prop = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='Ana Pública',
+            wikidata_id='Q42', description='periodista')
+        persona = _person_for(prop)
+        self.assertTrue(persona.is_public_figure)
+        self.assertEqual(persona.base_slug, 'ana-publica')
+        self.assertEqual(self.client.get(f'/persona/{persona.slug}/').status_code, 200)
+
+    # --- cómo se decide el nombre ---
+    def test_wikidata_gana_a_un_nombre_escrito_a_mano_con_los_mismos_puntos(self):
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.wiki.naming import rank_key
+        post = self._post_con_hablantes(4)
+        a_mano = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='pedro sanchez')
+        con_qid = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='Pedro Sánchez',
+            wikidata_id='Q3128751')
+        self.assertGreater(rank_key(con_qid), rank_key(a_mano))
+
+    def test_el_voto_del_moderador_confirma_en_solitario(self):
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.wiki.naming import vote_proposal
+        post = self._post_con_hablantes(5)
+        prop = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='Ana Pública',
+            wikidata_id='Q42')
+        mod = make_user(username='modC', email='modc@example.org', level='MOD')
+        ok, msg = vote_proposal(prop, mod)
+        prop.refresh_from_db()
+        self.assertTrue(ok)
+        self.assertTrue(prop.confirmed)               # 5 puntos de una tacada
+        self.assertIsNotNone(prop.interlocutor)
+
+    def test_se_confirma_la_mejor_propuesta_no_la_ultima_votada(self):
+        from apps.wiki.models import SpeakerNameProposal
+        from apps.wiki.naming import vote_proposal
+        post = self._post_con_hablantes(6)
+        a_mano = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='pedro sanchez')
+        con_qid = SpeakerNameProposal.objects.create(
+            post=post, speaker_label='SPEAKER_00', candidate_name='Pedro Sánchez',
+            wikidata_id='Q3128751')
+        mod = make_user(username='modC2', email='modc2@example.org', level='MOD')
+        vote_proposal(con_qid, mod)                   # el mod vota la identificada
+        a_mano.refresh_from_db(); con_qid.refresh_from_db()
+        self.assertTrue(con_qid.confirmed)
+        self.assertFalse(a_mano.confirmed)
+
+    # --- el aviso a los votantes ---
+    def test_se_avisa_de_los_hablantes_sin_identificar_al_lanzar_la_fase_cara(self):
+        from apps.analysis.services import unnamed_speakers, warn_unnamed_speakers
+        from apps.accounts.models import Notification
+        post = self._post_con_hablantes(7, ('SPEAKER_00', 'SPEAKER_01'))
+        votante = make_user(username='votC', email='votc@example.org', karma=100)
+        post.validation_votes.create(user=votante, kind='VALIDATE')
+        self.assertEqual(unnamed_speakers(post), ['SPEAKER_00', 'SPEAKER_01'])
+        enviados = warn_unnamed_speakers(post)
+        self.assertGreaterEqual(enviados, 1)
+        aviso = Notification.objects.filter(user=votante).first()
+        self.assertIsNotNone(aviso)
+        self.assertIn('sin identificar', aviso.text)
+
+    def test_sin_hablantes_pendientes_no_se_molesta_a_nadie(self):
+        from apps.analysis.services import warn_unnamed_speakers
+        from apps.wiki.models import SpeakerNameProposal
+        post = self._post_con_hablantes(8)
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Ana Pública', confirmed=True)
+        self.assertEqual(warn_unnamed_speakers(post), 0)
+
+    def test_el_aviso_respeta_el_interruptor_del_usuario(self):
+        from apps.analysis.services import warn_unnamed_speakers
+        from apps.accounts.models import Notification
+        post = self._post_con_hablantes(9)
+        mudo = make_user(username='mudoC', email='mudoc@example.org',
+                         notify_prefs={'speakers_unnamed': False})
+        post.validation_votes.create(user=mudo, kind='VALIDATE')
+        warn_unnamed_speakers(post)
+        self.assertFalse(Notification.objects.filter(user=mudo).exists())
+
+    def test_el_interruptor_aparece_en_mi_cuenta(self):
+        from apps.accounts.views import settings_view       # existe de verdad
+        codigo = open('apps/accounts/views.py').read()
+        self.assertIn("'speakers_unnamed'", codigo)
+
+    # --- indexación: freno puesto por defecto ---
+    def test_las_fichas_nacen_con_noindex(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.filter(key='wiki_index_people').delete()
+        p = self._persona('Ana Pública', 'Q42')
+        html = self.client.get(f'/persona/{p.slug}/').content.decode()
+        self.assertIn('noindex', html)
+
+    def test_el_interruptor_del_panel_las_libera(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='wiki_index_people',
+                                               defaults={'value': '1'})
+        p = self._persona('Ana Pública', 'Q42')
+        html = self.client.get(f'/persona/{p.slug}/').content.decode()
+        self.assertNotIn('noindex', html)
+
+    def test_el_interruptor_es_editable_en_el_panel(self):
+        from apps.panel.views import SETTINGS_DEF
+        from django.conf import settings as s
+        claves = [k for k, _l, _h, _t in SETTINGS_DEF]
+        self.assertIn('wiki_index_people', claves)
+        self.assertEqual(s.SETTING_DEFAULTS['wiki_index_people'], '0')
+        self.assertIn('WIKI_INDEX_PEOPLE', open('.env.example').read())

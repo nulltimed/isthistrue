@@ -209,6 +209,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # ajuste siga siendo un entero editable en el panel.
     'analysis_free_minutes': '20',
     'cents_per_video_minute': '12',
+    # 4.3-C: las fichas de persona nacen con el freno de indexacion puesto.
+    'wiki_index_people': '0',
 }.items()}
 
 # 4.3-A.8: el video se transcribe ENTERO hasta este techo (antes: 1200 s fijos en

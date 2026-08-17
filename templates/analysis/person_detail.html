@@ -1,10 +1,50 @@
-{% extends 'base.html' %}{% block content %}
-<h1>{{ person.name }}</h1>
-<p class="hint">Recuento estrictamente factual de afirmaciones verificadas atribuidas a esta figura pública mediante identificación participativa. Toda atribución es reclamable en el <a href="{% url 'complaint_form' %}">canal de reclamaciones</a>.</p>
-<ul>
-{% for a in appearances %}
-  <li>{{ a.claim.get_color_display }} — <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:120 }}</a>
-      <span class="hint">({{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}, min {{ a.segment.start_seconds|floatformat:0 }}s)</span></li>
-{% empty %}<li>Sin afirmaciones atribuidas todavía.</li>{% endfor %}
-</ul>
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{{ person.name }} — {% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}{% endblock %}
+{% block og %}
+<meta property="og:site_name" content="isthistrue.">
+<meta property="og:title" content="{{ person.name }}">
+<meta property="og:description" content="{% trans 'Afirmaciones analizadas y atribuidas mediante identificación participativa.' %}">
+<meta name="twitter:card" content="summary">
+{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}
+{% endblock %}
+{% block content %}
+<article class="person-page">
+  <header class="person-head">
+    {% if person.photo_url %}<img class="person-photo" src="{{ person.photo_url }}" alt="{{ person.name }}" loading="lazy">{% endif %}
+    <div>
+      <h1>{{ person.name }}</h1>
+      {% if person.description %}<p class="person-desc">{{ person.description }}</p>{% endif %}
+      {% if person.wikidata_id %}<p class="hint">{% trans "Identidad verificada en Wikidata" %}: <a href="https://www.wikidata.org/wiki/{{ person.wikidata_id }}" rel="nofollow noopener">{{ person.wikidata_id }}</a></p>{% endif %}
+      <p class="hint">{% blocktrans count n=total %}{{ n }} afirmación analizada{% plural %}{{ n }} afirmaciones analizadas{% endblocktrans %}</p>
+    </div>
+  </header>
+
+  <p class="hint person-legal">{% trans "Recuento estrictamente factual de afirmaciones atribuidas a esta figura pública mediante identificación participativa con Wikidata. El semáforo califica afirmaciones concretas, nunca a la persona. Toda atribución es reclamable en el" %} <a href="{% url 'complaint_form' %}">{% trans "canal de reclamaciones" %}</a>.</p>
+
+  {% for g in grupos %}
+    <section class="claim-group group-{{ g.color }}">
+      <h2>{{ g.titulo }} <span class="badge">{{ g.filas|length }}</span></h2>
+      <ul class="claim-list">
+        {% for a in g.filas %}
+          <li>
+            <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:160 }}</a>
+            <span class="hint">— {% trans "en" %} <a href="{% url 'post_detail' a.segment.post.pk %}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}</a>,
+              {% trans "minuto" %} {{ a.segment.start_seconds|floatformat:0 }}s</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% empty %}
+    <p>{% trans "Todavía no hay afirmaciones con veredicto atribuidas a esta persona." %}</p>
+  {% endfor %}
+
+  {% if sin_color %}
+    <section class="claim-group">
+      <h2>{% trans "Pendientes de veredicto" %} <span class="badge">{{ sin_color|length }}</span></h2>
+      <ul class="claim-list">
+        {% for a in sin_color %}<li>{{ a.claim.text_original|truncatechars:160 }}</li>{% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+</article>
 {% endblock %}

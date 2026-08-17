@@ -72,6 +72,10 @@ def settings_view(request):
         ('trending', 'Un post suscrito entra en Trending', 'El fuego te llega a la campana.'),
         ('post_votes', 'Votos a mis posts', 'Cada ▲ que recibes, si quieres saberlo.'),
         ('project_news', 'Novedades del proyecto', 'Cuando la plataforma estrene algo.'),
+        # 4.3-C: sin nombre no hay ficha en la wiki; este aviso pide ayuda para
+        # identificar a los hablantes justo cuando el análisis va a dar veredictos.
+        ('speakers_unnamed', 'Hablantes sin identificar',
+         'Un análisis que sigues va a dar veredictos y aún no se sabe quién habla.'),
     ]
     pref_rows = [(k, lbl, hint, u.wants(k)) for k, lbl, hint in PREF_ROWS]
     return render(request, 'accounts/settings.html',

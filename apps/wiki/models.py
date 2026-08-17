@@ -81,6 +81,11 @@ class Interlocutor(models.Model):
     (solo con visto bueno ESCRITO del abogado de David, y no esta construido)."""
     name = models.CharField(max_length=160)
     slug = models.SlugField(max_length=170, unique=True)
+    # 4.3-C: raiz comun del nombre ('pedro-sanchez'). El slug unico puede llevar
+    # sufijo ('pedro-sanchez-2'); el base_slug NO, y por eso es la clave de la
+    # desambiguacion: /persona/pedro-sanchez/ con dos fichas detras enseña las dos
+    # (decision de David: "aparecerán todos los personajes posibles indexados").
+    base_slug = models.SlugField(max_length=170, blank=True, default='', db_index=True)
     is_public_figure = models.BooleanField(null=True)  # agente clasifica, David revisa
     # Identidad UNIVOCA (2026-08-17): el QID de Wikidata distingue homonimos
     # ('Q3128751') — dos personas con el mismo nombre son dos fichas distintas.

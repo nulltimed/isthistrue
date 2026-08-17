@@ -74,6 +74,9 @@ SETTINGS_DEF = [
      'Hasta aquí no se pide nada. Por encima se AVISA de la donación sugerida (nunca se bloquea el envío).', 'num'),
     ('cents_per_video_minute', 'Céntimos por minuto de vídeo',
      'Coste estimado de analizar un minuto. Fija el gasto que se reserva del presupuesto y la donación sugerida.', 'num'),
+    # 4.3-C (decisión de David): por defecto APAGADO.
+    ('wiki_index_people', 'Fichas de persona visibles en buscadores',
+     'Apagado, las fichas existen y se pueden enlazar, pero llevan «noindex»: Google no las lista. Enciéndelo cuando el aviso legal esté completo.', 'bool'),
 ]
 
 

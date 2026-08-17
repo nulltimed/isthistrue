@@ -31,6 +31,7 @@ def cast_vote(post, user, kind):
             post.status = 'FULL_QUEUED'
             post.save(update_fields=['status'])
             launch_full_analysis(post)
+            warn_unnamed_speakers(post)   # 4.3-C
             return True, 'Validado: análisis completo lanzado.'
         return True, 'Voto registrado.'
 
@@ -49,6 +50,44 @@ def cast_vote(post, user, kind):
         return True, 'Voto de rescate registrado.'
 
     return False, 'Voto no aplicable al estado actual del post.'
+
+
+def unnamed_speakers(post):
+    """Etiquetas de hablante de este post que NO tienen nombre confirmado.
+    Sin nombre no hay ficha en la wiki: sus afirmaciones se quedan en el vídeo."""
+    from apps.wiki.models import SpeakerNameProposal
+    etiquetas = set(post.transcript_segments.exclude(speaker_label='')
+                    .values_list('speaker_label', flat=True))
+    nombradas = set(SpeakerNameProposal.objects
+                    .filter(post=post, confirmed=True)
+                    .values_list('speaker_label', flat=True))
+    return sorted(etiquetas - nombradas)
+
+
+def warn_unnamed_speakers(post):
+    """4.3-C (decisión de David): en el momento en que un análisis reúne los votos
+    y arranca la fase de veredictos, se avisa a quienes votaron y a quienes siguen
+    el post de que hay hablantes sin identificar — porque sin nombre no habrá
+    página en la wiki. Campana siempre; email según las preferencias de cada uno
+    (silencio nocturno, pausa y resumen diario los respeta notify()).
+    """
+    from apps.accounts.services import notify
+    from .models import ValidationVote
+    pendientes = unnamed_speakers(post)
+    if not pendientes:
+        return 0
+    titulo = post.title or post.url
+    texto = (f'«{titulo}» ya tiene los votos y va a generar veredictos, pero '
+             f'{len(pendientes)} hablante(s) siguen sin identificar. Sin nombre no '
+             f'habrá página en la wiki: si sabes quién habla, propónlo o vota una '
+             f'propuesta.')
+    destinatarios = {v.user for v in ValidationVote.objects.filter(post=post)
+                     .select_related('user')}
+    destinatarios |= {s.user for s in post.subscriptions.select_related('user')}
+    destinatarios.add(post.author)
+    for u in destinatarios:
+        notify(u, texto, url=f'/post/{post.pk}/', kind='speakers_unnamed')
+    return len(destinatarios)
 
 
 def open_validation_window(post):
