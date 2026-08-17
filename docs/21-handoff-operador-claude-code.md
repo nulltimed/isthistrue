@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§28: TODA la historia técnica) y el informe del último pase (`docs/30`).
+> (§1-§29: TODA la historia técnica) y el informe del último pase (`docs/31`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §28) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §29) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -163,11 +163,14 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
   0,34 € reales (14-16 agosto). `HF_TOKEN` presente y diarización funcionando.
   Brevo REAL activo. **`TURNSTILE_SECRET` sigue AUSENTE** (warning esperado en logs).
   Backups diarios 00:00 activos y PROBADOS (restic → Drive, con pg_dump).
-- **Trampa que te ahorrará una hora**: `/mas18/` devuelve **403 a la cuenta de administrador
-  `d`** porque `ensure_superuser` NO establece `birth_date` → `is_adult=False`. Es el candado
-  funcionando, no un bug. Para verificar la sala, **crea una cuenta con `birth_date` de mayor
-  de edad** (y en el espejo, además, `staging_invited=True`, o el candado de invitados te
-  devolverá un 302 que parece de la sala y no lo es).
+- **Regla de David (2026-08-17): la cuenta superusuario NO tiene restricciones de edad.**
+  `User.is_adult` devuelve True si `is_superuser`, sin exigir `birth_date` (que
+  `ensure_superuser` no establece). El privilegio es SOLO del superusuario: staff y
+  moderadores siguen sujetos a la fecha, y hay test que lo fija. **No lo revoques** si un
+  pase futuro reescribe `is_adult`.
+- **Trampa al verificar la sala +18 en el ESPEJO**: una cuenta normal recibe un **302 del
+  candado de invitados** (StagingAccessMiddleware) que parece de la sala y no lo es. Para
+  probar de verdad: cuenta con `birth_date` de mayor de edad **y** `staging_invited=True`.
 - **Pendiente inmediato del pase 4.2**: David debe confirmar (o no) el marcado
   `sources_ok=False` de los claims del 15-08 para re-veredicto (~0,07 €/post; comando
   `reverdict_missing_sources`); dry-run actual: 0. Y su paseo visual (campana, MP, Mi cuenta).
@@ -193,8 +196,8 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§28) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30` |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§29) |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |

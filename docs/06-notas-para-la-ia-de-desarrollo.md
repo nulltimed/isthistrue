@@ -288,3 +288,63 @@ visible**. Considera si `ensure_superuser` debería aceptar una fecha opcional d
 
 La decisión **B4** (donación sugerida para vídeos >20 min = **aviso, no muro**) queda tal
 cual está desplegada —aviso— a la espera de su confirmación explícita.
+
+## 29. Decisiones de producto de David (2026-08-17) sobre vídeos largos y densos
+
+Tras leer las mediciones del §28, David ha decidido tres cosas. Las dos primeras son
+órdenes cerradas; la tercera te la traslado con un escollo técnico que debes resolver TÚ
+en el diseño, porque tal como está enunciada no es implementable.
+
+### 29.1 La cuenta superusuario NO tiene restricciones (YA APLICADO por el operador)
+
+Commit `c765516`. `User.is_adult` devuelve `True` si `is_superuser`, sin exigir
+`birth_date`. Motivo: `ensure_superuser` no establece fecha de nacimiento, así que el dueño
+de la plataforma se quedaba fuera de su propia sala +18. Como el menú, la vista `/mas18/`,
+los filtros de portada y los ajustes cuelgan todos de esa propiedad, el privilegio queda
+coherente en toda la web con un solo cambio. **El privilegio es SOLO del superusuario**:
+staff y moderadores siguen sujetos a la fecha (fijado con test). No lo revoques en futuros pases.
+
+### 29.2 Vídeos largos: aviso + notificación + email, nunca muro (decisión B4 CONFIRMADA)
+
+> David, literal: «a las personas que hayan votado por analizar un vídeo tan largo, se les
+> emitirá una notificación e email de las consecuencias económicas, sin más. El gasto
+> entrará en el gasto diario/mensual».
+
+Queda confirmado que la donación sugerida es **aviso, no muro**. Lo que falta por construir
+—y es tuyo—:
+
+- Al lanzarse el análisis de un vídeo largo, **notificación en la campana + email** a
+  **quienes votaron por analizarlo** (no solo a quien lo envió), explicando el coste que
+  supone. Respeta el circuito de preferencias que ya existe: `wants(key)`, silencio
+  nocturno (`quiet_night`), digest. Hará falta una clave de preferencia nueva.
+- El gasto **entra en `DailyBudget`/`MonthlyCap` como cualquier otro**: no se crea ninguna
+  vía de gasto paralela ni se salta `try_spend`.
+- El aviso es informativo: **el usuario puede continuar sin pagar**. No añadas muros.
+
+### 29.3 Cobrar por densidad (>40 frases/min) — ESCOLLO: el dato no existe a tiempo
+
+> David, literal: «por eso el exigir al usuario dinero que quiera analizar un vídeo de más
+> de 40 frases por minuto».
+
+La intención es clara y está bien fundada: en las mediciones del §28, un vídeo denso (44,1
+frases/min) genera **casi 3 veces más lotes** que uno tranquilo (16,1 frases/min) a igual
+duración, y hoy los dos pagan lo mismo porque el precio solo mira los minutos. **Pero el
+número de frases por minuto NO se conoce antes de transcribir**, y la transcripción es
+justamente una de las partes caras. Pedir dinero por adelantado en función de un dato que
+solo existe después de gastarlo es imposible tal cual.
+
+Tres salidas posibles (elige tú, o propón otra, y que David confirme):
+
+1. **Precio en dos tramos**: se cobra/sugiere por minutos al empezar y, si al terminar la
+   transcripción la densidad supera el umbral, se avisa del sobrecoste y se pide un
+   complemento voluntario. Coherente con «aviso, no muro» del 29.2.
+2. **Estimación previa por señales baratas**: plataforma, categoría, si es un debate o
+   tertulia, duración e histórico del canal (el modelo `Channel` existe y está vacío). Es
+   una heurística: acertará a veces.
+3. **Reserva por el peor caso**: cobrar/sugerir suponiendo la densidad alta y devolver o
+   acreditar la diferencia. Es lo más justo económicamente y lo más incómodo de explicar.
+
+**Dato duro para dimensionar (§28)**: con `SWEEP_BATCH_SIZE=40`, una hora de vídeo son
+entre **25 lotes** (16 frases/min) y **67 lotes** (44 frases/min). El umbral de 40
+frases/min que menciona David cae justo en la zona alta de lo medido: hoy solo 1 de los 4
+vídeos reales lo superaría.
