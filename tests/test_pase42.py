@@ -609,11 +609,18 @@ class AutocompletadoHablantes(TestCase):
                          'descriptions': {'es': {'value': 'político español'}}},
             'Q27738': {'claims': {'P31': [{'mainsnak': {'datavalue': {'value': {'id': 'Q4830453'}}}}]},
                        'labels': {'es': {'value': 'Empresa S.A.'}}, 'descriptions': {}}}}
-        respuestas = [mock.Mock(status_code=200, **{'json.return_value': buscar,
-                                                    'raise_for_status.return_value': None}),
-                      mock.Mock(status_code=200, **{'json.return_value': entidades,
-                                                    'raise_for_status.return_value': None})]
-        with mock.patch.object(wikidata.httpx, 'get', side_effect=respuestas):
+        # El doble despacha por el `action` de la peticion, NO por el orden de
+        # llamada: asi no se rompe cuando search_people gana o pierde una
+        # consulta (el 4.3-D anadio la de texto completo en medio, y este test
+        # cayo por asumir exactamente dos peticiones).
+        def responder(_url, **kwargs):
+            action = (kwargs.get('params') or {}).get('action')
+            cuerpo = {'wbsearchentities': buscar,
+                      'query': {'query': {'search': []}},   # texto completo: sin extras
+                      'wbgetentities': entidades}[action]
+            return mock.Mock(status_code=200, **{'json.return_value': cuerpo,
+                                                 'raise_for_status.return_value': None})
+        with mock.patch.object(wikidata.httpx, 'get', side_effect=responder):
             res = wikidata.search_people('Pedro Sánchez')
         self.assertEqual(len(res), 1)                      # la empresa se descarta
         self.assertEqual(res[0]['qid'], 'Q3116471')
