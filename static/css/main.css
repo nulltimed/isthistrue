@@ -182,7 +182,8 @@ label.inline input{width:auto}
 .mod-actions input{max-width:220px}
 
 /* A5: barra Markdown (submit "Opina", respuestas del hilo, formularios machina) */
-.md-toolbar{display:flex;gap:.25rem;margin:.3rem 0 .15rem}
+/* 4.3-E: con la barra completa (12 botones) hace falta que envuelva. */
+.md-toolbar{display:flex;flex-wrap:wrap;gap:.25rem;margin:.3rem 0 .15rem}
 .md-toolbar button{font-size:.8rem;padding:.1rem .5rem;border:1px solid var(--line);
   background:var(--paper);border-radius:5px;cursor:pointer}
 .md-toolbar button:hover{background:#fff}
@@ -192,7 +193,9 @@ label.inline input{width:auto}
 .thread-msg{border:1px solid var(--line);border-radius:8px;padding:.55rem .8rem;margin:.5rem 0;background:#fff}
 .thread-meta{font-size:.8rem;color:#666;margin-bottom:.25rem}
 .thread-body p{margin:.3rem 0}
-.thread-reply textarea{width:100%;box-sizing:border-box}
+.thread-reply textarea{width:100%;box-sizing:border-box;min-height:9rem;font-size:.95rem}
+/* 4.3-E: el hilo usa todo el ancho que le da su contenedor. */
+.thread-msg{max-width:none}
 
 /* C3: FORO — piel del sitio sobre el marcado de machina (sin Bootstrap).
    Reglas minimas y defensivas: tablas-tarjeta, migas, paginacion, botones. */
@@ -281,6 +284,21 @@ input.toggle:focus-visible + .toggle-track{outline:2px solid #8a5200;outline-off
    redimensionandose con la ventana. Sin desbordes artificiales de ventana. */
 main.wide{max-width:none;padding:0 1.6rem}
 main.wide .post{width:100%}
+/* 4.3-E (decision de David): en la pagina del post, SOLO la rejilla de tres
+   columnas (¿Quién habla? | vídeo | transcripción) usa el ancho completo. Todo
+   lo demas —titulo, validacion, acciones de moderacion, compartir— se centra en
+   una columna legible: una linea de texto de 1.900 px no la lee nadie.
+   El hilo del foro se centra tambien, pero MUCHO mas ancho (decision de David:
+   "debe ocupar todo el ancho de la pantalla"), porque ahi el contenido son
+   mensajes y citas, no parrafos sueltos. */
+main.wide .post > h1,
+main.wide .post > .post-topbar,
+main.wide .post > #post-body > .validation,
+main.wide .post > #post-body > .mod-actions,
+main.wide .post > #post-body > p,
+main.wide .post > #post-body > form,
+main.wide .post > .share{max-width:900px;margin-left:auto;margin-right:auto}
+main.wide .post > #hilo{max-width:1600px;margin-left:auto;margin-right:auto;width:100%}
 /* 4.3-A.4 N2: rejilla de tres columnas REAL — hablantes | vídeo | transcripción.
    La rejilla NO es sticky (eso acoplaba el scroll de la página al de la transcripción).
    Cada columna lateral scrollea por dentro, independiente; el vídeo se queda sticky
@@ -397,9 +415,16 @@ main.wide .post{width:100%}
 .panel-tabs a.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 /* Autocompletado de hablantes con Wikidata (2026-08-17) */
 .speaker-suggest{position:relative}
+/* 4.3-E (David): "no sale el listado completo a no ser que se dé scroll".
+   Eran DOS recortes encadenados: el propio max-height de la lista, y —el de
+   verdad— que .speakers-col tiene overflow-y:auto, así que recortaba a su hija
+   posicionada. Ahora la lista no se limita a sí misma, y mientras hay
+   sugerencias abiertas la columna deja de recortar (clase .suggesting, que pone
+   el JS y quita al cerrar). Sin JS no hay lista, así que no hay nada que recortar. */
 .suggest-list{list-style:none;margin:.25rem 0 0;padding:.2rem;position:absolute;z-index:30;
-left:0;right:0;max-height:16rem;overflow-y:auto;background:var(--card);border:1px solid var(--ink);
+left:0;right:0;background:var(--card);border:1px solid var(--ink);
 border-radius:8px;box-shadow:var(--shadow)}
+.speakers-col.suggesting{overflow:visible;max-height:none}
 .suggest-item{display:flex;align-items:center;gap:.5rem;padding:.32rem .45rem;border-radius:6px;
 cursor:pointer;font-size:.82rem;line-height:1.25}
 .suggest-item:hover,.suggest-item:focus{background:var(--ink);color:#fff;outline:none}
@@ -425,3 +450,7 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .disambig-list{list-style:none;padding:0}
 .disambig-item{display:flex;gap:.7rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--line)}
 .disambig-photo{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+
+/* --- 4.3-F: cartel de la cola de presupuesto ---------------------------- */
+.validation.queued{border-left:4px solid var(--amber,#9a6b00);background:#fdf8ef}
+.validation.queued .btn{margin-left:.4rem}

@@ -4,11 +4,19 @@
  * el Markdown igual (machina/markdown2 con HTML escapado). */
 (function () {
   'use strict';
+  /* 4.3-E (David): "debe mostrarse todas las opciones de formateado".
+     Todas las que el servidor SABE renderizar: markdown2 con safe_mode='escape'
+     (config/settings.py MACHINA_MARKUP_LANGUAGE). Nada de botones que escriban
+     marcas que luego salgan como texto crudo — eso seria peor que no tenerlos.
+     Por eso NO hay subrayado ni tachado: Markdown basico no los lleva. */
   var BTNS = [
     ['B', '**', '**', 'negrita'], ['I', '*', '*', 'cursiva'],
-    ['H', '## ', '', 'título'], ['❝', '> ', '', 'cita'],
-    ['•', '- ', '', 'lista'], ['</>', '`', '`', 'código'],
-    ['🔗', '[', '](https://)', 'enlace']
+    ['H1', '# ', '', 'título'], ['H2', '## ', '', 'subtítulo'],
+    ['❝', '> ', '', 'cita'],
+    ['•', '- ', '', 'lista'], ['1.', '1. ', '', 'lista numerada'],
+    ['</>', '`', '`', 'código'], ['{ }', '\n```\n', '\n```\n', 'bloque de código'],
+    ['🔗', '[', '](https://)', 'enlace'], ['🖼', '![', '](https://)', 'imagen'],
+    ['—', '\n---\n', '', 'separador']
   ];
   function wrap(ta, pre, post) {
     var s = ta.selectionStart, e = ta.selectionEnd, v = ta.value;

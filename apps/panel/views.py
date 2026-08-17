@@ -41,6 +41,13 @@ def codes(request):
 SETTINGS_DEF = [
     # 4.3-A.3 M3 (decision de David): los ajustes del panel con nombre y apellidos.
     # kind: 'bool' = toggle (guarda 1/0); 'num' = campo numerico.
+    # 4.3-F (decision de David): el DINERO se toca aqui, escribiendo euros. Hasta
+    # hoy estos dos ajustes existian en la base de datos pero no estaban ni en el
+    # panel ni en /admin/: para cambiarlos habia que entrar por SSH.
+    ('budget_base_eur', 'Presupuesto base mensual (€)',
+     'Lo que el proyecto se permite gastar al mes sin contar donaciones. El límite DIARIO sale de aquí: se divide entre los días del mes.', 'num'),
+    ('budget_hard_ceiling_eur', 'Techo duro mensual (€)',
+     'Tope absoluto que no se supera ni con donaciones. Es el airbag: déjalo por encima del presupuesto base para que las donaciones tengan margen.', 'num'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
     ('opinion_ratio_percent', 'Umbral de opinión (%)',
@@ -75,6 +82,12 @@ SETTINGS_DEF = [
     ('cents_per_video_minute', 'Céntimos por minuto de vídeo',
      'Coste estimado de analizar un minuto. Fija el gasto que se reserva del presupuesto y la donación sugerida.', 'num'),
     # 4.3-C (decisión de David): por defecto APAGADO.
+    # 4.3-E (decisión de David): sin identificar a la mitad, no se valida.
+    ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',
+     'Porcentaje mínimo de hablantes con nombre confirmado antes de poder marcar un vídeo como factual. 0 lo desactiva.', 'num'),
+    # 4.3-F (decisión de David): la cola de los vídeos caros.
+    ('queue_threshold_percent', 'Cola de espera a partir del (%) del día',
+     'Si un vídeo cuesta más de este porcentaje del depósito diario, entra en cola: se analiza cuando haya presupuesto o cuando alguien lo apadrine. 0 lo desactiva.', 'num'),
     ('wiki_index_people', 'Fichas de persona visibles en buscadores',
      'Apagado, las fichas existen y se pueden enlazar, pero llevan «noindex»: Google no las lista. Enciéndelo cuando el aviso legal esté completo.', 'bool'),
 ]
@@ -82,7 +95,9 @@ SETTINGS_DEF = [
 
 @staff_member_required
 def settings_panel(request):
-    """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro."""
+    """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro.
+    4.3-F: tambien el dinero. El limite diario NO se escribe: se deriva del mensual
+    entre los dias del mes, asi que se muestra calculado para que no haya sorpresas."""
     if request.method == 'POST':
         for key, _label, _hint, kind in SETTINGS_DEF:
             if kind == 'bool':

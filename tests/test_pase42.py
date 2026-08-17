@@ -1460,3 +1460,329 @@ class Pase43D(TestCase):
         for campo in ('cheap_started_at', 'cheap_finished_at', 'full_started_at',
                       'full_finished_at', 'transcribe_seconds', 'diarize_seconds'):
             self.assertIn(campo, codigo)
+
+
+class Pase43E(TestCase):
+    """4.3-E — la puerta del 50%, los nombres fijados, el desplegable completo,
+    el foro y el rescate de análisis atascados.
+
+    Decisiones de David (2026-08-17):
+      · para marcar factual hace falta al menos el 50% de hablantes identificados
+      · el desplegable de «¿Quién crees que es?» debe verse entero
+      · el nombre confirmado sustituye a «Hablante N» en los dos sitios
+      · el foro: ancho, con todas las opciones de formato; el resto centrado
+      · los análisis atascados se relanzan solos
+    """
+
+    def _post(self, n=0, etiquetas=('SPEAKER_00', 'SPEAKER_01'), status='PENDING_VALIDATION'):
+        post = Post.objects.create(
+            author=make_user(username=f'e_{n}', email=f'e_{n}@example.org'),
+            url=f'https://youtu.be/e{n}', status=status, title=f'Vídeo {n}',
+            validation_deadline=timezone.now() + timedelta(days=2))
+        for i, etq in enumerate(etiquetas):
+            post.transcript_segments.create(start_seconds=i * 5.0, end_seconds=i * 5.0 + 4,
+                                            text=f'Frase de {etq}', speaker_label=etq)
+        return post
+
+    def _confirmar(self, post, etiqueta, nombre):
+        from apps.wiki.models import SpeakerNameProposal
+        return SpeakerNameProposal.objects.create(
+            post=post, speaker_label=etiqueta, candidate_name=nombre,
+            confirmed=True, source='user')
+
+    # --- la puerta del 50% ---
+    def test_sin_identificar_a_nadie_no_se_puede_validar(self):
+        from apps.analysis.services import identification_gate
+        puede, motivo = identification_gate(self._post(1))
+        self.assertFalse(puede)
+        self.assertIn('0 de 2', motivo)
+
+    def test_con_la_mitad_identificada_ya_se_puede(self):
+        from apps.analysis.services import identification_gate
+        post = self._post(2)
+        self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+        self.assertTrue(identification_gate(post)[0])
+
+    def test_con_tres_hablantes_hacen_falta_dos(self):
+        """El 50% de 3 se redondea HACIA ARRIBA: 2, no 1."""
+        from apps.analysis.services import identification_gate
+        post = self._post(3, ('SPEAKER_00', 'SPEAKER_01', 'SPEAKER_02'))
+        self._confirmar(post, 'SPEAKER_00', 'Ana')
+        self.assertFalse(identification_gate(post)[0])
+        self._confirmar(post, 'SPEAKER_01', 'Bea')
+        self.assertTrue(identification_gate(post)[0])
+
+    def test_sin_diarizacion_la_puerta_no_se_aplica(self):
+        """No se puede exigir identificar a nadie si no se separaron voces."""
+        from apps.analysis.services import identification_gate
+        post = self._post(4, ('',))
+        self.assertTrue(identification_gate(post)[0])
+
+    def test_el_voto_se_rechaza_con_el_motivo_y_no_queda_registrado(self):
+        from apps.analysis.services import cast_vote
+        post = self._post(5)
+        votante = make_user(username='votE', email='vote@example.org', karma=100)
+        ok, msg = cast_vote(post, votante, 'VALIDATE')
+        self.assertFalse(ok)
+        self.assertIn('identificar', msg)
+        self.assertEqual(post.distinct_validation_votes('VALIDATE'), 0)
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'PENDING_VALIDATION')   # no arrancó nada
+
+    def test_identificados_los_hablantes_el_voto_entra(self):
+        from apps.analysis.services import cast_vote
+        post = self._post(6)
+        self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+        votante = make_user(username='vot2E', email='vot2e@example.org', karma=100)
+        ok, _msg = cast_vote(post, votante, 'VALIDATE')
+        self.assertTrue(ok)
+        self.assertEqual(post.distinct_validation_votes('VALIDATE'), 1)
+
+    def test_el_umbral_es_editable_en_el_panel_y_el_entorno(self):
+        from django.conf import settings as s
+        from apps.panel.views import SETTINGS_DEF
+        self.assertIn('min_identified_speakers_percent',
+                      [k for k, _l, _h, _t in SETTINGS_DEF])
+        self.assertEqual(s.SETTING_DEFAULTS['min_identified_speakers_percent'], '50')
+        self.assertIn('MIN_IDENTIFIED_SPEAKERS_PERCENT', open('.env.example').read())
+
+    # --- el nombre confirmado manda ---
+    def test_el_nombre_confirmado_sustituye_a_hablante_n(self):
+        post = self._post(7, status='DONE')
+        self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('Ana Pública', html)
+        # El hablante 2 sigue sin nombre: ese sí conserva el número.
+        self.assertIn('Hablante 2', html)
+
+    def test_sin_confirmar_se_mantiene_el_numero(self):
+        post = self._post(8, status='DONE')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('Hablante 1', html)
+        self.assertIn('Hablante 2', html)
+
+    # --- el desplegable y el foro ---
+    def test_el_desplegable_ya_no_se_recorta(self):
+        css = open('static/css/main.css', encoding='utf-8').read()
+        js = open('static/js/speaker-suggest.js', encoding='utf-8').read()
+        import re
+        regla = re.search(r'\.suggest-list\{[^}]*\}', css).group(0)
+        self.assertNotIn('max-height', regla)          # ya no se limita a sí misma
+        self.assertIn('suggesting', css)               # la columna deja de recortar
+        self.assertIn('recorte(form', js)              # y el JS lo gobierna
+
+    def test_la_barra_de_formato_trae_todas_las_marcas_renderizables(self):
+        js = open('static/js/mdtoolbar.js', encoding='utf-8').read()
+        for marca in ('negrita', 'cursiva', 'título', 'cita', 'lista',
+                      'lista numerada', 'código', 'bloque de código', 'enlace',
+                      'imagen', 'separador'):
+            self.assertIn(marca, js)
+
+    def test_el_autor_puede_abrir_el_hilo_con_texto_formateado(self):
+        html = open('templates/analysis/submit.html', encoding='utf-8').read()
+        self.assertIn('name="opinion"', html)
+        self.assertIn('data-mdtoolbar', html)          # con barra de formato
+
+    def test_solo_la_rejilla_ocupa_todo_el_ancho(self):
+        css = open('static/css/main.css', encoding='utf-8').read()
+        self.assertIn('main.wide .post > h1', css)     # el resto, centrado
+        self.assertIn('main.wide .post > #hilo', css)  # el hilo, ancho propio
+
+    # --- el rescate de atascados ---
+    def test_se_relanza_lo_que_lleva_horas_colgado(self):
+        from apps.analysis.tasks import relaunch_stuck_analyses
+        viejo = self._post(9, status='CHEAP_RUNNING')
+        viejo.cheap_started_at = timezone.now() - timedelta(hours=9)
+        viejo.save(update_fields=['cheap_started_at'])
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanzar:
+            self.assertEqual(relaunch_stuck_analyses(), 1)
+            lanzar.assert_called_once_with(viejo.pk)
+        viejo.refresh_from_db()
+        self.assertEqual(viejo.status, 'NEW')
+
+    def test_un_analisis_que_solo_esta_tardando_no_se_toca(self):
+        """Un vídeo de una hora tarda: se mide contra el reloj del análisis, no
+        contra la fecha de creación."""
+        from apps.analysis.tasks import relaunch_stuck_analyses
+        reciente = self._post(10, status='CHEAP_RUNNING')
+        reciente.cheap_started_at = timezone.now() - timedelta(minutes=40)
+        reciente.save(update_fields=['cheap_started_at'])
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanzar:
+            self.assertEqual(relaunch_stuck_analyses(), 0)
+            lanzar.assert_not_called()
+
+    def test_sin_reloj_no_se_relanza_nada(self):
+        """Los posts anteriores al cronómetro no tienen fecha de arranque: sin
+        ella no se puede distinguir atascado de recién empezado."""
+        from apps.analysis.tasks import relaunch_stuck_analyses
+        self._post(11, status='CHEAP_RUNNING')     # cheap_started_at = None
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay'):
+            self.assertEqual(relaunch_stuck_analyses(), 0)
+
+    def test_la_fase_cara_atascada_no_repite_la_transcripcion(self):
+        from apps.analysis.tasks import relaunch_stuck_analyses
+        post = self._post(12, status='FULL_RUNNING')
+        post.full_started_at = timezone.now() - timedelta(hours=9)
+        post.save(update_fields=['full_started_at'])
+        segmentos_antes = post.transcript_segments.count()
+        with mock.patch('apps.analysis.tasks.run_full_analysis.apply_async') as lanzar:
+            self.assertEqual(relaunch_stuck_analyses(), 1)
+            lanzar.assert_called_once()
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'FULL_QUEUED')
+        self.assertEqual(post.transcript_segments.count(), segmentos_antes)
+
+    def test_el_rescate_esta_programado_cada_hora(self):
+        from config.celery import app
+        tarea = app.conf.beat_schedule['relanzar-analisis-atascados']
+        self.assertEqual(tarea['task'], 'apps.analysis.tasks.relaunch_stuck_analyses')
+        self.assertEqual(tarea['schedule'], 3600.0)
+
+
+class Pase43F(TestCase):
+    """4.3-F — el dinero se toca desde el panel, y los vídeos caros esperan turno.
+
+    Decisiones de David (2026-08-17):
+      · el presupuesto se edita en el panel escribiendo euros (no había forma de
+        cambiarlo desde la web: ni panel ni /admin/)
+      · si un vídeo se lleva más del 50% de la asignación diaria, entra en cola;
+        se analiza cuando haya depósito, o antes si alguien lo apadrina
+      · nunca es un muro: la donación es voluntaria y el vídeo se analiza igual
+    """
+
+    def _post(self, segundos, n=0, status='NEW'):
+        return Post.objects.create(
+            author=make_user(username=f'f_{n}', email=f'f_{n}@example.org'),
+            url=f'https://youtu.be/f{n}', duration_seconds=segundos,
+            status=status, title=f'Vídeo {n}')
+
+    # --- el presupuesto, editable ---
+    def test_el_presupuesto_se_edita_en_el_panel_en_euros(self):
+        from apps.panel.views import SETTINGS_DEF
+        filas = {k: (lbl, kind) for k, lbl, _h, kind in SETTINGS_DEF}
+        for clave in ('budget_base_eur', 'budget_hard_ceiling_eur'):
+            self.assertIn(clave, filas)
+            self.assertEqual(filas[clave][1], 'num')      # se escriben dígitos
+            self.assertIn('€', filas[clave][0])
+
+    def test_guardar_el_presupuesto_cambia_el_deposito_diario(self):
+        import calendar
+        from django.utils import timezone as tz
+        from apps.panel.models import SystemSetting
+        from apps.panel.services import live_daily_budget
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        SystemSetting.objects.update_or_create(key='budget_hard_ceiling_eur',
+                                               defaults={'value': '300'})
+        dias = calendar.monthrange(tz.localdate().year, tz.localdate().month)[1]
+        self.assertAlmostEqual(live_daily_budget(), round(150 / dias, 2), places=2)
+
+    def test_el_aviso_de_presupuesto_agotado_ya_no_usa_la_cifra_cableada(self):
+        codigo = open('apps/analysis/views.py').read()
+        self.assertNotIn('dj.DAILY_BUDGET_EUR', codigo)
+        self.assertIn('budget_left_today()', codigo)
+
+    # --- la cola ---
+    def test_un_video_caro_entra_en_cola_y_no_se_analiza_al_momento(self):
+        from apps.analysis.services import needs_sponsorship
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        a_la_cola, coste, sugerida = needs_sponsorship(self._post(3600, 1))
+        self.assertTrue(a_la_cola)
+        self.assertGreater(coste, 0)
+        self.assertEqual(sugerida * 2, int(sugerida * 2))    # múltiplo de 0,50
+
+    def test_un_video_normal_no_pasa_por_la_cola(self):
+        from apps.analysis.services import needs_sponsorship
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        self.assertFalse(needs_sponsorship(self._post(300, 2))[0])
+
+    def test_con_el_umbral_a_cero_la_cola_se_desactiva(self):
+        from apps.analysis.services import needs_sponsorship
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='queue_threshold_percent',
+                                               defaults={'value': '0'})
+        self.assertFalse(needs_sponsorship(self._post(7200, 3))[0])
+
+    def test_la_cola_avanza_cuando_cabe_en_el_deposito(self):
+        from apps.analysis.tasks import launch_queued_analyses
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        post = self._post(1800, 4, status='AWAITING_BUDGET')
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanzar:
+            self.assertEqual(launch_queued_analyses(), 1)
+            lanzar.assert_called_once_with(post.pk)
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'NEW')
+
+    def test_lo_que_no_cabe_espera_y_no_adelanta_a_nadie(self):
+        """Quien llegó antes va antes: una cola que adelanta a los baratos
+        condena a los caros a no analizarse nunca."""
+        from apps.analysis.tasks import launch_queued_analyses
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        caro = self._post(36000, 5, status='AWAITING_BUDGET')      # 10 h: no cabe
+        barato = self._post(120, 6, status='AWAITING_BUDGET')
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanzar:
+            self.assertEqual(launch_queued_analyses(), 0)
+            lanzar.assert_not_called()
+        caro.refresh_from_db()
+        barato.refresh_from_db()
+        self.assertEqual(caro.status, 'AWAITING_BUDGET')
+        self.assertEqual(barato.status, 'AWAITING_BUDGET')
+
+    def test_un_moderador_puede_adelantar_un_analisis(self):
+        post = self._post(3600, 7, status='AWAITING_BUDGET')
+        mod = make_user(username='modF', email='modf@example.org', level='MOD')
+        self.client.force_login(mod)
+        with mock.patch('apps.analysis.views.run_cheap_phase.delay') as lanzar:
+            self.client.post(f'/post/{post.pk}/adelantar/')
+            lanzar.assert_called_once_with(post.pk)
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'NEW')
+
+    def test_un_usuario_normal_no_puede_adelantar(self):
+        post = self._post(3600, 8, status='AWAITING_BUDGET')
+        cualquiera = make_user(username='anonF', email='anonf@example.org')
+        self.client.force_login(cualquiera)
+        with mock.patch('apps.analysis.views.run_cheap_phase.delay') as lanzar:
+            self.client.post(f'/post/{post.pk}/adelantar/')
+            lanzar.assert_not_called()
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'AWAITING_BUDGET')
+
+    def test_el_cartel_explica_la_cola_y_ofrece_apadrinar_sin_ser_un_muro(self):
+        post = self._post(3600, 9, status='AWAITING_BUDGET')
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '150'})
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('En cola por presupuesto', html)
+        self.assertIn('Apadrinar este análisis', html)
+        self.assertIn('/donaciones/', html)
+        self.assertIn('no cobra por publicar', html)      # ni muro ni peaje
+
+    def test_el_estado_nuevo_existe_en_el_modelo_y_en_la_migracion(self):
+        from apps.analysis.models import STATUSES
+        self.assertIn('AWAITING_BUDGET', [c for c, _l in STATUSES])
+        migracion = open('apps/analysis/migrations/0009_pase43f_estado_en_cola.py').read()
+        for codigo, _label in STATUSES:
+            self.assertIn(f"'{codigo}'", migracion)       # modelo y migración, iguales
+
+    def test_la_cola_esta_programada_cada_hora(self):
+        from config.celery import app
+        tarea = app.conf.beat_schedule['vaciar-cola-de-presupuesto']
+        self.assertEqual(tarea['task'], 'apps.analysis.tasks.launch_queued_analyses')
+        self.assertEqual(tarea['schedule'], 3600.0)
+
+    def test_el_umbral_de_cola_es_editable(self):
+        from django.conf import settings as s
+        from apps.panel.views import SETTINGS_DEF
+        self.assertIn('queue_threshold_percent', [k for k, _l, _h, _t in SETTINGS_DEF])
+        self.assertEqual(s.SETTING_DEFAULTS['queue_threshold_percent'], '50')
+        self.assertIn('QUEUE_THRESHOLD_PERCENT', open('.env.example').read())

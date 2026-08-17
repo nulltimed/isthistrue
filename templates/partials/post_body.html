@@ -4,9 +4,10 @@
     {% regroup name_proposals by speaker_label as speaker_groups %}
     <h2>{% trans "¿Quién habla?" %}</h2>
     <p class="hint">{% trans "Propón o vota. El voto de moderador confirma en solitario. Solo figuras públicas tendrán página propia." %}</p>
-    {% for label, num in speaker_names.items %}
-      <div class="speaker-block" data-spk="{{ num|add:-1 }}">
-        <strong class="speaker-tag spk-{{ num|add:-1 }}">{% trans "Hablante" %} {{ num }}</strong>
+    {% for row in speaker_rows %}{% with label=row.label num=row.num %}
+      <div class="speaker-block" data-spk="{{ row.color }}">
+        {# 4.3-E: confirmado el hablante, manda su NOMBRE; el número queda de apoyo. #}
+        <strong class="speaker-tag spk-{{ row.color }}">{% if row.name %}{{ row.name }}{% else %}{% trans "Hablante" %} {{ num }}{% endif %}</strong>
         {% for group in speaker_groups %}{% if group.grouper == label %}{% for prop in group.list %}
           <div class="candidate {% if prop.confirmed %}confirmed{% endif %}">
             {% if prop.photo_url %}<img src="{{ prop.photo_url }}" alt="" width="40" height="40" loading="lazy">{% endif %}
@@ -31,7 +32,7 @@
         </form>
         {% endif %}
       </div>
-    {% endfor %}
+    {% endwith %}{% endfor %}
     </aside>
     <div class="media-col"><div class="embed">{{ embed|safe }}</div></div>
     <aside class="transcript-col">
@@ -41,7 +42,7 @@
       {% for s in segments %}
         <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
              data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}">
-          <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% trans "Hablante" %} {{ s.spk_idx|add:1 }}</span>{% endif %}
+          <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% if s.spk_name %}{{ s.spk_name }}{% else %}{% trans "Hablante" %} {{ s.spk_idx|add:1 }}{% endif %}</span>{% endif %}
           <span class="text">{{ s.text }}</span>
           {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
           {% if post.status == 'DONE' and user.is_authenticated %}
@@ -64,12 +65,31 @@
 
   {% include 'partials/post_status.html' %}
 
+  {% if post.status == 'AWAITING_BUDGET' %}
+    {# 4.3-F (David): ni muro ni rechazo — cola con apadrinamiento. #}
+    <div class="validation queued">
+      <p><strong>{% trans "En cola por presupuesto." %}</strong>
+        {% blocktrans with c=queue_cost %}Este vídeo se lleva más de media asignación diaria (cuesta unos {{ c }} €), así que espera turno: se analizará solo en cuanto haya depósito, normalmente mañana.{% endblocktrans %}</p>
+      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} € y sale ahora.{% endblocktrans %}
+        <a class="btn" href="{% url 'donations' %}">{% trans "Apadrinar este análisis" %}</a></p>
+      <p class="hint">{% trans "El proyecto no cobra por publicar: la donación es voluntaria y el vídeo se analizará igualmente cuando llegue su turno." %}</p>
+      {% if is_mod %}
+      <form method="post" action="{% url 'post_greenlight' post.pk %}">{% csrf_token %}
+        <button class="mini">⏩ {% trans "Adelantar este análisis" %}</button></form>
+      {% endif %}
+    </div>
+  {% endif %}
   {% if post.status == 'PENDING_VALIDATION' %}
     <div class="validation">
-      <p><strong>Pendiente de validación:</strong> {{ votes_validate }} voto(s). Se necesitan votos de usuarios Contribuidor+ antes de {{ post.validation_deadline|date:'d/m H:i' }}.</p>
+      <p><strong>{% trans "Pendiente de validación:" %}</strong> {{ votes_validate }} {% trans "voto(s). Se necesitan votos de usuarios Contribuidor+ antes de" %} {{ post.validation_deadline|date:'d/m H:i' }}.</p>
+      {# 4.3-E (David): sin identificar a la mitad de los hablantes no se valida. #}
+      {% if identification.1 %}
+        <p class="hint">{% blocktrans with n=identification.0 total=identification.1 %}Hablantes identificados: {{ n }} de {{ total }}.{% endblocktrans %}
+          {% if not can_validate %}<strong>{% trans "Identifica al menos a la mitad en «¿Quién habla?» para poder marcarlo como factual." %}</strong>{% endif %}</p>
+      {% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'post_vote' post.pk 'validate' %}">{% csrf_token %}
-        <button>✔ Es factual</button></form>
+        <button {% if not can_validate %}title="{% trans 'Faltan hablantes por identificar' %}"{% endif %}>✔ {% trans "Es factual" %}</button></form>
       {% endif %}
     </div>
   {% endif %}

@@ -163,6 +163,75 @@ def run_full_analysis(self, post_id):
 
 
 @shared_task
+def launch_queued_analyses():
+    """4.3-F: vacia la cola de los videos que esperaban presupuesto.
+
+    Cada hora, por orden de llegada: si lo que queda del deposito de hoy cubre el
+    coste estimado, se lanza. Si no cabe, se PARA — no se salta al siguiente aunque
+    sea mas barato: quien llego antes, va antes. Una cola que adelanta a los
+    pequenos condena a los grandes a no analizarse jamas.
+
+    La donacion desatasca esto sola: sube el techo mensual y con el el deposito
+    diario, asi que al ciclo siguiente ya cabe.
+    """
+    from .models import Post
+    from .services import budget_left_today, cost_cheap_eur, cost_full_eur
+    lanzados = 0
+    for post in Post.objects.filter(status='AWAITING_BUDGET').order_by('created_at'):
+        coste = cost_cheap_eur(post) + cost_full_eur(post)
+        if coste > budget_left_today():
+            break
+        post.status = 'NEW'
+        post.save(update_fields=['status'])
+        run_cheap_phase.delay(post.pk)
+        logger.info('Post %s sale de la cola de presupuesto (coste estimado %.2f EUR)',
+                    post.pk, coste)
+        lanzados += 1
+    return lanzados
+
+
+@shared_task
+def relaunch_stuck_analyses():
+    """4.3-E (decision de David: "que se relancen automaticamente").
+
+    Un analisis puede quedarse clavado si el worker muere a mitad: Celery acusa
+    recibo del mensaje ANTES de ejecutarlo (acks_late=False), asi que ese trabajo
+    no se reintenta solo — el post se queda en CHEAP_RUNNING o FULL_RUNNING para
+    siempre, con la rueda girando y sin que nadie se entere.
+
+    Cada hora se buscan los que llevan atascados mas de STUCK_ANALYSIS_HOURS y se
+    relanzan. Candado importante: se compara contra el reloj del propio analisis
+    (4.3-D), no contra created_at, para no relanzar un video de una hora que
+    simplemente esta TARDANDO. Y se relanza la fase que corresponde, no siempre
+    la barata: repetir la transcripcion de un post que ya la tiene es tirar dinero.
+    """
+    from django.utils import timezone as tz
+    from .models import Post
+    limite = tz.now() - tz.timedelta(hours=settings.STUCK_ANALYSIS_HOURS)
+    relanzados = 0
+    for post in Post.objects.filter(status='CHEAP_RUNNING',
+                                    cheap_started_at__lt=limite):
+        logger.warning('Post %s atascado en CHEAP_RUNNING desde %s: relanzando',
+                       post.pk, post.cheap_started_at)
+        post.transcript_segments.all().delete()   # la transcripcion quedo a medias
+        post.status = 'NEW'
+        post.save(update_fields=['status'])
+        run_cheap_phase.delay(post.pk)
+        relanzados += 1
+    for post in Post.objects.filter(status='FULL_RUNNING',
+                                    full_started_at__lt=limite):
+        logger.warning('Post %s atascado en FULL_RUNNING desde %s: relanzando',
+                       post.pk, post.full_started_at)
+        post.status = 'FULL_QUEUED'
+        post.save(update_fields=['status'])
+        run_full_analysis.apply_async(args=[post.pk])
+        relanzados += 1
+    # Los que se quedaron sin reloj (anteriores al 4.3-D) no se tocan: sin fecha
+    # de arranque no se puede distinguir "atascado" de "recien empezado".
+    return relanzados
+
+
+@shared_task
 def relegate_expired_validations():
     """Beat horario. 4.2 A2: YA NO relega — marca la sugerencia para moderadores
     (relegar es siempre accion humana). El nombre se conserva: beat lo referencia."""

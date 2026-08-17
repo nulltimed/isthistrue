@@ -211,12 +211,21 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'cents_per_video_minute': '12',
     # 4.3-C: las fichas de persona nacen con el freno de indexacion puesto.
     'wiki_index_people': '0',
+    # 4.3-E: minimo de hablantes identificados para poder validar como factual.
+    'min_identified_speakers_percent': '50',
+    # 4.3-F: porcentaje del deposito diario a partir del cual un video espera en
+    # cola en vez de analizarse al momento.
+    'queue_threshold_percent': '50',
 }.items()}
 
 # 4.3-A.8: el video se transcribe ENTERO hasta este techo (antes: 1200 s fijos en
 # el codigo, y un video de una hora se analizaba al 33% sin avisar a nadie).
 # David: "se tienen que procesar igual que los videos de 5 minutos".
 TRANSCRIBE_MAX_SECONDS = int(os.getenv('TRANSCRIBE_MAX_SECONDS', '5400'))
+# 4.3-E: horas que un analisis puede llevar "en marcha" antes de darlo por
+# atascado y relanzarlo. Con el techo de 90 min de video y pyannote en CPU, un
+# analisis legitimo puede pasar de dos horas: 6 deja margen de sobra.
+STUCK_ANALYSIS_HOURS = int(os.getenv('STUCK_ANALYSIS_HOURS', '6'))
 PROBE_TIMEOUT_SECONDS = int(os.getenv('PROBE_TIMEOUT_SECONDS', '12'))
 EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
 EMBEDDINGS_DIM = 384  # MiniLM multilingue; congelado (antes 1024)

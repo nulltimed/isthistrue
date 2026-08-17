@@ -16,6 +16,10 @@ STATUSES = [
     ('CHEAP_RUNNING', 'Fase barata en curso'),
     ('PENDING_VALIDATION', 'Pendiente de validación (5 votos / 3 días)'),
     ('FULL_QUEUED', 'Análisis completo en cola'),
+    # 4.3-F (decision de David): un video que se lleva mas de media asignacion
+    # diaria NO se analiza al momento — espera a que haya deposito, o a que
+    # alguien lo apadrine con una donacion. Nunca se rechaza.
+    ('AWAITING_BUDGET', 'En cola por presupuesto (esperando depósito o apadrinamiento)'),
     ('FULL_RUNNING', 'Análisis completo en curso'),
     ('DONE', 'Analizado'),
     ('OFFTOPIC_SIGNALED', 'Off-Topic con señales'),

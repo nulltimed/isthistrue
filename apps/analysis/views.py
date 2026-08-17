@@ -106,11 +106,12 @@ def submit(request):
             post.delete()
             messages.error(request, 'Has agotado tu cupo diario de análisis.')
             return redirect('index')
-        from .models import DailyBudget
-        from django.conf import settings as dj
-        from django.utils import timezone as tz
-        today = DailyBudget.objects.filter(date=tz.localdate()).first()
-        if today and float(today.spent_eur) >= dj.DAILY_BUDGET_EUR:
+        # 4.3-F: el aviso de "presupuesto agotado" comparaba con settings.DAILY_BUDGET_EUR,
+        # una cifra CABLEADA (3,00 €) que ya no era la de nadie. El presupuesto vivo
+        # se calcula desde el panel; dos fuentes de verdad para el mismo número es
+        # justo el fallo que el operador cazó en 98d3442.
+        from .services import budget_left_today
+        if budget_left_today() <= 0:
             waiting = Post.objects.filter(status='NEW').count() + 1
             messages.info(request, f'Presupuesto diario agotado (proyecto sin ánimo de '
                           f'lucro). Tu análisis es el nº {waiting} de mañana. '
@@ -130,8 +131,44 @@ def submit(request):
                       f'lo sostienen las donaciones: si puedes, una de {donacion:.2f} € '
                       f'cubre este análisis. No es obligatoria y tu vídeo ya está en cola.')
 
+    # 4.3-F (decisión de David): si el vídeo se lleva más de media asignación
+    # diaria, NO se analiza al momento. Entra en cola y se lanza cuando haya
+    # depósito, o antes si alguien lo apadrina. Nunca se rechaza, y el aviso
+    # explica exactamente por qué y cuánto.
+    from .services import needs_sponsorship
+    a_la_cola, coste, sugerida = needs_sponsorship(post)
+    if a_la_cola:
+        post.status = 'AWAITING_BUDGET'
+        post.save(update_fields=['status'])
+        messages.info(request, f'Este vídeo se lleva más de media asignación diaria '
+                      f'(cuesta unos {coste:.2f} €), así que entra en cola: se '
+                      f'analizará solo en cuanto haya depósito, normalmente mañana. '
+                      f'Si quieres que salga antes, puedes apadrinarlo con una '
+                      f'donación de {sugerida:.2f} €.')
+        return redirect('post_detail', pk=post.pk)
+
     run_cheap_phase.delay(post.pk)
     return redirect('post_detail', pk=post.pk)
+
+
+@login_required
+def greenlight(request, pk):
+    """4.3-F: dar paso a un análisis en cola sin esperar al depósito. Solo
+    moderación. Es acción deliberada y con coste, como el reanálisis."""
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect('post_detail', pk=pk)
+    if post.status != 'AWAITING_BUDGET':
+        messages.error(request, 'Este análisis no está en cola por presupuesto.')
+        return redirect('post_detail', pk=pk)
+    post.status = 'NEW'
+    post.save(update_fields=['status'])
+    run_cheap_phase.delay(post.pk)
+    from apps.panel.models import AuditLog
+    AuditLog.objects.create(action='analysis_greenlit',
+                            detail=f'post {post.pk} adelantado por {request.user}')
+    messages.success(request, 'Análisis adelantado: entra en marcha ahora.')
+    return redirect('post_detail', pk=pk)
 
 
 def _can_see_adult(request):
@@ -177,11 +214,27 @@ def _post_context(request, post):
         s.spk_color = (s.spk_idx % 8) if s.spk_idx is not None else None
     # 4.2.1 I7: la MISMA numeracion "Hablante N" en transcripcion y "¿Quien habla?"
     speaker_names = {label: i + 1 for label, i in idx.items()}
+    # 4.3-E (decision de David): en cuanto un hablante queda CONFIRMADO, su nombre
+    # sustituye a "Hablante N" en los dos sitios — la ficha de ¿Quién habla? y cada
+    # frase de la transcripcion. Dejar el numero despues de identificarlo obliga al
+    # lector a traducir mentalmente en cada frase.
+    confirmadas = dict(post.name_proposals.filter(confirmed=True)
+                       .values_list('speaker_label', 'candidate_name'))
+    for s in segments:
+        s.spk_name = confirmadas.get(s.speaker_label, '')
+    # Lista (no diccionario): las plantillas de Django no saben consultar un dict
+    # por una clave variable, y meter un filtro nuevo solo para esto seria peor.
+    speaker_rows = [{'label': label, 'num': i + 1, 'color': i % 8,
+                     'name': confirmadas.get(label, '')}
+                    for label, i in sorted(idx.items(), key=lambda kv: kv[1])]
     hide_opinions = bool(u and u.hide_opinions)
     # 4.2 C4: el analisis y su hilo del foro son UNA sola pagina.
     from apps.forum.machina_glue import get_topic_for_post
+    from .services import identification_gate, needs_sponsorship, speaker_identification
     topic_obj = get_topic_for_post(post)
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
+    # 4.3-F: cifras del cartel de la cola (solo se pintan si el post está en ella).
+    _en_cola, queue_cost, queue_sponsor = needs_sponsorship(post)
     thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(topic_obj, u, request)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
     from apps.forum.models import MessageSensitive, HiddenMessage
@@ -207,7 +260,11 @@ def _post_context(request, post):
                               models.Q(source='user') | models.Q(confirmed=True))
                               .select_related('interlocutor')
                               .order_by('speaker_label', '-confirmed'),
-        'speaker_names': speaker_names, 'page_obj': page_obj,
+        'queue_cost': queue_cost, 'queue_sponsor': queue_sponsor,
+        'speaker_names': speaker_names, 'speaker_rows': speaker_rows,
+        'identification': speaker_identification(post),
+        'can_validate': identification_gate(post)[0],
+        'page_obj': page_obj,
         'first_unread_pk': first_unread_pk, 'newest_pk': newest_pk,
         'topic_obj': topic_obj, 'thread_messages': thread_messages,
         'is_mod': is_mod, 'is_trending': post.is_trending(),

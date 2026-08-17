@@ -20,4 +20,14 @@ app.conf.beat_schedule = {
         'task': 'apps.accounts.tasks.send_daily_digests',
         'schedule': 86400.0,
     },
+    # 4.3-E: rescate de analisis colgados (worker muerto a mitad).
+    'relanzar-analisis-atascados': {
+        'task': 'apps.analysis.tasks.relaunch_stuck_analyses',
+        'schedule': 3600.0,
+    },
+    # 4.3-F: los videos que esperaban presupuesto salen solos en cuanto cabe.
+    'vaciar-cola-de-presupuesto': {
+        'task': 'apps.analysis.tasks.launch_queued_analyses',
+        'schedule': 3600.0,
+    },
 }
