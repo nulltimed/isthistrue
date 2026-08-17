@@ -481,7 +481,10 @@ class Pase43A5(TestCase):
         css = open('static/css/main.css').read()
         # 4.3-A.7 fusiono .live y :hover en una regla: el negro se declara para ambas.
         self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
-        self.assertIn('.segment.live,.segment.live .text{color:#fff}', css)
+        # La regla del color agrupa .live y :hover en dos lineas (A.7): se comprueba
+        # el selector real, no una cadena de una sola linea que ya no existe.
+        self.assertIn('.segment.live,.segment.live .text,', css)
+        self.assertIn(".transcript .segment:hover .text{color:#fff}", css)
 
     def test_reanalizar_solo_moderador(self):
         from apps.analysis.models import TranscriptSegment
