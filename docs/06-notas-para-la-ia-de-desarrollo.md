@@ -247,3 +247,44 @@ Commit → push a main → (cuando exista) CI verde → encender espejo → `git
 - Lo que hay: `apps/agents/wikidata.py::search_people()` (filtra personas por P31=Q5, devuelve QID+nombre+descripción+foto de Commons, caché 24 h, degradación ruidosa), endpoint `/hablante/buscar/` con login, `static/js/speaker-suggest.js` (progresivo: sin JS el campo es texto libre), y **la identidad anclada al QID** en `apps/wiki/naming.py::_person_for()` — homónimos son fichas distintas, el mismo QID es idempotente. Migración `wiki/0003` (wikidata_id/photo_url/description).
 - **Lo que sigue libre en ese frente** (tuyo si David lo pide): normalización Haiku de nombres escritos a mano (para fusionar "pedro sanchez" con la ficha correcta), página pública de persona mostrando sus claims atribuidos (`claims_for_person` ya agrupa por identidad real), y el umbral 5-usuarios/1-mod que ya funciona tal cual.
 - Invariantes que NO debes romper si tocas esto: el QID manda sobre el nombre; reescribir a mano borra el QID en el cliente Y el servidor valida el formato `Q\d+`; y la línea roja §4.7 sigue intacta (cero voz, la identidad la ponen los votos).
+
+## 28. Pase 4.3-A.8 aplicado (2026-08-17) — addendum del operador
+
+Aplicado y en producción (commit `69da66e`, CI 100/100). Informe completo en `docs/30`.
+
+**Seis tests del propio pase fallaban por desactualizados** (no por bugs del código): 4 de
+CSS —el A.7 fusionó `.segment.live` y `:hover` en reglas agrupadas de dos líneas y los tests
+buscaban los selectores sueltos—, 1 de donación —el README fija 5,00 € para 60 min pero el
+test exigía `< 5`— y 1 de reescaneo de Opus —el umbral del 40 % es inclusivo (`>=`), así que
+el 5.º voto ya dispara, y el test usaba 6 votantes esperando 2 llamadas—. Los alineé con el
+comportamiento que el propio pase decidió. **Petición: cuando un pase cambie un umbral o
+agrupe reglas CSS, actualiza sus tests en el mismo ZIP.**
+
+### Las tres mediciones que pediste en tu §5
+
+1. **Frases y lotes (✅ medido)**: sobre 4 vídeos reales, la densidad va de **16,1 a 44,1
+   frases/minuto** según lo picado del montaje. Extrapolado a 1 hora: **entre ~970 frases
+   (25 lotes) y ~2.650 frases (67 lotes)** con `SWEEP_BATCH_SIZE=40`. Dimensiona para el
+   rango, no para una media. Caso real medido: 12,6 min → 553 frases → 14 lotes.
+2. **Tiempos de whisper+pyannote en 1 h (❌ no disponible)**: ningún vídeo de esa duración se
+   ha procesado (el mayor es de 12,6 min) y, sobre todo, **`AnalysisRequest` no guarda
+   tiempos**: sus campos son `id, post, user, served_from_cache, created_at`. Si quieres esta
+   métrica de forma repetible, **añade `started_at`/`finished_at`** (o registra la duración de
+   la tarea Celery); hoy solo vive en los logs efímeros del worker, que se pierden al recrearlo.
+3. **Gasto real vs reservado (🟡 parcial)**: `DailyBudget` reservó 0,05 + 0,17 + 0,12 =
+   **0,34 €** (14-16 de agosto). El contraste con la consola de Anthropic solo puede hacerlo
+   David. Con ese volumen la calibración de `cents_per_video_minute` no será significativa:
+   hace falta más tráfico.
+
+### Trampa nueva documentada: la sala +18 y el superusuario
+
+`/mas18/` devuelve **403 a la cuenta de administrador `d`** porque `ensure_superuser` **no
+establece `birth_date`** y `is_adult` es False. Es el candado funcionando, no un bug — pero
+provoca un falso negativo al verificar: parece que la sala está rota cuando lo que falta es
+la edad del verificador. Comprobado con una cuenta mayor de edad real: **200 y menú +18
+visible**. Considera si `ensure_superuser` debería aceptar una fecha opcional del `.env`.
+
+### Pendiente de David
+
+La decisión **B4** (donación sugerida para vídeos >20 min = **aviso, no muro**) queda tal
+cual está desplegada —aviso— a la espera de su confirmación explícita.

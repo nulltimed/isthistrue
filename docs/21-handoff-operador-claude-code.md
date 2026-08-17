@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Estado del repo: identidad de hablantes con Wikidata en producción (ver git log; este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-17 · Commit en producción: `69da66e` · Estado del repo: pase 4.3-A.8 (barrido troceado, vídeos largos, sala +18) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -151,18 +151,33 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 - **Ephemeral migrate**: `docker compose run --rm web python manage.py migrate` (no necesita el servicio web vivo).
 - **Verificar sin ver secretos**: `sudo grep '^CLAVE=' .env | cut -d= -f2- | md5sum` para comparar, awk para presencia.
 
-## 10. Estado EXACTO al traspasar (2026-08-15, tras pase 4.2)
+## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: identidad de hablantes con Wikidata (autocompletado con QID en «¿Quién
-  crees que es?»; homónimos separados) sobre el pase 4.3-A.6, 6 contenedores Up,
-  71/71 tests, logs limpios. Espejo: mismo commit, APAGADO.
-- **Funcional**: MOCK_AGENTS=true (David aún sin poner ANTHROPIC_API_KEY → todo [SIMULADO]
-  y sin gasto), Brevo REAL activo (emails de verificación/bienvenida salen), Turnstile sin
-  claves (warning esperado en logs), HF_TOKEN presente y la diarización YA funciona
-  (pase 4.1), backups diarios 00:00 activos y PROBADOS (restic → Drive, con pg_dump).
+- **Producción**: commit `69da66e` — pase 4.3-A.8 (barrido troceado en lotes de 40 con techo
+  de 8.000 tokens, `TRANSCRIBE_MAX_SECONDS=5400`, botón único «Discuto», coste/donación por
+  minutos, sala +18 en `/mas18/`) sobre la identidad de hablantes con Wikidata y el 4.3-A.6.
+  6 contenedores Up, CI 100/100, estáticos verdes en los 3 dominios (27.966 bytes).
+  Copia previa: `/opt/isthistrue.bak-20260817-0228`. Espejo: mismo commit, APAGADO.
+- **Funcional (¡CAMBIÓ!)**: **`MOCK_AGENTS=False` y `ANTHROPIC_API_KEY` CONFIGURADA — la
+  plataforma GASTA DINERO REAL desde el 14-08.** `DailyBudget` lleva 0,05 + 0,17 + 0,12 =
+  0,34 € reales (14-16 agosto). `HF_TOKEN` presente y diarización funcionando.
+  Brevo REAL activo. **`TURNSTILE_SECRET` sigue AUSENTE** (warning esperado en logs).
+  Backups diarios 00:00 activos y PROBADOS (restic → Drive, con pg_dump).
+- **Trampa que te ahorrará una hora**: `/mas18/` devuelve **403 a la cuenta de administrador
+  `d`** porque `ensure_superuser` NO establece `birth_date` → `is_adult=False`. Es el candado
+  funcionando, no un bug. Para verificar la sala, **crea una cuenta con `birth_date` de mayor
+  de edad** (y en el espejo, además, `staging_invited=True`, o el candado de invitados te
+  devolverá un 302 que parece de la sala y no lo es).
 - **Pendiente inmediato del pase 4.2**: David debe confirmar (o no) el marcado
   `sources_ok=False` de los claims del 15-08 para re-veredicto (~0,07 €/post; comando
   `reverdict_missing_sources`); dry-run actual: 0. Y su paseo visual (campana, MP, Mi cuenta).
+- **Pendiente de decisión de David (A.8)**: confirmar la decisión **B4** — donación sugerida
+  para vídeos >20 min es **aviso, no muro** (así está desplegado).
+- **Medición que Fable pidió y NO se puede dar hoy**: tiempos reales de whisper+pyannote en un
+  vídeo de ~1 h. Ningún vídeo de esa duración se ha procesado (el mayor: 12,6 min) y
+  `AnalysisRequest` no guarda tiempos (campos: `id, post, user, served_from_cache,
+  created_at`). Si David autoriza el gasto (~2,52 € barata / 4,68 € completa), procesa uno y
+  documenta los tiempos.
 - **Anunciado por Fable**: 4.3-B — OJO: su parte principal (autocompletado Wikidata para
   nombrar hablantes) la pidió David directamente y ya está EN PRODUCCIÓN (docs/29, avisado
   en docs/06 §27). Si llega un 4.3-B con eso dentro, coordina antes de aplicar. Sigue libre:
@@ -178,8 +193,8 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§20) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20` |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§28) |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
