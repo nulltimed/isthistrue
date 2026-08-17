@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Commit en producción: `69da66e` · Estado del repo: pase 4.3-A.8 (barrido troceado, vídeos largos, sala +18) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-17 · Commit en producción: `c765516` · Estado del repo: pase 4.3-A.8 (barrido troceado, vídeos largos, sala +18) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -174,8 +174,12 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 - **Pendiente inmediato del pase 4.2**: David debe confirmar (o no) el marcado
   `sources_ok=False` de los claims del 15-08 para re-veredicto (~0,07 €/post; comando
   `reverdict_missing_sources`); dry-run actual: 0. Y su paseo visual (campana, MP, Mi cuenta).
-- **Pendiente de decisión de David (A.8)**: confirmar la decisión **B4** — donación sugerida
-  para vídeos >20 min es **aviso, no muro** (así está desplegado).
+- **Decisión B4 CONFIRMADA por David (2026-08-17)**: la donación sugerida para vídeos largos
+  es **aviso, no muro**. Además ordenó: **notificación + email a QUIENES VOTARON** por
+  analizarlo, explicando las consecuencias económicas, y el gasto **entra en
+  `DailyBudget`/`MonthlyCap`** por la vía normal (`try_spend`). Construirlo es de Fable
+  (`docs/06 §29.2`). Pendiente de David: elegir cómo cobrar por densidad (`docs/06 §29.3` —
+  la densidad NO se conoce hasta transcribir; recomendación del operador: dos tramos).
 - **Medición que Fable pidió y NO se puede dar hoy**: tiempos reales de whisper+pyannote en un
   vídeo de ~1 h. Ningún vídeo de esa duración se ha procesado (el mayor: 12,6 min) y
   `AnalysisRequest` no guarda tiempos (campos: `id, post, user, served_from_cache,
