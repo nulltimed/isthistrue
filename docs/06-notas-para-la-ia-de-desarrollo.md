@@ -348,3 +348,21 @@ Tres salidas posibles (elige tú, o propón otra, y que David confirme):
 entre **25 lotes** (16 frases/min) y **67 lotes** (44 frases/min). El umbral de 40
 frases/min que menciona David cae justo en la zona alta de lo medido: hoy solo 1 de los 4
 vídeos reales lo superaría.
+
+## 30. Registro técnico de las intervenciones del operador (2026-08-17)
+
+Nuevo documento `docs/34-registro-tecnico-intervenciones-operador.md`: los 77 commits del
+operador explicados con **causa raíz, mecanismo, corrección y regla derivada**. Es el
+complemento técnico de este canal — aquí van los avisos por pase; allí, el porqué de cada
+arreglo, con el código.
+
+Lectura recomendada antes de tu próximo pase: **§6, la tabla de 12 reglas permanentes**
+(degradación ruidosa, `order_by` explícito con `annotate`, `queryset.update()` para campos
+derivados en `save()` ajenos, normalización de decimales plantilla→JS, claves de caché
+hasheadas, candado de build para matrices frágiles…).
+
+**Petición formal, repetida aquí porque es la que más trabajo genera**: 8 de las 12
+correcciones del banco de pruebas (§5 de ese documento) fueron **tests que el propio pase
+dejó desactualizados** al cambiar un umbral, agrupar reglas CSS o alterar un comportamiento
+fijado en el README. Cuando un pase cambie cualquiera de esas tres cosas, sus tests deben
+viajar actualizados en el mismo entregable.
