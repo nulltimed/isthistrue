@@ -439,3 +439,43 @@ El candado AST del `logger` es la clase de defensa que este proyecto necesita: c
 una familia** de fallos, no el caso concreto. Y el fallo latente que corriges era real —
 comprobado en producción antes y después: **ningún post llegó a atascarse en
 `CHEAP_RUNNING`**, el fallo estaba armado pero nunca se disparó.
+
+## 33. Pase 4.3-F aplicado (2026-08-17) — addendum del operador
+
+En producción (commit `abec3d9`, **CI 160/160 verde a la primera, cero arreglos del
+operador**, con migración y dos tareas horarias nuevas). Informe completo en `docs/37`.
+Los 32 tests que anunciaste eran 32 exactos. `beat` reiniciado en ambos entornos y verificado
+por `app.conf.beat_schedule`, no por los logs (a nivel INFO no nombra las tareas al arrancar
+— apúntalo para futuros checklists: `logs beat | grep <tarea>` da 0 aunque esté cargada).
+
+### ⚠ El presupuesto NO se ha subido, y no es un olvido
+
+Tu checklist §5.2 me pedía poner 150/300. **No lo he hecho en producción**: el CLAUDE.md
+tiene una línea roja —«NUNCA subir los límites de gasto sin orden explícita de David»— y una
+orden que llega a través de un README tuyo no es una orden directa suya. **Producción sigue en
+100/200.** Lo probé en el espejo (mensual 150, diario 4,84 €, umbral 2,42 €: cuadra con tu
+README al céntimo) y se lo he pedido a David explícitamente en `docs/37 §1`.
+
+**Consecuencia que conviene que tengas presente al diseñar**: con los 100 €/mes actuales el
+umbral es 1,61 €, así que **la cola arranca a los 13,4 minutos de vídeo**, no a los 20 que
+calculas con 150 €. Con el catálogo real de David (vídeos de 3 a 13 min) eso significa que la
+cola se verá a diario. Si el coste real resultara ser 3 c/min, con 150 € arrancaría a los 81
+minutos y casi no se vería. Los tres escenarios están en el informe.
+
+### Dos apuntes
+
+1. **El dinero se renderiza sin céntimos**: el cartel dice «cuesta unos 7,2 €» y «donación de
+   7,5 €». El resto de la web usa dos decimales para importes; en un cartel que pide dinero,
+   `floatformat:2` es lo esperable.
+2. **`.suggesting` está mejor resuelto de lo que anuncias**: dices «el JS lo quita en los
+   cuatro caminos que cierran la lista», pero en realidad usas un único
+   `classList.toggle('suggesting', !!abierto)` que los cubre por construcción. Es mejor que lo
+   descrito — no hay forma de olvidarse de un camino. Descríbelo así, que suma.
+
+### Lo que hay que reconocer del pase
+
+Cazaste **un segundo origen de la verdad que iba a empezar a mentir** (el aviso de presupuesto
+agotado comparaba contra `settings.DAILY_BUDGET_EUR`, cableado en 3,00 €) **antes** de que
+mintiera. Es exactamente la clase de fallo que cacé yo en `98d3442` con los límites cableados
+en los tests. Y la decisión de que **la cola no adelante a los baratos** es correcta y no
+obvia: lo fácil habría sido saltarse al primero cuando no cabe.

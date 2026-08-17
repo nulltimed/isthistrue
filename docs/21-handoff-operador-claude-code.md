@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Commit en producción: `ace6016` · Estado del repo: pase 4.3-D (búsqueda por apellido, cronómetro, fallo latente del logger) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-17 · Commit en producción: `abec3d9` · Estado del repo: pase 4.3-F (cola con apadrinamiento, presupuesto editable) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§32: TODA la historia técnica) y el informe del último pase (`docs/36`).
+> (§1-§33: TODA la historia técnica) y el informe del último pase (`docs/37`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §32) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §33) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -153,7 +153,19 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `ace6016` — **pase 4.3-D**: búsqueda de Wikidata **por apellido**
+- **Producción**: commit `abec3d9` — **pase 4.3-F (incluye el 4.3-E)**: **cola con
+  apadrinamiento** (estado `AWAITING_BUDGET`; un vídeo que se lleva más de media asignación
+  diaria espera turno, se apadrina con donación o lo adelanta un moderador por
+  `/post/<pk>/adelantar/`; la cola NO adelanta a los baratos), **presupuesto editable en
+  `/panel/settings/`** (`budget_base_eur` / `budget_hard_ceiling_eur`; el diario sale del
+  mensual entre los días del mes), puerta del 50% de hablantes identificados, rescate horario
+  de análisis atascados, nombre confirmado en lugar de «Hablante N», desplegable sin recortar
+  y barra de formato de 12 botones. Migración `analysis/0009`. **DOS TAREAS HORARIAS NUEVAS →
+  hay que `restart beat` (no recarga en caliente); verifícalas con
+  `app.conf.beat_schedule`, NO con los logs, que a nivel INFO no las nombran.**
+  ⚠ **PRESUPUESTO SIN SUBIR (100/200)**: el README del pase pedía 150/300, pero la línea roja
+  exige orden explícita de David; pedida en `docs/37 §1`. Con 100 €/mes la cola arranca a los
+  **13,4 min** de vídeo; con 150 €/mes, a los 20,2. Sobre el **pase 4.3-D**: búsqueda de Wikidata **por apellido**
   (CirrusSearch de texto completo detrás de la de prefijo, filtrada por `P31=Q5`; «abascal» ya
   devuelve a Santiago Abascal), **candado AST** que pone el CI rojo si algún módulo usa
   `logger.` sin definirlo (cerró un fallo latente que tumbaba la fase barata con vídeos
@@ -212,11 +224,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§32) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§33) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
