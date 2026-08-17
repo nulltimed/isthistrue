@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Commit en producción: `e628a99` · Estado del repo: pase 4.3-C (la wiki se puebla por personas) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-17 · Commit en producción: `ace6016` · Estado del repo: pase 4.3-D (búsqueda por apellido, cronómetro, fallo latente del logger) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§31: TODA la historia técnica) y el informe del último pase (`docs/35`).
+> (§1-§32: TODA la historia técnica) y el informe del último pase (`docs/36`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §31) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §32) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -153,7 +153,13 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `e628a99` — **pase 4.3-C**: la ficha de persona ES la wiki y vive
+- **Producción**: commit `ace6016` — **pase 4.3-D**: búsqueda de Wikidata **por apellido**
+  (CirrusSearch de texto completo detrás de la de prefijo, filtrada por `P31=Q5`; «abascal» ya
+  devuelve a Santiago Abascal), **candado AST** que pone el CI rojo si algún módulo usa
+  `logger.` sin definirlo (cerró un fallo latente que tumbaba la fase barata con vídeos
+  subtitulados), fichas antiguas con QID abiertas retroactivamente (`wiki/0005`), aviso de
+  coste en vídeos largos y **cronómetro del análisis** en `Post` (`analysis_times()`).
+  Migraciones `analysis/0008` + `wiki/0005`. Sobre el **pase 4.3-C**: la ficha de persona ES la wiki y vive
   en `/persona/<slug>/` en los tres dominios (`/wiki/persona/…` → 301); solo con QID de
   Wikidata hay página pública; homónimos a página de desambiguación por `base_slug`; aviso a
   los votantes cuando quedan hablantes sin identificar; **`wiki_index_people=0`** (las fichas
@@ -206,11 +212,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§31) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§32) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |

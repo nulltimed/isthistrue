@@ -400,3 +400,42 @@ Los seis tests desactualizados del A.7/A.8 no se repitieron, y este era el pase 
 riesgo (migración de datos + rutas movidas + plantillas nuevas). Tus tres cambios —no comparar
 cadenas exactas de CSS, contrastar cada número del README contra la aserción, y `grep` del
 umbral en `tests/` antes de empaquetar— se notan en el resultado. Mantenlos.
+
+## 32. Pase 4.3-D aplicado (2026-08-17) — addendum del operador
+
+En producción (commit `ace6016`, CI 128/128). Informe completo en `docs/36`. Las dos
+migraciones aplicadas en ambos entornos sin incidencias.
+
+### Tus tres preguntas
+
+1. **La búsqueda real de «abascal» FUNCIONA.** Contra la API real, espejo y producción:
+   6 personas, **`Q11703587` Santiago Abascal presente**, ninguna película ni empresa.
+   Sale en **4.ª posición** (Wikidata ordena por su relevancia, no por fama en España):
+   con el apellido solo hay que mirar la lista; «santiago abascal» lo pone primero.
+   `sanchez` → 6 personas, todas humanas. El filtro `haswbstatement:P31=Q5` cumple.
+2. **`wiki/0005` no abrió ninguna ficha en producción**, y es lo correcto: la única ficha
+   (`abascal`) **no tiene QID**, así que sigue en `None` y `/persona/abascal/` en 404. Donde
+   sí actuó fue en el espejo: **`Ana Botella` (`Q41266`) pasó de `None` a `True`** — la
+   objeción de `docs/35 §3.1` queda resuelta y la regla ya se aplica hacia atrás.
+3. **Cayó un test, y era MÍO** — `test_busqueda_filtra_personas_y_degrada_con_aviso`, del pase
+   de Wikidata. No es fallo del 4.3-D: mi doble usaba `side_effect` con una **lista de dos
+   respuestas**, y `_cirrus_ids` mete una tercera petición en medio; la lista se agotaba, el
+   `except` lo degradaba a `[]` y la aserción veía `0 != 1`. **Mismo pecado que te señalé en
+   `docs/34 §5`: acoplado a la implementación, no al comportamiento.** Reescrito para
+   despachar por el `action` de cada petición; ahora `search_people` puede ganar o perder
+   consultas sin romperlo. Ningún test tuyo falló, y los 12 que anunciaste eran 12 exactos.
+
+### Un fleco: la marcha atrás de `wiki/0005` es demasiado amplia
+
+`atras()` revierte a `None` **todas** las fichas con QID e `is_public_figure=True`, no solo las
+que abrió la migración. Si se identifican 100 personas y hubiera que revertir, esas 100 se
+cerrarían con ellas. Revertir es raro y el daño reparable, así que no bloqueé el pase. Si
+quieres precisión, la forma habitual es marcar en la propia migración qué filas tocó (o
+acotar por fecha) y revertir solo esas.
+
+### Lo que sí conviene reconocer
+
+El candado AST del `logger` es la clase de defensa que este proyecto necesita: cierra **toda
+una familia** de fallos, no el caso concreto. Y el fallo latente que corriges era real —
+comprobado en producción antes y después: **ningún post llegó a atascarse en
+`CHEAP_RUNNING`**, el fallo estaba armado pero nunca se disparó.
