@@ -18,6 +18,7 @@ urlpatterns = [
     path('post/<int:pk>/reanalizar/', views.reanalyze, name='post_reanalyze'),
     path('post/<int:pk>/adelantar/', views.greenlight, name='post_greenlight'),  # 4.3-F
     path('post/<int:pk>/reply/', views.reply, name='post_reply'),
+    path('mensaje/previsualizar/', views.md_preview, name='md_preview'),  # 4.3-G
     path('post/<int:pk>/subscribe/', views.subscribe, name='post_subscribe'),
     path('oracion/<int:pk>/votar/<str:direction>/', views.segment_vote, name='segment_vote'),
     path('post/<int:pk>/hablante/proponer/', views.propose_speaker_name, name='propose_speaker_name'),

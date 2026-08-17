@@ -1,32 +1,50 @@
 {% load i18n istt_icons %}
 <input type="hidden" id="thread-last" name="ultimo" value="{{ newest_pk|default:0 }}">
+{% include 'partials/thread_pagination.html' %}
     {% for m in thread_messages %}
       {% if m.first_unread %}<div class="unread-divider" id="nuevo">— {% trans "Nuevos desde tu última visita" %} —</div>{% endif %}
-      <div class="thread-msg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}" id="msg-{{ m.pk }}">
-        <div class="thread-meta"><strong>{{ m.poster.username }}</strong> · {{ m.created|date:'d/m/Y H:i' }}
-          <span class="msg-tools">
+      {# 4.3-G: .fmsg es la piel de foro clasico (ficha del autor + cuerpo). #}
+      <div class="thread-msg fmsg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}" id="msg-{{ m.pk }}">
+        <div class="msg-author">
+          {% if m.poster.avatar and m.poster.avatar_approved %}
+            <img class="msg-avatar" src="{{ m.poster.avatar.url }}" alt="" width="54" height="54">
+          {% else %}
+            <span class="msg-monogram" aria-hidden="true">{{ m.poster.username|slice:':1'|upper|default:'?' }}</span>
+          {% endif %}
+          <span class="who">{{ m.poster.username|default:_("Cuenta borrada") }}</span>
+          {% if m.poster %}
+            <span class="who-line who-level">{{ m.poster.effective_level_label }}</span>
+            <span class="who-line">{% trans "Mensajes" %}: {{ m.author_posts|default:0 }}</span>
+            <span class="who-line">{% trans "Karma" %}: {{ m.poster.karma }}</span>
+            <span class="who-line">{% trans "Desde" %} {{ m.poster.date_joined|date:'m/Y' }}</span>
+          {% endif %}
+        </div>
+        <div class="msg-main">
+          <div class="msg-head">
+            <span>
+              <a class="msg-num" href="#msg-{{ m.pk }}" title="{% trans 'Enlace a este mensaje' %}">#{{ m.number }}</a>
+              · <time datetime="{{ m.created|date:'c' }}">{{ m.created|date:'d/m/Y H:i' }}</time>
+              {% if m.updates_count %}<span class="msg-edited">· {% trans "editado" %}</span>{% endif %}
+            </span>
+            <span class="msg-tools">
             {% if user.is_authenticated %}
+            <button type="button" class="ibtn quote-btn" data-author="{{ m.poster.username }}" data-num="{{ m.number }}" data-pk="{{ m.pk }}" title="{% trans 'Citar este mensaje' %}">{% icon 'chat' 15 %}{% trans "Citar" %}</button>
+            <button type="button" class="ibtn reply-btn" title="{% trans 'Escribir una respuesta' %}">{% icon 'up' 15 %}{% trans "Responder" %}</button>
+            {% if m.poster == user %}<a class="ibtn" href="{% url 'message_edit' m.pk %}" title="{% trans 'Editar (15 min)' %}">✎ {% trans "Editar" %}</a>{% endif %}
+            {% if m.pm_allowed %}<a class="ibtn" href="{% url 'pm_send' m.poster.pk %}" title="{% trans 'Mensaje privado' %}">{% icon 'mail' 15 %}{% trans "MP" %}</a>{% endif %}
+            <form method="post" action="{% url 'message_report' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar como inadecuado' %}">{% icon 'flag' 15 %}{% trans "Reportar" %}</button></form>
             <form method="post" action="{% url 'message_hide' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.hidden_by_me %}{% trans 'Mostrar de nuevo' %}{% else %}{% trans 'Difuminar para mí' %}{% endif %}">{% if m.hidden_by_me %}{% icon 'eye' 15 %}{% else %}{% icon 'eye_off' 15 %}{% endif %}</button></form>
-            <form method="post" action="{% url 'message_report' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar como inadecuado' %}">{% icon 'flag' 15 %}</button></form>
-            {% if m.pm_allowed %}<a class="ibtn" href="{% url 'pm_send' m.poster.pk %}" title="{% trans 'Mensaje privado' %}">{% icon 'mail' 15 %}</a>{% endif %}
-            <button type="button" class="ibtn quote-btn" data-author="{{ m.poster.username }}" title="{% trans 'Citar' %}">{% icon 'chat' 15 %}</button>
-            {% if m.poster == user %}<a class="ibtn" href="{% url 'message_edit' m.pk %}" title="{% trans 'Editar (15 min)' %}">✎</a>{% endif %}
-            {% if is_mod %}<form method="post" action="{% url 'message_sensitive' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.is_sensitive %}{% trans 'Quitar difuminado para todos' %}{% else %}{% trans 'Difuminar para todos' %}{% endif %}">{% icon 'shield' 15 %}</button></form>{% endif %}
+            {% if is_mod %}<form method="post" action="{% url 'message_sensitive' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.is_sensitive %}{% trans 'Quitar difuminado para todos' %}{% else %}{% trans 'Difuminar para todos' %}{% endif %}">{% icon 'shield' 15 %}{% trans "Sensible" %}</button></form>{% endif %}
             {% endif %}
-          </span>
+            </span>
+          </div>
+          <div class="thread-body-wrap">
+            <div class="thread-body">{{ m.content.rendered|safe }}</div>
+            {% if m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Este contenido puede ser sensible. Clic para verlo." %}</button>{% endif %}
+            {% if m.hidden_by_me and not m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Ocultado por ti. Clic para verlo." %}</button>{% endif %}
+          </div>
+          {% if m.poster.signature %}<div class="signature">— {{ m.poster.signature }}</div>{% endif %}
         </div>
-        <div class="thread-body-wrap">
-          <div class="thread-body">{{ m.content.rendered|safe }}</div>
-          {% if m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Este contenido puede ser sensible. Clic para verlo." %}</button>{% endif %}
-          {% if m.hidden_by_me and not m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Ocultado por ti. Clic para verlo." %}</button>{% endif %}
-        </div>
-        {% if m.poster.signature %}<div class="signature">— {{ m.poster.signature }}</div>{% endif %}
       </div>
     {% empty %}<p class="hint">{% trans "Nadie ha opinado todavía. Abre tú la conversación." %}</p>{% endfor %}
-{% if page_obj and page_obj.paginator.num_pages > 1 %}
-<ul class="pagination">
-  {% for p in page_obj.paginator.page_range %}
-    <li>{% if p == page_obj.number %}<span><strong>{{ p }}</strong></span>
-    {% else %}<a href="?pagina={{ p }}#hilo">{{ p }}</a>{% endif %}</li>
-  {% endfor %}
-</ul>{% endif %}
+{% include 'partials/thread_pagination.html' %}

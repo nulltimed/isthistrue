@@ -1786,3 +1786,161 @@ class Pase43F(TestCase):
         self.assertIn('queue_threshold_percent', [k for k, _l, _h, _t in SETTINGS_DEF])
         self.assertEqual(s.SETTING_DEFAULTS['queue_threshold_percent'], '50')
         self.assertIn('QUEUE_THRESHOLD_PERCENT', open('.env.example').read())
+
+
+class Pase43G(TestCase):
+    """4.3-G — el hilo del post es un FORO CLÁSICO de verdad.
+
+    Orden de David (2026-08-17), viendo producción: «en aspecto, más allá de la
+    identificación de hablantes, vídeo y transcripción, tiene que ser
+    EXACTAMENTE el de un foro clásico: todo el ancho, formateo, citas, etc.»
+
+    Dos fallos que la captura destapó y que aquí quedan cerrados con candado:
+      · los 12 botones de formato se pintaban BLANCOS sobre fondo claro (heredaban
+        color:#fff de la regla global de <button>): doce recuadros vacíos;
+      · el cajón de respuesta salía a 460 px dentro de un hilo ancho, porque la
+        regla global input,select,textarea impone ese max-width y width:100% no
+        lo levanta.
+    """
+
+    # ---------- utilidades ----------
+    @staticmethod
+    def _css_reglas():
+        """main.css como {selector normalizado: {propiedad: valor}}.
+
+        Se parsea, NO se compara texto: un reformateo del CSS no debe romper
+        estos tests (lección del A.7: nada de cadenas exactas de CSS).
+        """
+        import re
+        txt = open('static/css/main.css', encoding='utf-8').read()
+        txt = re.sub(r'/\*.*?\*/', '', txt, flags=re.S)
+        reglas = {}
+        for sel, cuerpo in re.findall(r'([^{}]+)\{([^{}]*)\}', txt):
+            decls = {}
+            for d in cuerpo.split(';'):
+                if ':' in d:
+                    k, v = d.split(':', 1)
+                    decls[k.strip()] = v.strip()
+            for uno in sel.split(','):
+                reglas.setdefault(' '.join(uno.split()), {}).update(decls)
+        return reglas
+
+    def _hilo(self, cuantos=1, autor=None, texto='Un **comentario** cualquiera'):
+        """Post con su hilo machina y N mensajes, sin pasar por Celery."""
+        from machina.core.db.models import get_model
+        from apps.forum.machina_glue import create_topic_for_post, get_topic_for_post
+        autor = autor or make_user(username='foro', email='foro@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/g0001',
+                                   title='Vídeo del foro', author_opinion='Abro yo.')
+        create_topic_for_post(post)
+        topic = get_topic_for_post(post)
+        MPost = get_model('forum_conversation', 'Post')
+        for i in range(cuantos):
+            MPost.objects.create(topic=topic, poster=autor, subject='Re',
+                                 content=f'{texto} {i}', approved=True)
+        return post, autor
+
+    # ---------- los dos fallos de producción ----------
+    def test_la_barra_de_formato_no_puede_pintarse_en_blanco_sobre_blanco(self):
+        """Candado general: si un botón cambia a fondo CLARO, fija su color.
+
+        Sin esto vuelve el fallo tal cual: el botón hereda color:#fff de la
+        regla global de <button> y desaparece.
+        """
+        claros = {'var(--paper)', 'var(--card)', '#fff', '#ffffff', 'white',
+                  'none', 'transparent'}
+        for sel, decls in self._css_reglas().items():
+            if 'button' in sel and decls.get('background') in claros:
+                self.assertIn('color', decls, f'{sel} se pinta invisible')
+
+    def test_el_cajon_de_respuesta_usa_todo_el_ancho(self):
+        regla = self._css_reglas()['.thread-reply textarea']
+        self.assertEqual(regla.get('max-width'), 'none')   # el global de 460px, levantado
+        self.assertEqual(regla.get('width'), '100%')
+
+    def test_el_hilo_ocupa_todo_el_ancho_de_la_pantalla(self):
+        regla = self._css_reglas()['main.wide .post > #hilo']
+        self.assertEqual(regla.get('max-width'), 'none')
+
+    def test_el_css_esta_cuadrado(self):
+        """Una llave de más deja el resto del archivo a merced del navegador."""
+        css = open('static/css/main.css', encoding='utf-8').read()
+        self.assertEqual(css.count('{'), css.count('}'))
+
+    def test_la_barra_de_formato_no_depende_de_emoji(self):
+        """Un emoji lo dibuja la fuente del sistema; en Windows salían vacíos."""
+        js = open('static/js/mdtoolbar.js', encoding='utf-8').read()
+        astral = [c for c in js if ord(c) > 0xFFFF]
+        self.assertEqual(astral, [])
+
+    # ---------- la piel de foro clásico ----------
+    def test_cada_mensaje_lleva_ficha_de_autor_y_numero_citable(self):
+        post, autor = self._hilo(1)
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('msg-author', html)          # columna del autor
+        self.assertIn('Mensajes', html)            # cuántos lleva escritos
+        self.assertIn('Karma', html)
+        self.assertIn('>#1<', html)                # numeración del hilo
+        self.assertIn('href="#msg-', html)         # enlace permanente
+
+    def test_el_contador_de_mensajes_del_autor_no_lo_parte_el_group_by(self):
+        """Trampa conocida: el ordering del Meta se cuela en el GROUP BY."""
+        post, autor = self._hilo(2)                # + el mensaje de apertura = 3
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('Mensajes: 3', html)
+
+    def test_las_acciones_del_mensaje_se_leen_con_palabras(self):
+        post, autor = self._hilo(1)
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        for palabra in ('Citar', 'Responder', 'Reportar'):
+            self.assertIn(palabra, html)
+        self.assertIn('data-num=', html)           # citar arrastra el número...
+        self.assertIn('data-pk=', html)            # ...y el enlace al mensaje
+
+    def test_la_paginacion_es_de_foro_con_primera_y_ultima(self):
+        post, autor = self._hilo(25)               # 26 con el de apertura: 2 páginas
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/?pagina=2').content.decode()
+        self.assertIn('Anterior', html)
+        self.assertIn('Página 2 de 2', html)
+        self.assertIn('?pagina=1#hilo', html)
+        self.assertIn('>#21<', html)               # la numeración NO reinicia
+
+    def test_la_cabecera_del_hilo_cuenta_los_mensajes(self):
+        post, autor = self._hilo(2)
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('3 mensajes', html)
+
+    # ---------- vista previa ----------
+    def test_la_vista_previa_usa_el_mismo_renderizador_que_el_foro(self):
+        autor = make_user(username='prev', email='prev@example.org')
+        self.client.force_login(autor)
+        r = self.client.post('/mensaje/previsualizar/', {'content': '**hola**'})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('<strong>hola</strong>', r.content.decode())
+
+    def test_la_vista_previa_escapa_el_html_como_el_foro(self):
+        autor = make_user(username='prev2', email='prev2@example.org')
+        self.client.force_login(autor)
+        r = self.client.post('/mensaje/previsualizar/', {'content': '<script>alert(1)</script>'})
+        cuerpo = r.content.decode()
+        self.assertNotIn('<script>', cuerpo)
+        self.assertIn('&lt;script&gt;', cuerpo)
+
+    def test_la_vista_previa_exige_estar_dentro(self):
+        r = self.client.post('/mensaje/previsualizar/', {'content': 'hola'})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/accounts/login', r['Location'])
+
+    def test_sin_javascript_el_foro_sigue_funcionando(self):
+        """Mejora progresiva: el botón de vista previa lo pone el JS; el
+        formulario de siempre publica igual sin él."""
+        post, autor = self._hilo(0)
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn(f'action="/post/{post.pk}/reply/"', html)
+        self.assertIn('data-preview-url=', html)   # el JS lo lee de aquí, no cableado

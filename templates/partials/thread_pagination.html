@@ -1,0 +1,27 @@
+{% load i18n %}{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav class="pagination-bar" aria-label="{% trans 'Páginas de la conversación' %}">
+  <ul class="pagination">
+    {% if page_obj.has_previous %}
+      <li><a href="?pagina=1#hilo" title="{% trans 'Primera página' %}">«</a></li>
+      <li><a href="?pagina={{ page_obj.previous_page_number }}#hilo">‹ {% trans "Anterior" %}</a></li>
+    {% else %}
+      <li><span class="off">«</span></li>
+      <li><span class="off">‹ {% trans "Anterior" %}</span></li>
+    {% endif %}
+    {% for p in page_obj.paginator.page_range %}
+      {% if p == page_obj.number %}<li><span class="cur">{{ p }}</span></li>
+      {% elif p >= page_obj.number|add:'-3' and p <= page_obj.number|add:'3' %}
+        <li><a href="?pagina={{ p }}#hilo">{{ p }}</a></li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li><a href="?pagina={{ page_obj.next_page_number }}#hilo">{% trans "Siguiente" %} ›</a></li>
+      <li><a href="?pagina={{ page_obj.paginator.num_pages }}#hilo" title="{% trans 'Última página' %}">»</a></li>
+    {% else %}
+      <li><span class="off">{% trans "Siguiente" %} ›</span></li>
+      <li><span class="off">»</span></li>
+    {% endif %}
+  </ul>
+  <span class="page-of">{% blocktrans with n=page_obj.number t=page_obj.paginator.num_pages %}Página {{ n }} de {{ t }}{% endblocktrans %}</span>
+</nav>
+{% endif %}

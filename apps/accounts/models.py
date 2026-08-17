@@ -71,6 +71,13 @@ class User(AbstractUser):
             return True
         return self.age is not None and self.age >= 18
 
+    @property
+    def effective_level_label(self):
+        """4.3-G: el nivel EFECTIVO en cristiano, para la ficha del autor en el
+        foro. get_level_display() no vale: ese muestra el nivel del campo, no el
+        que de verdad tiene en cuenta el karma y el nivel regalado."""
+        return dict(LEVELS).get(self.effective_level(), self.effective_level())
+
     def effective_level(self):
         """Nivel real por karma vs. nivel regalado: gana el mas alto."""
         if self.level == 'MOD':

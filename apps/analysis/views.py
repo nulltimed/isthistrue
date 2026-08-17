@@ -265,6 +265,7 @@ def _post_context(request, post):
         'identification': speaker_identification(post),
         'can_validate': identification_gate(post)[0],
         'page_obj': page_obj,
+        'thread_total': page_obj.paginator.count if page_obj else 0,
         'first_unread_pk': first_unread_pk, 'newest_pk': newest_pk,
         'topic_obj': topic_obj, 'thread_messages': thread_messages,
         'is_mod': is_mod, 'is_trending': post.is_trending(),
@@ -343,8 +344,23 @@ def _thread_page(topic_obj, u, request, per_page=20):
         number = paginator.num_pages  # convencion de foro: la ultima pagina
     page_obj = paginator.get_page(number)
     messages_list = list(page_obj.object_list)
-    for m in messages_list:
+    # 4.3-G: numero de mensaje dentro del HILO (#1, #2, ...), no de la pagina:
+    # es la referencia con la que se cita en cualquier foro.
+    inicio = page_obj.start_index()
+    for i, m in enumerate(messages_list):
         m.first_unread = (m.pk == first_unread_pk)
+        m.number = inicio + i
+    # 4.3-G: el "Mensajes: N" de la ficha del autor, en UNA sola consulta para
+    # toda la pagina. OJO (trampa conocida): sin .order_by() vacio, el ordering
+    # del Meta de machina se cuela en el GROUP BY y el recuento sale partido.
+    autores = {m.poster_id for m in messages_list if m.poster_id}
+    if autores:
+        from django.db.models import Count as _Count
+        recuento = dict(qs.model.objects.filter(poster_id__in=autores, approved=True)
+                        .order_by().values_list('poster_id')
+                        .annotate(n=_Count('pk')))
+        for m in messages_list:
+            m.author_posts = recuento.get(m.poster_id, 0)
     newest = qs.last()
     newest_pk = newest.pk if newest else 0
     if u and messages_list:
@@ -622,6 +638,26 @@ def reply(request, pk):
         add_reply(post, request.user, content)
         messages.success(request, 'Comentario publicado.')
     return redirect(f"{request.path.replace('/reply/', '/')}#hilo")
+
+
+@login_required
+def md_preview(request):
+    """4.3-G: vista previa de un mensaje del foro.
+
+    La pinta el SERVIDOR con el MISMO renderizador que usa machina para guardar
+    (config.MACHINA_MARKUP_LANGUAGE). Una sola fuente de verdad: si el servidor
+    no sabe pintar una marca, tampoco aparece en la vista previa — que es justo
+    lo que evita prometer al usuario un formato que luego saldra en crudo.
+    Mejora progresiva: sin JS no hay boton y el foro funciona igual."""
+    if request.method != 'POST':
+        return redirect('index')
+    from django.conf import settings
+    from django.http import HttpResponse
+    from django.utils.module_loading import import_string
+    ruta, kwargs = settings.MACHINA_MARKUP_LANGUAGE
+    render_md = import_string(ruta)
+    texto = request.POST.get('content', '')[:8000]
+    return HttpResponse(render_md(texto, **kwargs))
 
 
 @login_required

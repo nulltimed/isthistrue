@@ -28,17 +28,28 @@
     {% include 'partials/post_body.html' %}
   </div>
   <section id="hilo" class="thread">
-    <h2>{% trans "Conversación" %}</h2>
-    {% if first_unread_pk %}<p><a class="mini" href="?pagina={{ page_obj.number }}#nuevo">{% icon 'down' 13 %} {% trans "Ir al último no leído" %}</a></p>{% endif %}
+    {# 4.3-G: cabecera de foro clasico — cuantos mensajes hay y donde responder. #}
+    <div class="thread-head">
+      <h2>{% trans "Conversación" %}</h2>
+      <span class="thread-count">
+        {% blocktrans count total=thread_total %}{{ total }} mensaje{% plural %}{{ total }} mensajes{% endblocktrans %}
+        {% if first_unread_pk %} · <a href="?pagina={{ page_obj.number }}#nuevo">{% trans "ir al primero sin leer" %}</a>{% endif %}
+        {% if user.is_authenticated %} · <a href="#responder">{% trans "responder" %}</a>{% endif %}
+      </span>
+    </div>
     <div id="thread-messages" hx-get="{% url 'post_thread_fragment' post.pk %}?pagina={{ page_obj.number|default:1 }}"
          hx-include="#thread-last" hx-trigger="every 12s" hx-swap="innerHTML">
       {% include 'partials/thread_messages.html' %}
     </div>
     {% if user.is_authenticated %}
-      <form method="post" action="{% url 'post_reply' post.pk %}" class="thread-reply">{% csrf_token %}
-        <textarea name="content" rows="4" required data-mdtoolbar maxlength="8000"
+      <form method="post" action="{% url 'post_reply' post.pk %}" class="thread-reply" id="responder">{% csrf_token %}
+        <textarea name="content" rows="10" required data-mdtoolbar maxlength="8000"
+          data-preview-url="{% url 'md_preview' %}"
           placeholder="{% trans 'Responde con Markdown: **negrita**, *cursiva*, > cita…' %}"></textarea>
-        <button>{% trans "Responder" %}</button>
+        <div class="reply-actions">
+          <button>{% trans "Responder" %}</button>
+          <span class="reply-hint">{% trans "Máximo 8.000 caracteres. Cita con el botón «Citar» de cada mensaje." %}</span>
+        </div>
       </form>
     {% else %}
       <p class="hint"><a href="{% url 'login' %}">{% trans "Entra" %}</a> {% trans "para participar." %}</p>
