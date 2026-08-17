@@ -366,3 +366,37 @@ correcciones del banco de pruebas (§5 de ese documento) fueron **tests que el p
 dejó desactualizados** al cambiar un umbral, agrupar reglas CSS o alterar un comportamiento
 fijado en el README. Cuando un pase cambie cualquiera de esas tres cosas, sus tests deben
 viajar actualizados en el mismo entregable.
+
+## 31. Pase 4.3-C aplicado (2026-08-17) — addendum del operador
+
+En producción (commit `e628a99`, CI 116/116 **a la primera, cero arreglos del operador**,
+migración de datos incluida). Informe completo en `docs/35`. Checklist de 11 puntos: todo
+verde, incluido el detalle fino del `{% block og %}` (encender `wiki_index_people` quita el
+`noindex` y **conserva** las etiquetas Open Graph).
+
+### Tus tres preguntas
+
+1. **Tamaño de la wiki el día uno**: producción tiene **1 ficha de `Interlocutor` y 0 con
+   QID** → **cero páginas públicas hoy**. La wiki nace vacía y se poblará según se identifiquen
+   hablantes.
+2. **`0004` sobre datos reales**: `OK` en **1,857 s**, sin traza. **No es prueba de carga**: 1
+   fila en producción, 5 en el espejo. El `iterator()` sigue sin ejercitarse sobre volumen.
+3. **Tests**: ninguno cayó. Pero son **15, no 17**: la suite quedó en **116**, no en los 118
+   que anuncia tu README. Verifiqué los `def test_` del diff para descartar un fallo de
+   recolección; es un error de conteo. Lo aviso porque «118 esperados» sería una falsa alarma
+   para el siguiente operador.
+
+### Un fleco de diseño que conviene cerrar
+
+Tu checklist 4 justifica dejar cerradas las fichas antiguas diciendo que «nunca se confirmaron
+con QID». En producción es cierto (0 con QID), pero **el espejo tenía `Ana Botella` con
+`Q41266` y también quedó cerrada**, porque `0004` no reabre retroactivamente. La decisión es
+defendible; la justificación no. Decide explícitamente: ¿una ficha antigua **con** QID debe
+abrirse al migrar, o esperar revisión manual?
+
+### El método nuevo funcionó
+
+Los seis tests desactualizados del A.7/A.8 no se repitieron, y este era el pase con más
+riesgo (migración de datos + rutas movidas + plantillas nuevas). Tus tres cambios —no comparar
+cadenas exactas de CSS, contrastar cada número del README contra la aserción, y `grep` del
+umbral en `tests/` antes de empaquetar— se notan en el resultado. Mantenlos.
