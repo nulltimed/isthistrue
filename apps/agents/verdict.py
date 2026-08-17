@@ -25,20 +25,56 @@ def run(post, model=None):
         results, sources_ok = search.search_with_status(c['text'], max_results=n)
         context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                             for r in results)
-        payload = f"CLAIM: {c['text']}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"
+        payload = (f"CLAIM: {c['text']}\n\n"
+                   f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
+                   f"{c.get('context') or c['text']}\n\n"
+                   f"RESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}")
         v = client.call_json(model or settings.MODEL_VERDICT, prompts.VERDICT_SYSTEM,
                              payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
         if 'error' not in v:
             upsert_claim(post, c, v, sources_ok=sources_ok)
 
 
+def context_for(segments, i, before, after):
+    """4.3-A.7 (David): la ANTERIOR, la PRESENTE y la SIGUIENTE frase DEL MISMO
+    HABLANTE. "Del mismo hablante" no es "la de al lado": si otro interrumpe, se
+    salta y se sigue buscando hacia atras/adelante. Sin diarizacion (etiqueta
+    vacia) se usan las vecinas inmediatas, que es lo unico que hay."""
+    spk = segments[i].speaker_label
+    prev, nxt = [], []
+    j = i - 1
+    while j >= 0 and len(prev) < before:
+        if not spk or segments[j].speaker_label == spk:
+            prev.append(segments[j])
+        j -= 1
+    j = i + 1
+    while j < len(segments) and len(nxt) < after:
+        if not spk or segments[j].speaker_label == spk:
+            nxt.append(segments[j])
+        j += 1
+    lineas = [f'(antes) {s.text}' for s in reversed(prev)]
+    lineas.append(f'(ESTA ES LA FRASE VERIFICADA) {segments[i].text}')
+    lineas += [f'(despues) {s.text}' for s in nxt]
+    return '\n'.join(lineas)
+
+
 def _claims_from_segments(post):
+    """4.3-A.7: el semaforo se decide con la frase EN CONTEXTO, no suelta. Cuantas
+    frases entran a cada lado son ajustes vivos (panel) sembrados desde el .env."""
+    from apps.panel.models import SystemSetting
+    before = max(0, SystemSetting.get_int('verdict_context_before', 1))
+    after = max(0, SystemSetting.get_int('verdict_context_after', 1))
+    # Orden explicito: los indices que salen de aqui identifican la frase (leccion O1).
+    segments = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
     out = []
-    for i, s in enumerate(post.transcript_segments.all()):
+    for i, s in enumerate(segments):
         if s.signal in ('FACTUAL_UNVERIFIED', 'CONTRADICTS_MODEL'):
-            out.append({'segment_index': i, 'text': s.text, 'kind': 'FACTUAL',
-                        'ambiguous': s.signal == 'CONTRADICTS_MODEL'})
+            kind, ambiguous = 'FACTUAL', s.signal == 'CONTRADICTS_MODEL'
         elif s.signal == 'OPINION':
-            out.append({'segment_index': i, 'text': s.text, 'kind': 'OPINION',
-                        'ambiguous': False})
+            kind, ambiguous = 'OPINION', False
+        else:
+            continue
+        out.append({'segment_index': i, 'text': s.text, 'kind': kind,
+                    'ambiguous': ambiguous,
+                    'context': context_for(segments, i, before, after)})
     return out

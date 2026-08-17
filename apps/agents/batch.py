@@ -22,7 +22,12 @@ def submit_verdict_batch(post, claims):
             'params': {'model': settings.MODEL_VERDICT, 'max_tokens': 1500,
                        'system': prompts.VERDICT_SYSTEM,
                        'messages': [{'role': 'user', 'content':
-                           f"CLAIM: {c['text']}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"}]}})
+                           # 4.3-A.7: el lote manda EXACTAMENTE el mismo payload que
+                           # la via directa; si divergen, el color depende del camino.
+                           f"CLAIM: {c['text']}\n\n"
+                           f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
+                           f"{c.get('context') or c['text']}\n\n"
+                           f"RESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"}]}})
     batch = client.messages.batches.create(requests=requests)
     return batch.id
 

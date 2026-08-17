@@ -24,6 +24,11 @@ Para el claim dado y los resultados de busqueda aportados, devuelve:
 }
 Tono forense: seco, tecnico, sin adjetivos, sin ironia. GREY = no verificable
 (opinion/prediccion). NUNCA marques RED sin fuentes que lo respalden.
+Si viene un bloque CONTEXTO, son las frases contiguas del MISMO hablante: usalas
+para entender que quiso decir (pronombres, cifras que vienen de la frase anterior,
+ironia, condicionales) y decide el color EN CONTEXTO. El contexto NO se verifica:
+el veredicto es sobre el CLAIM. Si el contexto cambia el sentido de la frase suelta,
+dilo en "the_difference".
 Cita literal solo desde la transcripcion aportada. Si sensitive != null, NO cambies
 el tono: el sistema añadira avisos y recursos oficiales."""
 

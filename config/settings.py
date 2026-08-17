@@ -163,6 +163,59 @@ MONTHLY_CAP_EUR = float(os.getenv('MONTHLY_CAP_EUR', '100'))
 SEARXNG_URL = os.getenv('SEARXNG_URL', 'http://searxng:8080')
 SEARCHES_PER_CLAIM = int(os.getenv('SEARCHES_PER_CLAIM', '3'))
 SEARCHES_PER_CLAIM_AMBIGUOUS = int(os.getenv('SEARCHES_PER_CLAIM_AMBIGUOUS', '5'))
+# 4.3-A.7 (fallo de raiz del primer analisis REAL): el barrido mandaba la
+# transcripcion ENTERA en una sola llamada con max_tokens=2000. Con el mock
+# (3 frases) cabia; un video real trae cientos y el JSON volvia CORTADO ->
+# JSONDecodeError -> claims=[] -> CERO señales y CERO veredictos, en silencio.
+# Ahora se trocea. Ambos limites se editan en el .env sin tocar codigo.
+SWEEP_BATCH_SIZE = int(os.getenv('SWEEP_BATCH_SIZE', '40'))    # frases por llamada
+SWEEP_MAX_TOKENS = int(os.getenv('SWEEP_MAX_TOKENS', '8000'))  # techo de respuesta
+
+# 4.3-A.7 (peticion de David): TODOS los umbrales vivos se pueden fijar desde el
+# .env. Reparto de papeles, para que no haya dos jefes discutiendo:
+#   .env  = la FABRICA. Siembra el valor la primera vez (seed_settings) y, con
+#           `seed_settings --force`, pisa lo que haya. Cambiarlo pide Regla de Oro.
+#   panel = el MANDO EN VIVO. Una vez sembrado, lo que se guarde en /panel/settings/
+#           manda sobre el .env (decision congelada: umbrales en SystemSetting).
+# Si una clave nunca se sembro, get_int cae aqui: el .env sigue siendo la verdad.
+SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
+    'opinion_ratio_percent': '70',
+    'minutes_per_factual_claim': '5',
+    'votes_to_validate': '5',
+    'votes_to_rescue': '10',
+    'validation_window_days': '3',
+    'startup_mode_min_users': '50',
+    'mod_vote_weight': '5',
+    'name_confirm_points': '5',
+    'budget_base_eur': '100',
+    'budget_hard_ceiling_eur': '200',
+    'paypal_url': '',
+    'opus_rescan_percent': '40',
+    'opus_rescan_min_users': '50',
+    'donation_goal_eur': '100',
+    'trending_votes_threshold': '5',
+    'trending_window_days': '7',
+    'segment_opus_downvotes': '5',
+    'message_sensitive_reports': '5',
+    'registration_open': '1',
+    'lang_es': '1', 'lang_en': '1',
+    # 4.3-A.7: ventana de contexto del semaforo (frases del mismo hablante).
+    'verdict_context_before': '1',
+    'verdict_context_after': '1',
+    # 4.3-A.8 (decision de David): cualquier usuario puede postear hasta N minutos
+    # sin mas; por encima se le AVISA de la donacion que sostiene ese analisis
+    # (nunca se le bloquea: la puerta de submit es login + email verificado y esa
+    # decision esta congelada). El precio va en CENTIMOS por minuto para que el
+    # ajuste siga siendo un entero editable en el panel.
+    'analysis_free_minutes': '20',
+    'cents_per_video_minute': '12',
+}.items()}
+
+# 4.3-A.8: el video se transcribe ENTERO hasta este techo (antes: 1200 s fijos en
+# el codigo, y un video de una hora se analizaba al 33% sin avisar a nadie).
+# David: "se tienen que procesar igual que los videos de 5 minutos".
+TRANSCRIBE_MAX_SECONDS = int(os.getenv('TRANSCRIBE_MAX_SECONDS', '5400'))
+PROBE_TIMEOUT_SECONDS = int(os.getenv('PROBE_TIMEOUT_SECONDS', '12'))
 EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
 EMBEDDINGS_DIM = 384  # MiniLM multilingue; congelado (antes 1024)
 HF_TOKEN = os.getenv('HF_TOKEN', '')

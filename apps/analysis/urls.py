@@ -25,6 +25,7 @@ urlpatterns = [
     path('mensaje/<int:mpost_id>/ocultar/', views.message_hide_toggle, name='message_hide'),
     path('mensaje/<int:mpost_id>/sensible/', views.message_sensitive_toggle, name='message_sensitive'),
     path('buscar/', views.search, name='search'),
+    path('mas18/', views.adult_room, name='adult_room'),  # 4.3-A.8: sala cerrada
     path('hablante/votar/<int:proposal_id>/', views.vote_speaker_name, name='vote_speaker_name'),
     path('post/<int:pk>/upvote/', views.upvote, name='post_upvote'),
     path('donaciones/', views.donations_page, name='donations'),

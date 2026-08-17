@@ -17,7 +17,12 @@ def index(request):
     from django.utils import timezone as tz
     from .models import TOPICS, Channel
     topic = request.GET.get('tema', '')
-    base = Post.objects.filter(category='MAIN')
+    # 4.3-A.8 (decision de David): el contenido +18 NO vive en los listados
+    # publicos. Tiene su propia sala cerrada (/mas18/) y solo entra quien es mayor
+    # de edad segun la fecha de nacimiento del registro. Antes de esto, un post
+    # marcado +18 salia en portada a cualquiera (el candado solo estaba en la
+    # pagina del post): el aviso llegaba tarde, con el titular ya leido.
+    base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
     if topic:
         base = base.filter(topic=topic)
     recent = base.order_by('-created_at')[:20]
@@ -25,10 +30,12 @@ def index(request):
     top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
     repeat_channels = [c for c in Channel.objects.order_by('-created_at')[:50]
                        if c.meets_threshold()][:10]
-    offtopic = Post.objects.filter(category='OFFTOPIC').order_by('-created_at')[:20]
+    offtopic = (Post.objects.filter(category='OFFTOPIC').exclude(is_adult=True)
+                .order_by('-created_at')[:20])
     return render(request, 'analysis/index.html', {
         'recent': recent, 'top': top, 'repeat_channels': repeat_channels,
-        'offtopic': offtopic, 'topics': TOPICS, 'active_topic': topic})
+        'offtopic': offtopic, 'topics': TOPICS, 'active_topic': topic,
+        'adult_room': _can_see_adult(request)})
 
 
 VIDEO_RX = re.compile(r'(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv|spotify\.com)', re.I)
@@ -57,6 +64,14 @@ def submit(request):
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
         platform = 'link'
 
+    # 4.3-A.8 (decision de David): ANTES de postear se comprueba el video —
+    # titulo (para colocarlo bien), duracion (para el aviso de donacion) y si es
+    # +18 (para que nazca ya en la sala cerrada, no despues). Si el pre-chequeo
+    # falla, seguimos con lo que haya: nunca se cierra la puerta por eso.
+    from apps.embeds.adapters import probe
+    ficha = probe(url, platform)
+    edad_plataforma = ficha['age_limit'] >= 18
+
     with transaction.atomic():
         post, created = Post.objects.get_or_create(
             url=url, defaults={'author': request.user, 'platform': platform,
@@ -64,8 +79,11 @@ def submit(request):
                                'voluntary_offtopic': voluntary_offtopic,
                                'topic': topic, 'tags': tags,
                                'author_opinion': author_opinion,
-                               'is_adult': author_adult_flag,
-                               'adult_flag_source': 'author' if author_adult_flag else ''})
+                               'title': ficha['title'],
+                               'duration_seconds': ficha['duration_seconds'],
+                               'is_adult': author_adult_flag or edad_plataforma,
+                               'adult_flag_source': ('author' if author_adult_flag
+                                                     else 'platform' if edad_plataforma else '')})
         if created and not post.title:
             from apps.embeds.adapters import fetch_title
             title = fetch_title(url, platform)  # I2: titulo inmediato (oEmbed, 4 s max)
@@ -99,13 +117,43 @@ def submit(request):
                           f'Si donas, el depósito crece.')
         AnalysisCredit.objects.create(user=request.user, post=post)  # sin devolucion
 
+    # 4.3-A.8: los dos avisos del pre-chequeo. Son AVISOS, no muros: la puerta de
+    # submit sigue siendo login + email verificado (decision congelada).
+    if post.is_adult and post.adult_flag_source == 'platform':
+        messages.warning(request, 'La plataforma marca este vídeo como +18: el análisis '
+                         'irá a la sala para mayores de edad y no aparecerá en portada.')
+    from .services import free_minutes, suggested_donation_eur, video_minutes
+    donacion = suggested_donation_eur(post)
+    if donacion:
+        messages.info(request, f'Este vídeo dura {video_minutes(post)} minutos y se '
+                      f'analizará entero. Por encima de {free_minutes()} minutos el coste '
+                      f'lo sostienen las donaciones: si puedes, una de {donacion:.2f} € '
+                      f'cubre este análisis. No es obligatoria y tu vídeo ya está en cola.')
+
     run_cheap_phase.delay(post.pk)
     return redirect('post_detail', pk=post.pk)
 
 
-def _adult_blocked(request, post):
+def _can_see_adult(request):
+    """4.3-A.8: mayor de edad SEGUN LA FECHA DE NACIMIENTO del registro. Sin
+    sesion, o sin fecha, o con menos de 18: no. La propiedad User.is_adult ya
+    calcula la edad; aqui solo se le suma el requisito de estar identificado."""
     u = request.user if request.user.is_authenticated else None
-    return post.is_adult and ((not u) or (not u.is_adult))
+    return bool(u and u.is_adult)
+
+
+def _adult_blocked(request, post):
+    return post.is_adult and not _can_see_adult(request)
+
+
+def adult_room(request):
+    """Sala +18: cerrada al publico. Los analisis marcados para mayores de edad
+    no aparecen en portada ni en el buscador; viven aqui, y aqui solo entra quien
+    tiene 18 anos cumplidos segun su fecha de nacimiento."""
+    if not _can_see_adult(request):
+        return render(request, 'analysis/adult_blocked.html', status=403)
+    posts = Post.objects.filter(is_adult=True).order_by('-created_at')[:50]
+    return render(request, 'analysis/adult_room.html', {'posts': posts})
 
 
 def _post_context(request, post):
@@ -406,8 +454,9 @@ def segment_vote(request, pk, direction):
             obj.value = value
             obj.save(update_fields=['value'])
     downs = seg.sentence_votes.filter(value=-1).count()
+    # 4.3-A.7 (David): "si llega a 5 usuarios" son 5, no 6. Era > (estricto).
     if (value == -1 and not seg.opus_rescanned
-            and downs > SystemSetting.get_int('segment_opus_downvotes', 5)):
+            and downs >= SystemSetting.get_int('segment_opus_downvotes', 5)):
         from .tasks import opus_rescan_segment
         opus_rescan_segment.delay(seg.pk)
         messages.info(request, 'Oración muy discutida: se re-analizará con el modelo premium.')
@@ -544,7 +593,11 @@ def search(request):
     if q:
         query = SearchQuery(q, config='spanish')
         if scope in ('all', 'posts'):
-            results['posts'] = Post.objects.annotate(
+            # 4.3-A.8: el buscador era la puerta de atras de la sala +18.
+            visibles = Post.objects.all()
+            if not _can_see_adult(request):
+                visibles = visibles.exclude(is_adult=True)
+            results['posts'] = visibles.annotate(
                 sv=SearchVector('title', 'tags', 'topic', config='spanish')
             ).filter(sv=query)[:20]
         if scope in ('all', 'forum'):

@@ -47,7 +47,6 @@ article.post{background:var(--card);border:1px solid var(--line);border-radius:v
 padding:1.2rem 1.4rem;box-shadow:var(--shadow)}
 .embed iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px}
 .transcript .segment{position:relative;padding:.4rem .6rem;border-left:3px solid var(--line);margin:.3rem 0;border-radius:0 6px 6px 0}
-.transcript .segment:hover{background:var(--paper)}
 .ts{font-family:ui-monospace,'Courier Prime','Courier New',monospace;font-size:.8rem;color:var(--grey);margin-right:.45rem;text-decoration:none}
 .speaker-tag{font-size:.68rem;background:#eef3fb;border-radius:4px;padding:.05rem .35rem;margin-right:.3rem;color:#28477a}
 .signal{display:inline-block;font-size:.7rem;margin-left:.5rem;padding:.06rem .45rem;border-radius:4px;background:#efefec;color:var(--grey)}
@@ -339,11 +338,18 @@ main.wide .post{width:100%}
 /* 4.3-A.5 O2 (decisión de David): la intervención que suena va en NEGRO, con su texto
    y su marca de tiempo en BLANCO — el resto de frases quedan en su color claro por
    hablante. Así se sigue el hilo de la conversación de un vistazo. */
-.segment.live{background:#141414;border-left:3px solid #141414;border-radius:4px;
-  transition:background .12s,color .12s}
-.segment.live,.segment.live .text{color:#fff}
-.segment.live .ts{color:#fff;font-weight:700}
-.segment.live .speaker-tag{color:#fff;opacity:.95}
+.segment.live,.transcript .segment:hover{background:#141414;border-left:3px solid #141414;
+  border-radius:4px;transition:background .12s,color .12s}
+.segment.live,.segment.live .text,
+.transcript .segment:hover,.transcript .segment:hover .text{color:#fff}
+.segment.live .ts,.transcript .segment:hover .ts{color:#fff;font-weight:700}
+/* 4.3-A.7 (reporte de David en el primer analisis real): al posar el raton sobre
+   una frase, la frase "desaparecia". No desaparecia: la regla de hover le devolvia
+   un fondo casi blanco SIN devolverle el color a la letra -> blanco sobre blanco.
+   Decision de David: el hover se comporta igual que la intervencion activa (negro
+   con letra blanca). Asi las dos reglas dicen lo mismo y no pueden pelearse. */
+.transcript .segment:hover .signal,.segment.live .signal{
+  background:#fff;color:#141414;font-weight:600}
 /* la ficha del hablante activo (columna izquierda), también en negro con texto blanco */
 .speaker-block.speaking{background:#141414;border-color:#141414;color:#fff;
   box-shadow:inset 3px 0 0 #000;transition:background .15s,color .15s}
@@ -354,11 +360,19 @@ main.wide .post{width:100%}
    BLANCA MACIZA con el texto en negro; se lee desde lejos sobre el fondo #141414.
    De paso: los botones de voto eran negros sobre negro (invisibles) y el velo de
    las opiniones difuminadas se aclaraba a gris ilegible. */
-.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag{
-  background:#fff;border-color:#fff;color:#141414;font-weight:700}
-.segment.live .ibtn{color:#fff}
-.segment.live .ibtn:hover{color:#141414;background:#fff}
-.segment.live .blur-overlay{background:rgba(20,20,20,.75);color:#fff}
+/* Pildora del hablante: OPCION A elegida por David (2026-08-17), la misma que se
+   eligio en el A.6 — blanca maciza con letra negra: sobre el negro se ve donde
+   acaba la etiqueta y donde empieza la frase. Se aplica igual en hover. */
+.segment.live .speaker-tag,.speaker-block.speaking .speaker-tag,
+.transcript .segment:hover .speaker-tag{
+  background:#fff;border-color:#fff;color:#141414;font-weight:700;opacity:1}
+.segment.live .ibtn,.transcript .segment:hover .ibtn{color:#fff}
+.segment.live .ibtn:hover,.transcript .segment:hover .ibtn:hover{color:#141414;background:#fff}
+.segment.live .blur-overlay,.transcript .segment:hover .blur-overlay{
+  background:rgba(20,20,20,.75);color:#fff}
+/* El boton de discutir es el UNICO de la frase: que se lea como una accion. */
+.ibtn.dispute{font-size:.74rem;opacity:.75}
+.ibtn.dispute:hover{opacity:1}
 
 /* 4.3-A.5 O4 (petición imperativa de David): el toggle de registro de nuevos usuarios,
    destacado arriba del panel en su propio recuadro. Verde=abierto, rojo=cerrado. */

@@ -35,6 +35,7 @@
       <a href="{% url 'submit' %}" class="primary">{% icon 'search' 15 %} {% trans "Analizar un vídeo" %}</a>
       <a href="{% url 'notifications' %}" id="bell" class="bell" title="{% trans 'Notificaciones' %}">{% icon 'bell' 18 %}{% if unread_notifications %}<span class="bell-count">{{ unread_notifications }}</span>{% endif %}</a>
       <a href="{% url 'pm_inbox' %}" class="bell" title="{% trans 'Mensajes privados' %}">{% icon 'mail' 18 %}</a>
+      {% if user.is_adult %}<a href="{% url 'adult_room' %}" title="{% trans 'Análisis para mayores de edad' %}">+18</a>{% endif %}
       <a href="{% url 'account_settings' %}">{{ user.username }}</a>
       {% if user.is_staff %}<a href="{% url 'panel_settings' %}">Panel</a>{% endif %}
       <form method="post" action="{% url 'logout' %}" style="display:inline">{% csrf_token %}<button class="linklike">{% trans "Salir" %}</button></form>

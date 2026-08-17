@@ -18,7 +18,10 @@ def classify(post, sweep_result):
 
     ratio_threshold = SystemSetting.get_int('opinion_ratio_percent', 70)
     minutes_per_factual = SystemSetting.get_int('minutes_per_factual_claim', 5)
-    tranche_minutes = max(1, min(post.duration_seconds, 1200) // 60) or 20
+    # 4.3-A.8: el tramo analizado ya no son 20 min fijos.
+    from django.conf import settings as dj
+    tranche_minutes = max(1, min(post.duration_seconds or dj.TRANSCRIBE_MAX_SECONDS,
+                                 dj.TRANSCRIBE_MAX_SECONDS) // 60)
 
     is_opinion = False
     if total > 0 and (len(grey) * 100 / total) >= ratio_threshold:

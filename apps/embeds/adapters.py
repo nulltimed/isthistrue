@@ -42,6 +42,43 @@ def fetch_title(url, platform):
     return ''
 
 
+def probe(url, platform):
+    """4.3-A.8 (decision de David): ANTES de postear se comprueba el video.
+    Devuelve {'ok', 'title', 'duration_seconds', 'age_limit', 'reason'}.
+
+    Fuente: yt-dlp con extract_info(download=False) — NO descarga nada, solo lee
+    la ficha publica. Es la MISMA fuente que ya usa la fase barata, asi que el
+    titulo y la duracion que ve el usuario al postear son los definitivos.
+
+    Regla 6.7 (degradar con aviso, jamas fail-closed): si la plataforma no
+    contesta, si nos toma por un robot o si tarda demasiado, se devuelve
+    ok=False con el motivo, se AVISA en los logs y el envio SIGUE ADELANTE con
+    lo que haya (titulo por oEmbed, duracion 0). Nunca se le cierra la puerta a
+    un usuario porque YouTube tenga un mal dia.
+    """
+    import logging
+    from django.conf import settings as dj_settings
+    logger = logging.getLogger('embeds.probe')
+    vacio = {'ok': False, 'title': '', 'duration_seconds': 0, 'age_limit': 0, 'reason': ''}
+    if dj_settings.MOCK_AGENTS:
+        return {'ok': True, 'title': '[SIMULADO] Vídeo de prueba del espejo',
+                'duration_seconds': 360, 'age_limit': 0, 'reason': ''}
+    try:
+        import yt_dlp
+        opts = {'quiet': True, 'no_warnings': True, 'skip_download': True,
+                'socket_timeout': int(getattr(dj_settings, 'PROBE_TIMEOUT_SECONDS', 12))}
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False) or {}
+    except Exception as exc:
+        logger.warning('Pre-chequeo del vídeo %s omitido: %r', url, exc)
+        return dict(vacio, reason=str(exc)[:200])
+    return {'ok': True,
+            'title': str(info.get('title') or '')[:300],
+            'duration_seconds': int(info.get('duration') or 0),
+            'age_limit': int(info.get('age_limit') or 0),
+            'reason': ''}
+
+
 def detect_platform(url):
     for platform, rx in PATTERNS.items():
         m = rx.search(url)

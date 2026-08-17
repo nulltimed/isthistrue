@@ -45,9 +45,10 @@
           <span class="text">{{ s.text }}</span>
           {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
           {% if post.status == 'DONE' and user.is_authenticated %}
+          {# 4.3-A.7 (David): NO se vota si una frase es cierta — de eso responde el #}
+          {# modelo. Solo se PIDE una segunda opinion; al llegar al umbral, Opus. #}
           <span class="seg-votes" id="seg-{{ s.pk }}">
-            <form method="post" action="{% url 'segment_vote' s.pk 'up' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'La verificación de esta oración es correcta' %}">{% icon 'up' 14 %}{{ s.ups }}</button></form>
-            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Discuto esta verificación' %}">{% icon 'down' 14 %}{{ s.downs }}</button></form>
+            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% trans 'Pide una re-verificación con el modelo premium' %}">⚑ {% trans "Discuto" %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
             {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
           </span>
           {% endif %}

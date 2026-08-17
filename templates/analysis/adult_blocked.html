@@ -1,3 +1,4 @@
-{% extends 'base.html' %}
-{% block content %}<h1>Contenido para mayores de 18</h1>
-<p>Este contenido está marcado como +18 y no está disponible para tu cuenta.</p>{% endblock %}
+{% extends 'base.html' %}{% load i18n %}
+{% block content %}<h1>{% trans "Contenido para mayores de 18" %}</h1>
+<p>{% trans "Este contenido está marcado como +18 y no está disponible para tu cuenta." %}</p>
+<p class="hint">{% trans "El acceso depende de la fecha de nacimiento que indicaste al registrarte. Si no has iniciado sesión, entra primero." %}</p>{% endblock %}

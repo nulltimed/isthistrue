@@ -12,12 +12,21 @@ class SystemSetting(models.Model):
     value = models.CharField(max_length=200)
 
     @classmethod
-    def get_int(cls, key, default):
+    def get_int(cls, key, default=None):
+        """Orden de mando (4.3-A.7): fila del panel > valor del .env > default del
+        codigo. Asi un umbral que nunca se sembro respeta el .env en vez de un
+        numero escondido en el codigo."""
         row = cls.objects.filter(key=key).first()
+        if row is not None:
+            try:
+                return int(row.value)
+            except (TypeError, ValueError):
+                pass
         try:
-            return int(row.value) if row else default
-        except (TypeError, ValueError):
-            return default
+            return int(getattr(settings, 'SETTING_DEFAULTS', {})[key])
+        except (KeyError, TypeError, ValueError):
+            pass
+        return default
 
 
 class AuditLog(models.Model):

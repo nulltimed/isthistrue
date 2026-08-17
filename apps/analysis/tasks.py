@@ -7,9 +7,14 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-COST_CHEAP_EUR = 0.05  # clasificador Sonnet (decidido); en mock tambien se contabiliza: INTENCIONAL (permite probar banner y candados sin gastar)
-COST_FULL_EUR = 0.07  # estimacion conservadora con tope adaptativo
-COST_OPUS_RESCAN_EUR = 0.35  # Opus: 5-7x Sonnet; solo posts muy votados, 1 vez
+# 4.3-A.8: estos dos numeros eran el coste FIJO de cualquier post, durase 3 min o
+# una hora. Se conservan como SUELO (un video corto no cuesta menos que esto) y el
+# precio real lo calcula services.cost_cheap_eur/cost_full_eur por minutos.
+COST_CHEAP_EUR = 0.05  # suelo del clasificador Sonnet; en mock tambien se contabiliza: INTENCIONAL (permite probar banner y candados sin gastar)
+COST_FULL_EUR = 0.07  # suelo de los veredictos
+COST_OPUS_RESCAN_EUR = 0.40  # Opus: 5-7x Sonnet; solo posts muy votados, 1 vez
+# (4.3-A.7: estaba definida DOS veces en este archivo, 0.35 aqui y 0.40 mas abajo;
+#  mandaba la segunda. Se conserva el valor vigente y se borra el duplicado.)
 
 
 @shared_task(bind=True, max_retries=2)
@@ -19,7 +24,8 @@ def run_cheap_phase(self, post_id):
     from apps.agents import sweep, algorithm
 
     post = Post.objects.get(pk=post_id)
-    if not DailyBudget.try_spend(COST_CHEAP_EUR):
+    from .services import cost_cheap_eur
+    if not DailyBudget.try_spend(max(COST_CHEAP_EUR, cost_cheap_eur(post))):
         post.status = 'NEW'  # se reintentara cuando haya deposito
         post.save(update_fields=['status'])
         return 'budget_exhausted'
@@ -55,7 +61,9 @@ def run_cheap_phase(self, post_id):
     verdict = algorithm.classify(post, result)  # 'FACTUAL' | 'OPINION'
     # 4.2 A2 (decision de David): el clasificador YA NO relega. Solo sugiere;
     # el post nace SIEMPRE en Principal y relegar es accion manual de moderador.
-    if verdict == 'OPINION':
+    # 4.3-A.7: si el barrido volvio ilegible, "sin afirmaciones extraibles" es
+    # MENTIRA (no las leimos, no es que no existan): no se sugiere Off-Topic.
+    if verdict == 'OPINION' and not result.get('sweep_failed'):
         post.offtopic_suggested = True
 
     post.save()
@@ -103,7 +111,8 @@ def run_full_analysis(self, post_id):
     from apps.agents import verdict as verdict_agent
 
     post = Post.objects.get(pk=post_id)
-    if not DailyBudget.try_spend(COST_FULL_EUR):
+    from .services import cost_full_eur
+    if not DailyBudget.try_spend(max(COST_FULL_EUR, cost_full_eur(post))):
         return 'budget_exhausted'  # beat lo reintentara; cola congelada si corte mensual
 
     post.status = 'FULL_RUNNING'
@@ -203,7 +212,8 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
 
 
 def _transcribe_first_tranche(post, tmpdir):
-    """yt-dlp audio -> faster-whisper small-int8 (CPU) del primer tramo de 20 min.
+    """yt-dlp audio -> faster-whisper small-int8 (CPU) del tramo inicial del video
+    (techo settings.TRANSCRIBE_MAX_SECONDS; 4.3-A.8: 90 min, antes 20 cableados).
     En MOCK_AGENTS devuelve segmentos ficticios para probar sin descargar nada."""
     if settings.MOCK_AGENTS:
         if not post.title:  # 4.2 F1: tambien el espejo enseña titulo, no enlace
@@ -228,7 +238,10 @@ def _transcribe_first_tranche(post, tmpdir):
             # igual: la diarizacion lo necesita para separar voces.
             'writesubtitles': True, 'writeautomaticsub': False,
             'subtitleslangs': ['es', 'gl', 'en'], 'subtitlesformat': 'vtt',
-            'download_ranges': yt_dlp.utils.download_range_func(None, [(0, 1200)])}
+            # 4.3-A.8: el tramo ya no son 1200 s cableados (video de 1 h analizado
+            # al 33% en silencio). Techo configurable en el .env.
+            'download_ranges': yt_dlp.utils.download_range_func(
+                None, [(0, settings.TRANSCRIBE_MAX_SECONDS)])}
     with yt_dlp.YoutubeDL(opts) as ydl:
         # 4.2 F1 (decision de David): el TITULO sustituye al enlace en bruto en la
         # pagina, el foro y las notificaciones. extract_info descarga Y devuelve
@@ -287,9 +300,6 @@ def generate_name_proposals(post_id):
     # la comunidad (caja "¿Quien crees que es?"); la foto de Wikipedia se busca al
     # proponer. La funcion se conserva (la llama run_cheap_phase) como no-op.
     return 'auto_candidates_disabled'
-
-
-COST_OPUS_RESCAN_EUR = 0.40  # estimacion conservadora; pasa por los candados como todo
 
 
 @shared_task

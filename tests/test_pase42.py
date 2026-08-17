@@ -667,3 +667,345 @@ class AutocompletadoHablantes(TestCase):
         # El mismo QID SIEMPRE devuelve la misma ficha (idempotente):
         self.assertEqual(_person_for(p1).pk, a.pk)
         self.assertEqual(Interlocutor.objects.filter(name='Pedro Sánchez').count(), 2)
+
+
+class Pase43A7(TestCase):
+    """4.3-A.7 — el primer análisis REAL destapó tres cosas:
+
+    1. El barrido mandaba la transcripción entera en UNA llamada con techo de 2000
+       tokens. Con el mock (3 frases) cabía; con un vídeo real (cientos) el JSON
+       volvía cortado -> claims=[] -> cero señales y cero veredictos, EN SILENCIO.
+       Ahora se trocea, se avisa a gritos si un lote vuelve ilegible, y no se
+       sugiere Off-Topic cuando el motivo es que no supimos leer (no que no haya).
+    2. Al posar el ratón sobre una frase, la frase se volvía invisible (letra
+       blanca sobre el fondo claro que ponía el hover). El hover pasa a ser el
+       mismo negro con letra blanca de la intervención activa.
+    3. Los votos ▲/▼ parecían un plebiscito sobre si algo es verdad. Decisión de
+       David: un solo botón "Discuto" que PIDE una re-verificación con Opus, y
+       "llegar a 5" son 5 (el umbral se comparaba con > estricto: hacían falta 6).
+    """
+
+    def _post_con_frases(self, n, status='DONE'):
+        post = Post.objects.create(
+            author=make_user(username=f'a7_{n}', email=f'a7_{n}@example.org'),
+            url=f'https://youtu.be/a7{n:05d}', status=status, duration_seconds=1200)
+        for i in range(n):
+            post.transcript_segments.create(start_seconds=i * 4.0, end_seconds=i * 4.0 + 3.5,
+                                            text=f'Frase numero {i} de la transcripcion.')
+        return post
+
+    # --- 1. el barrido se trocea y los índices siguen siendo globales ---
+    @override_settings(MOCK_AGENTS=False, SWEEP_BATCH_SIZE=40, SWEEP_MAX_TOKENS=8000)
+    def test_barrido_trocea_y_ancla_por_indice_global(self):
+        from apps.agents import sweep
+        post = self._post_con_frases(95)          # 95 frases -> 3 lotes de 40/40/15
+        vistos = []
+
+        def fake_call_json(model, system, payload, max_tokens=2000, mock_payload=None):
+            vistos.append((payload, max_tokens))
+            primera = int(payload.splitlines()[0].split(']')[0].lstrip('['))
+            return {'claims': [{'segment_index': primera, 'text': 'x',
+                                'kind': 'FACTUAL', 'contradicts_common_knowledge': False}],
+                    'manipulation': False, 'is_adult': False}
+
+        with mock.patch.object(sweep.client, 'call_json', side_effect=fake_call_json):
+            res = sweep.run(post)
+
+        self.assertEqual(len(vistos), 3)                       # se trocea
+        self.assertEqual(vistos[0][1], 8000)                   # con el techo del .env
+        self.assertFalse(res['sweep_failed'])
+        self.assertEqual(len(res['claims']), 3)
+        # Los índices que viajan son globales: el segundo lote empieza en [40].
+        self.assertTrue(vistos[1][0].startswith('[40]'))
+        marcadas = list(post.transcript_segments.exclude(signal='')
+                        .order_by('start_seconds').values_list('signal', flat=True))
+        self.assertEqual(marcadas, ['FACTUAL_UNVERIFIED'] * 3)  # 0, 40 y 80
+
+    @override_settings(MOCK_AGENTS=False, SWEEP_BATCH_SIZE=10)
+    def test_barrido_degrada_con_aviso_y_no_miente_con_offtopic(self):
+        """Un lote ilegible NO revienta el análisis y NO se disfraza de Off-Topic."""
+        from apps.agents import sweep
+        post = self._post_con_frases(25)
+        with mock.patch.object(sweep.client, 'call_json',
+                               return_value={'error': 'json_parse', 'raw': '{"clai'}):
+            with self.assertLogs('agents.sweep', level='WARNING') as logs:
+                res = sweep.run(post)
+        self.assertEqual(res['claims'], [])
+        self.assertTrue(res['sweep_failed'])
+        self.assertEqual(res['batches_failed'], 3)
+        self.assertTrue(any('ilegible' in l.lower() or 'ILEGIBLE' in l for l in logs.output))
+        self.assertFalse(post.transcript_segments.exclude(signal='').exists())
+
+    def test_los_dos_limites_del_barrido_se_leen_del_entorno(self):
+        from django.conf import settings as s
+        self.assertIsInstance(s.SWEEP_BATCH_SIZE, int)
+        self.assertIsInstance(s.SWEEP_MAX_TOKENS, int)
+        self.assertGreaterEqual(s.SWEEP_MAX_TOKENS, 2000)
+        self.assertIn('SWEEP_BATCH_SIZE', open('.env.example').read())
+
+    # --- 2. el hover ya no borra la frase ---
+    def test_hover_comparte_el_negro_de_la_intervencion_activa(self):
+        css = open('static/css/main.css').read()
+        self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
+        self.assertIn('.transcript .segment:hover,.transcript .segment:hover .text{color:#fff}', css)
+        # la píldora del hablante (opción A de David) también en hover
+        self.assertIn('.transcript .segment:hover .speaker-tag{', css)
+        # y la regla vieja de hover con fondo claro ya no existe en ninguna forma
+        self.assertNotIn('.transcript .segment:hover{background:var', css)
+
+    # --- 3. un solo botón, y "llegar a 5" son 5 ---
+    def test_solo_queda_el_boton_de_discutir(self):
+        post = self._post_con_frases(2)
+        self.client.force_login(make_user(username='lectorA7', email='lectora7@example.org'))
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('/votar/down/', html)
+        self.assertNotIn('/votar/up/', html)          # el plebiscito, fuera
+        self.assertIn('Discuto', html)
+
+    def test_el_quinto_voto_en_contra_dispara_opus(self):
+        post = self._post_con_frases(1)
+        seg = post.transcript_segments.first()
+        url = f'/oracion/{seg.pk}/votar/down/'
+        with mock.patch('apps.analysis.tasks.opus_rescan_segment.delay') as delay:
+            for i in range(4):
+                self.client.force_login(make_user(username=f'v{i}', email=f'v{i}@example.org'))
+                self.client.post(url)
+            self.assertFalse(delay.called)            # con 4 todavía no
+            self.client.force_login(make_user(username='v5', email='v5@example.org'))
+            self.client.post(url)
+            delay.assert_called_once_with(seg.pk)     # el QUINTO lo dispara
+
+    def test_el_coste_del_reescaneo_se_define_una_sola_vez(self):
+        codigo = open('apps/analysis/tasks.py').read()
+        self.assertEqual(codigo.count('COST_OPUS_RESCAN_EUR = '), 1)
+
+    # --- 4. el semáforo se decide EN CONTEXTO (anterior + presente + siguiente) ---
+    def test_el_contexto_salta_al_hablante_que_interrumpe(self):
+        """La \"anterior del hablante\" no es la de al lado: si otro interrumpe,
+        se salta y se sigue buscando hacia atrás."""
+        from apps.agents.verdict import context_for
+        post = self._post_con_frases(0)
+        textos = [('SPEAKER_00', 'Uno de Ana.'), ('SPEAKER_01', 'Interrumpe Bea.'),
+                  ('SPEAKER_00', 'Dos de Ana.'), ('SPEAKER_01', 'Otra de Bea.'),
+                  ('SPEAKER_00', 'Tres de Ana.')]
+        for i, (spk, txt) in enumerate(textos):
+            post.transcript_segments.create(start_seconds=i * 5.0, end_seconds=i * 5.0 + 4,
+                                            text=txt, speaker_label=spk)
+        segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
+        ctx = context_for(segs, 2, 1, 1)   # 'Dos de Ana.'
+        self.assertIn('(antes) Uno de Ana.', ctx)
+        self.assertIn('(ESTA ES LA FRASE VERIFICADA) Dos de Ana.', ctx)
+        self.assertIn('(despues) Tres de Ana.', ctx)
+        self.assertNotIn('Bea', ctx)       # la interrupción no entra
+
+    def test_sin_diarizacion_el_contexto_son_las_vecinas_inmediatas(self):
+        from apps.agents.verdict import context_for
+        post = self._post_con_frases(3)    # sin speaker_label
+        segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
+        ctx = context_for(segs, 1, 1, 1)
+        self.assertIn('(antes) Frase numero 0', ctx)
+        self.assertIn('(despues) Frase numero 2', ctx)
+
+    def test_los_bordes_no_revientan(self):
+        from apps.agents.verdict import context_for
+        post = self._post_con_frases(2)
+        segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
+        self.assertNotIn('(antes)', context_for(segs, 0, 1, 1))    # la primera
+        self.assertNotIn('(despues)', context_for(segs, 1, 1, 1))  # la última
+
+    def test_el_claim_viaja_con_su_contexto_y_el_lote_manda_lo_mismo(self):
+        from apps.agents.verdict import _claims_from_segments
+        post = self._post_con_frases(3)
+        for s in post.transcript_segments.all():
+            s.signal = 'FACTUAL_UNVERIFIED'
+            s.save(update_fields=['signal'])
+        claims = _claims_from_segments(post)
+        self.assertEqual(len(claims), 3)
+        self.assertIn('(despues) Frase numero 1', claims[0]['context'])
+        # La vía directa y la vía por lotes tienen que mandar el MISMO texto:
+        directo = open('apps/agents/verdict.py').read()
+        lote = open('apps/agents/batch.py').read()
+        marca = "CONTEXTO (frases contiguas del mismo hablante; NO se verifican)"
+        self.assertIn(marca, directo)
+        self.assertIn(marca, lote)
+
+    # --- 5. todos los umbrales se pueden fijar desde el .env ---
+    def test_sin_fila_en_la_base_de_datos_manda_el_entorno(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.filter(key='segment_opus_downvotes').delete()
+        with override_settings(SETTING_DEFAULTS={'segment_opus_downvotes': '9'}):
+            self.assertEqual(SystemSetting.get_int('segment_opus_downvotes', 5), 9)
+
+    def test_con_fila_manda_el_panel(self):
+        """Decisión congelada: el panel es el mando en vivo."""
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='segment_opus_downvotes',
+                                               defaults={'value': '3'})
+        with override_settings(SETTING_DEFAULTS={'segment_opus_downvotes': '9'}):
+            self.assertEqual(SystemSetting.get_int('segment_opus_downvotes', 5), 3)
+
+    def test_seed_settings_no_pisa_salvo_con_force(self):
+        from django.core.management import call_command
+        from io import StringIO
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='votes_to_validate',
+                                               defaults={'value': '77'})
+        call_command('seed_settings', stdout=StringIO())
+        self.assertEqual(SystemSetting.get_int('votes_to_validate', 5), 77)
+        call_command('seed_settings', '--force', stdout=StringIO())
+        from django.conf import settings as s
+        self.assertEqual(str(SystemSetting.get_int('votes_to_validate', 5)),
+                         s.SETTING_DEFAULTS['votes_to_validate'])
+
+    def test_la_lista_de_umbrales_vive_en_un_solo_sitio(self):
+        """Ni claves duplicadas ni dos listas que se desincronizan."""
+        from django.conf import settings as s
+        seed = open('apps/panel/management/commands/seed_settings.py').read()
+        self.assertNotIn('DEFAULTS = {', seed)          # la lista ya no está aquí
+        self.assertIn('SETTING_DEFAULTS', seed)
+        for clave in ('segment_opus_downvotes', 'verdict_context_before',
+                      'verdict_context_after', 'trending_votes_threshold'):
+            self.assertIn(clave, s.SETTING_DEFAULTS)
+        env = open('.env.example').read()
+        for var in ('SEGMENT_OPUS_DOWNVOTES', 'VERDICT_CONTEXT_BEFORE',
+                    'VERDICT_CONTEXT_AFTER'):
+            self.assertIn(var, env)
+
+    def test_los_umbrales_nuevos_son_editables_en_el_panel(self):
+        from apps.panel.views import SETTINGS_DEF
+        claves = [k for k, _l, _h, _t in SETTINGS_DEF]
+        for clave in ('segment_opus_downvotes', 'verdict_context_before',
+                      'verdict_context_after'):
+            self.assertIn(clave, claves)
+        self.assertEqual(len(claves), len(set(claves)))   # sin duplicados
+
+
+class Pase43A8(TestCase):
+    """4.3-A.8 — vídeos largos, pre-chequeo antes de postear y sala +18.
+
+    Decisiones de David (2026-08-17):
+      · "se tienen que procesar igual que los vídeos de 5 minutos": fuera el
+        recorte de 20 min cableado; el techo va al .env.
+      · "al final todo va al presupuesto diario y mensual": el gasto se reserva
+        por MINUTOS, no a tanto alzado (el contador mentía 4-6x con 1 hora).
+      · límite de 20 min por usuario -> AVISO de donación, nunca un muro (la
+        puerta de submit es login + email verificado, decisión congelada).
+      · antes de postear se comprueban título, duración y +18.
+      · el +18 va a una sala cerrada, solo para mayores según su fecha de
+        nacimiento del registro.
+    """
+
+    def _post(self, segundos, **kw):
+        datos = dict(author=make_user(username=f'a8_{segundos}_{kw.get("n", 0)}',
+                                      email=f'a8_{segundos}_{kw.get("n", 0)}@example.org'),
+                     url=f'https://youtu.be/a8{segundos}{kw.get("n", 0)}',
+                     duration_seconds=segundos, status='DONE')
+        datos.update({k: v for k, v in kw.items() if k != 'n'})
+        return Post.objects.create(**datos)
+
+    # --- el techo de 20 minutos ya no está cableado ---
+    def test_el_tramo_transcrito_se_lee_del_entorno(self):
+        from django.conf import settings as s
+        codigo = open('apps/analysis/tasks.py').read()
+        self.assertNotIn('[(0, 1200)]', codigo)      # el 1200 cableado, fuera
+        self.assertIn('TRANSCRIBE_MAX_SECONDS', codigo)
+        self.assertGreaterEqual(s.TRANSCRIBE_MAX_SECONDS, 3600)   # cabe 1 hora
+
+    # --- el dinero se cuenta por minutos ---
+    def test_una_hora_reserva_mucho_mas_que_cinco_minutos(self):
+        from apps.analysis.services import cost_cheap_eur, cost_full_eur
+        corto, largo = self._post(300, n=1), self._post(3600, n=2)
+        self.assertGreater(cost_cheap_eur(largo), cost_cheap_eur(corto) * 5)
+        self.assertGreater(cost_full_eur(largo), cost_full_eur(corto) * 5)
+
+    def test_el_coste_nunca_baja_del_suelo_historico(self):
+        """Un vídeo cortísimo no puede salir gratis: el suelo sigue siendo el
+        coste fijo de siempre."""
+        from apps.analysis.tasks import COST_CHEAP_EUR
+        from apps.analysis.services import cost_cheap_eur
+        p = self._post(30, n=3)
+        self.assertGreaterEqual(max(COST_CHEAP_EUR, cost_cheap_eur(p)), COST_CHEAP_EUR)
+
+    def test_duracion_desconocida_reserva_de_mas_no_de_menos(self):
+        from apps.analysis.services import video_minutes
+        from django.conf import settings as s
+        self.assertEqual(video_minutes(self._post(0, n=4)),
+                         s.TRANSCRIBE_MAX_SECONDS // 60)
+
+    # --- la donación sugerida ---
+    def test_hasta_veinte_minutos_no_se_pide_nada(self):
+        from apps.analysis.services import suggested_donation_eur
+        self.assertEqual(suggested_donation_eur(self._post(1200, n=5)), 0.0)
+        self.assertEqual(suggested_donation_eur(self._post(300, n=6)), 0.0)
+
+    def test_una_hora_pide_una_donacion_redondeada_a_medios_euros(self):
+        from apps.analysis.services import suggested_donation_eur
+        d = suggested_donation_eur(self._post(3600, n=7))
+        self.assertGreater(d, 0)
+        self.assertEqual(d * 2, int(d * 2))      # múltiplo de 0,50
+        self.assertLess(d, 5)                    # sigue siendo una donación, no un peaje
+
+    def test_la_donacion_solo_cobra_el_exceso(self):
+        from apps.analysis.services import suggested_donation_eur
+        self.assertLess(suggested_donation_eur(self._post(1800, n=8)),
+                        suggested_donation_eur(self._post(3600, n=9)))
+
+    # --- el pre-chequeo ---
+    def test_el_prechequeo_degrada_con_aviso_y_no_bloquea(self):
+        from apps.embeds.adapters import probe
+        with override_settings(MOCK_AGENTS=False):
+            with mock.patch.dict('sys.modules', {'yt_dlp': None}):
+                with self.assertLogs('embeds.probe', level='WARNING'):
+                    f = probe('https://youtu.be/x', 'youtube')
+        self.assertFalse(f['ok'])
+        self.assertEqual(f['duration_seconds'], 0)   # sigue siendo usable
+        self.assertEqual(f['age_limit'], 0)
+
+    def test_el_prechequeo_devuelve_las_tres_cosas(self):
+        from apps.embeds.adapters import probe
+        f = probe('https://youtu.be/x', 'youtube')   # MOCK_AGENTS=True en tests
+        for clave in ('title', 'duration_seconds', 'age_limit'):
+            self.assertIn(clave, f)
+
+    # --- la sala +18 ---
+    def test_el_mas18_no_asoma_en_portada_ni_en_el_buscador(self):
+        adulto = self._post(300, n=10, is_adult=True, title='Contenido adulto de prueba',
+                            category='MAIN')
+        html = self.client.get('/').content.decode()
+        self.assertNotIn(f'/post/{adulto.pk}/', html)
+        html = self.client.get('/buscar/?q=adulto').content.decode()
+        self.assertNotIn(f'/post/{adulto.pk}/', html)
+
+    def test_la_sala_esta_cerrada_al_publico_y_a_los_menores(self):
+        from datetime import date
+        self._post(300, n=11, is_adult=True)
+        self.assertEqual(self.client.get('/mas18/').status_code, 403)   # sin sesión
+        menor = make_user(username='menorA8', email='menora8@example.org',
+                          birth_date=date(date.today().year - 15, 1, 1))
+        self.client.force_login(menor)
+        self.assertEqual(self.client.get('/mas18/').status_code, 403)
+        sinfecha = make_user(username='sinfechaA8', email='sinfecha8@example.org')
+        self.client.force_login(sinfecha)
+        self.assertEqual(self.client.get('/mas18/').status_code, 403)   # sin fecha, tampoco
+
+    def test_un_mayor_de_edad_entra_y_ve_los_analisis(self):
+        from datetime import date
+        p = self._post(300, n=12, is_adult=True, title='Análisis reservado')
+        mayor = make_user(username='mayorA8', email='mayora8@example.org',
+                          birth_date=date(date.today().year - 30, 1, 1))
+        self.client.force_login(mayor)
+        r = self.client.get('/mas18/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(f'/post/{p.pk}/', r.content.decode())
+
+    def test_los_ajustes_nuevos_estan_en_el_panel_y_en_el_entorno(self):
+        from apps.panel.views import SETTINGS_DEF
+        from django.conf import settings as s
+        claves = [k for k, _l, _h, _t in SETTINGS_DEF]
+        for c in ('analysis_free_minutes', 'cents_per_video_minute'):
+            self.assertIn(c, claves)
+            self.assertIn(c, s.SETTING_DEFAULTS)
+        env = open('.env.example').read()
+        for v in ('ANALYSIS_FREE_MINUTES', 'CENTS_PER_VIDEO_MINUTE',
+                  'TRANSCRIBE_MAX_SECONDS'):
+            self.assertIn(v, env)

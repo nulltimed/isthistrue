@@ -57,6 +57,23 @@ SETTINGS_DEF = [
      'Con menos usuarios que esto, un solo voto de moderador valida.', 'num'),
     ('donation_goal_eur', 'Meta de donaciones (€)',
      'El objetivo que muestra el termómetro del banner.', 'num'),
+    # 4.3-A.7 (decisión de David): los umbrales de re-verificación y de contexto
+    # también se tocan aquí. Su valor de fábrica se fija en el .env.
+    ('segment_opus_downvotes', 'Usuarios para re-verificar una frase',
+     'Personas que pulsan «Discuto» en la misma frase antes de que entre el modelo premium.', 'num'),
+    ('verdict_context_before', 'Frases de contexto ANTES',
+     'Cuántas frases anteriores del mismo hablante se leen para decidir el semáforo.', 'num'),
+    ('verdict_context_after', 'Frases de contexto DESPUÉS',
+     'Cuántas frases posteriores del mismo hablante se leen para decidir el semáforo.', 'num'),
+    ('trending_votes_threshold', 'Votos para Trending',
+     'Votos que meten un post en Trending dentro de la ventana.', 'num'),
+    ('trending_window_days', 'Ventana de Trending (días)',
+     'Días que se miran hacia atrás para contar esos votos.', 'num'),
+    # 4.3-A.8 (decisión de David): tramo gratuito y precio por minuto.
+    ('analysis_free_minutes', 'Minutos gratuitos por vídeo',
+     'Hasta aquí no se pide nada. Por encima se AVISA de la donación sugerida (nunca se bloquea el envío).', 'num'),
+    ('cents_per_video_minute', 'Céntimos por minuto de vídeo',
+     'Coste estimado de analizar un minuto. Fija el gasto que se reserva del presupuesto y la donación sugerida.', 'num'),
 ]
 
 
