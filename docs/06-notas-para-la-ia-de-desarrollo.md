@@ -479,3 +479,45 @@ agotado comparaba contra `settings.DAILY_BUDGET_EUR`, cableado en 3,00 €) **an
 mintiera. Es exactamente la clase de fallo que cacé yo en `98d3442` con los límites cableados
 en los tests. Y la decisión de que **la cola no adelante a los baratos** es correcta y no
 obvia: lo fácil habría sido saltarse al primero cuando no cabe.
+
+## 34. Pase 4.3-G aplicado (2026-08-17) — addendum del operador
+
+En producción (commit `6ae077b`, **CI 174/174 verde a la primera, cero arreglos del
+operador**). Informe completo en `docs/38`. Sin migraciones, sin `seed_settings`, sin reinicio
+de `beat` — tal como anunciabas. CSS 36.202 bytes exactos y 344/344 llaves: los tres números
+del README cuadraron al byte.
+
+**Mérito que hay que reconocer**: entregaste esto **sin poder ejecutar la suite** (no tienes
+Postgres con pgvector) y salió verde a la primera con 14 tests nuevos y la plantilla del hilo
+reescrita. Compensarlo verificando compilación, las 44 plantillas contra el motor real, las
+llaves del CSS y la lógica de tus propios candados fue la decisión correcta.
+
+### Verificación con datos exigentes
+
+Creé **22 mensajes** en el hilo del post 2 del espejo para forzar la paginación: ficha de autor
+en los 20 de la página (nivel «Verificador», karma 320, «Mensajes: N»), 20 anclas
+`id="msg-<pk>"`, acciones con palabras (Citar 21 · Editar 20 · Reportar 20), y **la numeración
+NO reinicia**: página 1 → #1…#20, página 2 → #21 #22. Vista previa: 200, `**hola**` →
+`<strong>`, `<script>` escapado, 302 sin sesión.
+
+### Casi te reporto un bug que era un acierto — documéntalo mejor
+
+Al pedir la página sin `?pagina=`, el hilo **no abre siempre en la primera**. Lo vi como
+inconsistencia (mi primera petición dio #1…#20 y la segunda #21 #22, sin tocar nada) y estuve
+a punto de reportarlo. Es tu lógica de `_thread_page()`: aterriza en la página del primer
+mensaje **no leído**, y la propia visita registra el `TopicRead`, así que la segunda petición ya
+no tiene nuevos y cae en la última página. **Es correcto y es lo que hace cualquier foro** —
+pero tu README no lo menciona, y un operador con prisa lo habría reportado como fallo o, peor,
+lo habría «arreglado». Un renglón en el checklist («sin parámetro aterriza en el primer no
+leído; la segunda visita irá al final») lo evita.
+
+### Dos apuntes de verificación para el checklist
+
+1. **`?page=2` parece funcionar y no funciona.** El parámetro es `pagina`; `page` se ignora y
+   cae en la rama «última página», que con 22 mensajes devuelve #21 #22 — exactamente lo que
+   uno esperaría de la página 2. Un checklist que diga «prueba `?page=2`» daría un falso verde.
+2. **Los grep de una línea no valen contra este CSS.** Reglas como `.md-toolbar button{…}`
+   ocupan tres líneas, así que `grep -o '\.md-toolbar button{[^}]*}'` no encuentra nada y
+   parece que el arreglo no está. Es la segunda vez que me pasa (también en el 4.3-F con
+   `.suggest-list`). Cuando el checklist pida comprobar una propiedad CSS, indica el número de
+   línea o usa `grep -A3`.
