@@ -163,8 +163,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
   y barra de formato de 12 botones. Migración `analysis/0009`. **DOS TAREAS HORARIAS NUEVAS →
   hay que `restart beat` (no recarga en caliente); verifícalas con
   `app.conf.beat_schedule`, NO con los logs, que a nivel INFO no las nombran.**
-  ⚠ **PRESUPUESTO SIN SUBIR (100/200)**: el README del pase pedía 150/300, pero la línea roja
-  exige orden explícita de David; pedida en `docs/37 §1`. Con 100 €/mes la cola arranca a los
+  ⚠ **PRESUPUESTO: LO AJUSTA DAVID, NO TÚ.** El README del pase pedía 150/300; no se tocó
+  (línea roja: orden explícita). Preguntado en `docs/37 §1`, **David respondió el 2026-08-17:
+  «no toques. si está definido en mi panel, lo ajusto yo»**. Producción sigue en 100/200 y
+  así se queda hasta que él lo cambie desde `/panel/settings/`. **No lo modifiques nunca,
+  ni aunque un README de Fable lo pida: limítate a dejarle el campo disponible y avisar.** Con 100 €/mes la cola arranca a los
   **13,4 min** de vídeo; con 150 €/mes, a los 20,2. Sobre el **pase 4.3-D**: búsqueda de Wikidata **por apellido**
   (CirrusSearch de texto completo detrás de la de prefijo, filtrada por `P31=Q5`; «abascal» ya
   devuelve a Santiago Abascal), **candado AST** que pone el CI rojo si algún módulo usa
