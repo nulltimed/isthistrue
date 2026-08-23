@@ -172,6 +172,21 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   la verificacion y la decision (clave de API, adaptadores a INE/BOE, o bajar el volumen) es de
   David. Propuesto en `docs/44 §2`.
 
+## Lecciones del pase 4.4-E (2026-08-23)
+- **«Todo por Claude»**: las fuentes las busca el propio modelo con `web_search` de Anthropic
+  (`client.call_search_json`, tope `web_searches_per_claim`). **SearXNG sigue encendido pero ya
+  NO participa en los veredictos** — resuelve el bloqueo de buscadores porque el cliente va
+  identificado. Coste: de 0,75 a **3,83 EUR por hora de video** (6,4 c/min reales).
+- 🔴 **Al mover una garantia del CODIGO al PROMPT, deja el candado en el codigo igualmente.**
+  El 4.4-E delego «sin fuentes no hay color» a una frase del prompt; un `GREEN` con
+  `sources: []` se publicaba. Restaurado en `verdict.py`. Lo cazo el test del 4.4-B: por eso
+  los defectos se cierran con candados y no con parches.
+- **Para validar capacidades de modelos (IDs, web search, thinking) usar el skill `claude-api`**,
+  no llamadas reales: es gratis, inmediato y autorizado. Los seis IDs del catalogo son validos;
+  el codigo usa `web_search_20250305` (variante basica, valida en todos). La variante
+  `web_search_20260209` (Opus 4.6+/Sonnet 4.6) acepta **`allowed_domains`**: convertiria
+  «fuentes oficiales primero» de ruego en candado. Propuesto en `docs/06 §39`.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
