@@ -821,3 +821,55 @@ no lo rescata hasta la madrugada. Añadido al ritual del handoff: **comprobar
 de 6 horas es razonable para vídeos largos pero deja mucho tiempo muerto en los cortos. Un
 umbral proporcional a la duración del vídeo (p. ej. 3× el tiempo esperado) rescataría antes sin
 arriesgarse a relanzar algo que solo está tardando.
+
+## 41. Diagnóstico de la diarización (2026-08-23) — para el próximo pase
+
+David reanalizó el post 5 con el 4.4-F ya desplegado y los tres síntomas siguen: el interlocutor
+se atribuye al dominante, aparece un «hablante 3» inexistente y casi todo cae en el primero.
+**Diagnóstico completo con mediciones en `docs/47`.** Resumen para que no repitas mi camino:
+
+### Tu arreglo funcionó, pero el problema de fondo es anterior
+
+Por número de frases el reparto mejoró (95/5 → 73/17). **Por tiempo de voz sigue en 91/8**: al
+segundo hablante le llegaron muchos trocitos cortos (0,74 s de media), no sus intervenciones.
+Mide siempre en segundos, no en frases — el recuento de frases engaña justo aquí.
+
+### Causa principal, medida: pyannote sin `num_speakers`
+
+`diarization.py` llama a `pipeline(audio)` **sin parámetros**. Experimento sobre el mismo tramo
+de 3 min:
+
+```
+como hoy (automático):        39 turnos · 94,8 % / 5,2 %
+con num_speakers=2:           51 turnos · 84,8 % / 15,2 %   ← +190 % el segundo
+con num_speakers=2 + WAV 16k: 52 turnos · 86,3 % / 13,7 %
+```
+
+**`min_speakers=2` es una línea y triplica la presencia del interlocutor.** Recomendado como
+mínimo seguro (en un vídeo conversado nunca hay una sola voz).
+
+### El formato del audio NO es el problema (mi hipótesis, refutada)
+
+Sospechaba del MP3 con pérdida frente al WAV 16k mono que pyannote espera. **Medido: 13,7 % vs
+15,2 %, dentro del ruido e incluso peor.** No pierdas tiempo ahí.
+
+### El «hablante 3» es un cajón de sastre
+
+12 fragmentos, **7,7 s en total**, 0,64 s de media: «Mm», «Nice.», «the way.», «Mm-hmm.». No es
+una voz: es lo que el clustering no sabe clasificar. Regla propuesta: un hablante por debajo del
+1 % del tiempo (o ~10 s) se absorbe, no se muestra.
+
+### 🔴 Tu corte por palabras necesita un suelo
+
+**212 de 748 frases (28,3 %) son de UNA sola palabra; el 50,7 % duran menos de 0,8 s.** Aparecen
+líneas sueltas «And», «century», «It», «-hmm.». Dos daños: la transcripción se lee a trompicones
+y —más grave— **la fragmentación alimenta el problema de arriba**, porque cuanto más corto es el
+trozo menos fiable es el reconocimiento de voz. Propuesta: no cortar por debajo de ~0,8 s ni
+dejar frases de una palabra; pegar el resto a la frase vecina del mismo hablante.
+
+### Dato para afinar backchannels
+
+Hay **81 reacciones breves** («Right», «Whoa», «Nice», «Okay», «I love it») y **62 se le
+atribuyen al que monologa**. Heurística barata: una reacción de una palabra rodeada por dos
+intervenciones largas del MISMO hablante es casi seguro **del otro** — nadie se contesta a sí
+mismo.
