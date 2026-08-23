@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Commit en producción: `75b1e38` · Estado del repo: pase 4.4-A.2 (la interfaz en inglés de verdad) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-23 · Commit en producción: `75b1e38` · Estado del repo: pase 4.4-A.2 (la interfaz en inglés de verdad) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -82,6 +82,9 @@ tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 - **collectstatic** ya va en el command del web (cadena `ensure_superuser && collectstatic
   && gunicorn`) — CONSÉRVALA si algo toca los compose. Tras collectstatic manual: restart web
   (WhiteNoise indexa al arrancar).
+- **Si el pase toca el `Dockerfile`** → `docker compose build web worker beat` ANTES de
+  levantar, en los dos entornos. Señal de que hizo falta: `msgfmt: not found` o cualquier
+  binario nuevo que no aparece.
 - **searxng existe SOLO en producción** (el espejo no lo tiene): instrucciones de
   force-recreate de searxng = solo producción.
 - El espejo tiene **candado de invitados** (StagingAccessMiddleware): toda URL no exenta da

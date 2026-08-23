@@ -113,6 +113,21 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   NO adelanta a los baratos: si el primero no cabe, para.
 - Un defecto no se cierra con un parche: se cierra con un **test o un candado estructural**.
 
+## Lecciones del pase 4.4-A.2 (2026-08-23)
+- **En `sh`, `&&` y `||` asocian por la izquierda y sin precedencia entre si**: en
+  `A && B || true; C`, ese `|| true` cubre `A && B` ENTERO, no solo B. Para tolerar el fallo de
+  un solo eslabon hay que agruparlo: `A && { B || true; } && C`. Cazado en el command del web,
+  donde dejaba arrancar el contenedor aunque fallara `ensure_superuser`.
+- **Si un pase toca el `Dockerfile`, hay que reconstruir la imagen** (`build web worker beat`)
+  en los dos entornos antes de levantar. Sintoma tipico si se olvida: `msgfmt: not found`.
+- **i18n: el idioma activo es estado GLOBAL DEL HILO.** Una peticion con `Accept-Language: en`
+  lo deja activado y el cliente de pruebas NO lo restaura: los tests se contaminan entre si y
+  el resultado depende del orden alfabetico. Resetear en el `setUp`.
+- **Solo se traduce la INTERFAZ** (decision de David, coste 0 EUR): videos, transcripciones,
+  veredictos y mensajes del foro se leen siempre en su idioma original. El catalogo vive en
+  `locale/en/LC_MESSAGES/django.po`; el `.mo` NO se commitea (lo genera `compilemessages` en
+  cada arranque). Ojo: `makemessages` NO ve las cadenas de los `choices`, anadidas a mano.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
