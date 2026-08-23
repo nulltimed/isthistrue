@@ -676,3 +676,53 @@ solo esta noche.
 
 No existía en ninguno de los tres árboles ni tiene historia en git, así que no había nada que
 limpiar por mi parte. Si lo viste en un contenedor, era de tu entorno, no del despliegue.
+
+## 38. Pase 4.4-D aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `8d00e2c`, **CI 229/229 verde a la primera, cero arreglos del operador**).
+Informe en `docs/44`. Sin migraciones. Apliqué de entrada el barrido AST de símbolos que dejó el
+4.4-C: `tasks.py` y `views.py` sin pérdidas.
+
+Verificado tu checklist entero: el moderador relanza en solitario y **dos veces seguidas** (el
+candado no le aplica), con dos `force_deep_scan` en auditoría; el usuario normal ve «Discuto»,
+**no dispara** y **sí se le registra el voto** para sumar hacia los 5. En producción dejé el
+botón sin pulsar: gastaría dinero real y eso lo autoriza David.
+
+### 🔴 El hallazgo que importa más que el pase: no hay buscador
+
+Al verificar producción vi que el post 4 pasó de 32 grises a **18 anclajes, 16 de ellos
+`UNDECIDED`**. Alguien lanzó la reverificación — y el resultado destapa la causa raíz. Se lo
+pregunté a SearXNG:
+
+```
+unresponsive_engines: brave      → Suspended: too many requests
+                      duckduckgo → CAPTCHA
+                      google cse → Suspended: too many requests
+                      startpage  → Suspended: CAPTCHA
+```
+
+Solo responde Wikipedia, y solo a palabras sueltas. `search_with_status('ocupados agricultura
+EPA')` → **0 resultados, ok=False**. 117 avisos de suspensión en 30 minutos.
+
+**Tu arreglo del 4.4-B funciona**: el sistema ya no da la búsqueda vacía por buena y dice 🔍 en
+vez de mentir con ⚪. Pero la causa raíz es de infraestructura, no de código: **3-5 búsquedas por
+afirmación × 84 frases ≈ 300 consultas en minutos desde una IP** es exactamente el patrón que
+cualquier buscador corta con CAPTCHA. Los reintentos con espera no lo arreglan: reintentar
+contra un motor que te ha puesto un CAPTCHA no lo levanta, y encima consume tiempo.
+
+**Esto condiciona tu diseño del semáforo**: mientras no haya buscador, TODA reverificación
+producirá 🔍 y gastará dinero para nada. Tres caminos, por orden de solidez:
+
+1. **Clave de API de búsqueda** (Brave Search API: 2.000 consultas/mes gratis, sin bloqueos
+   porque te identifica). Una variable más en el `.env`, como `ANTHROPIC_API_KEY`. Es la
+   solución real.
+2. **Ir directo a la fuente**: INE y BOE publican sus propios datos; `official_sources` ya lista
+   los dominios. Un adaptador por organismo evita el intermediario que se bloquea.
+3. **Bajar el volumen**: una sola consulta por afirmación en vez de 3-5, y espaciarlas. Reduce
+   el problema, no lo elimina.
+
+Lo he dejado en manos de David (`docs/44 §2`) por ser decisión de producto y de gasto: yo no
+cambio por mi cuenta la configuración de motores, que es el corazón de la verificación.
+
+**Y una advertencia para el próximo pase**: no tiene sentido afinar el semáforo ni añadir
+estados nuevos mientras la base documental esté a cero. Primero el buscador.

@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-23 · Commit en producción: `88fdcb9` · Estado del repo: pase 4.4-C (panel de modelos, vigía nocturno) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-23 · Commit en producción: `8d00e2c` · Estado del repo: pase 4.4-D (el voto del admin relanza el análisis) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§37: TODA la historia técnica) y el informe del último pase (`docs/43`).
+> (§1-§38: TODA la historia técnica) y el informe del último pase (`docs/44`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §37) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §38) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -158,7 +158,21 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `88fdcb9` — **pase 4.4-C**: **panel de modelos por tarea** en
+- **Producción**: commit `8d00e2c` — **pase 4.4-D**: el voto ▼ de moderador o superusuario
+  **relanza el reanálisis profundo en solitario y siempre** (el candado de «una vez» no le
+  aplica; los usuarios normales conservan sus 5 votos por frase y el 40% por vídeo). Antes era
+  INALCANZABLE: 5 personas distintas con el registro cerrado. Deja `AuditLog(force_deep_scan)`,
+  el reanálisis recibe el expediente completo y el gasto sigue pasando por `try_spend`.
+  ⚠️ **Cada clic gasta dinero real** con el modelo de «Reanálisis profundo» (hoy Opus 4.8), sin
+  confirmación intermedia.
+  🔴 **HALLAZGO CRÍTICO de esta iteración (no del pase)**: **los buscadores han bloqueado al
+  servidor**. SearXNG declara `brave: Suspended`, `duckduckgo: CAPTCHA`, `google cse: Suspended`,
+  `startpage: CAPTCHA`; solo responde Wikipedia. `search_with_status(...)` → 0 resultados,
+  ok=False. Causa: 3-5 búsquedas por afirmación × 84 frases ≈ 300 consultas en minutos desde una
+  IP. **Mientras siga así, toda reverificación gasta dinero y produce 🔍.** Propuesto a David en
+  `docs/44 §2`: clave de API de búsqueda (Brave), adaptadores a INE/BOE, o bajar el volumen.
+  **No cambies los motores por tu cuenta**: es el corazón de la verificación. Sobre el
+  **pase 4.4-C**: **panel de modelos por tarea** en
   `/panel/modelos/` (seis tareas × dos ruedas: modelo y forma de envío; **libertad total con
   aviso de coste**, sin prohibiciones, decisión de David; muestra el coste de 1 h de vídeo y
   avisa de las combinaciones malas), **transcripción entera** en cada veredicto como bloque
@@ -279,11 +293,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§37) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§38) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
