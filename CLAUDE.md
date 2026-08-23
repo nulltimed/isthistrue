@@ -128,6 +128,25 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   `locale/en/LC_MESSAGES/django.po`; el `.mo` NO se commitea (lo genera `compilemessages` en
   cada arranque). Ojo: `makemessages` NO ve las cadenas de los `choices`, anadidas a mano.
 
+## Lecciones del pase 4.4-B (2026-08-23)
+- **RECONSTRUIR LA IMAGEN EN TODOS LOS PASES**, cambie o no el `Dockerfile`: hace `COPY . .` y
+  el unico volumen es `media`, asi que el codigo va DENTRO de la imagen. Sin `build`, el
+  contenedor arranca con el codigo viejo y `migrate` dice «no migrations to apply» con las
+  migraciones nuevas sin aplicar.
+- **Un `{# ... #}` de Django es de UNA linea.** En varias, el resto se interpreta como
+  plantilla: un `{% if %}` citado dentro del texto queda sin cerrar y tumba la pagina entera.
+  (Error propio en este pase; ya habia test de guardia desde el 4.3-A.1.)
+- **Ningun camino con `time.sleep` debe correr a velocidad real en los tests**: el reintento de
+  busquedas (20 s) llevo la suite de 5 s a 326 s. Se baja en `tests/settings_test.py`.
+- **Dos pases entregados en paralelo colisionan SIEMPRE en `tests/test_pase42.py`** (ambos
+  anaden su clase al final). Se resuelve con `git apply --3way`, que es mecanico y verificable
+  — nunca a mano. Si el 3way deja marcadores de conflicto, PARAR y avisar.
+- **Los `choices` traducidos por variable** (`{% trans obj.get_x_display %}`) NO los ve el
+  candado i18n: al anadir estados nuevos hay que meterlos al `.po` a mano.
+- **Vacio no es exito**: SearXNG devolvia HTTP 200 con cero resultados cuando los motores
+  estaban suspendidos, y el codigo lo daba por bueno. Al verificar una integracion, mirar el
+  NUMERO DE RESULTADOS, jamas solo el codigo HTTP.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
