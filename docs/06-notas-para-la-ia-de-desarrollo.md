@@ -726,3 +726,49 @@ cambio por mi cuenta la configuración de motores, que es el corazón de la veri
 
 **Y una advertencia para el próximo pase**: no tiene sentido afinar el semáforo ni añadir
 estados nuevos mientras la base documental esté a cero. Primero el buscador.
+
+## 39. Pase 4.4-E aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `a54e670`, CI 236/236 al tercer intento). Informe en `docs/45`. El
+circuito nuevo funciona: `verdict.py` ya no menciona SearXNG, el reanálisis tampoco, y
+`web_searches_per_claim=3` sembrado en ambos entornos. Ninguno de tus 7 tests falló — los tres
+fallos eran de pases anteriores, algo esperable al cambiar el circuito de verificación entero.
+
+### 🔴 Se perdió «sin fuentes no hay color», y la cazó el test del 4.4-B
+
+En el 4.4-B la garantía era **estructural**: búsqueda vacía → no se llamaba al modelo → el claim
+quedaba `UNDECIDED`. Al mover la búsqueda dentro del modelo, lo único que quedó fue una frase en
+el prompt: *«Si no encuentras nada útil: UNDECIDED»*. **Un ruego no es un candado**: `verdict.run`
+guardaba `v['color']` tal cual y `upsert_claim` no lo revisa, así que un `GREEN` con
+`sources: []` se publicaba con `sources_ok=False` como única señal — el mismo fallo que
+arreglamos hace dos días, entrando por otra puerta.
+
+Restaurado en `verdict.py`: `if not tiene_fuentes: v['color'] = 'UNDECIDED'` antes de
+`upsert_claim`. **Regla general para lo que viene**: cuando muevas una garantía del código al
+prompt, deja el candado en el código igualmente. El modelo obedece casi siempre; «casi» no vale
+en una web de verificación.
+
+### Tu §5 resuelto sin gastar: consulté la referencia de la API
+
+Pedías validar los seis modelos «con una llamada por modelo». No hizo falta:
+
+- **Los seis IDs son válidos** (`claude-haiku-4-5-20251001`, `claude-sonnet-4-6`,
+  `claude-opus-4-6/4-7/4-8`, `claude-fable-5`). Yo mismo dudé al ver los `4-x` y lo verifiqué.
+- Usas **`web_search_20250305`**, la variante básica: soportada de forma general, Haiku incluida.
+  Correcto y conservador.
+
+**Mejora concreta para el próximo pase**: los modelos actuales (Opus 4.6/4.7/4.8, Sonnet 4.6)
+soportan **`web_search_20260209`**, que acepta **`allowed_domains`**. Con eso, «primero
+organismos oficiales» dejaría de ser una instrucción de texto y pasaría a ser una restricción de
+la herramienta — `official_sources` ya tiene la lista. Es exactamente la misma lección del punto
+anterior: candado en vez de ruego. Ojo: esa variante requiere modelo compatible, así que hay que
+elegirla según la columna `web` del catálogo, no fijarla a ciegas.
+
+### La factura, medida
+
+El panel pasa de **0,75 €/hora** (4.4-C) a **3,83 €/hora**: ×5. Coste real **6,4 c/min** — el
+panel sigue asumiendo 12, así que reserva de más, que es el lado seguro; tu sugerencia de bajar
+a 8 deja margen razonable. **El dato que conviene que tengas presente al diseñar**: con los 100
+€/mes actuales de David, el presupuesto de un día entero (3,23 €) **no cubre un vídeo de una
+hora** (3,83 €), y la cola arranca a los 25 minutos. Se lo he puesto en `docs/45 §3` con la
+tabla de escenarios; la decisión es suya.
