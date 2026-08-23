@@ -1,8 +1,19 @@
-"""4.4-C: el vigía nocturno de los modelos."""
+"""Tareas del panel.
+
+1. Generacion masiva de codigos canjeables: 1 a 1.000.000, txt descargable
+   (README v2 §7). RESTAURADA POR EL OPERADOR: el pase 4.4-C reescribio este
+   fichero desde cero y se la llevo por delante junto con BATCH_BG_THRESHOLD,
+   que apps/panel/views.py importa — el panel ENTERO caia con ImportError.
+2. 4.4-C: el vigia nocturno de los modelos.
+"""
+import io
 import logging
 
 from celery import shared_task
 from django.conf import settings
+from django.core.files.base import ContentFile
+
+BATCH_BG_THRESHOLD = 10000  # por encima: segundo plano con aviso
 
 logger = logging.getLogger('panel.models')
 
@@ -49,3 +60,30 @@ def check_models():
         except Exception:
             pass
     return f'{len(catalog.TASK_KEYS)} comprobados, {len(caidos)} caídos'
+
+
+@shared_task
+def generate_code_batch(batch_id):
+    from apps.accounts.models import RedeemCode
+    from .models import CodeBatch
+    batch = CodeBatch.objects.get(pk=batch_id)
+    try:
+        buf = io.StringIO()
+        chunk = []
+        for i in range(batch.count):
+            code = RedeemCode(grants_level=batch.level, batch=f'batch-{batch.pk}')
+            chunk.append(code)
+            buf.write(code.code + '\n')
+            if len(chunk) >= 5000:
+                RedeemCode.objects.bulk_create(chunk)
+                chunk = []
+        if chunk:
+            RedeemCode.objects.bulk_create(chunk)
+        batch.file.save(f'codigos-{batch.level}-{batch.pk}.txt',
+                        ContentFile(buf.getvalue().encode()))
+        batch.status = 'READY'
+    except Exception as e:
+        batch.status = 'FAILED'
+        batch.save()
+        raise e
+    batch.save()
