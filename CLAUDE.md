@@ -159,6 +159,19 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
 - **El vigia nocturno hace llamadas REALES** a cada modelo configurado. No lanzarlo a mano en
   produccion: corre solo a diario y el gasto lo autoriza David.
 
+## Lecciones del pase 4.4-D (2026-08-23)
+- **El voto de moderador/superusuario relanza el reanalisis profundo SIEMPRE** y en solitario
+  (orden de David). El candado de «una vez» no le aplica; los usuarios normales conservan sus
+  5 votos por frase. Cada clic **gasta dinero real** con el modelo de «Reanalisis profundo».
+- 🔴 **LOS BUSCADORES BLOQUEAN AL SERVIDOR.** SearXNG declara `brave: Suspended`,
+  `duckduckgo: CAPTCHA`, `google cse: Suspended`, `startpage: CAPTCHA`; solo responde Wikipedia.
+  Causa: 3-5 busquedas POR AFIRMACION x 84 frases = ~300 consultas en minutos desde una IP.
+  **Mientras siga asi, toda reverificacion gasta dinero y devuelve 🔍.** Diagnostico rapido:
+  `wget -qO- 'http://localhost:8080/search?q=test&format=json'` dentro del contenedor searxng y
+  mirar `unresponsive_engines`. **NO cambiar los motores por cuenta propia**: es el corazon de
+  la verificacion y la decision (clave de API, adaptadores a INE/BOE, o bajar el volumen) es de
+  David. Propuesto en `docs/44 §2`.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
