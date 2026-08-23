@@ -2696,3 +2696,63 @@ class Pase44E(TestCase):
                                                defaults={'value': '5'})
         caro = catalog.cost_per_hour_eur(task='verdict')
         self.assertGreater(caro, barato)
+
+
+class Pase44F(TestCase):
+    """4.4-F — el cruce voz↔frase deja de regalar las frases al que domina.
+
+    Caso real (post 5, podcast en inglés): pyannote detectó 3 hablantes y 287
+    turnos, y aun así TODO salió como SPEAKER_00. Causa: turnos solapados — uno
+    largo del dominante envolvía los microturnos del otro, y «el de más solape»
+    se lo quedaba todo.
+    """
+
+    def test_el_turno_especifico_gana_al_envolvente(self):
+        """«Get out» (1 s) dentro de un turno de 30 s del otro: antes se lo
+        quedaba el envolvente; ahora gana el microturno que lo cubre."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0.0, 30.0, 'SPEAKER_00'), (3.0, 4.2, 'SPEAKER_01')]
+        raw = [
+            {'start_seconds': 0.0, 'end_seconds': 2.8, 'text': 'I have an explainer.'},
+            {'start_seconds': 3.1, 'end_seconds': 4.1, 'text': 'Get out.'},
+            {'start_seconds': 4.5, 'end_seconds': 7.0, 'text': 'So, the 19th century.'},
+        ]
+        out = merge_into_sentences(raw, turns)
+        por_texto = {m['text']: m['speaker_label'] for m in out}
+        self.assertEqual(por_texto['Get out.'], 'SPEAKER_01')
+        self.assertEqual(por_texto['I have an explainer.'], 'SPEAKER_00')
+
+    def test_sin_turno_que_cubra_gana_el_de_mas_solape_como_siempre(self):
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0.0, 1.0, 'SPEAKER_00'), (1.0, 1.4, 'SPEAKER_01')]
+        raw = [{'start_seconds': 0.0, 'end_seconds': 2.0, 'text': 'Frase larga aquí.'}]
+        out = merge_into_sentences(raw, turns)
+        self.assertEqual(out[0]['speaker_label'], 'SPEAKER_00')
+
+    def test_las_palabras_con_reloj_parten_el_fragmento_entre_voces(self):
+        """Un fragmento de whisper con palabras de DOS voces se reparte: cada
+        palabra va con la suya y salen dos frases, no una."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0.0, 3.0, 'SPEAKER_00'), (3.0, 6.0, 'SPEAKER_01')]
+        raw = [{'start_seconds': 0.0, 'end_seconds': 6.0,
+                'text': 'Hello there. Thank you.',
+                'words': [{'start': 0.2, 'end': 1.0, 'text': 'Hello'},
+                          {'start': 1.1, 'end': 2.0, 'text': 'there.'},
+                          {'start': 3.2, 'end': 4.0, 'text': 'Thank'},
+                          {'start': 4.1, 'end': 5.0, 'text': 'you.'}]}]
+        out = merge_into_sentences(raw, turns)
+        self.assertEqual(len(out), 2)
+        self.assertEqual(out[0]['speaker_label'], 'SPEAKER_00')
+        self.assertEqual(out[0]['text'], 'Hello there.')
+        self.assertEqual(out[1]['speaker_label'], 'SPEAKER_01')
+        self.assertEqual(out[1]['text'], 'Thank you.')
+
+    def test_sin_diarizacion_las_palabras_no_fragmentan(self):
+        """Sin turnos no hay nada que cruzar: el fragmento queda entero."""
+        from apps.analysis.tasks import merge_into_sentences
+        raw = [{'start_seconds': 0.0, 'end_seconds': 6.0,
+                'text': 'Hello there. Thank you.',
+                'words': [{'start': 0.2, 'end': 1.0, 'text': 'Hello'}]}]
+        out = merge_into_sentences(raw, [])
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['text'], 'Hello there. Thank you.')

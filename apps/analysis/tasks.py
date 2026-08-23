@@ -347,12 +347,37 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
     (c) se supera max_chars (candado anti-parrafada). El timestamp del grupo es
     el inicio del PRIMER fragmento: clic-para-saltar aterriza donde empezo la frase."""
     def speaker_of(seg):
-        best, best_overlap = '', 0.0
+        """4.4-F: en conversacion rapida pyannote emite turnos SOLAPADOS — uno
+        largo del que domina y microturnos del otro DENTRO. Elegir "el de mas
+        solape" hacia que el turno largo envolviera las interjecciones ajenas y
+        se las quedara todas: el video 5 (podcast en ingles) salio con 3
+        hablantes detectados y todo atribuido a SPEAKER_00. Regla nueva: entre
+        los turnos que cubren bien la frase (>=60%), gana el MAS CORTO — el mas
+        especifico; sin ninguno asi, el de mayor solape, como antes."""
+        dur = max(seg['end_seconds'] - seg['start_seconds'], 0.01)
+        cubren, best, best_overlap = [], '', 0.0
         for (ts, te, label) in turns:
             overlap = min(seg['end_seconds'], te) - max(seg['start_seconds'], ts)
+            if overlap <= 0:
+                continue
+            if overlap / dur >= 0.6:
+                cubren.append((te - ts, label))
             if overlap > best_overlap:
                 best, best_overlap = label, overlap
+        if cubren:
+            return min(cubren)[1]
         return best
+
+    # 4.4-F: si el fragmento trae PALABRAS con su tiempo (whisper), la unidad de
+    # cruce es la palabra: "Get out" (1 s) cae en el microturno de su hablante
+    # aunque viva dentro de un fragmento mas largo del otro.
+    if turns and any(seg.get('words') for seg in raw_segments):
+        raw_segments = [
+            {'start_seconds': w['start'], 'end_seconds': w['end'], 'text': w['text']}
+            for seg in raw_segments for w in (seg.get('words') or
+                [{'start': seg['start_seconds'], 'end': seg['end_seconds'],
+                  'text': seg['text']}])
+        ]
 
     merged, current = [], None
     for seg in raw_segments:
@@ -424,6 +449,14 @@ def _transcribe_first_tranche(post, tmpdir):
     files = sorted(os.listdir(tmpdir))
     audio = next((os.path.join(tmpdir, f) for f in files if not f.endswith('.vtt')), None)
     vtt = next((os.path.join(tmpdir, f) for f in files if f.endswith('.vtt')), None)
+    # 4.4-F (decision de David, revisa la del 4.2.1): cuando VA A HABER separacion
+    # de voces, whisper manda — sus tiempos por palabra permiten atribuir bien las
+    # frases. Los subtitulos humanos vienen en bloques que mezclan hablantes y solo
+    # mandan cuando no hay diarizacion (sin HF_TOKEN no hay voces que cruzar).
+    if vtt and settings.HF_TOKEN and not settings.MOCK_AGENTS:
+        logger.info('Subtítulos presentes pero IGNORADOS: hay diarización y la '
+                    'atribución por palabra de whisper cruza mejor (4.4-F)')
+        vtt = None
     if vtt:
         with open(vtt, encoding='utf-8', errors='replace') as f:
             cues = _parse_vtt(f.read())
@@ -432,8 +465,12 @@ def _transcribe_first_tranche(post, tmpdir):
                         len(cues), os.path.basename(vtt))
             return (cues, audio)
     model = WhisperModel('small', device='cpu', compute_type='int8')
-    segs, _info = model.transcribe(audio, vad_filter=True)
-    return ([{'start_seconds': s.start, 'end_seconds': s.end, 'text': s.text.strip()}
+    # 4.4-F: word_timestamps da el reloj de CADA PALABRA (algo mas lento en CPU,
+    # ~+20%). Es lo que permite que una interjeccion de 1 s se atribuya a su voz.
+    segs, _info = model.transcribe(audio, vad_filter=True, word_timestamps=True)
+    return ([{'start_seconds': s.start, 'end_seconds': s.end, 'text': s.text.strip(),
+              'words': [{'start': w.start, 'end': w.end, 'text': w.word.strip()}
+                        for w in (s.words or [])]}
              for s in segs], audio)
 
 
