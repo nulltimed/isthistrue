@@ -99,6 +99,14 @@ def run(post, model=None):
         if 'error' not in v:
             v['model_used'] = usado
             tiene_fuentes = bool(v.get('sources'))
+            # 4.4-B (decision de David): SIN FUENTES NO HAY COLOR. Hasta el 4.4-E la
+            # garantia era estructural — si la busqueda volvia vacia no se llamaba al
+            # modelo. Ahora que el modelo busca solo, la unica salvaguarda que quedaba
+            # era pedirselo en el prompt ("si no encuentras nada util: UNDECIDED"), y
+            # un ruego no es un candado: si contesta GREEN sin una sola URL, ese verde
+            # se publicaba. Se vuelve a imponer aqui. Lo cazo el test del 4.4-B.
+            if not tiene_fuentes:
+                v['color'] = 'UNDECIDED'
             upsert_claim(post, c, v, sources_ok=tiene_fuentes)
 
 

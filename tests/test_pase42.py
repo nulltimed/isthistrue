@@ -2395,7 +2395,7 @@ class Pase44C(TestCase):
     def test_el_suplente_nunca_es_peor_que_el_titular(self):
         """Decisión de David: «un escalón por encima en calidad, nunca por debajo»."""
         from apps.agents import catalog
-        for mid, _l, tier, _pi, _po in catalog.CATALOG:
+        for mid, _l, tier, _pi, _po, _web in catalog.CATALOG:  # 4.4-E anadio la columna web
             sup = catalog.substitute(mid)
             if sup:
                 self.assertGreater(catalog.tier(sup), tier, f'{mid} → {sup}')
@@ -2595,7 +2595,10 @@ class Pase44D(TestCase):
             capturado.update(k)
             return ({'color': 'GREEN', 'what_is_claimed': 'x'}, 'claude-opus-4-8')
 
-        with patch('apps.agents.client.call_json', side_effect=espia):
+        # 4.4-E: el reanalisis dejo de usar call_json y ahora busca sus propias
+        # fuentes con call_search_json. La intencion del test no cambia — el
+        # expediente completo tiene que seguir viajando como bloque cacheable.
+        with patch('apps.agents.client.call_search_json', side_effect=espia):
             opus_rescan_segment(seg.pk, forced=True)
         self.assertIn('cacheable', capturado)
         self.assertIn('FICHA DEL VÍDEO', capturado['cacheable'])
