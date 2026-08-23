@@ -560,3 +560,25 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .verdict-basis{font-style:italic}
 .event-date{font-size:.8rem;color:var(--grey);margin:.4rem 0 0;text-align:center}
 .event-date em{font-style:italic}
+
+/* 4.4-C · PANEL DE MODELOS ================================================
+   Libertad total con aviso de coste (decisión de David): el número se ve ANTES
+   de guardar, y el aviso de "te estás disparando en el pie" no se puede no leer.
+   ========================================================================== */
+.tutorial{border:1px solid var(--line);border-radius:10px;background:var(--paper);
+  padding:.7rem .9rem;margin:.6rem 0 1rem}
+.tutorial summary{cursor:pointer}
+.tutorial p{margin:.5rem 0}
+.tutorial ul{margin:.4rem 0;padding-left:1.3rem}
+.cost-banner{border:1px solid var(--ink);border-radius:10px;padding:.6rem .9rem;
+  margin:.6rem 0 1rem;display:flex;justify-content:space-between;align-items:baseline;
+  gap:.8rem;flex-wrap:wrap;background:#fff}
+.model-row{border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem;
+  margin:.5rem 0;background:#fff}
+.model-head{display:flex;justify-content:space-between;align-items:baseline;
+  gap:.6rem;flex-wrap:wrap;margin-bottom:.4rem}
+.model-controls{display:flex;gap:1rem;flex-wrap:wrap}
+.model-controls label{font-size:.82rem;color:var(--grey)}
+.model-controls select{max-width:320px}
+.model-row .warning{margin:.5rem 0 0;font-size:.85rem}
+.model-row .ko{color:#8c1c1c}

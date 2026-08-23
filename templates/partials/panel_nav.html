@@ -15,6 +15,7 @@ título de la ventana del navegador.
   <a href="{% url 'panel_settings' %}"{% if cur == 'panel_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'sliders' 16 %} {% trans "Ajustes" %}</a>
   <a href="{% url 'panel_codes' %}"{% if cur == 'panel_codes' %} class="active" aria-current="page"{% endif %}>{% icon 'ticket' 16 %} {% trans "Códigos" %}</a>
   <a href="{% url 'panel_donations' %}"{% if cur == 'panel_donations' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Donaciones" %}</a>
+  <a href="{% url 'panel_models' %}"{% if cur == 'panel_models' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Modelos" %}</a>
   <a href="{% url 'panel_moderators' %}"{% if cur == 'panel_moderators' %} class="active" aria-current="page"{% endif %}>{% icon 'users' 16 %} {% trans "Moderadores" %}</a>
   <a href="{% url 'panel_moderator_settings' %}"{% if cur == 'panel_moderator_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'shield' 16 %} {% trans "Moderación" %}</a>
   <a href="{% url 'panel_complaints' %}"{% if cur == 'panel_complaints' %} class="active" aria-current="page"{% endif %}>{% icon 'flag' 16 %} {% trans "Reclamaciones" %}</a>

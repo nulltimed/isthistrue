@@ -32,6 +32,7 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     claim.sensitive = verdict.get('sensitive') or ''
     # 4.4-B: contra que serie y que rango se comparo (decision de David).
     claim.temporal_basis = (verdict.get('temporal_basis') or '')[:300]
+    claim.model_used = (verdict.get('model_used') or '')[:60]
     claim.sources_ok = sources_ok
     claim.save()
     # 4.3-A J3: el semaforo de un claim seguido cambia -> aviso a sus seguidores

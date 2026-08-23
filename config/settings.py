@@ -200,6 +200,17 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'message_sensitive_reports': '5',
     'registration_open': '1',
     'lang_es': '1', 'lang_en': '1',
+    # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
+    'model_sweep': 'claude-haiku-4-5-20251001',
+    'model_classify': 'claude-sonnet-4-6',
+    'model_dating': 'claude-haiku-4-5-20251001',
+    'model_verdict': 'claude-sonnet-4-6',
+    'model_moderation': 'claude-haiku-4-5-20251001',
+    'model_deep': 'claude-opus-4-8',
+    'delivery_sweep': 'direct', 'delivery_classify': 'direct',
+    'delivery_dating': 'direct', 'delivery_verdict': 'direct',
+    'delivery_moderation': 'direct', 'delivery_deep': 'direct',
+    'full_transcript_verdict': '1',     # decision de David: transcripcion entera
     # 4.4-B: el semaforo.
     'auto_verify_daily_cap': '5',       # videos que se verifican solos al dia
     'search_retries': '2',              # reintentos cuando los motores se suspenden

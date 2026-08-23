@@ -38,6 +38,24 @@ class SystemSetting(models.Model):
         return getattr(settings, 'SETTING_DEFAULTS', {}).get(key) or default
 
 
+class ModelHealth(models.Model):
+    """4.4-C: el vigía nocturno.
+
+    David pidió «actualización diaria» de los modelos. El catálogo NO se puede
+    descubrir solo de forma fiable, así que lo diario no sirve para encontrar
+    modelos nuevos —eso lo trae Fable en cada pase— sino para AVISAR de que uno de
+    los tuyos ha dejado de responder. Que es el problema real: enterarse el día
+    siguiente en vez de cuando falla un análisis.
+    """
+    model_id = models.CharField(max_length=60, unique=True)
+    ok = models.BooleanField(default=True)
+    checked_at = models.DateTimeField(auto_now=True)
+    detail = models.CharField(max_length=200, blank=True, default='')
+
+    def __str__(self):
+        return f'{self.model_id}: {"ok" if self.ok else "CAÍDO"}'
+
+
 class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     action = models.CharField(max_length=120)

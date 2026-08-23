@@ -3,6 +3,7 @@ validacion comunitaria, asi que la latencia del lote (minutos-horas) es gratis."
 import json
 from celery import shared_task
 from django.conf import settings
+from apps.agents.catalog import model_for
 from apps.agents import prompts, search
 
 
@@ -19,7 +20,7 @@ def submit_verdict_batch(post, claims):
                             for r in results)
         requests.append({
             'custom_id': f'claim-{post.pk}-{i}',
-            'params': {'model': settings.MODEL_VERDICT, 'max_tokens': 1500,
+            'params': {'model': model_for('verdict'), 'max_tokens': 1500,
                        'system': prompts.VERDICT_SYSTEM,
                        'messages': [{'role': 'user', 'content':
                            # 4.3-A.7: el lote manda EXACTAMENTE el mismo payload que

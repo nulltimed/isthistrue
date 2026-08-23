@@ -41,7 +41,8 @@ def date_event(post):
                f"FECHA DE SUBIDA (tope superior): "
                f"{subida.date().isoformat() if subida else '(desconocida)'}\n\n"
                f"TRANSCRIPCION (fragmento):\n{cuerpo}")
-    datos = client.call_json(settings.MODEL_CHEAP, prompts.DATING_SYSTEM, payload,
+    from apps.agents.catalog import model_for
+    datos = client.call_json(model_for('dating'), prompts.DATING_SYSTEM, payload,
                              max_tokens=400, mock_payload=MOCK_DATING)
     if 'error' in datos:
         logger.warning('Datación fallida en el post %s: %s', post.pk, datos.get('error'))

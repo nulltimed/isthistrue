@@ -2357,3 +2357,131 @@ class Pase44B(TestCase):
         self.assertEqual(ClaimAppearance.objects.filter(segment__post=post).count(), 0)
         post.refresh_from_db()
         self.assertEqual(post.status, 'FULL_QUEUED')
+
+
+class Pase44C(TestCase):
+    """4.4-C — el panel de modelos, la transcripción entera y el vigía nocturno.
+
+    David: «crea un panel para el admin donde pueda establecer los modelos usados
+    para cada situación». Y eligió LIBERTAD TOTAL con aviso de coste, no candados.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def test_cada_tarea_tiene_modelo_y_metodo_de_envio(self):
+        from apps.agents import catalog
+        for clave in catalog.TASK_KEYS:
+            self.assertIn(catalog.model_for(clave), catalog.BY_ID, clave)
+            self.assertIn(catalog.delivery_for(clave), catalog.DELIVERY_KEYS, clave)
+
+    def test_el_panel_manda_sobre_el_valor_de_fabrica(self):
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='model_verdict',
+                                               defaults={'value': 'claude-opus-4-8'})
+        self.assertEqual(catalog.model_for('verdict'), 'claude-opus-4-8')
+
+    def test_un_modelo_inventado_en_la_base_se_ignora(self):
+        """Lista cerrada (decisión de David): una errata no puede dejar la web
+        sin analizar."""
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='model_sweep',
+                                               defaults={'value': 'gpt-lo-que-sea'})
+        self.assertIn(catalog.model_for('sweep'), catalog.BY_ID)
+
+    def test_el_suplente_nunca_es_peor_que_el_titular(self):
+        """Decisión de David: «un escalón por encima en calidad, nunca por debajo»."""
+        from apps.agents import catalog
+        for mid, _l, tier, _pi, _po in catalog.CATALOG:
+            sup = catalog.substitute(mid)
+            if sup:
+                self.assertGreater(catalog.tier(sup), tier, f'{mid} → {sup}')
+
+    def test_el_mejor_modelo_se_queda_sin_suplente(self):
+        from apps.agents import catalog
+        mejor = max(catalog.CATALOG, key=lambda m: m[2])[0]
+        self.assertEqual(catalog.substitute(mejor), '')
+
+    def test_la_memoria_abarata_la_transcripcion_entera(self):
+        """Sin caché, mandar el texto 80 veces multiplica la factura por más de
+        dos. Con caché, sube un 17%. Es la diferencia entre asumible y no."""
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                               defaults={'value': 'direct'})
+        con_memoria = catalog.cost_per_hour_eur(task='verdict')
+        SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                               defaults={'value': 'batch'})
+        por_correo = catalog.cost_per_hour_eur(task='verdict')
+        self.assertLess(con_memoria, por_correo)
+
+    def test_avisa_cuando_la_combinacion_es_lo_peor_de_los_dos(self):
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                               defaults={'value': 'batch'})
+        self.assertIn('24 h', catalog.warning_for('verdict'))
+
+    def test_el_expediente_lleva_marcas_de_tiempo_y_metadatos(self):
+        """Lo que pidió David: transcripción entera marcada con su marca de
+        tiempo, la oración con contexto, y los metadatos del vídeo."""
+        from apps.agents.verdict import transcript_dossier
+        from apps.analysis.models import TranscriptSegment
+        autor = make_user(username='exp', email='exp@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/exp1',
+                                   title='DEBATE 23J', duration_seconds=720)
+        TranscriptSegment.objects.create(post=post, start_seconds=125, end_seconds=130,
+                                         text='Somos 750.000 en el campo.')
+        d = transcript_dossier(post)
+        self.assertIn('DEBATE 23J', d)
+        self.assertIn('[02:05]', d)
+        self.assertIn('750.000', d)
+        self.assertIn('FICHA DEL VÍDEO', d)
+
+    def test_el_expediente_es_identico_entre_llamadas(self):
+        """Si cambiara byte a byte, la memoria no serviría y se pagaría el texto
+        entero cada vez."""
+        from apps.agents.verdict import transcript_dossier
+        from apps.analysis.models import TranscriptSegment
+        autor = make_user(username='exp2', email='exp2@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/exp2', title='X')
+        TranscriptSegment.objects.create(post=post, start_seconds=1, end_seconds=2, text='a')
+        self.assertEqual(transcript_dossier(post), transcript_dossier(post))
+
+    def test_el_veredicto_guarda_con_que_modelo_se_emitio(self):
+        from apps.wiki.services import upsert_claim
+        from apps.analysis.models import TranscriptSegment
+        autor = make_user(username='mu', email='mu@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/mu1', title='X')
+        TranscriptSegment.objects.create(post=post, start_seconds=0, end_seconds=3,
+                                         text='Una afirmación.')
+        c = upsert_claim(post, {'text': 'Una afirmación.', 'segment_index': 0},
+                         {'color': 'GREEN', 'what_is_claimed': 'x',
+                          'model_used': 'claude-opus-4-8'}, sources_ok=True)
+        self.assertEqual(c.model_used, 'claude-opus-4-8')
+
+    def test_el_panel_de_modelos_responde_y_guarda(self):
+        root = make_user(username='root44c', email='root44c@example.org',
+                         is_superuser=True, is_staff=True)
+        self.client.force_login(root)
+        r = self.client.get('/panel/modelos/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Modelo', r.content.decode())
+        self.client.post('/panel/modelos/', {'model_verdict': 'claude-opus-4-8',
+                                             'delivery_verdict': 'direct'})
+        from apps.agents import catalog
+        self.assertEqual(catalog.model_for('verdict'), 'claude-opus-4-8')
+
+    def test_el_vigia_apunta_la_salud_de_cada_modelo(self):
+        from apps.panel.tasks import check_models
+        from apps.panel.models import ModelHealth
+        check_models()
+        self.assertGreater(ModelHealth.objects.count(), 0)
+        self.assertTrue(all(h.ok for h in ModelHealth.objects.all()))
+
+    def test_el_vigia_corre_todos_los_dias(self):
+        from config.celery import app
+        self.assertIn('comprobar-modelos', app.conf.beat_schedule)

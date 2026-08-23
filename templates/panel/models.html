@@ -1,0 +1,60 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Modelos" %}{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' with cur='panel_models' %}
+<h1>{% icon 'gauge' 22 %} {% trans "Qué modelo hace cada cosa" %}</h1>
+
+{# 4.4-C: el tutorial vive AQUI, no en un manual aparte que nadie abre. #}
+<details class="tutorial" open>
+  <summary><strong>{% trans "Cómo funciona esto (léelo una vez)" %}</strong></summary>
+  <p>{% trans "Cada tarea la puede hacer un modelo distinto, igual que en una cocina cada plato lo hace un cocinero. Aquí eliges quién hace qué." %}</p>
+  <p><strong>{% trans "Y además, cómo se le envía el trabajo." %}</strong> {% trans "Imagina que la transcripción de un vídeo es un libro gordo, y que verificar cada afirmación es hacerle una pregunta a ese libro. En una hora de vídeo son unas 80 preguntas." %}</p>
+  <ul>
+    <li><strong>{% trans "Por correo (lotes)" %}</strong>: {% trans "metes cada pregunta en un sobre. El sello vale la mitad, pero en cada sobre va una fotocopia del libro entero, y las respuestas tardan hasta 24 horas." %}</li>
+    <li><strong>{% trans "En el mostrador (directo)" %}</strong>: {% trans "dejas el libro encima y haces las 80 preguntas seguidas. El libro se fotocopia una sola vez y te contestan en minutos." %}</li>
+  </ul>
+  <p class="hint">{% trans "Salen casi igual de precio, pero uno tarda un día y el otro minutos. Lo que NO conviene es mezclarlos mal: enviar por correo la transcripción entera es pagar 80 fotocopias y encima esperar." %}</p>
+  <p class="hint">{% trans "Debajo de todo esto sigue el fusible del presupuesto: aunque configures lo más caro en todas las tareas, cuando se agote el depósito diario el sistema para solo. El daño máximo de un despiste es un día, no la cuenta entera." %}</p>
+</details>
+
+<div class="cost-banner">
+  <strong>{% blocktrans with c=cost_now %}Coste estimado de una hora de vídeo con la configuración actual: {{ c }} €{% endblocktrans %}</strong>
+  <span class="hint">{% blocktrans with c=cost_light %}Sin transcripción entera sería {{ c }} €{% endblocktrans %}</span>
+</div>
+
+<form method="post">{% csrf_token %}
+  <div class="setting-row">
+    <span class="setting-control"><input type="checkbox" class="toggle" id="ft" name="full_transcript" {% if full_transcript %}checked{% endif %}><label class="toggle-track" for="ft" aria-hidden="true"></label></span>
+    <div class="setting-text"><label for="ft"><strong>{% trans "Enviar la transcripción entera con cada veredicto" %}</strong></label>
+      <p class="hint">{% trans "Con marcas de tiempo y los datos del vídeo. Mejora mucho la calidad —sin el debate completo, «estos dos hombres» no se entiende— y encarece. En el mostrador, el texto se paga una sola vez." %}</p></div>
+  </div>
+
+  {% for r in rows %}
+  <div class="model-row">
+    <div class="model-head">
+      <strong>{{ r.label }}</strong>
+      <span class="hint">{% blocktrans with v=r.times %}Se ejecuta: {{ v }} por vídeo{% endblocktrans %}</span>
+    </div>
+    <div class="model-controls">
+      <label>{% trans "Modelo" %}
+        <select name="model_{{ r.key }}">
+          {% for id, nombre, tier, pin, pout in catalog %}
+          <option value="{{ id }}" {% if id == r.model %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M</option>
+          {% endfor %}
+        </select></label>
+      <label>{% trans "Envío" %}
+        <select name="delivery_{{ r.key }}">
+          {% for id, nombre in deliveries %}
+          <option value="{{ id }}" {% if id == r.delivery %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select></label>
+    </div>
+    <p class="hint">{% blocktrans with s=r.substitute %}Si no responde, lo sustituye: {{ s }}{% endblocktrans %}
+      {% if r.health %}· {% if r.health.ok %}{% trans "comprobado" %}{% else %}<strong class="ko">{% trans "NO RESPONDE" %}</strong>{% endif %} {{ r.health.checked_at|date:'d/m H:i' }}{% endif %}</p>
+    {% if r.warning %}<p class="warning">{% icon 'flag' 14 %} {{ r.warning }}</p>{% endif %}
+  </div>
+  {% endfor %}
+
+  <button class="wide">{% trans "Guardar" %}</button>
+</form>
+{% endblock %}

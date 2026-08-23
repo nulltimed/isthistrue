@@ -38,6 +38,11 @@ class Claim(models.Model):
     # años y ROJO mirando la serie completa de la EPA desde 1976. El lector tiene
     # derecho a discrepar del criterio, no solo del dato.
     temporal_basis = models.CharField(max_length=300, blank=True, default='')
+    # 4.4-C (decisión de David): con qué modelo se emitió ESTE veredicto. Dentro
+    # de unos meses permite comparar si Sonnet acierta más que Opus en este caso
+    # concreto — con datos propios, no con lo que diga un blog. Y marca los
+    # veredictos que emitió un suplente cuando el titular no respondía.
+    model_used = models.CharField(max_length=60, blank=True, default='')
     consolidated = models.BooleanField(default=False)
     what_is_claimed = models.TextField(blank=True)
     what_evidence_says = models.TextField(blank=True)

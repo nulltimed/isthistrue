@@ -486,7 +486,8 @@ def opus_rescan_segment(segment_id):
     context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                         for r in results)
     payload = f"CLAIM: {seg.text}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"
-    v = client.call_json(settings.MODEL_PREMIUM, prompts.VERDICT_SYSTEM,
+    from apps.agents.catalog import model_for
+    v = client.call_json(model_for('deep'), prompts.VERDICT_SYSTEM,
                          payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
     if 'error' not in v:
         idx = list(seg.post.transcript_segments.all()).index(seg)
@@ -512,7 +513,8 @@ def opus_rescan(post_id):
     post.opus_rescanned = True
     post.save(update_fields=['opus_rescanned'])
     from apps.agents import verdict as verdict_agent
-    verdict_agent.run(post, model=settings.MODEL_PREMIUM)  # la firma real es run(post, model=None)
+    from apps.agents.catalog import model_for as _mf
+    verdict_agent.run(post, model=_mf('deep'))  # la firma real es run(post, model=None)
     from apps.panel.services import alert_admin
     alert_admin('Reescaneo Opus ejecutado',
                 f'Post {post.pk} supero el umbral de votos y fue re-verificado con Opus.')

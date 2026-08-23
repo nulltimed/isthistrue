@@ -108,6 +108,54 @@ SETTINGS_DEF = [
 
 
 @staff_member_required
+def models_panel(request):
+    """4.4-C: qué modelo y qué método de envío usa cada tarea.
+
+    David eligió LIBERTAD TOTAL con aviso de coste (ronda 1), no prohibiciones:
+    «la libertad se defiende con información, no con candados». Debajo sigue el
+    airbag del presupuesto: aunque configure lo más caro en todo, al agotarse el
+    depósito diario el sistema para solo. El daño máximo de un despiste es un día.
+    """
+    from apps.agents import catalog
+    if request.method == 'POST':
+        for clave in catalog.TASK_KEYS:
+            modelo = request.POST.get(f'model_{clave}', '')
+            if modelo in catalog.BY_ID:
+                SystemSetting.objects.update_or_create(
+                    key=f'model_{clave}', defaults={'value': modelo})
+            envio = request.POST.get(f'delivery_{clave}', '')
+            if envio in catalog.DELIVERY_KEYS:
+                SystemSetting.objects.update_or_create(
+                    key=f'delivery_{clave}', defaults={'value': envio})
+        SystemSetting.objects.update_or_create(
+            key='full_transcript_verdict',
+            defaults={'value': '1' if request.POST.get('full_transcript') == 'on' else '0'})
+        AuditLog.objects.create(user=request.user, action='update_models',
+                                detail=f'coste/hora estimado: {catalog.cost_per_hour_eur()} EUR')
+        messages.success(request, f'Guardado. Coste estimado de una hora de vídeo: '
+                                  f'{catalog.cost_per_hour_eur()} €.')
+        return redirect('panel_models')
+
+    from .models import ModelHealth
+    salud = {h.model_id: h for h in ModelHealth.objects.all()}
+    filas = []
+    for clave, etiqueta, _def, veces in catalog.TASKS:
+        actual = catalog.model_for(clave)
+        filas.append({
+            'key': clave, 'label': etiqueta, 'times': veces,
+            'model': actual, 'delivery': catalog.delivery_for(clave),
+            'substitute': catalog.label(catalog.substitute(actual)),
+            'warning': catalog.warning_for(clave),
+            'health': salud.get(actual),
+        })
+    return render(request, 'panel/models.html', {
+        'rows': filas, 'catalog': catalog.CATALOG, 'deliveries': catalog.DELIVERY,
+        'full_transcript': catalog.full_transcript_enabled_setting(),
+        'cost_now': catalog.cost_per_hour_eur(),
+        'cost_light': catalog.cost_per_hour_eur(full_transcript=False),
+    })
+
+
 def settings_panel(request):
     """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro.
     4.3-F: tambien el dinero. El limite diario NO se escribe: se deriva del mensual

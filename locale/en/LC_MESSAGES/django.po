@@ -1088,3 +1088,60 @@ msgstr "🔍 Checked by the system, no conclusion reached"
 #: pase 4.4-B
 msgid "👁 No verificable solo con audio"
 msgstr "👁 Not verifiable from audio alone"
+
+msgid "Panel · Modelos"
+msgstr "Panel · Models"
+
+msgid "Modelos"
+msgstr "Models"
+
+msgid "Modelo"
+msgstr "Model"
+
+msgid "Envío"
+msgstr "Delivery"
+
+msgid "Qué modelo hace cada cosa"
+msgstr "Which model does what"
+
+msgid "Cómo funciona esto (léelo una vez)"
+msgstr "How this works (read it once)"
+
+msgid "Cada tarea la puede hacer un modelo distinto, igual que en una cocina cada plato lo hace un cocinero. Aquí eliges quién hace qué."
+msgstr "Each task can be done by a different model, just as each dish in a kitchen has its own cook. Here you choose who does what."
+
+msgid "Y además, cómo se le envía el trabajo."
+msgstr "And also how the work is sent to them."
+
+msgid "Imagina que la transcripción de un vídeo es un libro gordo, y que verificar cada afirmación es hacerle una pregunta a ese libro. En una hora de vídeo son unas 80 preguntas."
+msgstr "Think of a video's transcript as a thick book, and of checking each claim as asking that book a question. An hour of video means about 80 questions."
+
+msgid "Por correo (lotes)"
+msgstr "By post (batches)"
+
+msgid "metes cada pregunta en un sobre. El sello vale la mitad, pero en cada sobre va una fotocopia del libro entero, y las respuestas tardan hasta 24 horas."
+msgstr "you put each question in an envelope. The stamp costs half, but every envelope carries a photocopy of the whole book, and answers take up to 24 hours."
+
+msgid "En el mostrador (directo)"
+msgstr "At the counter (direct)"
+
+msgid "dejas el libro encima y haces las 80 preguntas seguidas. El libro se fotocopia una sola vez y te contestan en minutos."
+msgstr "you put the book on the counter and ask all 80 questions in a row. The book is photocopied once and you get answers in minutes."
+
+msgid "Salen casi igual de precio, pero uno tarda un día y el otro minutos. Lo que NO conviene es mezclarlos mal: enviar por correo la transcripción entera es pagar 80 fotocopias y encima esperar."
+msgstr "They cost almost the same, but one takes a day and the other minutes. What you should NOT do is mix them badly: posting the whole transcript means paying for 80 photocopies and waiting on top of that."
+
+msgid "Debajo de todo esto sigue el fusible del presupuesto: aunque configures lo más caro en todas las tareas, cuando se agote el depósito diario el sistema para solo. El daño máximo de un despiste es un día, no la cuenta entera."
+msgstr "The budget fuse sits underneath all of this: even if you set the most expensive model everywhere, the system stops on its own once the daily pot runs out. The worst a slip can cost you is one day, not the whole bill."
+
+msgid "Enviar la transcripción entera con cada veredicto"
+msgstr "Send the whole transcript with every verdict"
+
+msgid "Con marcas de tiempo y los datos del vídeo. Mejora mucho la calidad —sin el debate completo, «estos dos hombres» no se entiende— y encarece. En el mostrador, el texto se paga una sola vez."
+msgstr "With timestamps and the video's details. It improves quality a lot — without the full debate, “these two men” makes no sense — and it costs more. At the counter, the text is paid for only once."
+
+msgid "NO RESPONDE"
+msgstr "NOT RESPONDING"
+
+msgid "comprobado"
+msgstr "checked"

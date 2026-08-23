@@ -21,6 +21,11 @@ app.conf.beat_schedule = {
         'schedule': 86400.0,
     },
     # 4.3-E: rescate de analisis colgados (worker muerto a mitad).
+    # 4.4-C: el vigía nocturno de los modelos (una llamada mínima a cada uno).
+    'comprobar-modelos': {
+        'task': 'apps.panel.tasks.check_models',
+        'schedule': 86400.0,
+    },
     'relanzar-analisis-atascados': {
         'task': 'apps.analysis.tasks.relaunch_stuck_analyses',
         'schedule': 3600.0,
