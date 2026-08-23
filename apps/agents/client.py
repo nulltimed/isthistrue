@@ -81,6 +81,93 @@ def call_full(model, system, user_content, max_tokens=2000, mock_payload=None,
     raise ultimo
 
 
+def call_with_search(model, system, user_content, max_tokens=2000,
+                     mock_payload=None, cacheable=None, max_searches=3,
+                     allow_substitute=True):
+    """4.4-E (decision de David): "todo por Claude". El MODELO busca sus fuentes.
+
+    Devuelve (texto, modelo_usado, n_busquedas). La herramienta de busqueda web
+    de Anthropic cuesta 10 $/1.000 consultas mas los tokens de los resultados;
+    `max_searches` es el tope por llamada (ajuste web_searches_per_claim).
+
+    Los buscadores dejan de bloquearnos porque ya no vamos de robot anonimo:
+    vamos de cliente identificado de Anthropic. A cambio, cada busqueda se paga.
+    """
+    if settings.MOCK_AGENTS:
+        return (json.dumps(mock_payload if mock_payload is not None
+                           else {'simulated': True}), model, 0)
+
+    import anthropic
+    from apps.agents.catalog import substitute, supports_web
+
+    intentos = [model]
+    if allow_substitute:
+        sup = substitute(model, need_web=True)
+        if sup:
+            intentos.append(sup)
+
+    ultimo = None
+    for i, modelo in enumerate(intentos):
+        if not supports_web(modelo):
+            ultimo = RuntimeError(f'{modelo} no permite búsqueda web')
+            logger.warning('Modelo %s sin búsqueda web: no sirve para esta tarea', modelo)
+            continue
+        try:
+            client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+            if cacheable and len(cacheable) >= MIN_CACHE_CHARS:
+                contenido = [
+                    {'type': 'text', 'text': cacheable,
+                     'cache_control': {'type': 'ephemeral'}},
+                    {'type': 'text', 'text': user_content},
+                ]
+            else:
+                contenido = ([{'type': 'text', 'text': cacheable + '\n\n' + user_content}]
+                             if cacheable else user_content)
+            msg = client.messages.create(
+                model=modelo, max_tokens=max_tokens, system=system,
+                tools=[{'type': 'web_search_20250305', 'name': 'web_search',
+                        'max_uses': max_searches}],
+                messages=[{'role': 'user', 'content': contenido}])
+            texto = ''.join(b.text for b in msg.content
+                            if getattr(b, 'type', '') == 'text')
+            usos = getattr(getattr(msg, 'usage', None), 'server_tool_use', None)
+            n_busquedas = getattr(usos, 'web_search_requests', 0) if usos else 0
+            if i > 0:
+                logger.warning('SUPLENTE en uso: %s no respondió, contestó %s',
+                               model, modelo)
+                _avisar_suplente(model, modelo)
+            return (texto, modelo, n_busquedas)
+        except Exception as exc:
+            ultimo = exc
+            logger.warning('Modelo %s falló (%r)', modelo, exc)
+    raise ultimo
+
+
+def call_search_json(model, system, user_content, max_tokens=2000,
+                     mock_payload=None, cacheable=None, max_searches=3):
+    """call_with_search + parseo JSON. Devuelve (datos, modelo_usado)."""
+    try:
+        raw, usado, _n = call_with_search(model, system, user_content, max_tokens,
+                                          mock_payload, cacheable, max_searches)
+    except Exception as exc:
+        return ({'error': 'api', 'detail': repr(exc)[:200]}, model)
+    raw = raw.strip().removeprefix('```json').removesuffix('```').strip()
+    # Con la busqueda activada el modelo puede anteponer texto al JSON: se
+    # localiza el primer bloque { ... } equilibrado.
+    if not raw.startswith('{'):
+        inicio = raw.find('{')
+        if inicio >= 0:
+            raw = raw[inicio:]
+    fin = raw.rfind('}')
+    if fin > 0:
+        raw = raw[:fin + 1]
+    try:
+        datos = json.loads(raw)
+    except json.JSONDecodeError:
+        datos = {'error': 'json_parse', 'raw': raw[:500]}
+    return (datos, usado)
+
+
 def call(model, system, user_content, max_tokens=2000, mock_payload=None,
          cacheable=None):
     """Compatibilidad: quien no necesite saber quién contestó sigue usando call()."""

@@ -1151,3 +1151,6 @@ msgstr "Re-run analysis"
 
 msgid "Tu voto de moderación relanza el análisis al instante"
 msgstr "Your moderator vote re-runs the analysis right away"
+
+msgid "sin búsqueda web"
+msgstr "no web search"

@@ -91,6 +91,9 @@ SETTINGS_DEF = [
      'sustituye al voto manual: por encima de esta cifra, esperan a mañana. 0 lo desactiva.', 'num'),
     ('deep_scan_votes', 'Votos para el reanálisis profundo',
      'Votos que hacen falta para volver a mirar una afirmación indecisa con el modelo premium.', 'num'),
+    ('web_searches_per_claim', 'Búsquedas web por afirmación',
+     'Cuántas búsquedas puede hacer el modelo para verificar cada afirmación (10 $ por cada '
+     '1.000). Más búsquedas = mejores fuentes y más coste.', 'num'),
     ('search_retries', 'Reintentos de búsqueda',
      'Cuántas veces se reintenta una búsqueda vacía antes de darla por perdida. Los buscadores '
      'suspenden el motor cuando se les pide demasiado seguido.', 'num'),

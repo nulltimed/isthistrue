@@ -2,6 +2,7 @@
 from django.conf import settings
 from apps.agents import client, prompts, search, sweep
 
+# 4.4-E: el mock trae fuentes para que el circuito simulado se parezca al real.
 MOCK_VERDICT = {
     'color': 'GREEN',
     'what_is_claimed': '[SIMULADO] La torre Eiffel mide 300 m y se terminó en 1889.',
@@ -72,38 +73,33 @@ def run(post, model=None):
     # Va como bloque CACHEABLE: se paga una vez y las 80 afirmaciones lo releen a
     # una décima parte. Sin eso, esta decisión multiplicaría la factura por 2,6.
     expediente = transcript_dossier(post) if full_transcript_enabled() else None
+    from apps.agents.catalog import model_for, web_searches_per_claim
+    tope = web_searches_per_claim()
     for c in sw['claims']:
         if c.get('kind') != 'FACTUAL':
             continue          # una opinion no se verifica: ni se busca, ni se paga
-        n = search.budget_for_claim(c)
-        results, sources_ok = search.search_with_status(c['text'], max_results=n)
-        if not sources_ok or not results:
-            # Decision de David (2026-08-23): "el sistema lo ha mirado y no se ha
-            # decidido", con boton de reanalisis profundo. NO es lo mismo que
-            # "no verificable": aqui hay un hecho comprobable y nos faltaron datos.
-            upsert_claim(post, c, {
-                'color': 'UNDECIDED',
-                'what_is_claimed': c['text'],
-                'what_evidence_says': 'No se han podido reunir fuentes para esta afirmación.',
-                'the_difference': 'Falta base documental. Pide el reanálisis profundo '
-                                  'si crees que merece una segunda mirada.',
-                'sources': [], 'sensitive': None}, sources_ok=False)
-            continue
-        context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
-                            for r in results)
+        # 4.4-E (decision de David): "todo por Claude". Ya no hay documentalista
+        # aparte: EL MODELO busca sus fuentes con la herramienta web de Anthropic
+        # (10 $/1.000 + tokens), con las fuentes oficiales por delante y el tope
+        # del panel. SearXNG queda fuera del circuito de veredictos: los
+        # buscadores le cerraban la puerta al servidor y el semaforo se quedaba
+        # en 🔍 por falta de papeles.
         payload = (f"CLAIM: {c['text']}\n\n"
                    + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
                    + f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
                      f"{c.get('context') or c['text']}\n\n"
-                     f"RESULTADOS DE BUSQUEDA:\n{context}")
-        from apps.agents.catalog import model_for
-        v, usado = client.call_json(model or model_for('verdict'),
-                                    prompts.VERDICT_SYSTEM, payload, max_tokens=1500,
-                                    mock_payload=MOCK_VERDICT, cacheable=expediente,
-                                    with_model=True)
+                     f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
+                     f"organismos oficiales (INE, Eurostat, BOE, bancos centrales, "
+                     f"OMS...), prensa solo como apoyo. Lista en \"sources\" las URLs "
+                     f"reales que uses. Si no encuentras nada útil: UNDECIDED.")
+        v, usado = client.call_search_json(model or model_for('verdict'),
+                                           prompts.VERDICT_SYSTEM, payload,
+                                           max_tokens=1500, mock_payload=MOCK_VERDICT,
+                                           cacheable=expediente, max_searches=tope)
         if 'error' not in v:
             v['model_used'] = usado
-            upsert_claim(post, c, v, sources_ok=sources_ok)
+            tiene_fuentes = bool(v.get('sources'))
+            upsert_claim(post, c, v, sources_ok=tiene_fuentes)
 
 
 def context_for(segments, i, before, after):

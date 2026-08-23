@@ -211,6 +211,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'delivery_dating': 'direct', 'delivery_verdict': 'direct',
     'delivery_moderation': 'direct', 'delivery_deep': 'direct',
     'full_transcript_verdict': '1',     # decision de David: transcripcion entera
+    'web_searches_per_claim': '3',      # 4.4-E: tope de busquedas del modelo por afirmacion
     # 4.4-B: el semaforo.
     'auto_verify_daily_cap': '5',       # videos que se verifican solos al dia
     'search_retries': '2',              # reintentos cuando los motores se suspenden

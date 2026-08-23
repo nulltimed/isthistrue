@@ -479,26 +479,26 @@ def opus_rescan_segment(segment_id, forced=False):
         return 'budget_exhausted'
     seg.opus_rescanned = True
     seg.save(update_fields=['opus_rescanned'])
-    from apps.agents import search, client, prompts
-    from apps.agents.verdict import MOCK_VERDICT
+    from apps.agents import client, prompts
+    from apps.agents.verdict import MOCK_VERDICT, transcript_dossier
     from apps.wiki.services import upsert_claim
-    results, sources_ok = search.search_with_status(seg.text, max_results=5)
-    context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
-                        for r in results)
-    # 4.4-D (orden de David): al modelo alto se le pasa la TRANSCRIPCION ENTERA con
-    # sus marcas de tiempo, los metadatos del video y la frase con su contexto. El
-    # reanalisis profundo es justo donde mas falta hace: si se pide una segunda
-    # mirada es porque la primera, con la frase suelta, no bastó.
-    from apps.agents.verdict import transcript_dossier
-    from apps.agents.catalog import model_for
+    from apps.agents.catalog import model_for, web_searches_per_claim
+    # 4.4-D/E (ordenes de David): expediente COMPLETO y el modelo busca sus
+    # propias fuentes con la herramienta web de Anthropic. El reanalisis profundo
+    # es justo donde mas falta hace: si alguien pide una segunda mirada es porque
+    # la primera no basto.
     expediente = transcript_dossier(seg.post)
     fecha = seg.post.event_date.isoformat() if seg.post.event_date else None
+    tope = web_searches_per_claim() + 2      # la segunda mirada busca un poco mas
     payload = (f"CLAIM: {seg.text}\n\n"
                + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
-               + f"RESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}")
-    v, usado = client.call_json(model_for('deep'), prompts.VERDICT_SYSTEM,
-                                payload, max_tokens=1500, mock_payload=MOCK_VERDICT,
-                                cacheable=expediente, with_model=True)
+               + f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
+                 f"organismos oficiales, prensa solo como apoyo. Lista en "
+                 f"\"sources\" las URLs reales que uses. Sin nada útil: UNDECIDED.")
+    v, usado = client.call_search_json(model_for('deep'), prompts.VERDICT_SYSTEM,
+                                       payload, max_tokens=1500,
+                                       mock_payload=MOCK_VERDICT,
+                                       cacheable=expediente, max_searches=tope)
     if 'error' not in v:
         v['model_used'] = usado
         # Mismo bug de anclaje que cerró el 4.4-B, y seguía vivo AQUI: el Meta
@@ -506,7 +506,7 @@ def opus_rescan_segment(segment_id, forced=False):
         # Con dos personas pisandose, el veredicto se pegaba a la frase equivocada.
         idx = list(seg.post.transcript_segments.order_by('start_seconds', 'pk')).index(seg)
         upsert_claim(seg.post, {'text': seg.text, 'segment_index': idx},
-                     v, sources_ok=sources_ok)
+                     v, sources_ok=bool(v.get('sources')))
         notify_post_event(seg.post, 'analysis',
                           'Una oración muy discutida fue re-verificada con el modelo premium')
     return 'rescanned'

@@ -38,8 +38,8 @@
     <div class="model-controls">
       <label>{% trans "Modelo" %}
         <select name="model_{{ r.key }}">
-          {% for id, nombre, tier, pin, pout in catalog %}
-          <option value="{{ id }}" {% if id == r.model %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M</option>
+          {% for id, nombre, tier, pin, pout, web in catalog %}
+          <option value="{{ id }}" {% if id == r.model %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M{% if not web %} · {% trans "sin búsqueda web" %}{% endif %}</option>
           {% endfor %}
         </select></label>
       <label>{% trans "Envío" %}

@@ -2600,3 +2600,92 @@ class Pase44D(TestCase):
         self.assertIn('cacheable', capturado)
         self.assertIn('FICHA DEL VÍDEO', capturado['cacheable'])
         self.assertIn('[00:05]', capturado['cacheable'])
+
+
+class Pase44E(TestCase):
+    """4.4-E — «todo por Claude»: el modelo busca sus propias fuentes.
+
+    Decisión de David (2026-08-23) tras el bloqueo de SearXNG por los buscadores:
+    las fuentes las trae la herramienta de búsqueda web de Anthropic (10 $/1.000 +
+    tokens). Se paga más por búsqueda, pero desaparecen los portazos: cliente
+    identificado, no robot anónimo.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def test_las_tareas_con_web_avisan_si_el_modelo_no_busca(self):
+        """Petición literal de David: «Este modelo no permite búsqueda web»."""
+        from apps.agents import catalog
+        from unittest.mock import patch
+        ciego = ('modelo-ciego', 'Ciego', 2, 3.0, 15.0, False)
+        with patch.object(catalog, 'CATALOG', catalog.CATALOG + [ciego]), \
+             patch.object(catalog, 'BY_ID', {**catalog.BY_ID, 'modelo-ciego': ciego}):
+            from apps.panel.models import SystemSetting
+            SystemSetting.objects.update_or_create(key='model_verdict',
+                                                   defaults={'value': 'modelo-ciego'})
+            aviso = catalog.warning_for('verdict')
+        self.assertIn('no permite búsqueda web', aviso)
+
+    def test_los_seis_modelos_actuales_saben_buscar(self):
+        from apps.agents import catalog
+        for m in catalog.CATALOG:
+            self.assertTrue(catalog.supports_web(m[0]), m[0])
+
+    def test_el_suplente_de_una_tarea_web_tambien_sabe_buscar(self):
+        from apps.agents import catalog
+        for m in catalog.CATALOG:
+            sup = catalog.substitute(m[0], need_web=True)
+            if sup:
+                self.assertTrue(catalog.supports_web(sup), f'{m[0]} → {sup}')
+
+    def test_el_veredicto_ya_no_llama_al_documentalista_viejo(self):
+        """SearXNG queda fuera del circuito: si algo volviera a llamarlo desde el
+        veredicto, volverían los portazos."""
+        from apps.agents import verdict as va
+        from apps.analysis.models import TranscriptSegment
+        from unittest.mock import patch
+        autor = make_user(username='e44', email='e44@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/e441',
+                                   title='X', status='DONE')
+        TranscriptSegment.objects.create(post=post, start_seconds=1, end_seconds=3,
+                                         text='Afirmación.', signal='FACTUAL_UNVERIFIED')
+        with patch.object(va.search, 'search_with_status') as viejo:
+            va.run(post)
+        viejo.assert_not_called()
+
+    def test_el_veredicto_simulado_guarda_fuentes_y_modelo(self):
+        from apps.agents import verdict as va
+        from apps.analysis.models import TranscriptSegment
+        from apps.wiki.models import Claim
+        autor = make_user(username='e44b', email='e44b@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/e442',
+                                   title='X', status='DONE')
+        TranscriptSegment.objects.create(post=post, start_seconds=1, end_seconds=3,
+                                         text='La torre mide 300 m.',
+                                         signal='FACTUAL_UNVERIFIED')
+        va.run(post)
+        c = Claim.objects.get(text_original='La torre mide 300 m.')
+        self.assertTrue(c.sources.exists())
+        self.assertTrue(c.sources_ok)
+
+    def test_el_tope_de_busquedas_se_lee_del_panel(self):
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='web_searches_per_claim',
+                                               defaults={'value': '5'})
+        self.assertEqual(catalog.web_searches_per_claim(), 5)
+
+    def test_el_coste_estimado_incluye_las_busquedas(self):
+        """Una hora ≈ 80 afirmaciones × tope de búsquedas × 1 céntimo: tiene que
+        notarse en el número del panel."""
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='web_searches_per_claim',
+                                               defaults={'value': '1'})
+        barato = catalog.cost_per_hour_eur(task='verdict')
+        SystemSetting.objects.update_or_create(key='web_searches_per_claim',
+                                               defaults={'value': '5'})
+        caro = catalog.cost_per_hour_eur(task='verdict')
+        self.assertGreater(caro, barato)

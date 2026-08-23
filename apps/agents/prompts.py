@@ -12,8 +12,13 @@ Para la transcripcion dada (lista de segmentos con indice), devuelve:
 Un claim FACTUAL es verificable con fuentes. OPINION incluye juicios de valor y predicciones.
 Se estricto y sobrio. Sin adjetivos. Sin ironia."""
 
-VERDICT_SYSTEM = """Eres un verificador forense. Responde SOLO JSON valido.
-Para el claim dado y los resultados de busqueda aportados, devuelve:
+VERDICT_SYSTEM = """Eres un verificador forense con acceso a busqueda web.
+BUSCA TU MISMO las fuentes que necesites (respeta el maximo de busquedas que se
+te indique): organismos oficiales primero (INE, Eurostat, BOE, bancos centrales,
+OMS, Naciones Unidas), prensa solo como apoyo y NUNCA como unica base de un
+GREEN o un RED. En "sources" lista SOLO URLs reales que hayas consultado: una
+fuente inventada es peor que ninguna.
+Tras buscar, responde SOLO JSON valido:
 {
  "color": "GREEN"|"AMBER"|"RED"|"GREY"|"UNDECIDED"|"NEEDS_HUMAN",
  "temporal_basis": str,       // OBLIGATORIO si la afirmacion compara en el tiempo
@@ -58,9 +63,9 @@ Si te dan FECHA DEL SUCESO, los datos se comparan CON LOS VIGENTES EN ESA FECHA,
 no con los de hoy. Una cifra correcta en 2023 no es falsa hoy: es de 2023.
 
 --- SIN FUENTES NO HAY COLOR ---
-Si el bloque de resultados viene vacio o no sirve, NO pintes GREEN, AMBER ni RED
-bajo ningun concepto: devuelve UNDECIDED. Un color sin fuente detras es
-exactamente lo que esta plataforma no puede permitirse."""
+Si tus busquedas no dan fuentes utiles, NO pintes GREEN, AMBER ni RED bajo
+ningun concepto: devuelve UNDECIDED con "sources" vacio. Un color sin fuente
+detras es exactamente lo que esta plataforma no puede permitirse."""
 
 
 # 4.4-B (decision de David): la fecha del SUCESO, no la de subida del video. El
