@@ -187,6 +187,17 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   `web_search_20260209` (Opus 4.6+/Sonnet 4.6) acepta **`allowed_domains`**: convertiria
   «fuentes oficiales primero» de ruego en candado. Propuesto en `docs/06 §39`.
 
+## Lecciones del pase 4.4-F (2026-08-23)
+- **ANTES DE RECREAR CONTENEDORES EN PRODUCCION, comprobar si hay analisis en vuelo**:
+  `Post.objects.filter(status__in=['CHEAP_RUNNING','FULL_RUNNING'])`. Celery acusa recibo antes
+  de ejecutar (`acks_late=False`), asi que reiniciar el worker MATA la tarea, y
+  `relaunch_stuck_analyses` no la rescata hasta las 6 horas. Paso con el post 5 de David.
+- 📊 **Tiempos reales medidos** (post 5, video de 22,8 min): whisper **999 s**, pyannote
+  **2.059 s**, fase barata completa **3.103 s**. **Analizar cuesta 2,3x la duracion del video**
+  y DOS TERCIOS se los lleva la separacion de voces, no la transcripcion.
+- **Con diarizacion disponible, los subtitulos oficiales del video se IGNORAN** y manda whisper
+  (revisa la decision del 4.2.1): los subtitulos vienen en bloques que mezclan hablantes.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`

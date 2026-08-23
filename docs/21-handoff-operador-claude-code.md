@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-23 · Commit en producción: `a54e670` · Estado del repo: pase 4.4-E (todo por Claude: el modelo busca sus fuentes) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-23 · Commit en producción: `dc68fa6` · Estado del repo: pase 4.4-F (atribución de voces) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§39: TODA la historia técnica) y el informe del último pase (`docs/45`).
+> (§1-§40: TODA la historia técnica) y el informe del último pase (`docs/46`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §39) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §40) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -82,6 +82,11 @@ tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 - **collectstatic** ya va en el command del web (cadena `ensure_superuser && collectstatic
   && gunicorn`) — CONSÉRVALA si algo toca los compose. Tras collectstatic manual: restart web
   (WhiteNoise indexa al arrancar).
+- **ANTES DE TOCAR PRODUCCIÓN, MIRAR SI HAY ANÁLISIS EN VUELO**:
+  `Post.objects.filter(status__in=['CHEAP_RUNNING','FULL_RUNNING'])`. Recrear contenedores mata
+  la tarea (Celery `acks_late=False`) y `relaunch_stuck_analyses` no la rescata hasta las
+  **6 horas**. Pasó en el 4.4-F con el post 5 de David, en plena fase cara. Si los hay: avisar
+  y esperar, o avisar y asumirlo explícitamente en el informe.
 - **RECONSTRUIR LA IMAGEN SIEMPRE**, cambie o no el `Dockerfile`: hace `COPY . .` y el único
   volumen es `media`, así que **el código vive DENTRO de la imagen**. `up -d --force-recreate`
   sin `build` arranca con el código anterior y `migrate` dice «no migrations to apply» con las
@@ -158,7 +163,17 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `a54e670` — **pase 4.4-E**: **«todo por Claude»** — las fuentes las
+- **Producción**: commit `dc68fa6` — **pase 4.4-F**: la **atribución de voces** deja de
+  regalar las frases al hablante que domina. En conversación rápida pyannote emite turnos
+  SOLAPADOS (uno largo del dominante con microturnos ajenos dentro) y «el de más solape» hacía
+  que el envolvente se quedara las interjecciones: el post 5 tenía **565 de 597 frases (95%) en
+  SPEAKER_00**. Ahora entre los turnos que cubren ≥60% gana **el más corto**, whisper lleva
+  `word_timestamps=True` y un fragmento a caballo de dos voces **se parte por palabras**.
+  **Cambio de criterio**: con diarización disponible, los subtítulos oficiales del vídeo se
+  IGNORAN (revisa la decisión del 4.2.1) porque mezclan hablantes en un mismo bloque.
+  📊 **TIEMPOS REALES por fin medidos** (post 5, 22,8 min de vídeo): transcribir **999 s**,
+  diarizar **2.059 s**, fase barata **3.103 s** → **analizar cuesta 2,3× la duración del vídeo**
+  y dos tercios se los lleva pyannote. Sobre el **pase 4.4-E**: **«todo por Claude»** — las fuentes las
   busca el propio modelo con la herramienta `web_search` de Anthropic (`client.call_search_json`,
   tope `web_searches_per_claim=3`); **SearXNG queda fuera del circuito de veredictos** (sigue
   encendido pero nadie lo llama). Resuelve de raíz el bloqueo de buscadores del 4.4-D: el
@@ -305,11 +320,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§39) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§40) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45,46` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |

@@ -772,3 +772,52 @@ a 8 deja margen razonable. **El dato que conviene que tengas presente al diseña
 €/mes actuales de David, el presupuesto de un día entero (3,23 €) **no cubre un vídeo de una
 hora** (3,83 €), y la cola arranca a los 25 minutos. Se lo he puesto en `docs/45 §3` con la
 tabla de escenarios; la decisión es suya.
+
+## 40. Pase 4.4-F aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `dc68fa6`, **CI 240/240 verde a la primera, cero arreglos del operador**).
+Informe en `docs/46`. El parche entró limpio sobre el 4.4-E: no hizo falta el 3-way que
+anticipabas — tus tests van al final pero el hunk de contexto seguía casando.
+
+### Tu arreglo funciona, probado con el caso real sin gastar
+
+Reproduje la situación del post 5 ejecutando `merge_into_sentences` con turnos sintéticos:
+
+```
+turno largo SPEAKER_00 (0-30 s) + microturno SPEAKER_01 (10-11 s):
+  SPEAKER_00: Frase del dominante.
+  SPEAKER_01: Get out.               ← antes se lo quedaba el envolvente ✔
+fragmento a caballo de dos turnos → se parte por palabras ✔
+sin diarización → no fragmenta ni etiqueta ✔
+```
+
+Y el síntoma que describías está confirmado con datos de producción: el post 5 tenía **565 de
+597 frases (95%) atribuidas a SPEAKER_00**, 30 al segundo y 2 al tercero.
+
+### 📊 Los tiempos reales de whisper+pyannote, POR FIN
+
+Lo pediste en el 4.3-A.8 y no había forma de medirlo. Tu propio cronómetro del 4.4-C lo ha
+capturado en el post 5 (22,8 min de vídeo):
+
+```
+transcribir (whisper):     999,3 s  (16,7 min)
+diarizar (pyannote):     2.058,8 s  (34,3 min)   ← el doble que transcribir
+fase barata completa:    3.102,6 s  (51,7 min)
+```
+
+**Analizar cuesta 2,3× la duración del vídeo en tiempo de servidor**, y **dos tercios se los
+lleva la separación de voces**. Una hora de vídeo ≈ 2,3 horas de proceso. Dos consecuencias
+para tu diseño: (1) el aviso de «esto tardará» debería hablar de horas, no de minutos, en
+vídeos largos; (2) si alguna vez hay que recortar, el objetivo es pyannote, no whisper.
+
+### Regla de operación nueva (culpa mía, la asumo)
+
+Recreé los contenedores con el post 5 **en plena fase cara** y la tarea se perdió (Celery
+`acks_late=False`). Tu `relaunch_stuck_analyses` existe pero el umbral son **6 horas**, así que
+no lo rescata hasta la madrugada. Añadido al ritual del handoff: **comprobar
+`CHEAP_RUNNING`/`FULL_RUNNING` antes de tocar producción**.
+
+**Sugerencia para ti**: con la fase barata durando ~52 min en un vídeo de 23 minutos, un umbral
+de 6 horas es razonable para vídeos largos pero deja mucho tiempo muerto en los cortos. Un
+umbral proporcional a la duración del vídeo (p. ej. 3× el tiempo esperado) rescataría antes sin
+arriesgarse a relanzar algo que solo está tardando.
