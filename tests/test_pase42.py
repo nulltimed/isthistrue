@@ -2269,16 +2269,20 @@ class Pase44B(TestCase):
         from apps.agents import verdict as va
         from apps.wiki.models import Claim
         post, seg, _ = self._post_con_frase()
-        llamadas = []
         from unittest.mock import patch
-        with patch.object(va.client, 'call_json',
-                          side_effect=lambda *a, **k: llamadas.append(a) or {'color': 'GREEN'}):
-            with patch.object(va.search, 'search_with_status', return_value=([], False)):
-                va.run(post)
-        self.assertEqual(llamadas, [], 'se ha llamado al modelo caro sin una sola fuente')
+        # 4.4-E: el circuito cambio. Ya no se consulta a SearXNG antes de decidir si
+        # se llama al modelo — el propio modelo busca sus fuentes. La regla de David
+        # sigue siendo la misma y es lo que se comprueba aqui: si el veredicto vuelve
+        # SIN una sola URL, ese color NO se publica, por muy verde que lo pinte el
+        # modelo. La garantia tiene que vivir en el codigo, no en el prompt.
+        with patch.object(va.client, 'call_search_json',
+                          return_value=({'color': 'GREEN', 'what_is_claimed': 'x',
+                                         'sources': []}, 'claude-sonnet-4-6')):
+            va.run(post)
         c = Claim.objects.filter(text_original=seg.text).first()
         self.assertIsNotNone(c)
-        self.assertEqual(c.color, 'UNDECIDED')
+        self.assertEqual(c.color, 'UNDECIDED', 'un verde sin fuentes se ha publicado')
+        self.assertFalse(c.sources_ok)
 
     # ---------- 5. el anclaje ----------
     def test_dos_frases_en_el_mismo_segundo_no_intercambian_su_veredicto(self):
