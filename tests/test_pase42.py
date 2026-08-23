@@ -1963,7 +1963,15 @@ class Pase44A(TestCase):
         # importado a nivel de módulo y el setUp del pase lo usaba a pelo
         # (NameError en los 16 tests de esta clase).
         from django.core.cache import cache
+        from django.conf import settings as s
+        from django.utils import translation
         cache.clear()
+        # El idioma activo es estado GLOBAL DEL HILO: una petición con
+        # Accept-Language: en deja activado el inglés y el cliente de pruebas no
+        # lo restaura al terminar. Sin esto, el test de "los correos siguen en
+        # castellano por defecto" veía el inglés que había dejado el test
+        # anterior — y el fallo dependía del orden de ejecución.
+        translation.activate(s.LANGUAGE_CODE)
 
     # ---------- el catálogo ----------
     def test_el_catalogo_ingles_existe_y_no_tiene_huecos(self):
