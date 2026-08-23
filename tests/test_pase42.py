@@ -2485,3 +2485,118 @@ class Pase44C(TestCase):
     def test_el_vigia_corre_todos_los_dias(self):
         from config.celery import app
         self.assertIn('comprobar-modelos', app.conf.beat_schedule)
+
+
+class Pase44D(TestCase):
+    """4.4-D — el voto del admin relanza el análisis SIEMPRE.
+
+    Orden de David (2026-08-23): «El voto del admin siempre relanzará el análisis».
+
+    Por qué hacía falta: el reanálisis profundo era **inalcanzable**. Por frase
+    pedía 5 personas distintas; por vídeo, un 40% de al menos 50 usuarios
+    verificados. Con el registro cerrado a propósito, nadie podía juntarlos: la
+    rueda de «Reanálisis profundo» del panel de modelos estaba configurada y no la
+    podía usar nadie.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def _post_analizado(self):
+        from apps.analysis.models import TranscriptSegment
+        autor = make_user(username='d44d', email='d44d@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/d44d1',
+                                   title='X', status='DONE')
+        seg = TranscriptSegment.objects.create(post=post, start_seconds=5, end_seconds=9,
+                                               text='Una afirmación discutible.')
+        return post, seg
+
+    def test_el_voto_del_superusuario_relanza_la_frase_al_instante(self):
+        from unittest.mock import patch
+        post, seg = self._post_analizado()
+        root = make_user(username='root44d', email='root44d@example.org',
+                         is_superuser=True, is_staff=True)
+        self.client.force_login(root)
+        with patch('apps.analysis.tasks.opus_rescan_segment.delay') as tarea:
+            self.client.post(f'/oracion/{seg.pk}/votar/down/')
+        tarea.assert_called_once()
+        self.assertTrue(tarea.call_args.kwargs.get('forced'))
+
+    def test_un_usuario_normal_sigue_necesitando_cinco_votos(self):
+        from unittest.mock import patch
+        post, seg = self._post_analizado()
+        u = make_user(username='normal44d', email='normal44d@example.org')
+        self.client.force_login(u)
+        with patch('apps.analysis.tasks.opus_rescan_segment.delay') as tarea:
+            self.client.post(f'/oracion/{seg.pk}/votar/down/')
+        tarea.assert_not_called()
+
+    def test_el_admin_relanza_aunque_ya_se_hubiera_reanalizado(self):
+        """«Siempre» es siempre: el candado de una-vez-por-frase no le aplica."""
+        from unittest.mock import patch
+        post, seg = self._post_analizado()
+        seg.opus_rescanned = True
+        seg.save(update_fields=['opus_rescanned'])
+        root = make_user(username='root44d2', email='root44d2@example.org',
+                         is_superuser=True, is_staff=True)
+        self.client.force_login(root)
+        with patch('apps.analysis.tasks.opus_rescan_segment.delay') as tarea:
+            self.client.post(f'/oracion/{seg.pk}/votar/down/')
+        tarea.assert_called_once()
+
+    def test_la_tarea_forzada_ignora_el_candado(self):
+        from unittest.mock import patch
+        from apps.analysis.tasks import opus_rescan_segment
+        post, seg = self._post_analizado()
+        seg.opus_rescanned = True
+        seg.save(update_fields=['opus_rescanned'])
+        self.assertEqual(opus_rescan_segment(seg.pk), 'skip')
+        resultado = opus_rescan_segment(seg.pk, forced=True)
+        self.assertNotEqual(resultado, 'skip')
+
+    def test_el_voto_del_admin_relanza_el_video_entero_sin_esperar_al_40_por_ciento(self):
+        from unittest.mock import patch
+        from apps.analysis.tasks import maybe_trigger_opus_rescan
+        post, _seg = self._post_analizado()
+        root = make_user(username='root44d3', email='root44d3@example.org',
+                         is_superuser=True, is_staff=True)
+        with patch('apps.analysis.tasks.opus_rescan.delay') as tarea:
+            self.assertTrue(maybe_trigger_opus_rescan(post, root))
+        tarea.assert_called_once()
+
+    def test_sin_usuario_el_umbral_de_siempre_sigue_mandando(self):
+        from apps.analysis.tasks import maybe_trigger_opus_rescan
+        post, _seg = self._post_analizado()
+        self.assertFalse(maybe_trigger_opus_rescan(post))       # <50 usuarios
+        self.assertFalse(maybe_trigger_opus_rescan(post, None))
+
+    def test_queda_registrado_en_la_auditoria(self):
+        from unittest.mock import patch
+        from apps.panel.models import AuditLog
+        post, seg = self._post_analizado()
+        root = make_user(username='root44d4', email='root44d4@example.org',
+                         is_superuser=True, is_staff=True)
+        self.client.force_login(root)
+        with patch('apps.analysis.tasks.opus_rescan_segment.delay'):
+            self.client.post(f'/oracion/{seg.pk}/votar/down/')
+        self.assertTrue(AuditLog.objects.filter(action='force_deep_scan').exists())
+
+    def test_el_reanalisis_profundo_recibe_la_transcripcion_entera(self):
+        """Orden de David: al modelo alto se le pasa el expediente completo. Es
+        justo donde más falta hace: si se pide una segunda mirada es porque la
+        primera, con la frase suelta, no bastó."""
+        from unittest.mock import patch
+        from apps.analysis.tasks import opus_rescan_segment
+        post, seg = self._post_analizado()
+        capturado = {}
+
+        def espia(*a, **k):
+            capturado.update(k)
+            return ({'color': 'GREEN', 'what_is_claimed': 'x'}, 'claude-opus-4-8')
+
+        with patch('apps.agents.client.call_json', side_effect=espia):
+            opus_rescan_segment(seg.pk, forced=True)
+        self.assertIn('cacheable', capturado)
+        self.assertIn('FICHA DEL VÍDEO', capturado['cacheable'])
+        self.assertIn('[00:05]', capturado['cacheable'])

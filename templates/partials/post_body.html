@@ -64,7 +64,7 @@
           {# 4.3-A.7 (David): NO se vota si una frase es cierta — de eso responde el #}
           {# modelo. Solo se PIDE una segunda opinion; al llegar al umbral, Opus. #}
           <span class="seg-votes" id="seg-{{ s.pk }}">
-            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% trans 'Pide una re-verificación con el modelo premium' %}">⚑ {% if s.claim and s.claim.color == 'UNDECIDED' %}{% trans "Vota reanálisis profundo" %}{% else %}{% trans "Discuto" %}{% endif %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
+            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% if is_mod %}{% trans 'Tu voto de moderación relanza el análisis al instante' %}{% else %}{% trans 'Pide una re-verificación con el modelo premium' %}{% endif %}">⚑ {% if is_mod %}{% trans "Relanzar análisis" %}{% elif s.claim and s.claim.color == 'UNDECIDED' %}{% trans "Vota reanálisis profundo" %}{% else %}{% trans "Discuto" %}{% endif %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
             {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
           </span>
           {% endif %}

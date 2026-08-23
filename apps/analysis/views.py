@@ -542,8 +542,22 @@ def segment_vote(request, pk, direction):
             obj.value = value
             obj.save(update_fields=['value'])
     downs = seg.sentence_votes.filter(value=-1).count()
+    # 4.4-D (orden de David, 2026-08-23): "El voto del admin siempre relanzará el
+    # analisis". Sin esto el reanalisis profundo era INALCANZABLE: hacen falta 5
+    # personas distintas y la web esta cerrada a registros. La rueda de "Reanalisis
+    # profundo" del panel de modelos estaba configurada y no la podia usar nadie.
+    # Es la misma solucion que ya rige en la validacion de videos y en la
+    # confirmacion de nombres: el voto de moderador confirma en solitario.
+    es_admin = request.user.is_superuser or request.user.effective_level() == 'MOD'
+    if value == -1 and es_admin:
+        from .tasks import opus_rescan_segment
+        opus_rescan_segment.delay(seg.pk, forced=True)
+        from apps.panel.models import AuditLog
+        AuditLog.objects.create(user=request.user, action='force_deep_scan',
+                                detail=f'segmento {seg.pk} del post {seg.post_id}')
+        messages.info(request, 'Reanálisis profundo lanzado con tu voto de moderación.')
     # 4.3-A.7 (David): "si llega a 5 usuarios" son 5, no 6. Era > (estricto).
-    if (value == -1 and not seg.opus_rescanned
+    elif (value == -1 and not seg.opus_rescanned
             and downs >= SystemSetting.get_int('segment_opus_downvotes', 5)):
         from .tasks import opus_rescan_segment
         opus_rescan_segment.delay(seg.pk)
@@ -761,7 +775,7 @@ def upvote(request, pk):
             from .tasks import notify_post_event
             notify_post_event(post, 'trending', '🔥 El post está en Trending')
         from .tasks import maybe_trigger_opus_rescan
-        if maybe_trigger_opus_rescan(post):  # unica puerta al reescaneo (Fase 3.4 §6)
+        if maybe_trigger_opus_rescan(post, request.user):  # unica puerta (Fase 3.4 §6)
             messages.info(request, 'Este contenido ha alcanzado gran interés: '
                                    're-verificación con el modelo mayor en marcha.')
     return redirect('post_detail', pk=pk)

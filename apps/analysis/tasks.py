@@ -468,12 +468,12 @@ def generate_name_proposals(post_id):
 
 
 @shared_task
-def opus_rescan_segment(segment_id):
+def opus_rescan_segment(segment_id, forced=False):
     """4.2 H5: una ORACION muy downvoteada se re-analiza con Opus (MODEL_PREMIUM).
     Candados: una vez por oracion, solo posts DONE, y presupuesto (try_spend)."""
     from .models import TranscriptSegment, DailyBudget
     seg = TranscriptSegment.objects.select_related('post').get(pk=segment_id)
-    if seg.opus_rescanned or seg.post.status != 'DONE':
+    if seg.post.status != 'DONE' or (seg.opus_rescanned and not forced):
         return 'skip'
     if not DailyBudget.try_spend(0.10):  # una oracion, no el post entero
         return 'budget_exhausted'
@@ -485,12 +485,26 @@ def opus_rescan_segment(segment_id):
     results, sources_ok = search.search_with_status(seg.text, max_results=5)
     context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                         for r in results)
-    payload = f"CLAIM: {seg.text}\n\nRESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}"
+    # 4.4-D (orden de David): al modelo alto se le pasa la TRANSCRIPCION ENTERA con
+    # sus marcas de tiempo, los metadatos del video y la frase con su contexto. El
+    # reanalisis profundo es justo donde mas falta hace: si se pide una segunda
+    # mirada es porque la primera, con la frase suelta, no bastó.
+    from apps.agents.verdict import transcript_dossier
     from apps.agents.catalog import model_for
-    v = client.call_json(model_for('deep'), prompts.VERDICT_SYSTEM,
-                         payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
+    expediente = transcript_dossier(seg.post)
+    fecha = seg.post.event_date.isoformat() if seg.post.event_date else None
+    payload = (f"CLAIM: {seg.text}\n\n"
+               + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
+               + f"RESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}")
+    v, usado = client.call_json(model_for('deep'), prompts.VERDICT_SYSTEM,
+                                payload, max_tokens=1500, mock_payload=MOCK_VERDICT,
+                                cacheable=expediente, with_model=True)
     if 'error' not in v:
-        idx = list(seg.post.transcript_segments.all()).index(seg)
+        v['model_used'] = usado
+        # Mismo bug de anclaje que cerró el 4.4-B, y seguía vivo AQUI: el Meta
+        # ordena solo por start_seconds y la numeracion usa ('start_seconds','pk').
+        # Con dos personas pisandose, el veredicto se pegaba a la frase equivocada.
+        idx = list(seg.post.transcript_segments.order_by('start_seconds', 'pk')).index(seg)
         upsert_claim(seg.post, {'text': seg.text, 'segment_index': idx},
                      v, sources_ok=sources_ok)
         notify_post_event(seg.post, 'analysis',
@@ -499,14 +513,14 @@ def opus_rescan_segment(segment_id):
 
 
 @shared_task
-def opus_rescan(post_id):
+def opus_rescan(post_id, forced=False):
     """Reescaneo premium (decidido por David): si los votos ▲ superan el
     opus_rescan_percent (40%) de los usuarios del foro, el post se re-verifica con
     MODEL_PREMIUM (Opus). Candados: minimo opus_rescan_min_users (50), UNA vez por
     post, y presupuesto. Los claims ganan nueva version en su historial."""
     from .models import Post, DailyBudget
     post = Post.objects.get(pk=post_id)
-    if post.opus_rescanned or post.status != 'DONE':
+    if post.status != 'DONE' or (post.opus_rescanned and not forced):
         return 'skip'
     if not DailyBudget.try_spend(COST_OPUS_RESCAN_EUR):
         return 'budget_exhausted'
@@ -521,13 +535,26 @@ def opus_rescan(post_id):
     return 'rescanned'
 
 
-def maybe_trigger_opus_rescan(post):
+def maybe_trigger_opus_rescan(post, user=None):
     from apps.accounts.models import User
     from apps.panel.models import SystemSetting
+    if post.status != 'DONE':
+        return False
+    # 4.4-D (orden de David): el voto de un moderador o del superusuario relanza
+    # el analisis SIEMPRE — sin esperar al 40% de los votantes, sin el minimo de
+    # 50 usuarios verificados y aunque el post ya se hubiera reescaneado antes.
+    # Quien manda paga: sigue pasando por el fusible del presupuesto.
+    if user is not None and getattr(user, 'is_authenticated', False) and (
+            user.is_superuser or user.effective_level() == 'MOD'):
+        opus_rescan.delay(post.pk, forced=True)
+        from apps.panel.models import AuditLog
+        AuditLog.objects.create(user=user, action='force_deep_scan',
+                                detail=f'post {post.pk} completo')
+        return True
     min_users = SystemSetting.get_int('opus_rescan_min_users', 50)
     percent = SystemSetting.get_int('opus_rescan_percent', 40)
     total = User.objects.filter(is_active=True, email_verified=True).count()
-    if total < min_users or post.opus_rescanned or post.status != 'DONE':
+    if total < min_users or post.opus_rescanned:
         return False
     votes = post.votes.count()
     if votes * 100 > total * percent:
