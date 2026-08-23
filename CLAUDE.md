@@ -147,6 +147,18 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   estaban suspendidos, y el codigo lo daba por bueno. Al verificar una integracion, mirar el
   NUMERO DE RESULTADOS, jamas solo el codigo HTTP.
 
+## Lecciones del pase 4.4-C (2026-08-23)
+- **Si un pase reescribe un fichero que YA existe, comprobar que no se lleva simbolos por
+  delante.** El 4.4-C dejo `apps/panel/tasks.py` con solo su tarea nueva y borro
+  `generate_code_batch` + `BATCH_BG_THRESHOLD`, que `panel/views.py` importa: el ImportError
+  tumbaba el PANEL ENTERO. Tecnica: barrido con `ast` comparando los simbolos de nivel superior
+  de cada .py antes (`git show HEAD~1:fichero`) y despues. Es la vieja regla de la «fusion de
+  rondas» (Fase 3.2), ahora automatizable.
+- **El panel de modelos (`/panel/modelos/`) es de David**, como el presupuesto: el operador lo
+  verifica en el espejo y deja produccion como este. Hoy: veredictos en Sonnet, 0,75 EUR/hora.
+- **El vigia nocturno hace llamadas REALES** a cada modelo configurado. No lanzarlo a mano en
+  produccion: corre solo a diario y el gasto lo autoriza David.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
