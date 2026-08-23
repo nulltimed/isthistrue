@@ -222,6 +222,21 @@ def _post_context(request, post):
                        .values_list('speaker_label', 'candidate_name'))
     for s in segments:
         s.spk_name = confirmadas.get(s.speaker_label, '')
+    # 4.4-B — EL ESCAPARATE. Hasta hoy esta plantilla pintaba SOLO la señal barata
+    # del barrido, y no habia ni una referencia a los veredictos: aunque un video
+    # se verificara entero, con fuentes y semaforo, la transcripcion seguia diciendo
+    # «Afirmación factual (no verificada)» para siempre. El trabajo caro se hacia,
+    # se pagaba, se guardaba en la wiki... y no aparecia donde el lector lo busca.
+    # (Datos del 2026-08-23: 96 afirmaciones con veredicto, cero visibles.)
+    from apps.wiki.models import ClaimAppearance
+    veredictos = {}
+    for ap in (ClaimAppearance.objects
+               .filter(segment__post=post)
+               .select_related('claim')
+               .prefetch_related('claim__sources')):
+        veredictos.setdefault(ap.segment_id, ap.claim)
+    for s in segments:
+        s.claim = veredictos.get(s.pk)
     # Lista (no diccionario): las plantillas de Django no saben consultar un dict
     # por una clave variable, y meter un filtro nuevo solo para esto seria peor.
     speaker_rows = [{'label': label, 'num': i + 1, 'color': i % 8,

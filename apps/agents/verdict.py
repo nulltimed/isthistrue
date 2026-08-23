@@ -13,22 +13,51 @@ MOCK_VERDICT = {
 
 
 def run(post, model=None):
+    """4.4-B: dos fallos de raiz arreglados aqui.
+
+    1) LAS OPINIONES SE ESTABAN PAGANDO. La linea `if kind != FACTUAL: pass` no
+       hacia nada — literalmente un `pass` vacio — asi que el bucle seguia y
+       gastaba una verificacion completa (busquedas + Sonnet) en frases como
+       «Cataluña es una nacion», que por definicion no se verifican. En los datos
+       de produccion del 2026-08-23 sobraban veredictos en los tres videos: 17
+       frases factuales y 32 veredictos en el post 4. Cerca de un tercio del gasto
+       de la fase cara se iba en esto, y encima llenaba la wiki de grises.
+
+    2) SIN FUENTES SE PINTABA IGUAL. Si la busqueda volvia vacia se llamaba al
+       modelo caro de todas formas, y el modelo — honradamente — decia que no
+       tenia datos y salia gris. Pagar Sonnet para que diga que no sabe nada.
+       Ahora, sin fuentes no se llama: la afirmacion queda UNDECIDED y el lector
+       puede pedir el reanalisis profundo.
+    """
     from apps.wiki.services import upsert_claim
     sw = sweep.run(post) if not post.transcript_segments.filter(
         signal__isnull=False).exclude(signal='').exists() else {
         'claims': _claims_from_segments(post)}
+    fecha = post.event_date.isoformat() if post.event_date else None
     for c in sw['claims']:
         if c.get('kind') != 'FACTUAL':
-            # gris: solo genera wiki en flujo completo (post ya validado como FACTUAL)
-            pass
+            continue          # una opinion no se verifica: ni se busca, ni se paga
         n = search.budget_for_claim(c)
         results, sources_ok = search.search_with_status(c['text'], max_results=n)
+        if not sources_ok or not results:
+            # Decision de David (2026-08-23): "el sistema lo ha mirado y no se ha
+            # decidido", con boton de reanalisis profundo. NO es lo mismo que
+            # "no verificable": aqui hay un hecho comprobable y nos faltaron datos.
+            upsert_claim(post, c, {
+                'color': 'UNDECIDED',
+                'what_is_claimed': c['text'],
+                'what_evidence_says': 'No se han podido reunir fuentes para esta afirmación.',
+                'the_difference': 'Falta base documental. Pide el reanálisis profundo '
+                                  'si crees que merece una segunda mirada.',
+                'sources': [], 'sensitive': None}, sources_ok=False)
+            continue
         context = '\n'.join(f"- {r.get('title','')}: {r.get('url','')}\n  {r.get('content','')[:300]}"
                             for r in results)
         payload = (f"CLAIM: {c['text']}\n\n"
-                   f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
-                   f"{c.get('context') or c['text']}\n\n"
-                   f"RESULTADOS DE BUSQUEDA:\n{context or '(sin resultados)'}")
+                   + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
+                   + f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
+                     f"{c.get('context') or c['text']}\n\n"
+                     f"RESULTADOS DE BUSQUEDA:\n{context}")
         v = client.call_json(model or settings.MODEL_VERDICT, prompts.VERDICT_SYSTEM,
                              payload, max_tokens=1500, mock_payload=MOCK_VERDICT)
         if 'error' not in v:

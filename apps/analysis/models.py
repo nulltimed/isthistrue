@@ -80,6 +80,16 @@ class Post(models.Model):
     author_opinion = models.TextField(blank=True, default='')
     topic = models.CharField(max_length=16, choices=TOPICS, default='otros')
     tags = models.CharField(max_length=200, blank=True, default='')  # libres, separadas por comas
+    # 4.4-B (decision de David): la fecha en que OCURRIO lo que se ve, que no es
+    # la de subida. Sin ella, "mas trabajadores que nunca" no se puede contrastar:
+    # no se sabe contra que tabla mirar. La deduce un agente barato con las pistas
+    # del titulo y de toda la transcripcion; moderacion puede corregirla.
+    event_date = models.DateField(null=True, blank=True)
+    event_date_note = models.CharField(max_length=250, blank=True, default='')
+    EVENT_DATE_SOURCES = [('', '—'), ('agent', 'Estimada por el sistema'),
+                          ('mod', 'Corregida por moderación')]
+    event_date_source = models.CharField(max_length=8, choices=EVENT_DATE_SOURCES,
+                                         blank=True, default='')
     validation_deadline = models.DateTimeField(null=True, blank=True)
     opus_rescanned = models.BooleanField(default=False)  # candado: UNA vez por post
     # 4.2 D4: aviso de Trending enviado (se rearma al salir del umbral).

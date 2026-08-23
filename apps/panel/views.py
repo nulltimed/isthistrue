@@ -40,7 +40,7 @@ def codes(request):
 
 SETTINGS_DEF = [
     # 4.3-A.3 M3 (decision de David): los ajustes del panel con nombre y apellidos.
-    # kind: 'bool' = toggle (guarda 1/0); 'num' = campo numerico.
+    # kind: 'bool' = toggle (guarda 1/0); 'num' = campo numerico; 'text' = texto largo (4.4-B).
     # 4.3-F (decision de David): el DINERO se toca aqui, escribiendo euros. Hasta
     # hoy estos dos ajustes existian en la base de datos pero no estaban ni en el
     # panel ni en /admin/: para cambiarlos habia que entrar por SSH.
@@ -85,6 +85,20 @@ SETTINGS_DEF = [
     # 4.3-E (decisión de David): sin identificar a la mitad, no se valida.
     ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',
      'Porcentaje mínimo de hablantes con nombre confirmado antes de poder marcar un vídeo como factual. 0 lo desactiva.', 'num'),
+    # 4.4-B (decisión de David): el semáforo.
+    ('auto_verify_daily_cap', 'Vídeos verificados solos al día',
+     'Cuántos vídeos pasan solos a la verificación con fuentes cada día. Es el freno que '
+     'sustituye al voto manual: por encima de esta cifra, esperan a mañana. 0 lo desactiva.', 'num'),
+    ('deep_scan_votes', 'Votos para el reanálisis profundo',
+     'Votos que hacen falta para volver a mirar una afirmación indecisa con el modelo premium.', 'num'),
+    ('search_retries', 'Reintentos de búsqueda',
+     'Cuántas veces se reintenta una búsqueda vacía antes de darla por perdida. Los buscadores '
+     'suspenden el motor cuando se les pide demasiado seguido.', 'num'),
+    ('search_retry_seconds', 'Espera entre reintentos (s)',
+     'Segundos de espera cuando los buscadores suspenden el motor.', 'num'),
+    ('official_sources', 'Fuentes oficiales',
+     'Dominios que se consultan PRIMERO, separados por comas (INE, Eurostat, BOE…). La prensa '
+     'nunca es base única de un verde o un rojo.', 'text'),
     # 4.3-F (decisión de David): la cola de los vídeos caros.
     ('queue_threshold_percent', 'Cola de espera a partir del (%) del día',
      'Si un vídeo cuesta más de este porcentaje del depósito diario, entra en cola: se analiza cuando haya presupuesto o cuando alguien lo apadrine. 0 lo desactiva.', 'num'),

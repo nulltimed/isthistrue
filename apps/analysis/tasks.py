@@ -87,6 +87,18 @@ def run_cheap_phase(self, post_id):
     if verdict == 'OPINION' and not result.get('sweep_failed'):
         post.offtopic_suggested = True
 
+    # 4.4-B (decision de David): la fecha del SUCESO. Antes de cualquier veredicto,
+    # porque sin ella los datos se comparan contra el año equivocado.
+    try:
+        from apps.agents.dating import date_event
+        fecha, nota = date_event(post)
+        if fecha or nota:
+            post.event_date = fecha
+            post.event_date_note = nota
+            post.event_date_source = 'agent' if fecha else ''
+    except Exception as exc:          # datar es una ayuda, no un requisito
+        logger.warning('Datación fallida en el post %s: %r', post.pk, exc)
+
     post.save()
     from .services import open_validation_window
     open_validation_window(post)
@@ -95,8 +107,35 @@ def run_cheap_phase(self, post_id):
     archive_wayback.delay(post.pk)  # preservacion: TODO post (decidido)
     post.cheap_finished_at = timezone.now()
     post.save(update_fields=['cheap_finished_at'])
+    # 4.4-B (decision de David, opcion c): los videos factuales pasan SOLOS a la
+    # verificacion con fuentes, hasta un tope diario que el fija en el panel. Ese
+    # tope SUSTITUYE a su voto: es el freno. Sin el, la web pasaba de "no verifica
+    # nada sin David" a "puede vaciarse el deposito una mañana sin que se entere".
+    if verdict == 'FACTUAL' and auto_verify_slot_free():
+        post.status = 'FULL_QUEUED'
+        post.save(update_fields=['status'])
+        launch_full_analysis(post)
+        notify_post_event(post, 'analysis', 'Analizado: verificando con fuentes')
+        return 'auto_verifying'
     notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
     return 'pending_validation'
+
+
+def auto_verify_slot_free():
+    """4.4-B: ¿queda cupo de verificacion automatica para hoy?
+
+    Cuenta los videos que ARRANCARON la fase cara hoy (`full_started_at`), no los
+    que la terminaron: un video largo que empezo ayer y acaba hoy no debe robarle
+    el sitio a uno nuevo.
+    """
+    from .models import Post
+    from apps.panel.models import SystemSetting
+    tope = SystemSetting.get_int('auto_verify_daily_cap', 5)
+    if tope <= 0:
+        return False                      # 0 = desactivado: vuelve el voto manual
+    hoy = timezone.localdate()
+    usados = Post.objects.filter(full_started_at__date=hoy).count()
+    return usados < tope
 
 
 def notify_post_event(post, kind, text):
@@ -118,6 +157,38 @@ def notify_post_event(post, kind, text):
                 'trending': 'trending'}[kind]
     for user in recipients.values():
         notify(user, f'{text}: {title}', url, kind=pref_key)
+
+
+@shared_task
+def reverify_post(post_id, borrar_previos=True):
+    """4.4-B (orden de David): «hay que volver a verificar todo, manteniendo las
+    personas que hablan, que están correctas».
+
+    Se borran los VEREDICTOS, nunca la transcripcion ni la diarizacion ni las
+    identificaciones: lo que estaba bien se queda. Las afirmaciones de la wiki que
+    solo aparecian en este post se borran con el; las que aparecen tambien en otros
+    videos se conservan y pierden unicamente su anclaje aqui.
+    """
+    from .models import Post
+    from apps.wiki.models import Claim, ClaimAppearance
+
+    post = Post.objects.get(pk=post_id)
+    if borrar_previos:
+        apariciones = ClaimAppearance.objects.filter(segment__post=post)
+        claim_ids = set(apariciones.values_list('claim_id', flat=True))
+        apariciones.delete()
+        # Huerfanas: sin ninguna aparicion en ningun video, ya no las sostiene nada.
+        huerfanas = [c for c in claim_ids
+                     if not ClaimAppearance.objects.filter(claim_id=c).exists()]
+        Claim.objects.filter(pk__in=huerfanas).delete()
+        logger.info('Post %s: %d apariciones borradas, %d afirmaciones huérfanas',
+                    post.pk, len(claim_ids), len(huerfanas))
+    post.status = 'FULL_QUEUED'
+    post.full_started_at = None
+    post.full_finished_at = None
+    post.save(update_fields=['status', 'full_started_at', 'full_finished_at'])
+    launch_full_analysis(post)
+    return 'reverifying'
 
 
 def launch_full_analysis(post):

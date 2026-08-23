@@ -538,3 +538,25 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
   .msg-avatar,.msg-monogram{width:34px;height:34px;margin:0;line-height:34px;font-size:1.1rem}
   .fmsg .msg-author .who-line{font-size:.74rem}
 }
+
+/* ==========================================================================
+   4.4-B · EL SEMAFORO EN LA TRANSCRIPCION
+   Seis estados, y cada uno dice una cosa distinta. El gris de "no verificable"
+   y el "lo he mirado y no me decido" NO pueden parecerse: el lector tiene que
+   saber si el sistema trabajo o no.
+   ========================================================================== */
+.verdict{display:inline-block;font-size:.72rem;font-weight:700;padding:.05rem .45rem;
+  border-radius:999px;margin-left:.35rem;text-decoration:none;border:1px solid transparent;
+  vertical-align:middle;line-height:1.6}
+.verdict:hover{text-decoration:underline}
+.verdict-GREEN{background:#e7f4e9;color:#1c5c2a;border-color:#bfe0c6}
+.verdict-AMBER{background:#fdf3dd;color:#7a5405;border-color:#f0dcae}
+.verdict-RED{background:#fbe6e6;color:#8c1c1c;border-color:#eec2c2}
+.verdict-GREY{background:var(--paper);color:var(--grey);border-color:var(--line)}
+.verdict-PENDING{background:#fff;color:var(--grey);border-color:var(--line);font-weight:600}
+.verdict-UNDECIDED{background:#eef1f7;color:#3a4a6b;border-color:#ccd6e8}
+.verdict-NEEDS_HUMAN{background:#f3ecf7;color:#5a3a70;border-color:#ddd0e6}
+.verdict-basis,.verdict-sources{font-size:.7rem;color:var(--grey);margin-left:.3rem}
+.verdict-basis{font-style:italic}
+.event-date{font-size:.8rem;color:var(--grey);margin:.4rem 0 0;text-align:center}
+.event-date em{font-style:italic}

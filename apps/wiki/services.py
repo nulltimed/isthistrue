@@ -20,13 +20,18 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
         claim = Claim.objects.create(text_original=claim_data['text'],
                                      language='es', slug=slug)
     old_color = claim.color if claim.pk else None
-    claim.color = verdict.get('color', 'GREY')
+    from .models import COLORS
+    color = verdict.get('color', 'UNDECIDED')
+    # Un modelo puede inventarse una etiqueta: si no es de las nuestras, no entra.
+    claim.color = color if color in dict(COLORS) else 'UNDECIDED'
     claim.consolidated = True
     claim.what_is_claimed = verdict.get('what_is_claimed', '')
     claim.what_evidence_says = verdict.get('what_evidence_says', '')
     claim.the_difference = verdict.get('the_difference', '')
     old_color = Claim.objects.filter(pk=claim.pk).values_list('color', flat=True).first()
     claim.sensitive = verdict.get('sensitive') or ''
+    # 4.4-B: contra que serie y que rango se comparo (decision de David).
+    claim.temporal_basis = (verdict.get('temporal_basis') or '')[:300]
     claim.sources_ok = sources_ok
     claim.save()
     # 4.3-A J3: el semaforo de un claim seguido cambia -> aviso a sus seguidores
@@ -41,7 +46,12 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     for s in verdict.get('sources', []):
         Source.objects.create(claim=claim, url=s.get('url', ''), title=s.get('title', ''))
     seg_idx = claim_data.get('segment_index')
-    segments = list(post.transcript_segments.all())
+    # 4.4-B (bug de anclaje): quien numero las frases uso order_by('start_seconds',
+    # 'pk'); aqui se leia con el ordering del Meta, que solo ordena por
+    # start_seconds. Si DOS frases empiezan en el mismo segundo — normal cuando dos
+    # personas se pisan — el veredicto se pegaba a la frase equivocada. El propio
+    # codigo citaba la leccion tres lineas mas arriba y no la aplicaba.
+    segments = list(post.transcript_segments.order_by('start_seconds', 'pk'))
     if seg_idx is not None and 0 <= seg_idx < len(segments):
         ClaimAppearance.objects.get_or_create(claim=claim, segment=segments[seg_idx],
                                               defaults={'quote': claim_data['text']})

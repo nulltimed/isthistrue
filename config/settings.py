@@ -200,6 +200,13 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'message_sensitive_reports': '5',
     'registration_open': '1',
     'lang_es': '1', 'lang_en': '1',
+    # 4.4-B: el semaforo.
+    'auto_verify_daily_cap': '5',       # videos que se verifican solos al dia
+    'search_retries': '2',              # reintentos cuando los motores se suspenden
+    'search_retry_seconds': '20',       # espera entre reintentos
+    'deep_scan_votes': '5',             # votos para el reanalisis profundo
+    'official_sources': ('ine.es,europa.eu,boe.es,bde.es,aemet.es,seg-social.es,'
+                         'sepe.es,who.int,un.org,oecd.org'),
     # 4.3-A.7: ventana de contexto del semaforo (frases del mismo hablante).
     'verdict_context_before': '1',
     'verdict_context_after': '1',

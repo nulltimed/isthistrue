@@ -9,8 +9,20 @@ try:
 except ImportError:  # desarrollo sin pgvector instalado
     HAS_PGVECTOR = False
 
+# 4.4-B: hasta ahora habia CUATRO estados y el gris hacia de cajon de sastre —
+# 76 de 96 afirmaciones acabaron ahi. Tres cosas muy distintas se confundian:
+# "aun no la hemos mirado", "la hemos mirado y no se decide" y "esto no se
+# comprueba nunca". Un lector que ve el mismo simbolo en los tres casos no puede
+# saber si el sistema trabajo o no. Ahora son SEIS y cada uno dice una cosa.
 COLORS = [('GREEN', '🟢 Verificado'), ('AMBER', '🟡 Engañoso o sin contexto'),
-          ('RED', '🔴 Falso'), ('GREY', '⚪ No verificable')]
+          ('RED', '🔴 Falso'), ('GREY', '⚪ No verificable'),
+          ('PENDING', '⏳ Pendiente de verificar'),
+          ('UNDECIDED', '🔍 El sistema lo ha mirado y no se ha decidido'),
+          ('NEEDS_HUMAN', '👁 No verificable solo con audio')]
+
+# Los tres estados en los que el semaforo NO se ha pronunciado. Se usan en
+# plantillas y consultas: que la lista viva en un solo sitio.
+UNSETTLED = ('PENDING', 'UNDECIDED', 'NEEDS_HUMAN')
 
 
 class Claim(models.Model):
@@ -20,7 +32,12 @@ class Claim(models.Model):
     slug = models.SlugField(max_length=140, unique=True, null=True, blank=True)  # 9B: /claim/la-tierra-es-plana/
     if HAS_PGVECTOR:
         embedding = VectorField(dimensions=384, null=True)  # MiniLM multilingue local
-    color = models.CharField(max_length=6, choices=COLORS, default='GREY')
+    color = models.CharField(max_length=12, choices=COLORS, default='PENDING')
+    # 4.4-B (decision de David: "nunca es nunca"): contra que serie y que rango
+    # se comparo. Sin esto, "mas trabajadores que nunca" sale VERDE mirando diez
+    # años y ROJO mirando la serie completa de la EPA desde 1976. El lector tiene
+    # derecho a discrepar del criterio, no solo del dato.
+    temporal_basis = models.CharField(max_length=300, blank=True, default='')
     consolidated = models.BooleanField(default=False)
     what_is_claimed = models.TextField(blank=True)
     what_evidence_says = models.TextField(blank=True)
@@ -37,7 +54,7 @@ class Claim(models.Model):
 class ClaimVersion(models.Model):
     """Historial completo en cada re-verificacion (transparencia total)."""
     claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name='versions')
-    color = models.CharField(max_length=6, choices=COLORS)
+    color = models.CharField(max_length=12, choices=COLORS)
     body_snapshot = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
 

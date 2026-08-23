@@ -25,6 +25,12 @@
     <span class="setting-control"><input type="checkbox" class="toggle" id="s-{{ r.key }}" name="{{ r.key }}" {% if r.value != '0' %}checked{% endif %}><label class="toggle-track" for="s-{{ r.key }}" aria-hidden="true"></label></span>
     <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
       <p class="hint">{{ r.hint }}</p></div>
+    {% elif r.kind == 'text' %}
+    {# 4.4-B: ajuste de texto largo (la lista de fuentes oficiales). #}
+    <span class="setting-control">{% icon 'search' 18 %}</span>
+    <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
+      <p class="hint">{{ r.hint }}</p>
+      <input id="s-{{ r.key }}" name="{{ r.key }}" value="{{ r.value }}" style="max-width:100%" placeholder="(por defecto)"></div>
     {% else %}
     <span class="setting-control">{% icon 'gauge' 18 %}</span>
     <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>

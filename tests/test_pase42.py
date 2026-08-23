@@ -2126,3 +2126,234 @@ class Pase44A(TestCase):
         self.assertIn('gettext', open('Dockerfile', encoding='utf-8').read())
         for f in ('docker-compose.yml', 'docker-compose.staging.yml'):
             self.assertIn('compilemessages', open(f, encoding='utf-8').read(), f)
+
+
+class Pase44B(TestCase):
+    """4.4-B — el semáforo se enciende, y cuando no puede, lo dice.
+
+    Encargo de David (2026-08-23): «todas las afirmaciones están en estado "no
+    verificado". Eso precisamente no puede pasar en una web cuya razón de existencia
+    es buscar la verdad. Hay que arreglarlo como sea.»
+
+    El diagnóstico sobre producción encontró TRES fallos encadenados:
+      1. La transcripción no miraba los veredictos: 96 afirmaciones verificadas y
+         cero visibles. El trabajo caro se hacía, se pagaba y no se enseñaba.
+      2. Las búsquedas volvían vacías (motores suspendidos por exceso de peticiones)
+         y el código las daba por buenas porque el HTTP era 200.
+      3. Se pagaba la verificación completa de OPINIONES por un `pass` vacío.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def _post_con_frase(self, texto='Somos 750.000 en el campo, más que nunca.',
+                        signal='FACTUAL_UNVERIFIED'):
+        autor = make_user(username='sem', email='sem@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/sem001',
+                                   title='DEBATE 23J', status='DONE',
+                                   duration_seconds=600)
+        from apps.analysis.models import TranscriptSegment
+        seg = TranscriptSegment.objects.create(post=post, start_seconds=10, end_seconds=14,
+                                               text=texto, signal=signal)
+        return post, seg, autor
+
+    def _con_veredicto(self, seg, color='GREEN', basis='EPA del INE, serie 1976-2023'):
+        from apps.wiki.models import Claim, ClaimAppearance, Source
+        c = Claim.objects.create(text_original=seg.text, slug=f'c{seg.pk}', color=color,
+                                 temporal_basis=basis, what_is_claimed='X', consolidated=True)
+        Source.objects.create(claim=c, url='https://www.ine.es/tabla', title='INE')
+        ClaimAppearance.objects.create(claim=c, segment=seg, quote=seg.text)
+        return c
+
+    # ---------- 1. el escaparate ----------
+    def test_la_transcripcion_muestra_el_semaforo_y_no_la_senal_barata(self):
+        post, seg, _ = self._post_con_frase()
+        self._con_veredicto(seg, 'GREEN')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('verdict-GREEN', html)
+        self.assertIn('Verificado', html)
+        # La señal barata DESAPARECE en cuanto hay veredicto (decisión de David).
+        self.assertNotIn('signal-FACTUAL_UNVERIFIED', html)
+
+    def test_el_semaforo_enlaza_a_la_ficha_con_sus_fuentes(self):
+        post, seg, _ = self._post_con_frase()
+        c = self._con_veredicto(seg)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn(f'/wiki/claim/{c.slug}/', html)
+        self.assertIn('fuente', html)
+
+    def test_la_frase_sin_veredicto_sigue_mostrando_su_senal(self):
+        post, seg, _ = self._post_con_frase()
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('signal-FACTUAL_UNVERIFIED', html)
+
+    def test_el_pie_deja_de_mentir_cuando_hay_veredictos(self):
+        """Decía siempre «no son veredictos verificados», también después de verificar."""
+        post, seg, _ = self._post_con_frase()
+        self._con_veredicto(seg)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('contrastado con fuentes enlazadas', html)
+
+    def test_se_ve_contra_que_se_comparo(self):
+        """«Nunca es nunca»: el lector puede discrepar del criterio, no solo del dato."""
+        post, seg, _ = self._post_con_frase()
+        self._con_veredicto(seg, 'GREEN', 'EPA del INE, serie 1976-2023')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('serie 1976-2023', html)
+
+    # ---------- 2. los estados ----------
+    def test_existen_los_seis_estados_y_los_tres_sin_resolver(self):
+        from apps.wiki.models import COLORS, UNSETTLED
+        claves = dict(COLORS)
+        for c in ('GREEN', 'AMBER', 'RED', 'GREY', 'PENDING', 'UNDECIDED', 'NEEDS_HUMAN'):
+            self.assertIn(c, claves, c)
+        self.assertEqual(set(UNSETTLED), {'PENDING', 'UNDECIDED', 'NEEDS_HUMAN'})
+
+    def test_una_afirmacion_indecisa_ofrece_el_reanalisis_profundo(self):
+        post, seg, autor = self._post_con_frase()
+        self._con_veredicto(seg, 'UNDECIDED')
+        self.client.force_login(autor)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('verdict-UNDECIDED', html)
+        self.assertIn('reanálisis profundo', html)
+
+    def test_un_color_inventado_por_el_modelo_no_entra_en_la_base(self):
+        from apps.wiki.services import upsert_claim
+        post, seg, _ = self._post_con_frase()
+        c = upsert_claim(post, {'text': seg.text, 'segment_index': 0},
+                         {'color': 'MORADO', 'what_is_claimed': 'x'}, sources_ok=True)
+        self.assertEqual(c.color, 'UNDECIDED')
+
+    # ---------- 3. la raíz: las búsquedas ----------
+    def test_una_busqueda_vacia_no_es_una_busqueda_correcta(self):
+        """El fallo de raíz: SearXNG devolvía 200 con la lista vacía cuando los
+        motores estaban suspendidos, y el código lo daba por bueno."""
+        from apps.agents import search
+        from unittest.mock import patch
+        with patch.object(search, '_one_call', return_value=([], 'vacio')):
+            with self.settings(MOCK_AGENTS=False):
+                resultados, ok = search.search_with_status('lo que sea')
+        self.assertEqual(resultados, [])
+        self.assertFalse(ok, 'una búsqueda sin resultados NO puede darse por buena')
+
+    def test_las_fuentes_oficiales_se_consultan_primero(self):
+        from apps.agents import search
+        vistas = []
+
+        def espia(consulta, timeout=15):
+            vistas.append(consulta)
+            return ([], 'vacio')
+
+        from unittest.mock import patch
+        with patch.object(search, '_one_call', side_effect=espia):
+            with self.settings(MOCK_AGENTS=False):
+                search.search_with_status('ocupados agricultura')
+        self.assertTrue(vistas[0].startswith('site:'), vistas[:2])
+
+    # ---------- 4. no pagar lo que no se verifica ----------
+    def test_las_opiniones_no_se_verifican_ni_se_pagan(self):
+        """Un `pass` vacío hacía que el bucle siguiera: 17 frases factuales y 32
+        veredictos en el post 4 de producción."""
+        from apps.agents import verdict as va
+        post, seg, _ = self._post_con_frase('Cataluña es una nación.', signal='OPINION')
+        llamadas = []
+        from unittest.mock import patch
+        with patch.object(va.client, 'call_json',
+                          side_effect=lambda *a, **k: llamadas.append(a) or {'color': 'GREY'}):
+            with patch.object(va.search, 'search_with_status', return_value=([], False)):
+                va.run(post)
+        self.assertEqual(llamadas, [], 'se ha pagado la verificación de una opinión')
+
+    def test_sin_fuentes_no_se_pinta_color_y_queda_indecisa(self):
+        from apps.agents import verdict as va
+        from apps.wiki.models import Claim
+        post, seg, _ = self._post_con_frase()
+        llamadas = []
+        from unittest.mock import patch
+        with patch.object(va.client, 'call_json',
+                          side_effect=lambda *a, **k: llamadas.append(a) or {'color': 'GREEN'}):
+            with patch.object(va.search, 'search_with_status', return_value=([], False)):
+                va.run(post)
+        self.assertEqual(llamadas, [], 'se ha llamado al modelo caro sin una sola fuente')
+        c = Claim.objects.filter(text_original=seg.text).first()
+        self.assertIsNotNone(c)
+        self.assertEqual(c.color, 'UNDECIDED')
+
+    # ---------- 5. el anclaje ----------
+    def test_dos_frases_en_el_mismo_segundo_no_intercambian_su_veredicto(self):
+        """Bug real: quien numeraba usaba ('start_seconds','pk') y quien anclaba
+        solo 'start_seconds'. Con dos personas pisándose, el veredicto se pegaba a
+        la frase equivocada."""
+        from apps.wiki.services import upsert_claim
+        from apps.wiki.models import ClaimAppearance
+        post, seg1, _ = self._post_con_frase('Primera frase.')
+        from apps.analysis.models import TranscriptSegment
+        seg2 = TranscriptSegment.objects.create(post=post, start_seconds=10, end_seconds=15,
+                                                text='Segunda frase.',
+                                                signal='FACTUAL_UNVERIFIED')
+        # índice 1 = la SEGUNDA en el orden ('start_seconds', 'pk')
+        upsert_claim(post, {'text': 'Segunda frase.', 'segment_index': 1},
+                     {'color': 'RED', 'what_is_claimed': 'x'}, sources_ok=True)
+        ap = ClaimAppearance.objects.get(claim__text_original='Segunda frase.')
+        self.assertEqual(ap.segment_id, seg2.pk)
+
+    # ---------- 6. el tope diario ----------
+    def test_el_tope_diario_frena_la_verificacion_automatica(self):
+        from apps.analysis.tasks import auto_verify_slot_free
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='auto_verify_daily_cap',
+                                               defaults={'value': '2'})
+        autor = make_user(username='cap', email='cap@example.org')
+        self.assertTrue(auto_verify_slot_free())
+        for i in range(2):
+            Post.objects.create(author=autor, url=f'https://youtu.be/c{i}',
+                                full_started_at=timezone.now())
+        self.assertFalse(auto_verify_slot_free(), 'el tope diario no está frenando')
+
+    def test_el_tope_a_cero_devuelve_el_control_a_los_votos(self):
+        from apps.analysis.tasks import auto_verify_slot_free
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='auto_verify_daily_cap',
+                                               defaults={'value': '0'})
+        self.assertFalse(auto_verify_slot_free())
+
+    # ---------- 7. la fecha del suceso ----------
+    def test_la_fecha_del_suceso_se_normaliza_aunque_venga_incompleta(self):
+        from apps.agents.dating import normalize
+        import datetime
+        self.assertEqual(normalize('2023-07-10'), datetime.date(2023, 7, 10))
+        self.assertEqual(normalize('2023-07'), datetime.date(2023, 7, 1))
+        self.assertEqual(normalize('2023'), datetime.date(2023, 1, 1))
+        self.assertIsNone(normalize(None))
+        self.assertIsNone(normalize('el año pasado'))
+
+    def test_la_fecha_del_suceso_se_muestra_marcada_como_estimada(self):
+        import datetime
+        post, seg, _ = self._post_con_frase()
+        post.event_date = datetime.date(2023, 7, 10)
+        post.event_date_source = 'agent'
+        post.save(update_fields=['event_date', 'event_date_source'])
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('10/07/2023', html)
+        self.assertIn('estimada', html)
+
+    # ---------- 8. reverificar sin perder lo bueno ----------
+    def test_reverificar_conserva_transcripcion_y_hablantes(self):
+        """Orden de David: «volver a verificar todo, manteniendo las personas que
+        hablan, que están correctas»."""
+        from apps.analysis.tasks import reverify_post
+        from apps.wiki.models import ClaimAppearance
+        post, seg, _ = self._post_con_frase()
+        seg.speaker_label = 'SPEAKER_1'
+        seg.save(update_fields=['speaker_label'])
+        self._con_veredicto(seg, 'GREEN')
+        from unittest.mock import patch
+        with patch('apps.analysis.tasks.launch_full_analysis'):
+            reverify_post(post.pk)
+        seg.refresh_from_db()
+        self.assertEqual(seg.speaker_label, 'SPEAKER_1')      # el hablante, intacto
+        self.assertEqual(post.transcript_segments.count(), 1)  # la transcripción, intacta
+        self.assertEqual(ClaimAppearance.objects.filter(segment__post=post).count(), 0)
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'FULL_QUEUED')

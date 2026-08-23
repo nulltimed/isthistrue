@@ -34,7 +34,15 @@
       </div>
     {% endwith %}{% endfor %}
     </aside>
-    <div class="media-col"><div class="embed">{{ embed|safe }}</div></div>
+    <div class="media-col"><div class="embed">{{ embed|safe }}</div>
+      {% if post.event_date %}
+      {# 4.4-B: contra esta fecha se comparan los datos, no contra la de subida. #}
+      <p class="event-date" title="{{ post.event_date_note }}">
+        {% blocktrans with f=post.event_date|date:'d/m/Y' %}Lo que se ve ocurrió el {{ f }}{% endblocktrans %}
+        {% if post.event_date_source == 'agent' %}<em>({% trans "estimada" %})</em>{% endif %}
+      </p>
+      {% endif %}
+    </div>
     <aside class="transcript-col">
       <h2>{% trans "Transcripción sincronizada" %}</h2>
       <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}</p>
@@ -44,12 +52,19 @@
              data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}">
           <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% if s.spk_name %}{{ s.spk_name }}{% else %}{% trans "Hablante" %} {{ s.spk_idx|add:1 }}{% endif %}</span>{% endif %}
           <span class="text">{{ s.text }}</span>
-          {% if s.signal %}<span class="signal signal-{{ s.signal }}">{{ s.get_signal_display }}</span>{% endif %}
+          {# 4.4-B (decisión de David): en cuanto hay veredicto, la señal barata #}
+          {# DESAPARECE y en su sitio va el semáforo real, enlazado a la ficha.  #}
+          {% if s.claim %}
+            <a class="verdict verdict-{{ s.claim.color }}" href="/wiki/claim/{{ s.claim.slug|default:s.claim.pk }}/"
+               title="{% trans 'Ver la verificación completa con sus fuentes' %}">{% trans s.claim.get_color_display %}</a>
+            {% if s.claim.temporal_basis %}<span class="verdict-basis" title="{% trans 'Contra qué se comparó' %}">{{ s.claim.temporal_basis }}</span>{% endif %}
+            {% if s.claim.sources.exists %}<span class="verdict-sources">{% blocktrans count n=s.claim.sources.count %}{{ n }} fuente{% plural %}{{ n }} fuentes{% endblocktrans %}</span>{% endif %}
+          {% elif s.signal %}<span class="signal signal-{{ s.signal }}">{% trans s.get_signal_display %}</span>{% endif %}
           {% if post.status == 'DONE' and user.is_authenticated %}
           {# 4.3-A.7 (David): NO se vota si una frase es cierta — de eso responde el #}
           {# modelo. Solo se PIDE una segunda opinion; al llegar al umbral, Opus. #}
           <span class="seg-votes" id="seg-{{ s.pk }}">
-            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% trans 'Pide una re-verificación con el modelo premium' %}">⚑ {% trans "Discuto" %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
+            <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% trans 'Pide una re-verificación con el modelo premium' %}">⚑ {% if s.claim and s.claim.color == 'UNDECIDED' %}{% trans "Vota reanálisis profundo" %}{% else %}{% trans "Discuto" %}{% endif %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
             {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
           </span>
           {% endif %}
@@ -101,7 +116,12 @@
       <form method="post" action="{% url 'post_vote' post.pk 'rescue' %}">{% csrf_token %}
         <button>⤴ Rescatar al foro principal</button></form>
       {% endif %}
-      <p class="disclaimer">Las señales de esta página no son veredictos verificados: no incluyen búsqueda de fuentes.</p>
+      {# 4.4-B: esta frase estaba clavada y mentía en cuanto el vídeo se verificaba. #}
+      {% if post.status == 'DONE' %}
+      <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}</p>
+      {% else %}
+      <p class="disclaimer">{% trans "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después." %}</p>
+      {% endif %}
     </div>
   {% endif %}
   {% if post.manipulation_detected %}

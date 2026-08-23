@@ -28,6 +28,15 @@ class SystemSetting(models.Model):
             pass
         return default
 
+    @classmethod
+    def get_str(cls, key, default=''):
+        """4.4-B: misma cascada que get_int, para ajustes de texto (la lista de
+        dominios oficiales). Panel > .env > default del codigo."""
+        row = cls.objects.filter(key=key).first()
+        if row is not None and row.value:
+            return row.value
+        return getattr(settings, 'SETTING_DEFAULTS', {}).get(key) or default
+
 
 class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
