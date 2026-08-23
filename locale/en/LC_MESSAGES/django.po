@@ -1052,3 +1052,39 @@ msgid "%(total)s mensaje"
 msgid_plural "%(total)s mensajes"
 msgstr[0] "%(total)s message"
 msgstr[1] "%(total)s messages"
+
+#: pase 4.4-B
+msgid "Contra qué se comparó"
+msgstr "What it was compared against"
+
+#: pase 4.4-B
+msgid "Ver la verificación completa con sus fuentes"
+msgstr "See the full verification and its sources"
+
+#: pase 4.4-B
+msgid "Vota reanálisis profundo"
+msgstr "Vote for a deep re-analysis"
+
+#: pase 4.4-B
+msgid "estimada"
+msgstr "estimated"
+
+#: pase 4.4-B
+msgid "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía."
+msgstr "Claims with a traffic light have been checked against linked sources: click any of them to see the full verification. Those still showing a grey signal have not been verified yet."
+
+#: pase 4.4-B
+msgid "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después."
+msgstr "Signals from the initial pass: automatic, cheap, and they do NOT include a source search. Verification with sources comes later."
+
+#: pase 4.4-B
+msgid "⏳ Pendiente de verificar"
+msgstr "⏳ Pending verification"
+
+#: pase 4.4-B
+msgid "🔍 El sistema lo ha mirado y no se ha decidido"
+msgstr "🔍 Checked by the system, no conclusion reached"
+
+#: pase 4.4-B
+msgid "👁 No verificable solo con audio"
+msgstr "👁 Not verifiable from audio alone"

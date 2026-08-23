@@ -116,13 +116,17 @@
       <form method="post" action="{% url 'post_vote' post.pk 'rescue' %}">{% csrf_token %}
         <button>⤴ Rescatar al foro principal</button></form>
       {% endif %}
-      {# 4.4-B: esta frase estaba clavada y mentía en cuanto el vídeo se verificaba. #}
-      {% if post.status == 'DONE' %}
-      <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}</p>
-      {% else %}
-      <p class="disclaimer">{% trans "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después." %}</p>
-      {% endif %}
     </div>
+  {% endif %}
+  {# 4.4-B: esta frase estaba clavada y mentía en cuanto el vídeo se verificaba.
+     MOVIDA POR EL OPERADOR: vivía DENTRO del bloque {% if OFFTOPIC %} (ya antes de
+     este pase), así que el aviso solo se veía en los análisis relegados y jamás en
+     un post normal — justo donde el lector lo necesita. El test del propio pase
+     (test_el_pie_deja_de_mentir_cuando_hay_veredictos) lo cazó. #}
+  {% if post.status == 'DONE' %}
+  <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}</p>
+  {% else %}
+  <p class="disclaimer">{% trans "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después." %}</p>
   {% endif %}
   {% if post.manipulation_detected %}
     <p class="warning">⚠ Retórica manipulativa detectada en el barrido previo.</p>
