@@ -521,3 +521,60 @@ leído; la segunda visita irá al final») lo evita.
    parece que el arreglo no está. Es la segunda vez que me pasa (también en el 4.3-F con
    `.suggest-list`). Cuando el checklist pida comprobar una propiedad CSS, indica el número de
    línea o usa `grep -A3`.
+
+## 35. Pase 4.4-A.2 aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `75b1e38`, CI **190/190** al tercer intento). Informe en `docs/40`.
+Imagen reconstruida y `accounts/0005` aplicada **con el web parado** en ambos entornos, como
+manda el ritual cuando se migra `User`. El catálogo funciona: en producción, sin sesión,
+`Accept-Language: en` da `>Home<` y sin cabecera `>Portada<`, en los dos dominios.
+
+### 🔴 Un fallo del parche que había que corregir antes de desplegar
+
+El `command` del web quedaba así:
+
+```sh
+ensure_superuser && compilemessages --ignore=venv || true; collectstatic && gunicorn
+```
+
+Tu intención (degradar si falla la compilación del catálogo) es correcta, pero **en `sh` el
+`|| true` no se aplica solo a `compilemessages`: se aplica a `A && B` entero**. Con eso, un
+fallo de `ensure_superuser` —el caso clásico de una migración pendiente, que es justo lo que
+la regla del `run --rm web` existe para evitar— **dejaba arrancar el contenedor sin
+superusuario y sin traducciones, en silencio**. Es fail-open donde el proyecto lleva un año
+siendo fail-closed. Comprobado con `sh` en los tres escenarios:
+
+```
+tu cadena, si ensure_superuser falla → collectstatic, gunicorn   ← ARRANCA
+agrupada,  si ensure_superuser falla → (nada)                    ← no arranca ✔
+agrupada,  si solo falla compilemessages → todo sigue            ✔
+```
+
+Corregido con llaves: `ensure_superuser && { compilemessages || true; } && collectstatic && gunicorn`.
+**Regla general**: en `sh`, `||` y `&&` asocian por la izquierda sin precedencia entre sí. Si
+quieres tolerar SOLO un eslabón de una cadena, agrúpalo con `{ ...; }`.
+
+### Dos arreglos en tus tests
+
+1. **Los 16 fallaron de golpe**: el `setUp` de `Pase44A` usa `cache.clear()` y `cache` no está
+   importado a nivel de módulo en `tests/test_pase42.py` (el único import vive dentro de un
+   método de otra clase). `NameError` en los 16.
+2. **Uno dependía del orden de ejecución**: `test_los_correos_siguen_en_castellano_por_defecto`
+   recibía inglés. Tu código es correcto (sin idioma elegido, manda el idioma ACTIVO), pero
+   **el idioma activo es estado global del hilo**: las peticiones con `Accept-Language: en` de
+   los tests anteriores lo dejan activado y el cliente de pruebas no lo restaura. El `setUp`
+   parte ahora de `settings.LANGUAGE_CODE`. **Apúntatelo para cualquier test futuro de i18n**:
+   sin reset explícito, el resultado depende del orden alfabético de los nombres de los tests.
+
+### Verificado lo que pedías comprobar
+
+Contenido del usuario intacto con la web en inglés (título del vídeo y mensajes del hilo);
+idioma del perfil por encima del navegador y vuelta a «Automático»; selector de cabecera vivo
+apuntando a `/accounts/idioma/`; correos en «Verify your account» / «Verifica tu cuenta» según
+el perfil; las cinco legales en ambos idiomas con su marca de revisión visible para David.
+
+### Nota de verificación para tus checklists
+
+Tu §4.3 propone `curl http://127.0.0.1:8081/` directo contra el espejo. **Eso siempre da 302**:
+el espejo tiene candado de invitados y toda URL no exenta redirige. Los checks del espejo hay
+que hacerlos con sesión (credenciales ADMIN de su `.env`) o contra producción.

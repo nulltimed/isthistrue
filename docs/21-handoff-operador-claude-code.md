@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-17 · Commit en producción: `6ae077b` · Estado del repo: pase 4.3-G (el hilo del post es un foro clásico) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-17 · Commit en producción: `75b1e38` · Estado del repo: pase 4.4-A.2 (la interfaz en inglés de verdad) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§34: TODA la historia técnica) y el informe del último pase (`docs/38`).
+> (§1-§35: TODA la historia técnica) y el informe del último pase (`docs/40`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §34) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §35) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -153,7 +153,21 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `6ae077b` — **pase 4.3-G**: el hilo del post es un **foro clásico**
+- **Producción**: commit `75b1e38` — **pase 4.4-A.2**: la interfaz existe **de verdad en
+  inglés** (catálogo de 343 cadenas en `locale/en/LC_MESSAGES/django.po`; antes `LOCALE_PATHS`
+  apuntaba a una carpeta inexistente y el selector ES·EN no traducía nada), idioma en el perfil
+  (`User.language`, migración `accounts/0005`, middleware `UserLanguageMiddleware` DESPUÉS de
+  `AuthenticationMiddleware`), cinco páginas legales en inglés como plantillas paralelas, y los
+  correos de verificación/bienvenida en el idioma del destinatario. **El Dockerfile añade
+  `gettext`: hay que RECONSTRUIR imagen**, y `compilemessages` corre en el arranque del web.
+  **Solo se traduce la INTERFAZ** — vídeos, transcripciones, veredictos y mensajes del foro se
+  quedan en su idioma original (decisión de David, coste 0 €).
+  **Arreglo del operador**: el `|| true` de `compilemessages` cubría por precedencia de `sh`
+  toda la pareja `ensure_superuser && compilemessages`, así que un fallo de `ensure_superuser`
+  dejaba arrancar el contenedor en silencio; agrupado con `{ ...; }` para que la tolerancia sea
+  solo del catálogo. **En `sh`, para tolerar un solo eslabón de una cadena hay que agruparlo.**
+  Otra trampa nueva: **el idioma activo es estado global del hilo** y contamina los tests entre
+  sí (un `Accept-Language: en` deja el inglés activado). Sobre el **pase 4.3-G**: el hilo del post es un **foro clásico**
   (todo el ancho, ficha de autor con nivel/karma/mensajes, numeración `#N` del hilo entero y
   citable, paginación arriba y abajo, vista previa por `/mensaje/previsualizar/` con el mismo
   renderizador que guarda machina) y **dos fallos visibles arreglados**: los 12 botones de
@@ -237,11 +251,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§34) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§35) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
