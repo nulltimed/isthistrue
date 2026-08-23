@@ -1,8 +1,8 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Eliminar mi cuenta</h1>
-<p class="warning">Esto es permanente: tu usuario se anonimiza y no podrás volver a entrar. Tus comentarios quedarán como "usuario borrado".</p>
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+<h1>{% trans "Eliminar mi cuenta" %}</h1>
+<p class="warning">{% trans "Esto es permanente: tu usuario se anonimiza y no podrás volver a entrar. Tus comentarios quedarán como «usuario borrado»." %}</p>
 <form method="post">{% csrf_token %}
-  <label>Confirma tu contraseña<input type="password" name="password" required></label>
-  <button class="danger">Eliminar definitivamente</button>
+  <label>{% trans "Confirma tu contraseña" %}<input type="password" name="password" required></label>
+  <button class="danger">{% trans "Eliminar definitivamente" %}</button>
 </form>
 {% endblock %}

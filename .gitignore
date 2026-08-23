@@ -8,3 +8,5 @@ db.sqlite3
 .venv/
 audio_tmp/
 ops/backup/db-dump.sql.gz
+# 4.4-A: el catalogo binario lo genera compilemessages en cada arranque
+*.mo

@@ -19,7 +19,7 @@
 <h1>{% trans "Recientes" %}</h1>
 <ul class="post-list">
 {% for p in recent %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
-<span class="badge">{{ p.get_topic_display }}</span><span class="badge">{{ p.get_status_display }}</span>{% if p.is_trending %}<span class="badge trending-badge">🔥 Trending</span>{% endif %}</li>
+<span class="badge">{% trans p.get_topic_display %}</span><span class="badge">{% trans p.get_status_display %}</span>{% if p.is_trending %}<span class="badge trending-badge">🔥 Trending</span>{% endif %}</li>
 {% empty %}<li>{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}
 </ul>
 

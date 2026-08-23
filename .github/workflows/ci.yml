@@ -29,9 +29,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client gettext
       - run: pip install -r requirements.txt
       - run: PGPASSWORD=ci psql -h 127.0.0.1 -U isthistrue -d isthistrue -c "CREATE EXTENSION IF NOT EXISTS vector;"
       - run: python manage.py makemigrations accounts analysis wiki forum panel --noinput
       - run: python manage.py migrate --noinput
+      # 4.4-A: sin el catalogo compilado, la web sale en espanol aunque
+      # el .po este en el repositorio. Los tests del ingles lo exigen.
+      - run: python manage.py compilemessages
       - run: python manage.py test tests --settings=tests.settings_test -v 2

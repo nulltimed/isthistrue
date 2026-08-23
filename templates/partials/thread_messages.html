@@ -13,7 +13,7 @@
           {% endif %}
           <span class="who">{{ m.poster.username|default:_("Cuenta borrada") }}</span>
           {% if m.poster %}
-            <span class="who-line who-level">{{ m.poster.effective_level_label }}</span>
+            <span class="who-line who-level">{% trans m.poster.effective_level_label %}</span>
             <span class="who-line">{% trans "Mensajes" %}: {{ m.author_posts|default:0 }}</span>
             <span class="who-line">{% trans "Karma" %}: {{ m.poster.karma }}</span>
             <span class="who-line">{% trans "Desde" %} {{ m.poster.date_joined|date:'m/Y' }}</span>

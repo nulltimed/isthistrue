@@ -29,6 +29,17 @@
             <p class="hint">{% trans "Una línea corta bajo cada mensaje tuyo del foro. Vacía = sin firma." %}</p>
             <input id="sig" name="signature" maxlength="200" value="{{ u.signature }}"></div>
         </div>
+        {# 4.4-A: idioma de la interfaz, guardado en la cuenta (te sigue a otro navegador). #}
+        <div class="setting-row">
+          <span class="setting-control">{% icon 'globe' 18 %}</span>
+          <div class="setting-text"><label for="lang"><strong>{% trans "Idioma de la interfaz" %}</strong></label>
+            <p class="hint">{% trans "Menús, botones y avisos. El contenido que escriben los usuarios y las transcripciones se muestran siempre en su idioma original." %}</p>
+            <select id="lang" name="language">
+              <option value="" {% if not u.language %}selected{% endif %}>{% trans "Automático (idioma del navegador)" %}</option>
+              <option value="es" {% if u.language == 'es' %}selected{% endif %}>Español</option>
+              <option value="en" {% if u.language == 'en' %}selected{% endif %}>English</option>
+            </select></div>
+        </div>
       </section>
 
       <section id="contenido" class="settings-section">

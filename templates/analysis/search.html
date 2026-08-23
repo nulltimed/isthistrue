@@ -16,7 +16,7 @@
   {% if results.posts %}<h2>{% trans "Análisis" %}</h2><ul>
     {% for p in results.posts %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
     {% if p.is_trending %}<span class="badge trending-badge">🔥</span>{% endif %}
-    <span class="badge">{{ p.get_topic_display }}</span></li>{% endfor %}</ul>{% endif %}
+    <span class="badge">{% trans p.get_topic_display %}</span></li>{% endfor %}</ul>{% endif %}
   {% if results.messages %}<h2>{% trans "Conversaciones" %}</h2><ul>
     {% for m in results.messages %}<li>
       <a href="/foro/forum/x-0/topic/{{ m.topic.slug }}-{{ m.topic.pk }}/">{{ m.topic.subject|truncatechars:70 }}</a>

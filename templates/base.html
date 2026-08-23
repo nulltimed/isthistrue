@@ -18,7 +18,7 @@
 </head>
 <body{% if user.is_authenticated and user.notify_prefs.toast_sound %} data-toast-sound="1"{% endif %}>
 <header>
-  <form action="{% url 'set_language' %}" method="post" class="lang-switch-top">{% csrf_token %}
+  <form action="{% url 'set_language_pref' %}" method="post" class="lang-switch-top">{% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
     <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
   </form>

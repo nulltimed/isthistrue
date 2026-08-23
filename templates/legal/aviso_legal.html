@@ -1,7 +1,8 @@
-{% extends 'base.html' %}{% block content %}
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/aviso_legal.html' %}{% else %}
 <h1>Aviso legal</h1>
 <p><em>[PLANTILLA — David debe revisar y completar los campos entre corchetes antes de publicar. Esto es una guía, no asesoramiento jurídico.]</em></p>
 <p>Titular del sitio: <strong>David Souto Apariz</strong> · Contacto: <strong>contact@xyztserver.com</strong> · Domicilio a efectos de notificaciones: <strong>[APARTADO DE CORREOS — pendiente de contratar]</strong>.<br>Proyecto sin ánimo de lucro; asociación en proceso de constitución — al inscribirse en el registro correspondiente, la titularidad pasará a la asociación.</p>
 <p>isthistrue. / escierto. es un proyecto sin ánimo de lucro de verificación comunitaria de contenidos. El código es libre (AGPL-3.0) y los datos de la wiki se publican bajo CC-BY-SA. No se almacena contenido multimedia de terceros: los contenidos se muestran mediante los reproductores oficiales de cada plataforma.</p>
 <p>Las verificaciones expresan el resultado de una metodología documentada (<a href="{% url 'methodology' %}">cómo verificamos</a>) con fuentes enlazadas y reproducibles; no constituyen juicios sobre personas. Existe un <a href="{% url 'complaint_form' %}">canal de reclamaciones</a> con acuse de recibo y un procedimiento prioritario para autores del contenido analizado (SLA público de 7 días).</p>
-{% endblock %}
+{% endif %}{% endblock %}

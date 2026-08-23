@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng curl unzip && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng curl unzip gettext && rm -rf /var/lib/apt/lists/*
 # deno FIJADO (pase 4.1 B2): motor JS para yt-dlp — sin el, YouTube estrangula la
 # descarga (34 KiB/s observados). Binario oficial, version exacta.
 ARG DENO_VERSION=2.1.4

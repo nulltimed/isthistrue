@@ -1944,3 +1944,173 @@ class Pase43G(TestCase):
         html = self.client.get(f'/post/{post.pk}/').content.decode()
         self.assertIn(f'action="/post/{post.pk}/reply/"', html)
         self.assertIn('data-preview-url=', html)   # el JS lo lee de aquí, no cableado
+
+
+class Pase44A(TestCase):
+    """4.4-A — la interfaz existe de verdad en inglés.
+
+    Antes de este pase, LOCALE_PATHS apuntaba a una carpeta que no existía: los
+    247 {% trans %} de las plantillas marcaban las frases como traducibles y
+    detrás no había ningún catálogo. Pulsaras ES o EN, salía español.
+
+    Decisión de David (2026-08-18): SOLO español e inglés, y SOLO la interfaz.
+    Ni vídeos, ni transcripciones, ni veredictos, ni mensajes del foro: eso se
+    muestra siempre en el idioma en que se escribió.
+    """
+
+    def setUp(self):
+        cache.clear()
+
+    # ---------- el catálogo ----------
+    def test_el_catalogo_ingles_existe_y_no_tiene_huecos(self):
+        """Una traducción vacía sale como la cadena española: pasa desapercibida."""
+        import re
+        po = open('locale/en/LC_MESSAGES/django.po', encoding='utf-8').read()
+        pares = re.findall(r'^msgid "(.+)"\nmsgstr "(.*)"$', po, re.M)
+        self.assertGreater(len(pares), 250, 'el catálogo está a medias')
+        vacias = [m for m, t in pares if not t.strip()]
+        self.assertEqual(vacias, [], f'{len(vacias)} cadenas sin traducir')
+
+    def test_todas_las_cadenas_de_las_plantillas_estan_en_el_catalogo(self):
+        """Candado: una plantilla nueva con {% trans %} y sin entrada en el .po
+        sale en español dentro de la web inglesa, sin que nada falle."""
+        import glob, re
+        po = open('locale/en/LC_MESSAGES/django.po', encoding='utf-8').read()
+        catalogo = set(re.findall(r'^msgid "(.+)"$', po, re.M))
+        pat = re.compile(r'\{%\s*trans\s+(["\'])(.*?)\1', re.S)
+        faltan = set()
+        for f in glob.glob('templates/**/*.html', recursive=True):
+            for _q, t in pat.findall(open(f, encoding='utf-8').read()):
+                if t.replace('"', '\\"') not in catalogo:
+                    faltan.add(t)
+        self.assertEqual(faltan, set(), f'sin traducir al inglés: {sorted(faltan)[:5]}')
+
+    def test_el_catalogo_traduce_de_verdad(self):
+        """Si esto falla, falta `compilemessages`: el .po no lo lee nadie."""
+        from django.utils import translation
+        from django.utils.translation import gettext
+        with translation.override('en'):
+            self.assertEqual(gettext('Portada'), 'Home')
+            self.assertEqual(gettext('Conversación'), 'Conversation')
+        with translation.override('es'):
+            self.assertEqual(gettext('Portada'), 'Portada')
+
+    # ---------- la web ----------
+    def test_la_portada_responde_en_ingles(self):
+        r = self.client.get('/', HTTP_ACCEPT_LANGUAGE='en')
+        html = r.content.decode()
+        self.assertIn('Home', html)
+        self.assertNotIn('>Portada<', html)
+
+    def test_las_etiquetas_de_estado_tambien_se_traducen(self):
+        """Van por {% trans variable %}: los choices del modelo no se tocan."""
+        autor = make_user(username='ing', email='ing@example.org')
+        Post.objects.create(author=autor, url='https://youtu.be/i18n01',
+                            title='Vídeo', status='DONE', topic='politica')
+        html = self.client.get('/', HTTP_ACCEPT_LANGUAGE='en').content.decode()
+        self.assertIn('Analysed', html)
+        self.assertIn('Politics', html)
+
+    def test_las_paginas_legales_tienen_version_inglesa(self):
+        for url, esperado in [('/legal/aviso/', 'Legal notice'),
+                              ('/legal/privacidad/', 'Privacy policy'),
+                              ('/legal/condiciones/', 'Terms of use'),
+                              ('/legal/cookies/', 'Cookie policy'),
+                              ('/metodologia/', 'How we verify')]:
+            html = self.client.get(url, HTTP_ACCEPT_LANGUAGE='en').content.decode()
+            self.assertIn(esperado, html, url)
+
+    def test_las_paginas_legales_siguen_en_castellano_por_defecto(self):
+        html = self.client.get('/legal/privacidad/').content.decode()
+        self.assertIn('Política de privacidad', html)
+
+    # ---------- la elección del usuario ----------
+    def test_el_idioma_del_perfil_manda_sobre_el_navegador(self):
+        u = make_user(username='eng', email='eng@example.org')
+        u.language = 'en'
+        u.save(update_fields=['language'])
+        self.client.force_login(u)
+        html = self.client.get('/', HTTP_ACCEPT_LANGUAGE='es').content.decode()
+        self.assertIn('Home', html)
+
+    def test_el_selector_de_la_cabecera_guarda_la_eleccion_en_la_cuenta(self):
+        u = make_user(username='sel', email='sel@example.org')
+        self.client.force_login(u)
+        self.client.post('/accounts/idioma/', {'language': 'en', 'next': '/'})
+        u.refresh_from_db()
+        self.assertEqual(u.language, 'en')
+
+    def test_el_selector_funciona_sin_cuenta(self):
+        """Un visitante no tiene Ajustes: los botones de arriba son su única vía."""
+        r = self.client.post('/accounts/idioma/', {'language': 'en', 'next': '/'})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('Home', self.client.get('/').content.decode())
+
+    def test_ajustes_permite_volver_al_automatico(self):
+        u = make_user(username='auto', email='auto@example.org')
+        u.language = 'en'
+        u.save(update_fields=['language'])
+        self.client.force_login(u)
+        self.client.post('/accounts/settings/', {'language': '', 'notify_mode': 'WEB',
+                                                 'digest_hour': '8'})
+        u.refresh_from_db()
+        self.assertEqual(u.language, '')
+
+    # ---------- lo que NO se traduce ----------
+    def test_el_contenido_de_los_usuarios_no_se_traduce(self):
+        """Decisión explícita: los mensajes se leen en el idioma en que se
+        escribieron. Ni columnas, ni traducción automática, ni coste."""
+        from apps.forum.machina_glue import create_topic_for_post, get_topic_for_post
+        from machina.core.db.models import get_model
+        autor = make_user(username='orig', email='orig@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/i18n02',
+                                   title='Título en castellano', author_opinion='Abro yo.')
+        create_topic_for_post(post)
+        MPost = get_model('forum_conversation', 'Post')
+        MPost.objects.create(topic=get_topic_for_post(post), poster=autor,
+                             subject='Re', content='Esto se queda en castellano',
+                             approved=True)
+        html = self.client.get(f'/post/{post.pk}/',
+                               HTTP_ACCEPT_LANGUAGE='en').content.decode()
+        self.assertIn('Esto se queda en castellano', html)   # el mensaje, intacto
+        self.assertIn('Título en castellano', html)          # el título, intacto
+        self.assertIn('Conversation', html)                  # la interfaz, en inglés
+
+    def test_los_correos_van_en_el_idioma_del_destinatario(self):
+        """El de verificación es el único paso OBLIGATORIO del alta: si llega en
+        un idioma que el destinatario no lee, el registro se pierde."""
+        from django.core import mail
+        from apps.accounts.verification import send_verification_email
+        u = make_user(username='mail_en', email='mail_en@example.org')
+        u.language = 'en'
+        u.save(update_fields=['language'])
+        mail.outbox = []
+        send_verification_email(u)
+        self.assertEqual(len(mail.outbox), 1)
+        m = mail.outbox[0]
+        self.assertIn('Verify your account', m.subject)
+        self.assertIn('Verify my account', m.alternatives[0][0])
+
+    def test_los_correos_siguen_en_castellano_por_defecto(self):
+        from django.core import mail
+        from apps.accounts.verification import send_verification_email
+        u = make_user(username='mail_es', email='mail_es@example.org')
+        mail.outbox = []
+        send_verification_email(u)
+        self.assertIn('Verifica tu cuenta', mail.outbox[0].subject)
+
+    def test_las_cadenas_de_los_correos_estan_en_el_catalogo(self):
+        """Las de los .py no las ve el candado de plantillas: van aparte."""
+        import re
+        po = open('locale/en/LC_MESSAGES/django.po', encoding='utf-8').read()
+        catalogo = ' '.join(re.findall(r'^msgid "(.+)"$', po, re.M))
+        for frase in ('Verifica tu cuenta', 'Cuenta verificada',
+                      'Pulsa para verificar tu cuenta'):
+            self.assertIn(frase, catalogo, frase)
+
+    def test_la_infraestructura_de_traduccion_esta_completa(self):
+        """gettext en la imagen y compilemessages en el arranque: sin las dos
+        cosas el catálogo está en el repositorio y no lo lee nadie."""
+        self.assertIn('gettext', open('Dockerfile', encoding='utf-8').read())
+        for f in ('docker-compose.yml', 'docker-compose.staging.yml'):
+            self.assertIn('compilemessages', open(f, encoding='utf-8').read(), f)

@@ -1,8 +1,8 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Cambios recientes</h1>
-<p class="hint">Toda re-verificación y cambio de color, a la vista. <a href="{% url 'rss_changes' %}">RSS</a></p>
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+<h1>{% trans "Cambios recientes" %}</h1>
+<p class="hint">{% trans "Toda re-verificación y cambio de color, a la vista." %} <a href="{% url 'rss_changes' %}">RSS</a></p>
 <ul>{% for v in versions %}
-<li>{{ v.created_at|date:'d/m H:i' }} — {{ v.get_color_display }} —
+<li>{{ v.created_at|date:'d/m H:i' }} — {% trans v.get_color_display %} —
 <a href="/wiki/claim/{{ v.claim.slug|default:v.claim.pk }}/">{{ v.claim.text_original|truncatechars:110 }}</a></li>
 {% endfor %}</ul>
 {% endblock %}

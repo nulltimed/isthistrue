@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'machina.apps.forum_permission.middleware.ForumPermissionMiddleware',
     # HostLanguageMiddleware eliminado (Fase 3.9): idioma = cookie del selector →
     # Accept-Language del navegador → 'es' (LocaleMiddleware, ya arriba en la cadena).
+    'config.middleware.UserLanguageMiddleware',   # 4.4-A: el idioma del perfil manda
     'config.middleware.StagingAccessMiddleware',  # espejo: solo invitados
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]

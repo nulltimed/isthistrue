@@ -1,16 +1,16 @@
-{% extends 'base.html' %}{% block content %}
-<h1>Canal de reclamaciones</h1>
-<p class="hint">Recibirás un número de referencia y acuse por email. Si eres el autor del contenido analizado, indícalo: tu reclamación entra en cola prioritaria (respuesta en 7 días).</p>
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+<h1>{% trans "Canal de reclamaciones" %}</h1>
+<p class="hint">{% trans "Recibirás un número de referencia y acuse por email. Si eres el autor del contenido analizado, indícalo: tu reclamación entra en cola prioritaria (respuesta en 7 días)." %}</p>
 <form method="post">{% csrf_token %}
-  <label>Tu email<input type="email" name="email" required></label>
-  <label>Enlace al contenido reclamado<input name="content_url" required placeholder="https://..."></label>
-  <label>Motivo<select name="reason">
-    <option value="ERROR">Error factual</option>
-    <option value="DEFAMATION">Considero que me difama</option>
-    <option value="COPYRIGHT">Propiedad intelectual</option>
-    <option value="PRIVACY">Privacidad</option>
-    <option value="OTHER">Otro</option></select></label>
-  <label>Explica tu reclamación<textarea name="body" rows="6" required></textarea></label>
-  <button>Enviar reclamación</button>
+  <label>{% trans "Tu email" %}<input type="email" name="email" required></label>
+  <label>{% trans "Enlace al contenido reclamado" %}<input name="content_url" required placeholder="https://..."></label>
+  <label>{% trans "Motivo" %}<select name="reason">
+    <option value="ERROR">{% trans "Error factual" %}</option>
+    <option value="DEFAMATION">{% trans "Considero que me difama" %}</option>
+    <option value="COPYRIGHT">{% trans "Propiedad intelectual" %}</option>
+    <option value="PRIVACY">{% trans "Privacidad" %}</option>
+    <option value="OTHER">{% trans "Otro" %}</option></select></label>
+  <label>{% trans "Explica tu reclamación" %}<textarea name="body" rows="6" required></textarea></label>
+  <button>{% trans "Enviar reclamación" %}</button>
 </form>
 {% endblock %}

@@ -1,6 +1,7 @@
-{% extends 'base.html' %}{% block content %}
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/metodologia.html' %}{% else %}
 <h1>Cómo verificamos</h1>
 <p>Versión corta, para quien lee poco (la metodología completa, con umbrales y modelos, está publicada en el <a href="https://github.com/nulltimed/isthistrue" rel="noopener">repositorio del proyecto</a> — todo el código es libre):</p>
 <p>1) Al analizar un contenido, se transcribe y un agente extrae sus <strong>afirmaciones</strong>, separando hechos verificables de opiniones. 2) Si el contenido es mayormente opinión, va a Off-Topic sin veredictos. 3) Si es factual, la <strong>comunidad valida</strong> que merece verificación (5 votos en 3 días). 4) Entonces cada afirmación se contrasta con <strong>búsquedas y fuentes enlazadas</strong>, y recibe un color: 🟢 verificado · 🟡 engañoso o sin contexto · 🔴 falso · ⚪ no verificable. 5) Cada afirmación tiene su página wiki con historial de versiones, fuentes y todas sus apariciones. 6) Los colores se aplican a afirmaciones, jamás a personas. 7) Cualquiera puede reclamar; los autores del contenido tienen vía prioritaria (respuesta en 7 días).</p>
 <p>El proyecto no promete "la verdad": promete verificabilidad graduada, metodología transparente y fuentes reproducibles.</p>
-{% endblock %}
+{% endif %}{% endblock %}

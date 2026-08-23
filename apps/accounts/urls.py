@@ -10,6 +10,7 @@ urlpatterns = [
     path('verify/resend/', views.resend_verification, name='resend_verification'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('settings/', views.settings_view, name='account_settings'),
+    path('idioma/', views.set_language_pref, name='set_language_pref'),  # 4.4-A
     path('delete/', views.delete_account, name='delete_account'),
     path('notifications/', views.notifications, name='notifications'),
     path('notifications/poll/', views.notifications_poll, name='notifications_poll'),

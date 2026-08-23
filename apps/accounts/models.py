@@ -11,6 +11,11 @@ from django.utils import timezone
 
 LEVELS = [('NEW', 'Nuevo'), ('CONTRIB', 'Contribuidor'), ('VERIF', 'Verificador'),
           ('VET', 'Veterano'), ('MOD', 'Moderador')]
+# 4.4-A: idioma de la interfaz. Vacio = "lo que diga el navegador" (Accept-Language),
+# que es lo que ve un visitante sin cuenta. En cuanto el usuario elige, su eleccion
+# manda sobre la cookie y le SIGUE a cualquier navegador desde el que entre.
+UI_LANGUAGES = [('', 'Automático (idioma del navegador)'),
+                ('es', 'Español'), ('en', 'English')]
 KARMA_THRESHOLDS = {'NEW': 0, 'CONTRIB': 50, 'VERIF': 250, 'VET': 1000}
 DAILY_QUOTA = {'NEW': 10, 'CONTRIB': 50, 'VERIF': 100, 'VET': 500, 'MOD': 500}
 LEVEL_ORDER = ['NEW', 'CONTRIB', 'VERIF', 'VET', 'MOD']
@@ -21,6 +26,7 @@ class User(AbstractUser):
     level = models.CharField(max_length=8, choices=LEVELS, default='NEW')
     # Nivel regalado por codigo canjeable (privilegios sin karma; revocable):
     granted_level = models.CharField(max_length=8, choices=LEVELS, blank=True, default='')
+    language = models.CharField(max_length=5, choices=UI_LANGUAGES, blank=True, default='')
     birth_date = models.DateField(null=True, blank=True)
     # Sliders del panel de cuenta (compartido foro+wiki):
     hide_adult = models.BooleanField(default=True)

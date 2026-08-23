@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %}{% load i18n %}
 {% block content %}
-<h1>Canjear código</h1>
+<h1>{% trans "Canjear código" %}</h1>
 <form method="post">{% csrf_token %}
-  <label>Código<input name="code" placeholder="ISTT-XXXX-XXXX" required
+  <label>{% trans "Código" %}<input name="code" placeholder="ISTT-XXXX-XXXX" required
     style="text-transform:uppercase" maxlength="14"></label>
-  <button>Canjear</button>
+  <button>{% trans "Canjear" %}</button>
 </form>
 {% endblock %}

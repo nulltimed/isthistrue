@@ -1,0 +1,1054 @@
+# Catalogo ingles de la interfaz de isthistrue. / escierto.
+# Pase 4.4-A. Traducciones escritas a mano, no generadas por maquina.
+# Se compila con:  python manage.py compilemessages
+msgid ""
+msgstr ""
+"Project-Id-Version: isthistrue 4.4-A\n"
+"Report-Msgid-Bugs-To: contact@xyztserver.com\n"
+"PO-Revision-Date: 2026-08-18 00:00+0000\n"
+"Last-Translator: proyecto isthistrue. / escierto.\n"
+"Language-Team: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Aceptar"
+msgstr "Accept"
+
+msgid "Aceptar mensajes privados"
+msgstr "Accept private messages"
+
+msgid "Actuales"
+msgstr "Current"
+
+msgid "Adelantar este análisis"
+msgstr "Move this analysis up the queue"
+
+msgid "Afirmaciones analizadas y atribuidas mediante identificación participativa."
+msgstr "Claims analysed and attributed through community identification."
+
+msgid "Ahora mismo el registro está ABIERTO: cualquiera puede crear cuenta."
+msgstr "Sign-ups are currently OPEN: anyone can create an account."
+
+msgid "Ahora mismo el registro está CERRADO: nadie nuevo puede crear cuenta."
+msgstr "Sign-ups are currently CLOSED: no new accounts can be created."
+
+msgid "Ajustes"
+msgstr "Settings"
+
+msgid "Amigos"
+msgstr "Friends"
+
+msgid "Analizado"
+msgstr "Analysed"
+
+msgid "Analizar"
+msgstr "Analyse"
+
+msgid "Analizar un vídeo"
+msgstr "Analyse a video"
+
+msgid "Anterior"
+msgstr "Previous"
+
+msgid "Análisis"
+msgstr "Analysis"
+
+msgid "Análisis completo en cola"
+msgstr "Full analysis queued"
+
+msgid "Análisis completo en curso"
+msgstr "Full analysis running"
+
+msgid "Análisis marcados para mayores de edad. No aparecen en portada, en el buscador ni en las listas públicas: solo aquí, y solo para cuentas con 18 años cumplidos."
+msgstr "Analyses flagged as adult content. They do not appear on the front page, in search or in any public listing: only here, and only for accounts aged 18 or over."
+
+msgid "Análisis para mayores de edad"
+msgstr "Adult analyses"
+
+msgid "Apadrinar este análisis"
+msgstr "Sponsor this analysis"
+
+msgid "Apariciones"
+msgstr "Appearances"
+
+msgid "Automático (idioma del navegador)"
+msgstr "Automatic (browser language)"
+
+msgid "Avatar"
+msgstr "Avatar"
+
+msgid "Aviso legal"
+msgstr "Legal notice"
+
+msgid "Bloquear"
+msgstr "Block"
+
+msgid "Buscar"
+msgstr "Search"
+
+msgid "Buscar en"
+msgstr "Search in"
+
+msgid "Buscar..."
+msgstr "Search..."
+
+msgid "Buzón cerrado por defecto: se abre en Mi cuenta → Comunidad. Moderación siempre puede escribirte. El botón de reporte eleva un mensaje a los moderadores."
+msgstr "Your inbox is closed by default: open it in My account → Community. Moderators can always write to you. The report button escalates a message to the moderation team."
+
+msgid "Cambios en el análisis"
+msgstr "Changes to the analysis"
+
+msgid "Cambios recientes"
+msgstr "Recent changes"
+
+msgid "Canal de reclamaciones"
+msgstr "Complaints channel"
+
+msgid "Canjear"
+msgstr "Redeem"
+
+msgid "Canjear código"
+msgstr "Redeem a code"
+
+msgid "Canjear un código"
+msgstr "Redeem a code"
+
+msgid "Cantidad a donar"
+msgstr "Amount to donate"
+
+msgid "Cantidad mínima: 1 €"
+msgstr "Minimum amount: €1"
+
+msgid "Ciencia"
+msgstr "Science"
+
+msgid "Citar"
+msgstr "Quote"
+
+msgid "Citar este mensaje"
+msgstr "Quote this message"
+
+msgid "Clic en una frase: el vídeo salta a un segundo antes y se reproduce."
+msgstr "Click any sentence: the video jumps to one second earlier and plays."
+
+msgid "Compartir"
+msgstr "Share"
+
+msgid "Comunidad"
+msgstr "Community"
+
+msgid "Con el buzón cerrado, solo moderación puede escribirte. Los bloqueos mandan siempre."
+msgstr "With your inbox closed, only moderators can write to you. Blocks always take precedence."
+
+msgid "Conceder permiso"
+msgstr "Grant permission"
+
+msgid "Condiciones"
+msgstr "Terms"
+
+msgid "Confirma tu contraseña"
+msgstr "Confirm your password"
+
+msgid "Considero que me difama"
+msgstr "I believe it defames me"
+
+msgid "Contenido"
+msgstr "Content"
+
+msgid "Contenido para mayores de 18"
+msgstr "Content for over-18s"
+
+msgid "Contribuidor"
+msgstr "Contributor"
+
+msgid "Conversaciones"
+msgstr "Conversations"
+
+msgid "Conversación"
+msgstr "Conversation"
+
+msgid "Crea tu cuenta y analiza tu primer vídeo"
+msgstr "Create your account and analyse your first video"
+
+msgid "Crear cuenta"
+msgstr "Create account"
+
+msgid "Cuenta verificada — bienvenido/a"
+msgstr "Account verified — welcome"
+
+msgid "Cuenta y datos"
+msgstr "Account and data"
+
+msgid "Cultura"
+msgstr "Culture"
+
+msgid "Cupo hoy"
+msgstr "Today's quota"
+
+msgid "Código"
+msgstr "Code"
+
+msgid "Códigos"
+msgstr "Codes"
+
+msgid "Cómo avisarte"
+msgstr "How we notify you"
+
+msgid "Cómo verificamos"
+msgstr "How we verify"
+
+msgid "Deporte"
+msgstr "Sport"
+
+msgid "Depósito vivo"
+msgstr "Live budget"
+
+msgid "Derecho de supresión (RGPD): la cuenta desaparece; tus mensajes quedan anónimos."
+msgstr "Right to erasure (GDPR): the account is deleted; your messages become anonymous."
+
+msgid "Desde"
+msgstr "Since"
+
+msgid "Devolver a Principal"
+msgstr "Move back to Main"
+
+msgid "Difuminar opiniones"
+msgstr "Blur opinions"
+
+msgid "Difuminar para mí"
+msgstr "Blur for me"
+
+msgid "Difuminar para todos"
+msgstr "Blur for everyone"
+
+msgid "Discuto"
+msgstr "I disagree"
+
+msgid "Distinta de tu nombre de usuario y email"
+msgstr "Different from your username and email"
+
+msgid "Donaciones"
+msgstr "Donations"
+
+msgid "Donación puntual"
+msgstr "One-off donation"
+
+msgid "Donar"
+msgstr "Donate"
+
+msgid "Donar por PayPal (la cantidad se elige en PayPal)"
+msgstr "Donate with PayPal (you choose the amount on PayPal)"
+
+msgid "Economía"
+msgstr "Economy"
+
+msgid "Editar"
+msgstr "Edit"
+
+msgid "Editar (15 min)"
+msgstr "Edit (15 min)"
+
+msgid "Editar mensaje"
+msgstr "Edit message"
+
+msgid "El acceso depende de la fecha de nacimiento que indicaste al registrarte. Si no has iniciado sesión, entra primero."
+msgstr "Access depends on the date of birth you gave when signing up. If you are not logged in, log in first."
+
+msgid "El botón se activará cuando la contraseña cumpla todas las condiciones."
+msgstr "The button will become active once the password meets every requirement."
+
+msgid "El clasificador sugiere Off-Topic (mayoría de opinión). La decisión es tuya."
+msgstr "The classifier suggests Off-Topic (mostly opinion). The decision is yours."
+
+msgid "El contenido +18 se difumina estilo Reddit; clic para verlo."
+msgstr "Adult content is blurred Reddit-style; click to reveal it."
+
+msgid "El destinatario puede reportar cualquier mensaje a moderación."
+msgstr "The recipient can report any message to the moderation team."
+
+msgid "El enlace caduca en 72 horas. Si el botón no funciona, copia esta dirección:"
+msgstr "The link expires in 72 hours. If the button does not work, copy this address:"
+
+msgid "El proyecto no cobra por publicar: la donación es voluntaria y el vídeo se analizará igualmente cuando llegue su turno."
+msgstr "The project does not charge for posting: donating is voluntary and the video will be analysed anyway when its turn comes."
+
+msgid "El superusuario también es moderador supremo: esta subsección reúne los ajustes de moderación independientes del resto del panel. Los moderadores la verán cuando llegue su panel (4.4)."
+msgstr "The superuser is also the head moderator: this subsection gathers the moderation settings that are independent from the rest of the panel. Moderators will see it once their own panel arrives (4.4)."
+
+msgid "Elige 5 €, 10 € u otra cantidad en el banner de arriba y paga con el botón de PayPal — sin registrarte en ningún sitio nuevo."
+msgstr "Pick €5, €10 or another amount in the banner above and pay with the PayPal button — no new account anywhere."
+
+msgid "Eliminar definitivamente"
+msgstr "Delete permanently"
+
+msgid "Eliminar mi cuenta"
+msgstr "Delete my account"
+
+msgid "Email inmediato"
+msgstr "Immediate email"
+
+msgid "En cola por presupuesto (esperando depósito o apadrinamiento)"
+msgstr "Queued for budget (waiting for funds or a sponsor)"
+
+msgid "En cola por presupuesto."
+msgstr "Queued for budget."
+
+msgid "Enlace a este mensaje"
+msgstr "Link to this message"
+
+msgid "Enlace al contenido reclamado"
+msgstr "Link to the content complained about"
+
+msgid "Enlace del vídeo (obligatorio)"
+msgstr "Video link (required)"
+
+msgid "Entra"
+msgstr "Log in"
+
+msgid "Entrar"
+msgstr "Log in"
+
+msgid "Entrar en escierto."
+msgstr "Go to escierto."
+
+msgid "Enviados"
+msgstr "Sent"
+
+msgid "Enviar"
+msgstr "Send"
+
+msgid "Enviar reclamación"
+msgstr "Send complaint"
+
+msgid "Enviar solicitud a"
+msgstr "Send a request to"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Error factual"
+msgstr "Factual error"
+
+msgid "Es factual"
+msgstr "It is factual"
+
+msgid "Es opinión/entretenimiento: mandarlo directamente a Off-Topic"
+msgstr "It is opinion/entertainment: send it straight to Off-Topic"
+
+msgid "Escribir una respuesta"
+msgstr "Write a reply"
+
+msgid "Espejo"
+msgstr "Staging"
+
+msgid "Este contenido está marcado como +18 y no está disponible para tu cuenta."
+msgstr "This content is flagged as adult and is not available to your account."
+
+msgid "Este contenido puede ser sensible. Clic para verlo."
+msgstr "This content may be sensitive. Click to reveal it."
+
+msgid "Este mes"
+msgstr "This month"
+
+msgid "Esto borra la transcripción actual y la regenera con IA (tiene coste). ¿Reanalizar?"
+msgstr "This deletes the current transcript and regenerates it with AI (it costs money). Re-analyse?"
+
+msgid "Esto es permanente: tu usuario se anonimiza y no podrás volver a entrar. Tus comentarios quedarán como «usuario borrado»."
+msgstr "This is permanent: your account is anonymised and you will not be able to log in again. Your comments will show as “deleted user”."
+
+msgid "Etiquetas libres (opcional, separadas por comas)"
+msgstr "Free tags (optional, comma-separated)"
+
+msgid "Explica tu reclamación"
+msgstr "Explain your complaint"
+
+msgid "Faltan hablantes por identificar"
+msgstr "Some speakers are still unidentified"
+
+msgid "Fase barata en curso"
+msgstr "Cheap phase running"
+
+msgid "Firma"
+msgstr "Signature"
+
+msgid "Foro"
+msgstr "Forum"
+
+msgid "Foro principal"
+msgstr "Main forum"
+
+msgid "Fuentes"
+msgstr "Sources"
+
+msgid "Guardar"
+msgstr "Save"
+
+msgid "Hablante"
+msgstr "Speaker"
+
+msgid "Hola %(username)s:\n\nPulsa para verificar tu cuenta:\n%(url)s\n\nEl enlace caduca en 72 horas. Si no creaste esta cuenta, ignora este mensaje."
+msgstr "Hi %(username)s,\n\nClick to verify your account:\n%(url)s\n\nThe link expires in 72 hours. If you did not create this account, please ignore this message."
+
+msgid "Hora del resumen diario"
+msgstr "Daily digest time"
+
+msgid "Hoy"
+msgstr "Today"
+
+msgid "Identidad verificada en Wikidata"
+msgstr "Identity verified on Wikidata"
+
+msgid "Identifica al menos a la mitad en «¿Quién habla?» para poder marcarlo como factual."
+msgstr "Identify at least half of them under “Who is speaking?” before you can mark it as factual."
+
+msgid "Idioma de la interfaz"
+msgstr "Interface language"
+
+msgid "Imagen libre; un chequeo automático puede retirarla si incumple las normas."
+msgstr "Any image you like; an automatic check may remove it if it breaks the rules."
+
+msgid "Internacional"
+msgstr "World"
+
+msgid "Karma"
+msgstr "Karma"
+
+msgid "La amistad da visibilidad de actividad, no mensajería (no existe chat privado)."
+msgstr "Friendship gives visibility of activity, not messaging (there is no private chat)."
+
+msgid "La amistad solo da visibilidad mutua; no existe mensajería privada."
+msgstr "Friendship only grants mutual visibility; there is no private messaging."
+
+msgid "La campana siempre funciona; elige si además quieres email."
+msgstr "The bell always works; choose whether you also want email."
+
+msgid "La diferencia"
+msgstr "The difference"
+
+msgid "La fase inicial es automática y barata; la verificación a fondo con fuentes llega cuando la comunidad valida el análisis."
+msgstr "The first pass is automatic and cheap; in-depth verification with sources comes once the community validates the analysis."
+
+msgid "La identidad la manda Wikidata, no el nombre escrito. Estas son todas las personas indexadas bajo"
+msgstr "Identity is decided by Wikidata, not by the name as written. These are all the people indexed under"
+
+msgid "Las frases marcadas como opinión se muestran difuminadas en las transcripciones; clic para revelarlas."
+msgstr "Sentences flagged as opinion are blurred in transcripts; click to reveal them."
+
+msgid "Los códigos ISTT otorgan nivel de confianza."
+msgstr "ISTT codes grant a trust level."
+
+msgid "MP"
+msgstr "PM"
+
+msgid "Markdown: **negrita**, *cursiva*, > cita, enlaces…"
+msgstr "Markdown: **bold**, *italic*, > quote, links…"
+
+msgid "Medioambiente"
+msgstr "Environment"
+
+msgid "Mensaje privado"
+msgstr "Private message"
+
+msgid "Mensaje privado a"
+msgstr "Private message to"
+
+msgid "Mensajes"
+msgstr "Posts"
+
+msgid "Mensajes privados"
+msgstr "Private messages"
+
+msgid "Menús, botones y avisos. El contenido que escriben los usuarios y las transcripciones se muestran siempre en su idioma original."
+msgstr "Menus, buttons and notices. Content written by users and transcripts are always shown in their original language."
+
+msgid "Mi cuenta"
+msgstr "My account"
+
+msgid "Moderación"
+msgstr "Moderation"
+
+msgid "Moderador"
+msgstr "Moderator"
+
+msgid "Moderadores"
+msgstr "Moderators"
+
+msgid "Mostrar de nuevo"
+msgstr "Show again"
+
+msgid "Motivo"
+msgstr "Reason"
+
+msgid "Motivo (opcional)"
+msgstr "Reason (optional)"
+
+msgid "Más opciones de donación"
+msgstr "More ways to donate"
+
+msgid "Más votados (7 días)"
+msgstr "Most voted (7 days)"
+
+msgid "Máximo 8.000 caracteres. Cita con el botón «Citar» de cada mensaje."
+msgstr "Up to 8,000 characters. Quote using the “Quote” button on each message."
+
+msgid "Mínimo 8 caracteres"
+msgstr "At least 8 characters"
+
+msgid "Nada de emails entre las 23:00 y las 8:00. La campana no descansa."
+msgstr "No emails between 11 pm and 8 am. The bell never sleeps."
+
+msgid "Nada por aquí todavía."
+msgstr "Nothing here yet."
+
+msgid "Nada por aquí."
+msgstr "Nothing here."
+
+msgid "Nada todavía. Sé el primero en analizar algo."
+msgstr "Nothing yet. Be the first to analyse something."
+
+msgid "Nadie ha opinado todavía. Abre tú la conversación."
+msgstr "Nobody has commented yet. Start the conversation."
+
+msgid "Ninguna."
+msgstr "None."
+
+msgid "Nivel"
+msgstr "Level"
+
+msgid "No puede ser solo números"
+msgstr "It cannot be numbers only"
+
+msgid "No puede ser una contraseña típica (123456789, qwerty...)"
+msgstr "It cannot be a common password (123456789, qwerty...)"
+
+msgid "No se pudo crear la cuenta. Revisa:"
+msgstr "The account could not be created. Check:"
+
+msgid "No se pudo iniciar sesión:"
+msgstr "Could not log in:"
+
+msgid "Nombrar moderador"
+msgstr "Appoint moderator"
+
+msgid "Nombre del hablante"
+msgstr "Speaker's name"
+
+msgid "Notificaciones"
+msgstr "Notifications"
+
+msgid "Notificaciones del navegador"
+msgstr "Browser notifications"
+
+msgid "Nuevo"
+msgstr "New"
+
+msgid "Nuevos desde tu última visita"
+msgstr "New since your last visit"
+
+msgid "Nuevos mensajes"
+msgstr "New messages"
+
+msgid "O dona desde la página clásica de PayPal"
+msgstr "Or donate from the classic PayPal page"
+
+msgid "Objetivo del mes cubierto — ¡gracias!"
+msgstr "This month's goal is covered — thank you!"
+
+msgid "Ocultado por ti. Clic para verlo."
+msgstr "Hidden by you. Click to reveal it."
+
+msgid "Ocultar contenido para adultos"
+msgstr "Hide adult content"
+
+msgid "Off-Topic"
+msgstr "Off-Topic"
+
+msgid "Off-Topic con señales"
+msgstr "Off-Topic with signals"
+
+msgid "Off-Topic sin analizar (voluntario)"
+msgstr "Off-Topic, not analysed (voluntary)"
+
+msgid "Opina (opcional): tu comentario abrirá el hilo del foro, debajo de la transcripción"
+msgstr "Have your say (optional): your comment opens the forum thread below the transcript"
+
+msgid "Opiniones y contenidos sin suficientes afirmaciones verificables. 10 votos de la comunidad los rescatan al foro principal."
+msgstr "Opinion and content without enough verifiable claims. 10 community votes bring them back to the main forum."
+
+msgid "Otra cantidad"
+msgstr "Another amount"
+
+msgid "Otra cantidad en euros (mínimo 1)"
+msgstr "Another amount in euros (minimum 1)"
+
+msgid "Otro"
+msgstr "Other"
+
+msgid "Otros"
+msgstr "Other"
+
+msgid "Panel"
+msgstr "Panel"
+
+msgid "Panel · Ajustes"
+msgstr "Panel · Settings"
+
+msgid "Panel · Códigos"
+msgstr "Panel · Codes"
+
+msgid "Panel · Donaciones"
+msgstr "Panel · Donations"
+
+msgid "Panel · Espejo de pruebas"
+msgstr "Panel · Staging mirror"
+
+msgid "Panel · Moderación"
+msgstr "Panel · Moderation"
+
+msgid "Panel · Moderadores"
+msgstr "Panel · Moderators"
+
+msgid "Panel · Reclamaciones (DSA)"
+msgstr "Panel · Complaints (DSA)"
+
+msgid "Para"
+msgstr "To"
+
+msgid "Pausar emails 24 h"
+msgstr "Pause emails for 24 h"
+
+msgid "Pega el enlace de un vídeo y el sistema extraerá sus afirmaciones, las clasificará y la comunidad decidirá qué se verifica a fondo con fuentes."
+msgstr "Paste a video link and the system will pull out its claims, classify them, and the community will decide what gets verified in depth with sources."
+
+msgid "Pega el enlace del contenido. Plataformas soportadas: YouTube, TikTok, Twitch y Spotify (pódcast). El vídeo nunca se almacena: solo se transcribe y analiza."
+msgstr "Paste the link to the content. Supported platforms: YouTube, TikTok, Twitch and Spotify (podcasts). The video is never stored: it is only transcribed and analysed."
+
+msgid "Pendiente de validación (5 votos / 3 días)"
+msgstr "Awaiting validation (5 votes / 3 days)"
+
+msgid "Pendiente de validación:"
+msgstr "Awaiting validation:"
+
+msgid "Pendientes de veredicto"
+msgstr "Awaiting a verdict"
+
+msgid "Perfil"
+msgstr "Profile"
+
+msgid "Permiso del sistema para avisos aunque la pestaña esté en segundo plano."
+msgstr "System permission for alerts even when the tab is in the background."
+
+msgid "Permitir solicitudes de amistad"
+msgstr "Allow friend requests"
+
+msgid "Pide una re-verificación con el modelo premium"
+msgstr "Request a re-check with the premium model"
+
+msgid "Política"
+msgstr "Politics"
+
+msgid "Portada"
+msgstr "Home"
+
+msgid "Primera página"
+msgstr "First page"
+
+msgid "Privacidad"
+msgstr "Privacy"
+
+msgid "Propiedad intelectual"
+msgstr "Intellectual property"
+
+msgid "Propón o vota. El voto de moderador confirma en solitario. Solo figuras públicas tendrán página propia."
+msgstr "Propose or vote. A moderator's vote confirms on its own. Only public figures get a page of their own."
+
+msgid "Puedes entrar con tu email o con tu nombre de usuario."
+msgstr "You can log in with your email or your username."
+
+msgid "Pulsa el botón para verificar tu cuenta y poder entrar."
+msgstr "Click the button to verify your account and log in."
+
+msgid "Páginas de la conversación"
+msgstr "Conversation pages"
+
+msgid "Quitar difuminado para todos"
+msgstr "Unblur for everyone"
+
+msgid "Qué dice la evidencia"
+msgstr "What the evidence says"
+
+msgid "Qué puedes hacer ya:"
+msgstr "What you can do right now:"
+
+msgid "Qué se afirma"
+msgstr "What is claimed"
+
+msgid "Re-verificada con el modelo premium"
+msgstr "Re-checked with the premium model"
+
+msgid "Reanalizar con IA"
+msgstr "Re-analyse with AI"
+
+msgid "Reanudar emails"
+msgstr "Resume emails"
+
+msgid "Rechazar"
+msgstr "Decline"
+
+msgid "Recibidos"
+msgstr "Inbox"
+
+msgid "Recibirás un número de referencia y acuse por email. Si eres el autor del contenido analizado, indícalo: tu reclamación entra en cola prioritaria (respuesta en 7 días)."
+msgstr "You will receive a reference number and an acknowledgement by email. If you are the author of the analysed content, say so: your complaint goes into the priority queue (reply within 7 days)."
+
+msgid "Recientes"
+msgstr "Recent"
+
+msgid "Reclamaciones"
+msgstr "Complaints"
+
+msgid "Recuento estrictamente factual de afirmaciones atribuidas a esta figura pública mediante identificación participativa con Wikidata. El semáforo califica afirmaciones concretas, nunca a la persona. Toda atribución es reclamable en el"
+msgstr "A strictly factual count of claims attributed to this public figure through community identification with Wikidata. The traffic light rates specific claims, never the person. Every attribution can be disputed through the"
+
+msgid "Reenviar"
+msgstr "Resend"
+
+msgid "Registrarme"
+msgstr "Sign me up"
+
+msgid "Registro"
+msgstr "Sign-up"
+
+msgid "Regístrate"
+msgstr "Sign up"
+
+msgid "Reincidentes"
+msgstr "Repeat offenders"
+
+msgid "Relanza transcripción y análisis con IA. Úsalo si la sincronización vino mal."
+msgstr "Runs the transcript and the analysis again with AI. Use it if the timing came out wrong."
+
+msgid "Relegar a Off-Topic"
+msgstr "Move to Off-Topic"
+
+msgid "Reportar"
+msgstr "Report"
+
+msgid "Reportar a moderación"
+msgstr "Report to moderators"
+
+msgid "Reportar como inadecuado"
+msgstr "Report as inappropriate"
+
+msgid "Reportar error"
+msgstr "Report an error"
+
+msgid "Responde con Markdown: **negrita**, *cursiva*, > cita…"
+msgstr "Reply with Markdown: **bold**, *italic*, > quote…"
+
+msgid "Responder"
+msgstr "Reply"
+
+msgid "Resumen diario"
+msgstr "Daily digest"
+
+msgid "Retenido (anti-acoso)"
+msgstr "On hold (anti-harassment)"
+
+msgid "Retirar"
+msgstr "Withdraw"
+
+msgid "Sala +18"
+msgstr "Adult room"
+
+msgid "Salir"
+msgstr "Log out"
+
+msgid "Salud"
+msgstr "Health"
+
+msgid "Secciones de Mi cuenta"
+msgstr "My account sections"
+
+msgid "Secciones del panel"
+msgstr "Panel sections"
+
+msgid "Seguir afirmaciones"
+msgstr "Follow claims"
+
+msgid "Seguir esta afirmación"
+msgstr "Follow this claim"
+
+msgid "Sensible"
+msgstr "Sensitive"
+
+msgid "Si donas, estos cupos suben."
+msgstr "If you donate, these quotas go up."
+
+msgid "Si eliges resumen diario, llega a esta hora."
+msgstr "If you choose the daily digest, it arrives at this time."
+
+msgid "Si no creaste esta cuenta, ignora este mensaje."
+msgstr "If you did not create this account, please ignore this message."
+
+msgid "Siguiente"
+msgstr "Next"
+
+msgid "Silencio nocturno"
+msgstr "Night silence"
+
+msgid "Sin moderadores nombrados (modo arranque: tú eres el moderador supremo)."
+msgstr "No moderators appointed (start-up mode: you are the head moderator)."
+
+msgid "Sin resultados. Prueba con otras palabras."
+msgstr "No results. Try different words."
+
+msgid "Sociedad"
+msgstr "Society"
+
+msgid "Solicitudes pendientes"
+msgstr "Pending requests"
+
+msgid "Solo campana"
+msgstr "Bell only"
+
+msgid "Sonido de los bocadillos"
+msgstr "Toast sound"
+
+msgid "Sucesos"
+msgstr "Crime and incidents"
+
+msgid "Suscribirse a este post"
+msgstr "Subscribe to this post"
+
+msgid "Tecnología"
+msgstr "Technology"
+
+msgid "Tema"
+msgstr "Topic"
+
+msgid "Tema sensible: consulta siempre fuentes y recursos oficiales."
+msgstr "Sensitive topic: always check official sources and resources."
+
+msgid "Toda re-verificación y cambio de color, a la vista."
+msgstr "Every re-check and colour change, out in the open."
+
+msgid "Todavía nadie."
+msgstr "Nobody yet."
+
+msgid "Todavía no hay afirmaciones con veredicto atribuidas a esta persona."
+msgstr "There are no claims with a verdict attributed to this person yet."
+
+msgid "Todavía no hay ningún análisis en esta sala."
+msgstr "There are no analyses in this room yet."
+
+msgid "Todo"
+msgstr "Everything"
+
+msgid "Todos"
+msgstr "All"
+
+msgid "Transcripciones"
+msgstr "Transcripts"
+
+msgid "Transcripción sincronizada"
+msgstr "Synced transcript"
+
+msgid "Transparencia: la web carga el software del botón de donación puntual de PayPal en todas las páginas (banner de la cabecera). Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera."
+msgstr "Transparency: the site loads PayPal's one-off donation button software on every page (the header banner). Bizum donations (non-profit code) will arrive once the association is formally constituted. Every donation is recorded and spending is public in the header."
+
+msgid "Tu email"
+msgstr "Your email"
+
+msgid "Umbrales del sistema"
+msgstr "System thresholds"
+
+msgid "Un toque suave cuando aparece un aviso en pantalla. Apagado, los bocadillos son mudos."
+msgstr "A soft chime when an alert pops up. Turned off, toasts are silent."
+
+msgid "Una línea corta bajo cada mensaje tuyo del foro. Vacía = sin firma."
+msgstr "A short line under every forum message of yours. Empty = no signature."
+
+msgid "Usuario o contraseña incorrectos."
+msgstr "Wrong username or password."
+
+msgid "Vaciar todo"
+msgstr "Clear all"
+
+msgid "Vacío por ahora."
+msgstr "Empty for now."
+
+msgid "Validación expirada (a criterio de moderación)"
+msgstr "Validation expired (moderators decide)"
+
+msgid "Validar"
+msgstr "Validate"
+
+msgid "Varias personas comparten este nombre"
+msgstr "Several people share this name"
+
+msgid "Ventana de edición: 15 minutos desde la publicación."
+msgstr "Editing window: 15 minutes after posting."
+
+msgid "Verifica tu cuenta — escierto. / isthistrue."
+msgstr "Verify your account — escierto. / isthistrue."
+
+msgid "Verificación comunitaria con fuentes reproducibles."
+msgstr "Community verification with reproducible sources."
+
+msgid "Verificador"
+msgstr "Verifier"
+
+msgid "Verificamos afirmaciones, nunca personas · metodología pública · open source (AGPL) sin ánimo de lucro — si donas, los cupos suben."
+msgstr "We verify claims, never people · public methodology · non-profit open source (AGPL) — if you donate, quotas go up."
+
+msgid "Verificar mi cuenta"
+msgstr "Verify my account"
+
+msgid "Veterano"
+msgstr "Veteran"
+
+msgid "Volver a la web"
+msgstr "Back to the site"
+
+msgid "Votar"
+msgstr "Vote"
+
+msgid "al llegar a Contribuidor (50 de karma o un código), tu voto decide qué se verifica a fondo."
+msgstr "once you reach Contributor (50 karma or a code), your vote decides what gets verified in depth."
+
+msgid "aviso si cambia de color o reaparece"
+msgstr "you'll be told if it changes colour or shows up again"
+
+msgid "canal de reclamaciones"
+msgstr "complaints channel"
+
+msgid "donados de un objetivo de"
+msgstr "donated of a goal of"
+
+msgid "editado"
+msgstr "edited"
+
+msgid "en"
+msgstr "in"
+
+msgid "en la wiki: te avisamos si cambian de color."
+msgstr "in the wiki: we will tell you if they change colour."
+
+msgid "escierto. / isthistrue. — verificación con fuentes, sin ánimo de lucro"
+msgstr "escierto. / isthistrue. — verification with sources, non-profit"
+
+msgid "ir al primero sin leer"
+msgstr "go to the first unread"
+
+msgid "isthistrue./escierto. es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito."
+msgstr "isthistrue./escierto. is a non-profit open source project (AGPL). Donations go straight into the analysis budget: every euro donated this month is added to the pot."
+
+msgid "marcado por la plataforma"
+msgstr "flagged by the platform"
+
+msgid "marcado por moderación"
+msgstr "flagged by moderators"
+
+msgid "marcado por quien lo envió"
+msgstr "flagged by whoever submitted it"
+
+msgid "minuto"
+msgstr "minute"
+
+msgid "nickname o email"
+msgstr "username or email"
+
+msgid "nombre de usuario"
+msgstr "username"
+
+msgid "para participar."
+msgstr "to take part."
+
+msgid "pega un enlace y el sistema extrae y clasifica sus afirmaciones."
+msgstr "paste a link and the system pulls out and classifies its claims."
+
+msgid "responder"
+msgstr "reply"
+
+msgid "sin fuentes — pendiente"
+msgstr "no sources — pending"
+
+msgid "varias personas"
+msgstr "several people"
+
+msgid "voto(s). Se necesitan votos de usuarios Contribuidor+ antes de"
+msgstr "vote(s). Votes from Contributor+ users are needed before"
+
+msgid "¡Bienvenido/a, %(username)s!\n\nTu cuenta está verificada. Qué puedes hacer ya:\n- Analizar contenidos: pega un enlace y el sistema extrae y clasifica sus afirmaciones.\n- Votar validaciones cuando llegues a Contribuidor (50 de karma o un código de invitación).\n- Seguir afirmaciones en la wiki para enterarte si cambian de color.\n\nRecuerda: verificamos afirmaciones, nunca personas. Metodología pública en /metodologia/.\nProyecto open source (AGPL) sin ánimo de lucro: si donas, los cupos de análisis suben."
+msgstr "Welcome, %(username)s!\n\nYour account is verified. What you can do right now:\n- Analyse content: paste a link and the system pulls out and classifies its claims.\n- Vote on validations once you reach Contributor (50 karma or an invitation code).\n- Follow claims in the wiki to hear about it if they change colour.\n\nRemember: we verify claims, never people. Public methodology at /metodologia/.\nNon-profit open source project (AGPL): if you donate, analysis quotas go up."
+
+msgid "¡Donación recibida — gracias! Se sumará al depósito del mes."
+msgstr "Donation received — thank you! It will be added to this month's pot."
+
+msgid "¿Es cierto lo que acabas de ver?"
+msgstr "Is what you just watched true?"
+
+msgid "¿No te llegó el email de verificación?"
+msgstr "Didn't the verification email arrive?"
+
+msgid "¿Quién crees que es?"
+msgstr "Who do you think this is?"
+
+msgid "¿Quién habla?"
+msgstr "Who is speaking?"
+
+msgid "¿Sin cuenta?"
+msgstr "No account?"
+
+msgid "¿Ya tienes cuenta?"
+msgstr "Already have an account?"
+
+msgid "Última página"
+msgstr "Last page"
+
+msgid "⚪ No verificable"
+msgstr "⚪ Not verifiable"
+
+msgid "🔴 Falso"
+msgstr "🔴 False"
+
+msgid "🟡 Engañoso o sin contexto"
+msgstr "🟡 Misleading or lacking context"
+
+msgid "🟢 Verificado"
+msgstr "🟢 Verified"
+
+msgid "Este vídeo se lleva más de media asignación diaria (cuesta unos %(c)s €), así que espera turno: se analizará solo en cuanto haya depósito, normalmente mañana."
+msgstr "This video takes more than half of the daily allowance (it costs about €%(c)s), so it waits its turn: it will be analysed on its own as soon as there is budget, usually tomorrow."
+
+msgid "Faltan %(m)s € para costear el proyecto este mes"
+msgstr "€%(m)s still needed to cover the project this month"
+
+msgid "Hablantes identificados: %(n)s de %(total)s."
+msgstr "Speakers identified: %(n)s of %(total)s."
+
+msgid "Hola <strong>%(username)s</strong>:"
+msgstr "Hi <strong>%(username)s</strong>,"
+
+msgid "Página %(n)s de %(t)s"
+msgstr "Page %(n)s of %(t)s"
+
+msgid "¡Bienvenido/a, <strong>%(username)s</strong>! Tu cuenta ya está verificada."
+msgstr "Welcome, <strong>%(username)s</strong>! Your account is now verified."
+
+msgid "¿Tienes prisa? Apadrínalo con una donación de %(d)s € y sale ahora."
+msgstr "In a hurry? Sponsor it with a €%(d)s donation and it goes now."
+
+msgid "%(n)s afirmación analizada"
+msgid_plural "%(n)s afirmaciones analizadas"
+msgstr[0] "%(n)s claim analysed"
+msgstr[1] "%(n)s claims analysed"
+
+msgid "%(total)s mensaje"
+msgid_plural "%(total)s mensajes"
+msgstr[0] "%(total)s message"
+msgstr[1] "%(total)s messages"

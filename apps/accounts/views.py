@@ -4,7 +4,7 @@ from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from .forms import RegisterForm
-from .models import RedeemCode
+from .models import RedeemCode, UI_LANGUAGES
 from . import turnstile
 
 
@@ -33,6 +33,24 @@ def register(request):
     return render(request, 'accounts/register.html', {'form': form, 'debug': dj_settings.DEBUG, 'turnstile_site_key': dj_settings.TURNSTILE_SITE_KEY})
 
 
+def set_language_pref(request):
+    """4.4-A: el selector ES·EN de la cabecera.
+
+    Hace lo de siempre (cookie de idioma, via la vista de Django) y ADEMAS, si
+    hay cuenta, guarda la eleccion en el perfil. Asi el idioma le sigue al
+    usuario aunque entre desde otro ordenador, y Ajustes y la cabecera no se
+    contradicen nunca: son la misma decision escrita en el mismo sitio.
+    """
+    from django.conf import settings as dj_settings
+    from django.views.i18n import set_language
+    lang = request.POST.get('language', '')
+    if request.method == 'POST' and request.user.is_authenticated \
+            and lang in dict(dj_settings.LANGUAGES):
+        request.user.language = lang
+        request.user.save(update_fields=['language'])
+    return set_language(request)
+
+
 @login_required
 def settings_view(request):
     """Panel de cuenta unico (foro+wiki): sliders +18 y opiniones."""
@@ -52,6 +70,10 @@ def settings_view(request):
         u.notify_prefs['toast_sound'] = request.POST.get('toast_sound') == 'on'
         u.quiet_night = request.POST.get('quiet_night') == 'on'
         u.signature = request.POST.get('signature', '').strip()[:200]
+        # 4.4-A: idioma de la interfaz ('' = automatico segun el navegador)
+        lang = request.POST.get('language', '')
+        if lang in dict(UI_LANGUAGES):
+            u.language = lang
         dh = request.POST.get('digest_hour', '')
         if dh.isdigit() and 0 <= int(dh) <= 23:
             u.digest_hour = int(dh)
