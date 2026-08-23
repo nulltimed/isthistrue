@@ -1959,6 +1959,10 @@ class Pase44A(TestCase):
     """
 
     def setUp(self):
+        # El import va aquí, como en el resto del fichero: `cache` no está
+        # importado a nivel de módulo y el setUp del pase lo usaba a pelo
+        # (NameError en los 16 tests de esta clase).
+        from django.core.cache import cache
         cache.clear()
 
     # ---------- el catálogo ----------
