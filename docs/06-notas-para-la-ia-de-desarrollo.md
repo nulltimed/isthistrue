@@ -578,3 +578,57 @@ el perfil; las cinco legales en ambos idiomas con su marca de revisión visible 
 Tu §4.3 propone `curl http://127.0.0.1:8081/` directo contra el espejo. **Eso siempre da 302**:
 el espejo tiene candado de invitados y toda URL no exenta redirige. Los checks del espejo hay
 que hacerlos con sesión (credenciales ADMIN de su `.env`) o contra producción.
+
+## 36. Pase 4.4-B aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `f6b2e86`, CI **208/208**). Informe en `docs/41`. Los tres fallos
+encadenados quedan corregidos y **los semáforos ya se ven**: 26, 12 y 32 veredictos enlazados
+en los posts 2, 3 y 4, con la señal barata desaparecida. Los cinco ajustes sembrados.
+
+### El parche no aplicaba: dos pases en paralelo sobre el mismo fichero
+
+Lo entregaste sobre `b5e8423` diciendo que el 4.4-A.2 y este «no se tocan en ningún archivo».
+**Sí se tocan**: ambos añaden una clase al final de `tests/test_pase42.py`. 19 de 20 ficheros
+limpios; ese falló. Resuelto con `git apply --3way` (mecánico y verificable) — no a mano, que
+la norma lo prohíbe. **Petición**: cuando entregues dos pases en paralelo, asume que el fichero
+de tests colisiona siempre y dilo en el README; con eso me ahorro el diagnóstico.
+
+### Tres defectos que hubo que corregir
+
+1. **El aviso del pie no se veía en NINGÚN post normal.** Vivía dentro del bloque
+   `{% if post.category == 'OFFTOPIC' %}`, así que solo asomaba en los relegados. **El bug es
+   anterior a tu pase** (la frase vieja también estaba dentro): corregiste el texto y heredaste
+   la ubicación. Lo cazó tu propio test. Movido fuera.
+2. **Seis cadenas nuevas sin traducir + los tres estados del semáforo.** El candado i18n del
+   4.4-A.2 hizo su trabajo. Añadidas las nueve al `.po`. **Los `choices` van por variable
+   (`{% trans s.claim.get_color_display %}`), así que el candado NO los ve**: cuando añadas
+   estados nuevos, añádelos al catálogo a mano o saldrán en castellano dentro de la web inglesa.
+3. **La suite pasó de 5 s a 326 s.** `search_with_status` duerme `search_retry_seconds` (20 s)
+   de verdad, también en tests. Bajado al mínimo en `settings_test`: 26 s. **Regla: ningún
+   camino con `time.sleep` debe ejercitarse a velocidad real en el banco de pruebas.**
+
+### Dos correcciones a tu README de operador
+
+- **«Reconstruir imagen: NO (el Dockerfile no cambia)» es incorrecto.** El `Dockerfile` hace
+  `COPY . .` y el único volumen es `media`: **el código vive DENTRO de la imagen**. Sin
+  `build`, el contenedor arranca con el código anterior y `migrate` responde «no migrations to
+  apply» con las dos migraciones sin aplicar — que es exactamente lo que me pasó. **Todo pase
+  necesita `build`, cambie o no el `Dockerfile`.**
+- Tu §5.6 propone comprobar la búsqueda con `docker compose exec -T web python -c ...`. En el
+  espejo eso devuelve el mock (MOCK_AGENTS=true) y no prueba nada del arreglo real. Para
+  ejercitarlo hay que forzar `MOCK_AGENTS=False` con un doble de `httpx`, como hice.
+
+### Un error mío, por si vuelve a pasar
+
+Al mover el aviso escribí la explicación como `{# ... #}` **de cinco líneas**. Django solo
+admite ese comentario en una: el resto se interpreta como plantilla y el `{% if %}` que puse de
+ejemplo dentro del texto quedó sin cerrar → `TemplateSyntaxError` y 23 tests en rojo. Es la
+trampa que este proyecto documenta desde el 4.3-A.1. Reescrito en comentarios de una línea.
+
+### Lo que espera decisión de David
+
+La reverificación (§6 de tu README). Simulada sin gastar: **1,64 € en total** (post 2: 0,94 · post
+4: 0,39 · post 3: 0,23 · post 1: 0,08). **No la he lanzado**: gasta dinero real y la orden me
+llega por tu README, no por él. Se lo he pedido en `docs/41 §5` con tu consejo de empezar por
+el post 4. Mientras tanto, **los 96 claims siguen mostrando el veredicto viejo** —los 32 del
+post 4 en ⚪ y los 96 con `sources_ok=True`—, que es el retrato exacto del fallo F2.

@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-23 · Commit en producción: `75b1e38` · Estado del repo: pase 4.4-A.2 (la interfaz en inglés de verdad) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-23 · Commit en producción: `f6b2e86` · Estado del repo: pase 4.4-B (el semáforo se enciende) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§35: TODA la historia técnica) y el informe del último pase (`docs/40`).
+> (§1-§36: TODA la historia técnica) y el informe del último pase (`docs/41`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §35) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §36) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -82,9 +82,11 @@ tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 - **collectstatic** ya va en el command del web (cadena `ensure_superuser && collectstatic
   && gunicorn`) — CONSÉRVALA si algo toca los compose. Tras collectstatic manual: restart web
   (WhiteNoise indexa al arrancar).
-- **Si el pase toca el `Dockerfile`** → `docker compose build web worker beat` ANTES de
-  levantar, en los dos entornos. Señal de que hizo falta: `msgfmt: not found` o cualquier
-  binario nuevo que no aparece.
+- **RECONSTRUIR LA IMAGEN SIEMPRE**, cambie o no el `Dockerfile`: hace `COPY . .` y el único
+  volumen es `media`, así que **el código vive DENTRO de la imagen**. `up -d --force-recreate`
+  sin `build` arranca con el código anterior y `migrate` dice «no migrations to apply» con las
+  migraciones nuevas sin aplicar (pasó en el 4.4-B por seguir el README al pie de la letra).
+  Usa `up --build -d`, o `build web worker beat` antes de levantar.
 - **searxng existe SOLO en producción** (el espejo no lo tiene): instrucciones de
   force-recreate de searxng = solo producción.
 - El espejo tiene **candado de invitados** (StagingAccessMiddleware): toda URL no exenta da
@@ -156,7 +158,19 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `75b1e38` — **pase 4.4-A.2**: la interfaz existe **de verdad en
+- **Producción**: commit `f6b2e86` — **pase 4.4-B**: **el semáforo se enciende**. Tres fallos
+  encadenados corregidos: (1) la transcripción no pintaba los veredictos aunque existieran
+  (solo la señal barata); (2) SearXNG devolvía **200 con lista vacía** cuando los motores se
+  suspendían y el código lo daba por bueno → **96 de 96 claims con `sources_ok=True`** mientras
+  el verificador decía «no se aportan resultados»; ahora **vacío == fallo**, con reintentos y
+  fuentes oficiales primero (`official_sources`); (3) las opiniones pasaban al modelo caro (un
+  `if` que no hacía nada) ≈ un tercio del gasto. Además: tres estados nuevos (⏳ 🔍 👁),
+  fecha del suceso estimada, base temporal, verificación automática con tope diario
+  (`auto_verify_daily_cap=5`) y comando `reverificar`. Migraciones `wiki/0006` + `analysis/0010`.
+  ⚠️ **PENDIENTE DE DAVID**: la reverificación de lo ya analizado (**1,64 €** simulados) — sin
+  ella los semáforos muestran el veredicto VIEJO (los 32 del post 4 en ⚪). Pedida en `docs/41 §5`.
+  **Trampa nueva**: `search_with_status` duerme 20 s de verdad por reintento; en `settings_test`
+  está bajado al mínimo o la suite pasa de 5 s a 326 s. Sobre el **pase 4.4-A.2**: la interfaz existe **de verdad en
   inglés** (catálogo de 343 cadenas en `locale/en/LC_MESSAGES/django.po`; antes `LOCALE_PATHS`
   apuntaba a una carpeta inexistente y el selector ES·EN no traducía nada), idioma en el perfil
   (`User.language`, migración `accounts/0005`, middleware `UserLanguageMiddleware` DESPUÉS de
@@ -254,11 +268,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§35) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§36) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
