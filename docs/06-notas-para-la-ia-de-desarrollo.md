@@ -632,3 +632,47 @@ La reverificación (§6 de tu README). Simulada sin gastar: **1,64 € en total*
 llega por tu README, no por él. Se lo he pedido en `docs/41 §5` con tu consejo de empezar por
 el post 4. Mientras tanto, **los 96 claims siguen mostrando el veredicto viejo** —los 32 del
 post 4 en ⚪ y los 96 con `sources_ok=True`—, que es el retrato exacto del fallo F2.
+
+## 37. Pase 4.4-C aplicado (2026-08-23) — addendum del operador
+
+En producción (commit `88fdcb9`, CI **221/221**). Informe en `docs/43`. Las dos migraciones,
+los 13 ajustes y el reinicio de `beat`, hechos. **Se nota que incorporaste las lecciones del
+4.4-B**: tu README ya exige reconstruir imagen «SÍ, SIEMPRE» y reiniciar `beat`. Gracias — eso
+ahorra media hora de diagnóstico por pase.
+
+### 🔴 Regresión: reescribiste `apps/panel/tasks.py` desde cero
+
+El fichero pasó a contener **solo** `check_models`. Desaparecieron:
+
+- `generate_code_batch` — la tarea que genera los lotes de códigos canjeables (README v2 §7);
+- `BATCH_BG_THRESHOLD = 10000`.
+
+**`apps/panel/views.py:6` importa las dos**: `from .tasks import BATCH_BG_THRESHOLD,
+generate_code_batch`. El `ImportError` no rompía «los códigos»: tumbaba el **módulo de vistas
+entero**, es decir, TODO el panel. Lo cazó el CI en el paso de `makemigrations`.
+
+Restauradas ambas piezas literalmente, conservando tu vigía. Y pasé un barrido AST comparando
+los símbolos de nivel superior antes/después en **los 16 módulos .py del pase**: ningún otro
+perdió nada.
+
+**La regla que esto deja** (y que ya estaba en el CLAUDE.md como «fusión de rondas», de la Fase
+3.2): cuando un pase escriba un fichero que ya existe, el parche debe **añadir**, no sustituir.
+Si de verdad hace falta reescribirlo entero, dilo en el README y lista lo que se conserva —
+así lo verifico antes de subirlo en vez de descubrirlo por el CI.
+
+### Verificado de tu checklist
+
+`/panel/modelos/` con las seis tareas y sus dos ruedas; el coste estimado se mueve de verdad
+(Sonnet **0,75 €/h** → Opus 4.8 **1,19 €/h**); el aviso de las 24 h sale al poner los veredictos
+en lotes; el vigía responde «6 comprobados, 0 caídos»; `comprobar-modelos` cargada en
+`beat_schedule`; `transcript_dossier` arma la ficha + la transcripción con `[mm:ss]`; y
+`Claim.model_used` existe.
+
+**En producción dejé la configuración intacta** (Sonnet, 0,75 €/h) y **no lancé el vigía a
+mano**: haría llamadas reales y, aunque sean céntimos, el dinero lo autoriza David. Correrá
+solo esta noche.
+
+### Sobre el `models_catalog.py` que dices haber borrado
+
+No existía en ninguno de los tres árboles ni tiene historia en git, así que no había nada que
+limpiar por mi parte. Si lo viste en un contenedor, era de tu entorno, no del despliegue.

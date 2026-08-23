@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-23 · Commit en producción: `f6b2e86` · Estado del repo: pase 4.4-B (el semáforo se enciende) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-23 · Commit en producción: `88fdcb9` · Estado del repo: pase 4.4-C (panel de modelos, vigía nocturno) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§36: TODA la historia técnica) y el informe del último pase (`docs/41`).
+> (§1-§37: TODA la historia técnica) y el informe del último pase (`docs/43`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §36) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §37) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -158,7 +158,18 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `f6b2e86` — **pase 4.4-B**: **el semáforo se enciende**. Tres fallos
+- **Producción**: commit `88fdcb9` — **pase 4.4-C**: **panel de modelos por tarea** en
+  `/panel/modelos/` (seis tareas × dos ruedas: modelo y forma de envío; **libertad total con
+  aviso de coste**, sin prohibiciones, decisión de David; muestra el coste de 1 h de vídeo y
+  avisa de las combinaciones malas), **transcripción entera** en cada veredicto como bloque
+  cacheable (`verdict.transcript_dossier`), **suplente automático** que sube de calidad y nunca
+  baja cuando un modelo cae, **vigía nocturno** (`comprobar-modelos`, diario, modelo `ModelHealth`)
+  y `Claim.model_used`. Migraciones `panel/0002` + `wiki/0007`; 13 ajustes; **`beat` reiniciado**.
+  ⚠️ **Regresión que cazó el CI**: el pase reescribió `apps/panel/tasks.py` desde cero y borró
+  `generate_code_batch` + `BATCH_BG_THRESHOLD`, que `panel/views.py` importa — el ImportError
+  tumbaba el PANEL ENTERO. Restaurado, y barrido AST de símbolos sobre los 16 módulos del pase
+  para descartar más pérdidas. **Técnica reutilizable**: ante un pase que reescriba ficheros,
+  comparar símbolos de nivel superior antes/después con `ast`. Sobre el **pase 4.4-B**: **el semáforo se enciende**. Tres fallos
   encadenados corregidos: (1) la transcripción no pintaba los veredictos aunque existieran
   (solo la señal barata); (2) SearXNG devolvía **200 con lista vacía** cuando los motores se
   suspendían y el código lo daba por bueno → **96 de 96 claims con `sources_ok=True`** mientras
@@ -268,11 +279,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§36) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§37) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
