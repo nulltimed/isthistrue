@@ -22,7 +22,8 @@ from apps.agents import client, prompts
 logger = logging.getLogger('agents.dating')
 
 MOCK_DATING = {'event_date': '2023-07-10', 'confidence': 'high',
-               'note': '[SIMULADO] El título menciona un debate electoral datable.'}
+               'note': '[SIMULADO] El título menciona un debate electoral datable.',
+               'speakers_count': 2, 'speakers_confidence': 'high'}
 
 # Cuanta transcripcion se le enseña: las marcas temporales suelen estar al
 # principio (presentacion) y repartidas. 12.000 caracteres cubren de sobra un
@@ -30,11 +31,29 @@ MOCK_DATING = {'event_date': '2023-07-10', 'confidence': 'high',
 MAX_CHARS = 12000
 
 
-def date_event(post):
+def date_event(post, transcript_text=None):
     """Devuelve (fecha ISO o None, nota). No escribe en la BD: eso es de quien llama."""
-    textos = list(post.transcript_segments.order_by('start_seconds', 'pk')
-                  .values_list('text', flat=True))
-    cuerpo = ' '.join(textos)[:MAX_CHARS]
+    datos = date_and_count(post, transcript_text)
+    return (datos['event_date'], datos['note'])
+
+
+def date_and_count(post, transcript_text=None):
+    """4.4-G (A.1 reformulado por David): el MISMO viaje de Haiku devuelve ademas
+    cuantas voces hay, para que la diarizacion reciba una pista. Coste anadido:
+    cero. Por eso ahora la datacion ocurre ANTES de separar voces, sobre el texto
+    crudo de whisper (`transcript_text`); si no se pasa, se leen los segmentos
+    guardados (relanzamiento «solo fecha» desde la llave inglesa).
+
+    Devuelve {'event_date': date|None, 'note': str, 'speakers_count': int|None,
+    'speakers_confidence': 'high'|'medium'|'low'|''}.
+    """
+    vacio = {'event_date': None, 'note': '', 'speakers_count': None,
+             'speakers_confidence': ''}
+    if transcript_text is None:
+        textos = list(post.transcript_segments.order_by('start_seconds', 'pk')
+                      .values_list('text', flat=True))
+        transcript_text = ' '.join(textos)
+    cuerpo = transcript_text[:MAX_CHARS]
     subida = getattr(post, 'created_at', None)
     payload = (f"TITULO DEL VIDEO: {post.title or '(sin titulo)'}\n"
                f"URL: {post.url}\n"
@@ -46,8 +65,19 @@ def date_event(post):
                              max_tokens=400, mock_payload=MOCK_DATING)
     if 'error' in datos:
         logger.warning('Datación fallida en el post %s: %s', post.pk, datos.get('error'))
-        return (None, '')
-    return (normalize(datos.get('event_date')), (datos.get('note') or '')[:250])
+        return vacio
+    voces = datos.get('speakers_count')
+    try:
+        voces = int(voces) if voces is not None else None
+        if voces is not None and not (1 <= voces <= 20):
+            voces = None                  # un numero absurdo no es una pista
+    except (TypeError, ValueError):
+        voces = None
+    conf = str(datos.get('speakers_confidence') or '').lower()
+    return {'event_date': normalize(datos.get('event_date')),
+            'note': (datos.get('note') or '')[:250],
+            'speakers_count': voces,
+            'speakers_confidence': conf if conf in ('high', 'medium', 'low') else ''}
 
 
 def normalize(valor):

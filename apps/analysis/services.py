@@ -82,11 +82,10 @@ def identification_gate(post):
     etiquetas) la puerta NO se aplica: no se puede exigir identificar a nadie
     cuando el sistema no ha separado voces.
     """
-    from apps.panel.models import SystemSetting
     identificados, total = speaker_identification(post)
     if total == 0:
         return True, ''
-    minimo = max(0, min(100, SystemSetting.get_int('min_identified_speakers_percent', 50)))
+    minimo = min_identified_percent()
     hacen_falta = -(-total * minimo // 100)     # techo, sin float
     if identificados >= hacen_falta:
         return True, ''
@@ -94,6 +93,55 @@ def identification_gate(post):
                    f'{minimo}% de los hablantes: van {identificados} de {total} '
                    f'(hacen falta {hacen_falta}). Propón o vota un nombre en '
                    f'«¿Quién habla?» — sin nombre no hay página en la wiki.')
+
+
+def min_identified_percent():
+    """4.4-G (nota de David, 2026-08-24): la puerta sube del 50 al 65 %."""
+    from apps.panel.models import SystemSetting
+    return max(0, min(100, SystemSetting.get_int('min_identified_speakers_percent', 65)))
+
+
+def try_autopilot(post, factual=None):
+    """4.4-G (nota de David: la puerta del 65 % «frena TODO», el voto Y el piloto
+    automatico). Aqui vive el piloto automatico del 4.4-B con la puerta delante:
+    un video factual pasa solo a la verificacion con fuentes si (1) sigue
+    pendiente de validacion, (2) hay cupo diario y (3) los hablantes
+    identificados llegan al minimo.
+
+    Y lo que hace que la puerta sea una ESPERA y no un muro: se vuelve a llamar
+    cada vez que se CONFIRMA un nombre (naming._confirm). Sin esta segunda
+    llamada, ningun video con dos voces se verificaria solo jamas — la puerta
+    siempre esta cerrada al terminar la fase barata, porque nadie ha tenido
+    tiempo de nombrar a nadie. Es el patron «mecanismo montado y puerta tapiada».
+
+    `factual`: lo dice la fase barata al terminar; en las llamadas posteriores
+    se deduce de la sugerencia del clasificador (Off-Topic sugerido = opinion).
+    Devuelve True si lanzo la fase cara.
+    """
+    from .tasks import auto_verify_slot_free, launch_full_analysis, notify_post_event
+    if post.status != 'PENDING_VALIDATION':
+        return False
+    if factual is None:
+        factual = not post.offtopic_suggested
+    if not factual or not identification_gate(post)[0] or not auto_verify_slot_free():
+        return False
+    post.status = 'FULL_QUEUED'
+    post.save(update_fields=['status'])
+    launch_full_analysis(post)
+    notify_post_event(post, 'analysis', 'Analizado: verificando con fuentes')
+    return True
+
+
+def waiting_for_identification(post):
+    """4.4-G (nota de David): AVISO visible cuando es la identificacion lo que
+    frena la verificacion con fuentes. Devuelve (espera, identificados, total,
+    minimo) — espera=True solo si el video es factual, sigue pendiente y la
+    puerta esta cerrada."""
+    identificados, total = speaker_identification(post)
+    minimo = min_identified_percent()
+    espera = (post.status == 'PENDING_VALIDATION' and not post.offtopic_suggested
+              and total > 0 and not identification_gate(post)[0])
+    return espera, identificados, total, minimo
 
 
 def unnamed_speakers(post):
@@ -242,6 +290,28 @@ def cost_cheap_eur(post):
 
 def cost_full_eur(post):
     return round(video_minutes(post) * cents_per_minute() / 100.0 * FULL_SHARE, 4)
+
+
+def cost_dating_eur(post):
+    """4.4-G: lo que cuesta volver a datar un video (llave inglesa, etapa b).
+    Tokens de la transcripcion (12.000 caracteres como mucho) al precio del
+    modelo de datacion: centimos."""
+    from apps.agents.catalog import model_for, prices, USD_EUR
+    pin, pout = prices(model_for('dating'))
+    tokens_in = 3500 + 600           # ~12.000 caracteres + cabecera
+    return round(((tokens_in * pin + 400 * pout) / 1e6) * USD_EUR, 4)
+
+
+def cost_deep_eur(post):
+    """4.4-G: reserva del reanalisis profundo. Antes era un fijo (0,40 EUR) sin
+    mirar la duracion; ahora escala como la fase cara por el precio relativo del
+    modelo profundo frente al de veredictos, con el fijo como suelo."""
+    from apps.agents.catalog import model_for, prices
+    from .tasks import COST_OPUS_RESCAN_EUR
+    pin_v, _ = prices(model_for('verdict'))
+    pin_d, _ = prices(model_for('deep'))
+    ratio = (pin_d / pin_v) if pin_v else 1.0
+    return round(max(COST_OPUS_RESCAN_EUR, cost_full_eur(post) * ratio), 4)
 
 
 def free_minutes():

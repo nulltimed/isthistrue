@@ -499,13 +499,18 @@ class Pase43A5(TestCase):
             self.client.post(f'/post/{post.pk}/reanalizar/')
             m.assert_not_called()
         self.assertEqual(post.transcript_segments.count(), 1)  # intacto
-        # un moderador SÍ: borra segmentos y lanza el pipeline
+        # un moderador SÍ: borra segmentos y lanza el pipeline. 4.4-G (David):
+        # PRIMERO una pagina de confirmacion con el coste; el segundo POST ejecuta.
         mod = make_user(username='modx', email='modx@example.org')
         mod.is_staff = True
         mod.save()
         self.client.force_login(mod)
         with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as m:
-            self.client.post(f'/post/{post.pk}/reanalizar/')
+            r = self.client.post(f'/post/{post.pk}/reanalizar/')
+            self.assertEqual(r.status_code, 200)
+            self.assertIn('Coste estimado', r.content.decode())
+            m.assert_not_called()
+            self.client.post(f'/post/{post.pk}/reanalizar/', {'confirm': '1'})
             m.assert_called_once()
         post.refresh_from_db()
         self.assertEqual(post.transcript_segments.count(), 0)  # limpiado
@@ -835,12 +840,14 @@ class Pase43A7(TestCase):
         claims = _claims_from_segments(post)
         self.assertEqual(len(claims), 3)
         self.assertIn('(despues) Frase numero 1', claims[0]['context'])
-        # La vía directa y la vía por lotes tienen que mandar el MISMO texto:
+        # La vía directa y la vía por lotes tienen que mandar el MISMO texto.
+        # 4.4-G: ya no se comparan cadenas — las dos llaman al MISMO constructor.
         directo = open('apps/agents/verdict.py').read()
         lote = open('apps/agents/batch.py').read()
         marca = "CONTEXTO (frases contiguas del mismo hablante; NO se verifican)"
         self.assertIn(marca, directo)
-        self.assertIn(marca, lote)
+        self.assertIn('def build_payload(', directo)
+        self.assertIn('build_payload(', lote)
 
     # --- 5. todos los umbrales se pueden fijar desde el .env ---
     def test_sin_fila_en_la_base_de_datos_manda_el_entorno(self):
@@ -1497,10 +1504,13 @@ class Pase43E(TestCase):
         self.assertFalse(puede)
         self.assertIn('0 de 2', motivo)
 
-    def test_con_la_mitad_identificada_ya_se_puede(self):
+    def test_con_dos_hablantes_el_65_por_ciento_son_los_dos(self):
+        """4.4-G: con la puerta en el 65 %, uno de dos (50 %) ya no basta."""
         from apps.analysis.services import identification_gate
         post = self._post(2)
         self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+        self.assertFalse(identification_gate(post)[0])
+        self._confirmar(post, 'SPEAKER_01', 'Bea Pública')
         self.assertTrue(identification_gate(post)[0])
 
     def test_con_tres_hablantes_hacen_falta_dos(self):
@@ -1533,6 +1543,7 @@ class Pase43E(TestCase):
         from apps.analysis.services import cast_vote
         post = self._post(6)
         self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+        self._confirmar(post, 'SPEAKER_01', 'Bea Pública')   # 4.4-G: 65 % de 2 = 2
         votante = make_user(username='vot2E', email='vot2e@example.org', karma=100)
         ok, _msg = cast_vote(post, votante, 'VALIDATE')
         self.assertTrue(ok)
@@ -1543,7 +1554,8 @@ class Pase43E(TestCase):
         from apps.panel.views import SETTINGS_DEF
         self.assertIn('min_identified_speakers_percent',
                       [k for k, _l, _h, _t in SETTINGS_DEF])
-        self.assertEqual(s.SETTING_DEFAULTS['min_identified_speakers_percent'], '50')
+        # 4.4-G (David, 2026-08-24): del 50 al 65 %.
+        self.assertEqual(s.SETTING_DEFAULTS['min_identified_speakers_percent'], '65')
         self.assertIn('MIN_IDENTIFIED_SPEAKERS_PERCENT', open('.env.example').read())
 
     # --- el nombre confirmado manda ---
@@ -2756,3 +2768,441 @@ class Pase44F(TestCase):
         out = merge_into_sentences(raw, [])
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]['text'], 'Hello there. Thank you.')
+
+
+class Pase44G(TestCase):
+    """4.4-G — las voces, la vía de lotes, el panel que manda y la llave inglesa.
+
+    Encargo del operador (docs/47-48, medido sobre el post 5) más las notas de
+    David del 2026-08-24. Nueve puntos:
+      B.2 el panel manda (delivery_for única fuente de verdad + test de coherencia)
+      B.1 batch.py busca con el modelo, como la vía directa
+      A.1 la pista del número de voces viaja en la datación (coste cero)
+      A.4 suelo al fragmentar · A.3 fantasma absorbido · A.5 backchannels
+      la puerta del 65 % frena TODO y se reanuda sola · Intro envía ·
+      la llave inglesa con confirmación de coste en las cuatro etapas.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    # ---------- utilidades ----------
+    def _post(self, n, status='PENDING_VALIDATION', etiquetas=('SPEAKER_00', 'SPEAKER_01')):
+        post = Post.objects.create(
+            author=make_user(username=f'g{n}', email=f'g{n}@example.org'),
+            url=f'https://youtu.be/g44{n}', status=status, title=f'Vídeo G{n}',
+            duration_seconds=1200, validation_deadline=timezone.now() + timedelta(days=2))
+        for i, etq in enumerate(etiquetas):
+            post.transcript_segments.create(start_seconds=i * 5.0, end_seconds=i * 5.0 + 4,
+                                            text=f'Afirmación {i} con datos.',
+                                            speaker_label=etq, signal='FACTUAL_UNVERIFIED')
+        return post
+
+    def _mod(self, n):
+        return make_user(username=f'gmod{n}', email=f'gmod{n}@example.org',
+                         is_staff=True, is_superuser=True)
+
+    def _confirmar(self, post, etiqueta, nombre):
+        from apps.wiki.models import SpeakerNameProposal
+        return SpeakerNameProposal.objects.create(
+            post=post, speaker_label=etiqueta, candidate_name=nombre,
+            confirmed=True, source='user')
+
+    # ---------- B.2 · el panel manda ----------
+    def test_la_via_de_lotes_la_decide_el_panel_y_no_el_env(self):
+        """Antes mandaba settings.USE_BATCH_API por encima de lo que David veía
+        en /panel/modelos/. Ahora, con el .env diciendo «lotes», el panel en
+        «mostrador» va al mostrador; y al revés."""
+        from apps.analysis.tasks import run_full_analysis
+        from apps.panel.models import SystemSetting
+        post = self._post(1, status='FULL_QUEUED')
+        with override_settings(USE_BATCH_API=True):
+            SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                                   defaults={'value': 'direct'})
+            with mock.patch('apps.analysis.tasks._submit_batch') as lote, \
+                    mock.patch('apps.agents.verdict.run') as directo:
+                run_full_analysis(post.pk)
+            lote.assert_not_called()
+            directo.assert_called_once()
+        with override_settings(USE_BATCH_API=False):
+            SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                                   defaults={'value': 'batch'})
+            post.status = 'FULL_QUEUED'
+            post.save(update_fields=['status'])
+            with mock.patch('apps.analysis.tasks._submit_batch', return_value=True) as lote, \
+                    mock.patch('apps.agents.verdict.run') as directo:
+                run_full_analysis(post.pk)
+            lote.assert_called_once()
+            directo.assert_not_called()
+
+    def test_ningun_modulo_de_apps_lee_use_batch_api(self):
+        """Candado AST (no de cadena: un comentario no debe hacerlo saltar)."""
+        import ast, glob
+        for path in glob.glob('apps/**/*.py', recursive=True):
+            if '/migrations/' in path:
+                continue
+            for x in ast.walk(ast.parse(open(path, encoding='utf-8').read())):
+                if isinstance(x, ast.Attribute) and x.attr == 'USE_BATCH_API':
+                    self.fail(f'{path} sigue leyendo settings.USE_BATCH_API')
+
+    def test_cada_rueda_del_panel_gobierna_una_llamada_real(self):
+        """Test de coherencia pedido por el operador: para cada tarea del panel
+        tiene que haber código que lea model_for('<tarea>'). Hasta hoy la rueda
+        «Clasificador» no la leía nadie: mostraba Sonnet y no pasaba nada."""
+        import glob
+        from apps.agents import catalog
+        fuentes = '\n'.join(open(p, encoding='utf-8').read()
+                            for p in glob.glob('apps/**/*.py', recursive=True)
+                            if '/migrations/' not in p and not p.endswith('catalog.py'))
+        for clave in catalog.TASK_KEYS:
+            self.assertIn(f"model_for('{clave}')", fuentes,
+                          f'la rueda «{clave}» del panel no gobierna ninguna llamada')
+
+    def test_el_panel_muestra_exactamente_lo_que_el_codigo_decide(self):
+        from apps.agents import catalog
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='model_verdict',
+                                               defaults={'value': 'claude-opus-4-8'})
+        SystemSetting.objects.update_or_create(key='delivery_verdict',
+                                               defaults={'value': 'batch'})
+        SystemSetting.objects.update_or_create(key='delivery_sweep',
+                                               defaults={'value': 'batch'})  # fila huérfana
+        self.client.force_login(self._mod(1))
+        r = self.client.get('/panel/modelos/')
+        self.assertEqual(r.status_code, 200)
+        for fila in r.context['rows']:
+            self.assertEqual(fila['model'], catalog.model_for(fila['key']), fila['key'])
+            self.assertEqual(fila['delivery'], catalog.delivery_for(fila['key']), fila['key'])
+        self.assertEqual(catalog.delivery_for('verdict'), 'batch')
+        self.assertEqual(catalog.delivery_for('sweep'), 'direct')   # la fila no manda: no hay vía
+
+    def test_las_tareas_sin_via_de_lotes_no_ofrecen_el_selector(self):
+        self.client.force_login(self._mod(2))
+        html = self.client.get('/panel/modelos/').content.decode()
+        self.assertIn('name="delivery_verdict"', html)
+        self.assertIn('name="delivery_deep"', html)
+        for clave in ('sweep', 'dating', 'moderation', 'classify'):
+            self.assertNotIn(f'name="delivery_{clave}"', html, clave)
+
+    # ---------- el clasificador existe de verdad ----------
+    def _sweep_de_opinion(self):
+        return {'claims': [{'text': 'Es horrible.', 'kind': 'OPINION'}] * 8
+                          + [{'text': 'Hay 750.000 ocupados.', 'kind': 'FACTUAL'}],
+                'manipulation': False, 'is_adult': False}
+
+    def test_la_segunda_opinion_del_clasificador_rescata_con_confianza_alta(self):
+        from apps.agents import algorithm, catalog
+        post = self._post(3)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'verdict': 'FACTUAL', 'confidence': 'high'}) as llamada:
+            self.assertEqual(algorithm.classify(post, self._sweep_de_opinion()), 'FACTUAL')
+        self.assertEqual(llamada.call_args.args[0], catalog.model_for('classify'))
+
+    def test_la_segunda_opinion_dudosa_no_rescata_y_la_regla_factual_no_pregunta(self):
+        from apps.agents import algorithm
+        post = self._post(4)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'verdict': 'FACTUAL', 'confidence': 'low'}):
+            self.assertEqual(algorithm.classify(post, self._sweep_de_opinion()), 'OPINION')
+        factual = {'claims': [{'text': f'Dato {i}.', 'kind': 'FACTUAL'} for i in range(10)],
+                   'manipulation': False, 'is_adult': False}
+        with mock.patch('apps.agents.client.call_json') as llamada:
+            self.assertEqual(algorithm.classify(post, factual), 'FACTUAL')
+        llamada.assert_not_called()   # solo rescata; jamás relega
+
+    # ---------- B.1 · el lote busca con el modelo ----------
+    def _anthropic_falso(self):
+        falso = mock.MagicMock()
+        falso.Anthropic.return_value.messages.batches.create.return_value.id = 'batch_x'
+        return falso
+
+    def test_el_lote_lleva_la_busqueda_web_y_el_mismo_payload(self):
+        from apps.agents import batch
+        from apps.agents.verdict import _claims_from_segments, build_payload
+        post = self._post(5, status='FULL_RUNNING')
+        claims = _claims_from_segments(post)
+        falso = self._anthropic_falso()
+        with mock.patch.dict('sys.modules', {'anthropic': falso}), \
+                mock.patch.object(batch, 'model_for', return_value='claude-sonnet-4-6'):
+            self.assertEqual(batch.submit_verdict_batch(post, claims), 'batch_x')
+        peticiones = falso.Anthropic.return_value.messages.batches.create.call_args.kwargs['requests']
+        self.assertEqual(len(peticiones), len(claims))
+        params = peticiones[0]['params']
+        self.assertEqual(params['tools'][0]['name'], 'web_search')
+        contenido = params['messages'][0]['content']
+        texto = contenido if isinstance(contenido, str) else contenido[-1]['text']
+        self.assertEqual(texto, build_payload(claims[0], None, batch.web_searches_per_claim()))
+
+    def test_el_lote_ya_no_llama_al_documentalista_viejo(self):
+        import ast
+        arbol = ast.parse(open('apps/agents/batch.py', encoding='utf-8').read())
+        for x in ast.walk(arbol):
+            if isinstance(x, ast.ImportFrom) and x.module == 'apps.agents':
+                self.assertNotIn('search', [a.name for a in x.names])
+            if isinstance(x, ast.Attribute):
+                self.assertNotEqual(x.attr, 'search_with_status')
+
+    def test_el_sondeo_del_lote_aplica_sin_fuentes_no_hay_color(self):
+        from apps.agents import batch
+        from apps.wiki.models import ClaimAppearance
+        post = self._post(6, status='FULL_RUNNING')
+        claims = [{'segment_index': 0, 'text': 'Afirmación 0 con datos.', 'kind': 'FACTUAL'}]
+        import json
+        respuesta = mock.MagicMock()
+        respuesta.custom_id = f'claim-{post.pk}-0'
+        respuesta.result.type = 'succeeded'
+        respuesta.result.message.model = 'claude-sonnet-4-6'
+        bloque = mock.MagicMock(); bloque.type = 'text'
+        bloque.text = 'Tras buscar: {"color": "GREEN", "sources": [], "what_is_claimed": "x"}'
+        respuesta.result.message.content = [bloque]
+        falso = self._anthropic_falso()
+        falso.Anthropic.return_value.messages.batches.retrieve.return_value.processing_status = 'ended'
+        falso.Anthropic.return_value.messages.batches.results.return_value = [respuesta]
+        with mock.patch.dict('sys.modules', {'anthropic': falso}):
+            batch.poll_verdict_batch('batch_x', post.pk, json.dumps(claims))
+        ap = ClaimAppearance.objects.get(segment__post=post)
+        self.assertEqual(ap.claim.color, 'UNDECIDED')     # verde sin fuentes: no entra
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'DONE')
+
+    def test_el_profundo_por_correo_respeta_el_panel(self):
+        from apps.analysis.tasks import opus_rescan
+        from apps.panel.models import SystemSetting
+        post = self._post(7, status='DONE')
+        SystemSetting.objects.update_or_create(key='delivery_deep', defaults={'value': 'batch'})
+        with mock.patch('apps.analysis.tasks._submit_batch', return_value=True) as lote, \
+                mock.patch('apps.agents.verdict.run') as directo:
+            self.assertEqual(opus_rescan(post.pk, forced=True), 'batch_submitted')
+        lote.assert_called_once()
+        self.assertEqual(lote.call_args.kwargs.get('model'), 'claude-opus-4-8')
+        directo.assert_not_called()
+
+    # ---------- A.1 · la pista de voces ----------
+    def test_la_pista_de_voces_viaja_en_la_datacion(self):
+        from apps.agents import prompts
+        from apps.agents.dating import date_and_count
+        self.assertIn('speakers_count', prompts.DATING_SYSTEM)
+        post = self._post(8)
+        datos = date_and_count(post, 'texto crudo de whisper')
+        self.assertEqual(datos['speakers_count'], 2)
+        self.assertEqual(datos['speakers_confidence'], 'high')
+        self.assertIsNotNone(datos['event_date'])
+
+    def test_la_regla_de_david_para_la_pista(self):
+        from apps.analysis.tasks import diarization_hint
+        post = self._post(9)
+        post.speakers_count, post.speakers_confidence, post.speakers_count_source = 2, 'high', 'agent'
+        self.assertEqual(diarization_hint(post), {'min_speakers': 2, 'max_speakers': 3})
+        post.speakers_count = 1
+        self.assertEqual(diarization_hint(post), {'num_speakers': 1})   # monólogo blindado
+        post.speakers_count, post.speakers_confidence = 3, 'low'
+        self.assertEqual(diarization_hint(post), {})                    # duda: automático
+        post.speakers_count, post.speakers_count_source = 3, 'mod'
+        self.assertEqual(diarization_hint(post), {'num_speakers': 3})   # moderación manda
+
+    def test_la_correccion_de_moderacion_no_la_pisa_el_agente(self):
+        from apps.analysis.tasks import _date_and_hint
+        post = self._post(10)
+        post.speakers_count, post.speakers_count_source = 4, 'mod'
+        post.save()
+        _date_and_hint(post, 'texto')
+        post.refresh_from_db()
+        self.assertEqual((post.speakers_count, post.speakers_count_source), (4, 'mod'))
+        self.assertIsNotNone(post.event_date)          # la fecha sí se actualiza
+
+    def test_la_datacion_ocurre_antes_de_separar_voces(self):
+        src = open('apps/analysis/tasks.py', encoding='utf-8').read()
+        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        self.assertLess(cuerpo.index('_date_and_hint('), cuerpo.index('diarize(audio_path'))
+        self.assertIn('diarization_hint(post)', cuerpo)
+
+    def test_los_argumentos_de_pyannote_no_se_contradicen(self):
+        from apps.agents.diarization import pipeline_kwargs
+        self.assertEqual(pipeline_kwargs(num_speakers=2, min_speakers=1), {'num_speakers': 2})
+        self.assertEqual(pipeline_kwargs(min_speakers=2, max_speakers=1),
+                         {'min_speakers': 2, 'max_speakers': 2})
+        self.assertEqual(pipeline_kwargs(), {})
+
+    # ---------- A.3 · el fantasma ----------
+    def test_el_hablante_fantasma_se_absorbe_en_el_vecino(self):
+        from apps.agents.diarization import absorb_ghost_speakers
+        turns = [(0, 30, 'SPEAKER_00'), (30.5, 31.1, 'SPEAKER_02'),
+                 (31.2, 60, 'SPEAKER_01'), (60, 90, 'SPEAKER_00')]
+        out = absorb_ghost_speakers(turns)
+        self.assertEqual({t[2] for t in out}, {'SPEAKER_00', 'SPEAKER_01'})
+        self.assertEqual(out[1][2], 'SPEAKER_01')
+        # sin hablante real no se toca nada
+        self.assertEqual(absorb_ghost_speakers([(0, 2, 'A'), (2, 4, 'B')]),
+                         [(0, 2, 'A'), (2, 4, 'B')])
+
+    # ---------- A.4 / A.5 · el cruce por palabra, medido en frases legibles ----------
+    def _palabras(self, *ws):
+        return [{'start': a, 'end': b, 'text': t} for t, a, b in ws]
+
+    def test_las_islas_de_una_palabra_se_pegan_a_la_voz_que_las_rodea(self):
+        """«And» (0,4 s) caía en un microturno espurio y salía solo, como frase de
+        una palabra del otro hablante: el 28 % de las frases del post 5."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0, 20, 'SPEAKER_00'), (12.0, 12.2, 'SPEAKER_01')]
+        raw = [{'start_seconds': 0, 'end_seconds': 19.5, 'text': 'And they would heat up iron.',
+                'words': self._palabras(('And', 11.9, 12.3), ('they', 12.4, 12.7),
+                                        ('would', 12.7, 13.0), ('heat', 13.0, 13.4),
+                                        ('up', 13.4, 13.6), ('iron.', 13.6, 19.5))}]
+        out = merge_into_sentences(raw, turns)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['text'], 'And they would heat up iron.')
+        self.assertEqual(out[0]['speaker_label'], 'SPEAKER_00')
+
+    def test_el_backchannel_entre_dos_intervenciones_largas_es_del_otro(self):
+        """De las 81 reacciones breves del post 5, 62 se atribuían al que monologa."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0, 40, 'SPEAKER_00'), (40, 60, 'SPEAKER_01')]
+        raw = [{'start_seconds': 0, 'end_seconds': 10, 'text': 'The universe is expanding faster.'},
+               {'start_seconds': 10.2, 'end_seconds': 10.8, 'text': 'Whoa.'},
+               {'start_seconds': 11, 'end_seconds': 25, 'text': 'And that changes dark energy.'},
+               {'start_seconds': 41, 'end_seconds': 55, 'text': 'So what does that mean?'}]
+        por_texto = {m['text']: m['speaker_label'] for m in merge_into_sentences(raw, turns)}
+        self.assertEqual(por_texto['Whoa.'], 'SPEAKER_01')
+        self.assertEqual(por_texto['The universe is expanding faster.'], 'SPEAKER_00')
+
+    def test_el_monologo_no_inventa_un_segundo_hablante(self):
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0, 60, 'SPEAKER_00')]
+        raw = [{'start_seconds': 0, 'end_seconds': 10, 'text': 'Primera frase larga del monólogo.'},
+               {'start_seconds': 10.2, 'end_seconds': 10.8, 'text': 'Bien.'},
+               {'start_seconds': 11, 'end_seconds': 25, 'text': 'Segunda frase larga del monólogo.'}]
+        out = merge_into_sentences(raw, turns)
+        self.assertTrue(all(m['speaker_label'] == 'SPEAKER_00' for m in out))
+        self.assertTrue(all(len(m['text'].split()) > 1 for m in out))   # «Bien.» pegada
+
+    # ---------- la puerta del 65 % ----------
+    def test_la_puerta_frena_el_piloto_automatico_y_se_reanuda_al_nombrar(self):
+        from apps.analysis.services import try_autopilot
+        post = self._post(11)
+        with mock.patch('apps.analysis.tasks.launch_full_analysis') as lanzar:
+            self.assertFalse(try_autopilot(post, factual=True))
+            lanzar.assert_not_called()
+            post.refresh_from_db()
+            self.assertEqual(post.status, 'PENDING_VALIDATION')
+            self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
+            self._confirmar(post, 'SPEAKER_01', 'Bea Pública')
+            self.assertTrue(try_autopilot(post))
+            lanzar.assert_called_once()
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'FULL_QUEUED')
+
+    def test_confirmar_un_nombre_vuelve_a_probar_el_piloto(self):
+        from apps.wiki import naming
+        from apps.wiki.models import SpeakerNameProposal
+        post = self._post(12)
+        prop = SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                                  candidate_name='Ana Pública', source='user')
+        with mock.patch('apps.analysis.services.try_autopilot') as piloto:
+            naming._confirm(prop)
+        piloto.assert_called_once_with(post)
+
+    def test_un_video_de_opinion_no_pasa_solo_aunque_esten_todos_nombrados(self):
+        from apps.analysis.services import try_autopilot
+        post = self._post(13)
+        post.offtopic_suggested = True
+        post.save(update_fields=['offtopic_suggested'])
+        self._confirmar(post, 'SPEAKER_00', 'Ana')
+        self._confirmar(post, 'SPEAKER_01', 'Bea')
+        with mock.patch('apps.analysis.tasks.launch_full_analysis') as lanzar:
+            self.assertFalse(try_autopilot(post))
+        lanzar.assert_not_called()
+
+    def test_el_aviso_de_espera_se_ve_en_el_post(self):
+        post = self._post(14)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('La verificación con fuentes espera', html)
+        self.assertIn('0 de 2, hace falta el 65%', html)
+
+    # ---------- Intro envía ----------
+    def test_intro_envia_y_elegir_una_sugerencia_agrega(self):
+        js = open('static/js/speaker-suggest.js', encoding='utf-8').read()
+        self.assertIn("e.key === 'Enter'", js)
+        self.assertIn('requestSubmit', js)
+        self.assertIn('enviar(form);', js[js.index('function elegir'):])
+        html = open('templates/partials/post_body.html', encoding='utf-8').read()
+        self.assertIn('<button class="mini">＋</button>', html)   # sin JS, el botón sigue
+
+    # ---------- la llave inglesa ----------
+    def test_la_llave_solo_la_ve_moderacion(self):
+        from apps.analysis.templatetags.istt_icons import icon, _P
+        self.assertIn('wrench', _P)
+        self.assertIn(_P['wrench'], icon('wrench'))
+        post = self._post(15, status='DONE')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertNotIn('/relanzar/', html)
+        self.client.force_login(self._mod(15))
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        for etapa in ('cheap', 'dating', 'verdicts', 'deep'):
+            self.assertIn(f'/post/{post.pk}/relanzar/{etapa}/', html)
+        self.assertIn('≈', html)                          # el coste delante
+
+    def test_cada_etapa_pide_confirmacion_con_el_coste_antes_de_ejecutar(self):
+        from apps.panel.models import AuditLog
+        post = self._post(16)
+        self.client.force_login(self._mod(16))
+        with mock.patch('apps.analysis.tasks.reverify_post.delay') as tarea:
+            r = self.client.post(f'/post/{post.pk}/relanzar/verdicts/')
+            self.assertEqual(r.status_code, 200)
+            self.assertIn('Coste estimado', r.content.decode())
+            self.assertIn('name="confirm"', r.content.decode())
+            tarea.assert_not_called()
+            r = self.client.post(f'/post/{post.pk}/relanzar/verdicts/', {'confirm': '1'})
+            self.assertEqual(r.status_code, 302)
+            tarea.assert_called_once_with(post.pk)
+        self.assertTrue(AuditLog.objects.filter(action='relaunch_verdicts',
+                                                detail__contains=f'post {post.pk}').exists())
+
+    def test_las_voces_aceptan_la_correccion_de_moderacion_y_borran_identificaciones(self):
+        post = self._post(17, status='DONE')
+        self._confirmar(post, 'SPEAKER_00', 'Ana')
+        self.client.force_login(self._mod(17))
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as tarea:
+            self.client.post(f'/post/{post.pk}/relanzar/cheap/', {'confirm': '1', 'speakers': '3'})
+        tarea.assert_called_once_with(post.pk)
+        post.refresh_from_db()
+        self.assertEqual((post.speakers_count, post.speakers_count_source), (3, 'mod'))
+        self.assertEqual(post.status, 'NEW')
+        self.assertEqual(post.transcript_segments.count(), 0)
+        self.assertEqual(post.name_proposals.count(), 0)
+
+    def test_el_profundo_solo_en_posts_terminados_y_la_fecha_solo_con_transcripcion(self):
+        post = self._post(18)                                  # PENDING_VALIDATION
+        self.client.force_login(self._mod(18))
+        with mock.patch('apps.analysis.tasks.opus_rescan.delay') as tarea:
+            r = self.client.post(f'/post/{post.pk}/relanzar/deep/', {'confirm': '1'})
+        self.assertEqual(r.status_code, 302)
+        tarea.assert_not_called()
+        vacio = Post.objects.create(author=make_user(username='g18b', email='g18b@example.org'),
+                                    url='https://youtu.be/g18b', status='PENDING_VALIDATION')
+        with mock.patch('apps.analysis.tasks.redate_post.delay') as tarea:
+            self.client.post(f'/post/{vacio.pk}/relanzar/dating/', {'confirm': '1'})
+        tarea.assert_not_called()
+
+    def test_un_usuario_normal_no_relanza_nada(self):
+        post = self._post(19, status='DONE')
+        self.client.force_login(post.author)
+        with mock.patch('apps.analysis.tasks.reverify_post.delay') as tarea:
+            r = self.client.post(f'/post/{post.pk}/relanzar/verdicts/', {'confirm': '1'})
+        self.assertEqual(r.status_code, 302)
+        tarea.assert_not_called()
+
+    def test_todo_relanzamiento_pasa_por_el_presupuesto(self):
+        from apps.analysis.tasks import redate_post, opus_rescan
+        post = self._post(20, status='DONE')
+        with mock.patch('apps.analysis.models.DailyBudget.try_spend', return_value=False):
+            self.assertEqual(redate_post(post.pk), 'budget_exhausted')
+            self.assertEqual(opus_rescan(post.pk, forced=True), 'budget_exhausted')
+
+    def test_los_costes_de_las_cuatro_etapas_son_positivos_y_ordenados(self):
+        from apps.analysis.views import relaunch_options
+        post = self._post(21, status='DONE')
+        costes = {o['stage']: o['cost'] for o in relaunch_options(post)}
+        self.assertGreater(costes['dating'], 0)
+        self.assertLess(costes['dating'], costes['verdicts'])
+        self.assertLessEqual(costes['verdicts'], costes['deep'])

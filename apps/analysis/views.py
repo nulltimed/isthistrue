@@ -245,9 +245,14 @@ def _post_context(request, post):
     hide_opinions = bool(u and u.hide_opinions)
     # 4.2 C4: el analisis y su hilo del foro son UNA sola pagina.
     from apps.forum.machina_glue import get_topic_for_post
-    from .services import identification_gate, needs_sponsorship, speaker_identification
+    from .services import (identification_gate, needs_sponsorship, speaker_identification,
+                           waiting_for_identification, min_identified_percent)
     topic_obj = get_topic_for_post(post)
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
+    # 4.4-G: aviso visible cuando la identificacion frena la verificacion, y las
+    # cuatro etapas de la llave inglesa (solo se pintan para moderacion).
+    waiting_ident = waiting_for_identification(post)[0]
+    relaunch_rows = relaunch_options(post) if is_mod else []
     # 4.3-F: cifras del cartel de la cola (solo se pintan si el post está en ella).
     _en_cola, queue_cost, queue_sponsor = needs_sponsorship(post)
     thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(topic_obj, u, request)
@@ -279,6 +284,8 @@ def _post_context(request, post):
         'speaker_names': speaker_names, 'speaker_rows': speaker_rows,
         'identification': speaker_identification(post),
         'can_validate': identification_gate(post)[0],
+        'waiting_ident': waiting_ident, 'ident_min': min_identified_percent(),
+        'relaunch_rows': relaunch_rows,
         'page_obj': page_obj,
         'thread_total': page_obj.paginator.count if page_obj else 0,
         'first_unread_pk': first_unread_pk, 'newest_pk': newest_pk,
@@ -443,22 +450,91 @@ def relegate(request, pk):
 
 @login_required
 def reanalyze(request, pk):
-    """4.3-A.5 O3 (decisión de David): reanálisis manual de un post cuando la
-    transcripción/diarización viene mal de origen. Solo moderador. Borra los
-    segmentos actuales y relanza el pipeline barato→caro; pasa por el presupuesto
-    (try_spend dentro de las tareas) como cualquier análisis. NO es gratis: cuesta
-    lo mismo que un análisis nuevo, así que es acción deliberada, no automática."""
+    """4.3-A.5 O3: reanálisis manual. Desde el 4.4-G es la etapa (a) de la llave
+    inglesa y pasa por su página de confirmación con el coste (decisión de
+    David: confirmación para cualquier opción). La URL se conserva."""
+    return relaunch(request, pk, 'cheap')
+
+
+# 4.4-G (encargo de David, 2026-08-24): la LLAVE INGLESA. Junto al estado del
+# post, solo moderación/superusuario, cuatro etapas relanzables con su coste
+# delante. Sin JavaScript: POST -> pagina de confirmacion con el coste ->
+# segundo POST (confirm=1) ejecuta. AuditLog por accion; todo pasa por
+# DailyBudget.try_spend dentro de las tareas.
+RELAUNCH_STAGES = ['cheap', 'dating', 'verdicts', 'deep']
+
+
+def relaunch_options(post):
+    """Las cuatro etapas con etiqueta, coste estimado y si estan disponibles en
+    el estado actual del post. Lista (no dict): la plantilla lo recorre."""
+    from .services import cost_cheap_eur, cost_full_eur, cost_dating_eur, cost_deep_eur
+    tiene_frases = post.transcript_segments.exists()
+    return [
+        {'stage': 'cheap', 'label': 'Transcripción y voces', 'cost': cost_cheap_eur(post),
+         'available': True,
+         'note': 'Borra la transcripción, las voces y las identificaciones de este vídeo.'},
+        {'stage': 'dating', 'label': 'Fecha del suceso', 'cost': cost_dating_eur(post),
+         'available': tiene_frases, 'note': 'Solo la datación; céntimos.'},
+        {'stage': 'verdicts', 'label': 'Veredictos', 'cost': cost_full_eur(post),
+         'available': tiene_frases,
+         'note': 'Conserva transcripción y hablantes; rehace la verificación con fuentes.'},
+        {'stage': 'deep', 'label': 'Análisis profundo', 'cost': cost_deep_eur(post),
+         'available': post.status == 'DONE',
+         'note': 'El más caro: el modelo profundo del panel vuelve a mirar cada afirmación.'},
+    ]
+
+
+@login_required
+def relaunch(request, pk, stage):
+    """Etapa a relanzar: cheap | dating | verdicts | deep."""
+    from django.http import Http404
+    from apps.panel.models import AuditLog
     post = get_object_or_404(Post, pk=pk)
+    if stage not in RELAUNCH_STAGES:
+        raise Http404
     if request.method != 'POST' or not _require_mod(request.user):
         return redirect('post_detail', pk=pk)
-    # limpieza: fuera segmentos, candidatos automáticos y flag de reescaneo premium
-    post.transcript_segments.all().delete()
-    post.status = 'NEW'
-    post.opus_rescanned = False
-    post.save(update_fields=['status', 'opus_rescanned'])
-    from .tasks import run_cheap_phase
-    run_cheap_phase.delay(post.pk)
-    messages.success(request, 'Reanálisis lanzado: la transcripción se regenerará en unos minutos.')
+    opcion = next(o for o in relaunch_options(post) if o['stage'] == stage)
+    if not opcion['available']:
+        messages.error(request, 'Esa etapa no se puede relanzar en el estado actual del post.')
+        return redirect('post_detail', pk=pk)
+    voces = request.POST.get('speakers', '').strip()
+    if request.POST.get('confirm') != '1':
+        from .services import waiting_for_identification, budget_left_today
+        _espera, ident, total, minimo = waiting_for_identification(post)
+        return render(request, 'analysis/relaunch_confirm.html', {
+            'post': post, 'opcion': opcion, 'stage': stage,
+            'budget_left': round(budget_left_today(), 2),
+            'ident': ident, 'ident_total': total, 'ident_min': minimo,
+            'gate_open': ident * 100 >= total * minimo if total else True,
+            'speakers_now': post.speakers_count, 'speakers_source': post.speakers_count_source,
+        })
+    detalle = f'post {post.pk} etapa {stage} ({opcion["cost"]:.2f} EUR estimados)'
+    if stage == 'cheap':
+        from .tasks import run_cheap_phase, reset_for_cheap_phase
+        # Red de seguridad de David: moderacion puede corregir el numero de voces.
+        if voces.isdigit() and 1 <= int(voces) <= 20:
+            post.speakers_count, post.speakers_confidence = int(voces), 'high'
+            post.speakers_count_source = 'mod'
+            post.save(update_fields=['speakers_count', 'speakers_confidence',
+                                     'speakers_count_source'])
+            detalle += f', voces fijadas por moderación: {voces}'
+        reset_for_cheap_phase(post)
+        run_cheap_phase.delay(post.pk)
+        messages.success(request, 'Relanzado: transcripción y voces se regenerarán en unos minutos.')
+    elif stage == 'dating':
+        from .tasks import redate_post
+        redate_post.delay(post.pk)
+        messages.success(request, 'Relanzada la datación del suceso.')
+    elif stage == 'verdicts':
+        from .tasks import reverify_post
+        reverify_post.delay(post.pk)
+        messages.success(request, 'Relanzados los veredictos: los hablantes se conservan.')
+    else:
+        from .tasks import opus_rescan
+        opus_rescan.delay(post.pk, forced=True)
+        messages.success(request, 'Relanzado el análisis profundo con el modelo del panel.')
+    AuditLog.objects.create(user=request.user, action=f'relaunch_{stage}', detail=detalle)
     return redirect('post_detail', pk=pk)
 
 

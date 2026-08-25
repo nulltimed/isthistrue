@@ -232,7 +232,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 4.3-C: las fichas de persona nacen con el freno de indexacion puesto.
     'wiki_index_people': '0',
     # 4.3-E: minimo de hablantes identificados para poder validar como factual.
-    'min_identified_speakers_percent': '50',
+    'min_identified_speakers_percent': '65',   # 4.4-G (David): del 50 al 65, y frena TODO
     # 4.3-F: porcentaje del deposito diario a partir del cual un video espera en
     # cola en vez de analizarse al momento.
     'queue_threshold_percent': '50',
@@ -266,4 +266,10 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@localhost')
 ADMIN_ALERT_EMAIL = os.getenv('ADMIN_ALERT_EMAIL', 'contact@xyztserver.com')
 PROMETHEUS_EXPORT_MIGRATIONS = False
 OCR_FRAME_INTERVAL = int(os.getenv('OCR_FRAME_INTERVAL', '5'))
-USE_BATCH_API = os.getenv('USE_BATCH_API', 'true').lower() == 'true' and not MOCK_AGENTS
+# 4.4-G (B.2): USE_BATCH_API ya NO decide nada en el codigo — el metodo de envio
+# lo manda el panel (catalog.delivery_for). Queda como semilla de compatibilidad:
+# si el .env no trae DELIVERY_VERDICT y trae USE_BATCH_API=true, la siembra
+# arranca en «por correo». Sin USE_BATCH_API, de fabrica es «mostrador».
+USE_BATCH_API = os.getenv('USE_BATCH_API', 'false').lower() == 'true' and not MOCK_AGENTS
+if os.getenv('DELIVERY_VERDICT') is None and USE_BATCH_API:
+    SETTING_DEFAULTS['delivery_verdict'] = 'batch'

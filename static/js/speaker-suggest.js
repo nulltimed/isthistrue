@@ -34,6 +34,9 @@
         form.querySelector('input[name="qdesc"]').value = it.description || '';
         lista.hidden = true;
         recorte(form, false);
+        /* 4.4-G (nota de David): elegir una sugerencia de Wikidata la AGREGA
+           directamente, sin segundo clic en el boton. */
+        enviar(form);
       }
       li.addEventListener('click', elegir);
       li.addEventListener('keydown', function (e) {
@@ -43,6 +46,12 @@
     });
     lista.hidden = false;
     recorte(form, true);
+  }
+
+  /* Envio con validacion nativa (requestSubmit respeta `required`); el boton
+     sigue existiendo para quien no tiene JS. */
+  function enviar(form) {
+    if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
   }
 
   Array.prototype.forEach.call(document.querySelectorAll('form.speaker-suggest'), function (form) {
@@ -71,6 +80,15 @@
     });
 
     input.addEventListener('keydown', function (e) {
+      /* 4.4-G (nota de David): Intro ENVIA el nombre escrito, siempre — con el
+         desplegable abierto o cerrado. Para elegir una sugerencia se baja con
+         la flecha y se pulsa Intro sobre ella. */
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        lista.hidden = true; recorte(form, false);
+        enviar(form);
+        return;
+      }
       if (e.key === 'Escape') { lista.hidden = true; recorte(form, false); }
       if (e.key === 'ArrowDown' && !lista.hidden && lista.firstChild) {
         e.preventDefault(); lista.firstChild.focus();

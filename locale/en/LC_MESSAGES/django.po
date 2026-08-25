@@ -1154,3 +1154,68 @@ msgstr "Your moderator vote re-runs the analysis right away"
 
 msgid "sin búsqueda web"
 msgstr "no web search"
+
+# --- Pase 4.4-G: la llave inglesa, la puerta del 65 % y el panel honesto ---
+
+msgid "Análisis profundo"
+msgstr "Deep re-analysis"
+
+msgid "Cada opción pide confirmación con su coste antes de ejecutarse."
+msgstr "Every option asks for confirmation, with its cost, before running."
+
+msgid "Cancelar"
+msgstr "Cancel"
+
+msgid "Confirmar relanzamiento"
+msgstr "Confirm relaunch"
+
+msgid "Envío: solo en el mostrador (esta tarea no puede esperar a un lote: frenaría la transcripción o el foro)."
+msgstr "Delivery: counter only (this task cannot wait for a batch: it would hold up the transcript or the forum)."
+
+msgid "Fecha del suceso"
+msgstr "Event date"
+
+msgid "Número de voces (opcional, corrección de moderación)"
+msgstr "Number of voices (optional, moderator correction)"
+
+msgid "Relanzar una etapa del análisis"
+msgstr "Relaunch one stage of the analysis"
+
+msgid "Relanzar:"
+msgstr "Relaunch:"
+
+msgid "Se borran la transcripción, las voces y TODAS las identificaciones de este vídeo: tras separar de nuevo las voces, «Hablante 1» puede ser otra persona."
+msgstr "The transcript, the voices and ALL the identifications of this video are deleted: after separating the voices again, \"Speaker 1\" may be someone else."
+
+msgid "Si lo dejas vacío, el sistema lo deduce solo. Si lo rellenas, manda tu número."
+msgstr "Leave it empty and the system works it out; fill it in and your number rules."
+
+msgid "Solo los veredictos y el reanálisis profundo pueden ir por correo: son los únicos trabajos que no tienen a nadie esperando delante. El barrido, la fecha y la moderación van siempre al mostrador."
+msgstr "Only the verdicts and the deep re-analysis can go by mail: they are the only jobs with nobody waiting at the desk. The sweep, the date and the moderation always go to the counter."
+
+msgid "Sí, relanzar"
+msgstr "Yes, relaunch"
+
+msgid "Transcripción y voces"
+msgstr "Transcript and voices"
+
+msgid "Veredictos"
+msgstr "Verdicts"
+
+msgid "no disponible en este estado"
+msgstr "not available in this state"
+
+msgid "Coste estimado: %(c)s €"
+msgstr "Estimated cost: %(c)s €"
+
+msgid "(quedan %(b)s € en el depósito de hoy)"
+msgstr "(%(b)s € left in today's budget)"
+
+msgid "Hablantes identificados: %(n)s de %(total)s (el mínimo es el %(m)s%%). Lo relanzas igualmente porque lo ordenas tú; las frases de quien no tenga nombre no llegarán a ninguna página de la wiki."
+msgstr "Speakers identified: %(n)s of %(total)s (the minimum is %(m)s%%). It relaunches anyway because you ordered it; the sentences of anyone without a name will not reach any wiki page."
+
+msgid "La verificación con fuentes espera: identifica a quienes hablan (%(n)s de %(total)s, hace falta el %(m)s%%)."
+msgstr "Source verification is waiting: identify the speakers (%(n)s of %(total)s, %(m)s%% needed)."
+
+msgid "Identifica al menos al %(m)s%% en «¿Quién habla?» para poder marcarlo como factual."
+msgstr "Identify at least %(m)s%% in \"Who is speaking?\" to be able to mark it as factual."

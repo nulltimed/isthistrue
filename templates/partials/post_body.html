@@ -97,10 +97,12 @@
   {% if post.status == 'PENDING_VALIDATION' %}
     <div class="validation">
       <p><strong>{% trans "Pendiente de validación:" %}</strong> {{ votes_validate }} {% trans "voto(s). Se necesitan votos de usuarios Contribuidor+ antes de" %} {{ post.validation_deadline|date:'d/m H:i' }}.</p>
-      {# 4.3-E (David): sin identificar a la mitad de los hablantes no se valida. #}
+      {# 4.3-E (David): sin identificar a los hablantes no se valida. 4.4-G: el #}
+      {# minimo sube al 65% y frena TAMBIEN el piloto automatico; se dice aqui. #}
       {% if identification.1 %}
         <p class="hint">{% blocktrans with n=identification.0 total=identification.1 %}Hablantes identificados: {{ n }} de {{ total }}.{% endblocktrans %}
-          {% if not can_validate %}<strong>{% trans "Identifica al menos a la mitad en «¿Quién habla?» para poder marcarlo como factual." %}</strong>{% endif %}</p>
+          {% if waiting_ident %}<strong class="waiting-ident">{% blocktrans with n=identification.0 total=identification.1 m=ident_min %}La verificación con fuentes espera: identifica a quienes hablan ({{ n }} de {{ total }}, hace falta el {{ m }}%).{% endblocktrans %}</strong>
+          {% elif not can_validate %}<strong>{% blocktrans with m=ident_min %}Identifica al menos al {{ m }}% en «¿Quién habla?» para poder marcarlo como factual.{% endblocktrans %}</strong>{% endif %}</p>
       {% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'post_vote' post.pk 'validate' %}">{% csrf_token %}
@@ -145,12 +147,27 @@
           <button class="mini">⤴ {% trans "Devolver a Principal" %}</button>
         </form>
       {% endif %}
-      {% if post.status == 'DONE' or post.status == 'PENDING_VALIDATION' %}
-      <form method="post" action="{% url 'post_reanalyze' post.pk %}" class="reanalyze-form"
-            onsubmit="return confirm('{% trans "Esto borra la transcripción actual y la regenera con IA (tiene coste). ¿Reanalizar?" %}');">{% csrf_token %}
-        <button class="mini" title="{% trans 'Relanza transcripción y análisis con IA. Úsalo si la sincronización vino mal.' %}">↻ {% trans "Reanalizar con IA" %}</button>
-      </form>
-      {% endif %}
+      {# 4.4-G (encargo de David): la LLAVE INGLESA. Cuatro etapas relanzables con #}
+      {# su coste delante; cada una pasa por una pagina de confirmacion (dos clics, #}
+      {# sin JavaScript). Patron <details> como el tutorial del panel. #}
+      <details class="mod-menu">
+        <summary title="{% trans 'Relanzar una etapa del análisis' %}">{% icon 'wrench' 18 %} {% trans "Relanzar análisis" %}</summary>
+        <ul class="relaunch-list">
+          {% for r in relaunch_rows %}
+          <li>
+            {% if r.available %}
+            <form method="post" action="{% url 'post_relaunch' post.pk r.stage %}">{% csrf_token %}
+              <button class="mini">{% if r.stage == 'cheap' %}{% trans "Transcripción y voces" %}{% elif r.stage == 'dating' %}{% trans "Fecha del suceso" %}{% elif r.stage == 'verdicts' %}{% trans "Veredictos" %}{% else %}{% trans "Análisis profundo" %}{% endif %}</button>
+              <span class="relaunch-cost">≈ {{ r.cost|floatformat:2 }} €</span>
+            </form>
+            {% else %}
+            <span class="relaunch-off">{% if r.stage == 'dating' %}{% trans "Fecha del suceso" %}{% elif r.stage == 'verdicts' %}{% trans "Veredictos" %}{% else %}{% trans "Análisis profundo" %}{% endif %} <span class="hint">({% trans "no disponible en este estado" %})</span></span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="hint">{% trans "Cada opción pide confirmación con su coste antes de ejecutarse." %}</p>
+      </details>
     </div>
   {% endif %}
 

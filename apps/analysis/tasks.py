@@ -54,10 +54,16 @@ def run_cheap_phase(self, post_id):
         _t0 = _time.monotonic()
         segments, audio_path = _transcribe_first_tranche(post, tmpdir)
         post.transcribe_seconds = round(_time.monotonic() - _t0, 1)
+        # 4.4-G (A.1 reformulado por David): la DATACION va ahora AQUI, antes de
+        # separar voces, porque el mismo viaje de Haiku trae tambien cuantas voces
+        # hay — y esa pista es lo que pyannote necesita (docs/47: sin pista fundia
+        # a dos hablantes y sacaba un tercero de los restos). Coste anadido: cero.
+        _date_and_hint(post, ' '.join(s.get('text', '') for s in segments))
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
         from apps.agents.diarization import diarize
         _t1 = _time.monotonic()
-        turns = diarize(audio_path) if (audio_path or settings.MOCK_AGENTS) else []
+        turns = (diarize(audio_path, **diarization_hint(post))
+                 if (audio_path or settings.MOCK_AGENTS) else [])
         post.diarize_seconds = round(_time.monotonic() - _t1, 1)
         post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
         logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
@@ -87,18 +93,7 @@ def run_cheap_phase(self, post_id):
     if verdict == 'OPINION' and not result.get('sweep_failed'):
         post.offtopic_suggested = True
 
-    # 4.4-B (decision de David): la fecha del SUCESO. Antes de cualquier veredicto,
-    # porque sin ella los datos se comparan contra el año equivocado.
-    try:
-        from apps.agents.dating import date_event
-        fecha, nota = date_event(post)
-        if fecha or nota:
-            post.event_date = fecha
-            post.event_date_note = nota
-            post.event_date_source = 'agent' if fecha else ''
-    except Exception as exc:          # datar es una ayuda, no un requisito
-        logger.warning('Datación fallida en el post %s: %r', post.pk, exc)
-
+    # (La datacion del 4.4-B vive ahora arriba, junto a la diarizacion: 4.4-G.)
     post.save()
     from .services import open_validation_window
     open_validation_window(post)
@@ -111,14 +106,85 @@ def run_cheap_phase(self, post_id):
     # verificacion con fuentes, hasta un tope diario que el fija en el panel. Ese
     # tope SUSTITUYE a su voto: es el freno. Sin el, la web pasaba de "no verifica
     # nada sin David" a "puede vaciarse el deposito una mañana sin que se entere".
-    if verdict == 'FACTUAL' and auto_verify_slot_free():
-        post.status = 'FULL_QUEUED'
-        post.save(update_fields=['status'])
-        launch_full_analysis(post)
-        notify_post_event(post, 'analysis', 'Analizado: verificando con fuentes')
+    # 4.4-G: con la puerta del 65 % delante (services.try_autopilot), que «frena
+    # todo» y se reabre sola cuando la comunidad nombra a los hablantes.
+    from .services import try_autopilot
+    if try_autopilot(post, factual=(verdict == 'FACTUAL')):
         return 'auto_verifying'
     notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
     return 'pending_validation'
+
+
+def _date_and_hint(post, transcript_text):
+    """Datacion + pista de voces en un viaje. Datar es una ayuda, no un requisito:
+    cualquier fallo se registra y el analisis sigue."""
+    try:
+        from apps.agents.dating import date_and_count
+        datos = date_and_count(post, transcript_text)
+    except Exception as exc:
+        logger.warning('Datación fallida en el post %s: %r', post.pk, exc)
+        return
+    campos = []
+    if datos['event_date'] or datos['note']:
+        post.event_date = datos['event_date']
+        post.event_date_note = datos['note']
+        post.event_date_source = 'agent' if datos['event_date'] else ''
+        campos += ['event_date', 'event_date_note', 'event_date_source']
+    # La correccion de moderacion manda sobre lo que adivine el agente.
+    if post.speakers_count_source != 'mod':
+        post.speakers_count = datos['speakers_count']
+        post.speakers_confidence = datos['speakers_confidence']
+        post.speakers_count_source = 'agent' if datos['speakers_count'] else ''
+        campos += ['speakers_count', 'speakers_confidence', 'speakers_count_source']
+    if campos:
+        post.save(update_fields=campos)
+
+
+def diarization_hint(post):
+    """4.4-G (A.1, regla de David): que le decimos a pyannote sobre las voces.
+      · moderacion fijo N            -> num_speakers=N (quien manda, manda)
+      · agente, confianza alta, N>=2 -> min_speakers=2, max_speakers=N+1
+      · agente, confianza alta, N==1 -> num_speakers=1 (monologos BLINDADOS)
+      · duda (media/baja/sin dato)   -> automatico, como hasta hoy
+    """
+    n = post.speakers_count
+    if not n:
+        return {}
+    if post.speakers_count_source == 'mod':
+        return {'num_speakers': int(n)}
+    if post.speakers_confidence != 'high':
+        return {}
+    if n == 1:
+        return {'num_speakers': 1}
+    return {'min_speakers': 2, 'max_speakers': int(n) + 1}
+
+
+@shared_task
+def redate_post(post_id):
+    """4.4-G (llave inglesa, etapa b): solo la datacion, sobre la transcripcion
+    guardada. Centimos. Refresca tambien la pista de voces del agente (no la de
+    moderacion) para el proximo relanzamiento de voces."""
+    from .models import Post, DailyBudget
+    from .services import cost_dating_eur
+    post = Post.objects.get(pk=post_id)
+    if not DailyBudget.try_spend(cost_dating_eur(post)):
+        return 'budget_exhausted'
+    _date_and_hint(post, None)
+    notify_post_event(post, 'analysis', 'Fecha del suceso recalculada')
+    return 'redated'
+
+
+def reset_for_cheap_phase(post):
+    """4.4-G (llave inglesa, etapa a): deja el post como recien enviado. Se
+    borran la transcripcion, las voces Y las identificaciones: tras volver a
+    separar voces, «SPEAKER_00» puede ser otra persona, y conservar un nombre
+    confirmado sobre la etiqueta equivocada seria atribuirle a alguien lo que no
+    dijo — peor que perder los votos. La pagina de confirmacion lo avisa."""
+    post.transcript_segments.all().delete()
+    post.name_proposals.all().delete()
+    post.status = 'NEW'
+    post.opus_rescanned = False
+    post.save(update_fields=['status', 'opus_rescanned'])
 
 
 def auto_verify_slot_free():
@@ -191,6 +257,26 @@ def reverify_post(post_id, borrar_previos=True):
     return 'reverifying'
 
 
+def _submit_batch(post, model=None):
+    """Envia los claims factuales del post por correo (lotes). Devuelve True si
+    el lote salio; False si no hay claims o el envio fallo (se cae a la via
+    directa, con WARNING: regla 5.7)."""
+    import json as _json
+    from apps.agents.batch import submit_verdict_batch, poll_verdict_batch
+    from apps.agents.verdict import _claims_from_segments
+    claims = [c for c in _claims_from_segments(post) if c.get('kind') == 'FACTUAL']
+    if not claims:
+        return False
+    try:
+        batch_id = submit_verdict_batch(post, claims, model=model)
+    except Exception as exc:
+        logger.warning('Post %s: el lote no salió (%r); se usa la vía directa', post.pk, exc)
+        return False
+    poll_verdict_batch.apply_async(args=[batch_id, post.pk, _json.dumps(claims)],
+                                   countdown=120)
+    return True
+
+
 def launch_full_analysis(post):
     """Cola con prioridad: manipulacion con claims = paciente grave, primero."""
     prio = settings.PRIORITY_MANIPULATION if post.manipulation_detected \
@@ -212,19 +298,12 @@ def run_full_analysis(self, post_id):
     post.status = 'FULL_RUNNING'
     post.full_started_at = timezone.now()
     post.save(update_fields=['status', 'full_started_at'])
-    if settings.USE_BATCH_API:
-        import json as _json
-        from apps.agents.batch import submit_verdict_batch, poll_verdict_batch
-        from apps.agents.verdict import _claims_from_segments
-        claims = [c for c in _claims_from_segments(post) if c.get('kind') == 'FACTUAL']
-        if claims:
-            try:
-                batch_id = submit_verdict_batch(post, claims)
-                poll_verdict_batch.apply_async(args=[batch_id, post.pk, _json.dumps(claims)],
-                                               countdown=120)
-                return 'batch_submitted'  # poll_verdict_batch pondra DONE
-            except Exception:
-                pass  # si el lote falla, caemos a llamadas directas
+    # 4.4-G (B.2, encargo del operador): la rama de lotes la decide el PANEL
+    # (delivery_for), no una variable del .env que mandaba por encima sin que
+    # nadie lo viera. Hay candado: ningun modulo de apps/ lee USE_BATCH_API.
+    from apps.agents.catalog import delivery_for
+    if delivery_for('verdict') == 'batch' and _submit_batch(post):
+        return 'batch_submitted'  # poll_verdict_batch pondra DONE
     verdict_agent.run(post)  # crea/actualiza claims wiki, fuentes, colores
     post.status = 'DONE'
     post.full_finished_at = timezone.now()
@@ -371,7 +450,8 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
     # 4.4-F: si el fragmento trae PALABRAS con su tiempo (whisper), la unidad de
     # cruce es la palabra: "Get out" (1 s) cae en el microturno de su hablante
     # aunque viva dentro de un fragmento mas largo del otro.
-    if turns and any(seg.get('words') for seg in raw_segments):
+    por_palabra = bool(turns and any(seg.get('words') for seg in raw_segments))
+    if por_palabra:
         raw_segments = [
             {'start_seconds': w['start'], 'end_seconds': w['end'], 'text': w['text']}
             for seg in raw_segments for w in (seg.get('words') or
@@ -379,12 +459,18 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
                   'text': seg['text']}])
         ]
 
+    unidades = [(seg, speaker_of(seg)) for seg in raw_segments if seg['text'].strip()]
+    # 4.4-G (A.4, medido por el operador): el cruce por palabra dejaba un 28 % de
+    # frases de UNA palabra («And», «It», «-hmm.»). Una isla de menos de 0,8 s o
+    # de una sola palabra entre dos tramos de otra voz no es un cambio de
+    # hablante: es ruido del solape. Se pega a la voz que la rodea. Los
+    # backchannels legitimos («Right.», «Whoa») se recuperan despues (A.5).
+    if por_palabra:
+        unidades = smooth_word_islands(unidades)
+
     merged, current = [], None
-    for seg in raw_segments:
-        spk = speaker_of(seg)
+    for seg, spk in unidades:
         text = seg['text'].strip()
-        if not text:
-            continue
         if (current is not None and current['speaker_label'] == spk
                 and not _SENTENCE_END.search(current['text'])
                 and len(current['text']) + len(text) < max_chars):
@@ -398,7 +484,129 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
                        'text': text, 'speaker_label': spk}
     if current is not None:
         merged.append(current)
+    # 4.4-G (A.5): la reaccion breve entre dos intervenciones largas del mismo
+    # hablante es del OTRO (nadie se contesta a si mismo). Luego (A.4) las frases
+    # de una palabra que queden se pegan a su vecina del mismo hablante.
+    merged = reassign_backchannels(merged)
+    merged = glue_short_sentences(merged, max_chars=max_chars)
     return merged
+
+
+MIN_ISLAND_SECONDS = 0.8     # A.4: por debajo, un tramo no es un cambio de voz
+BACKCHANNEL_MAX_WORDS = 2    # A.5: «Right», «I love it» (tres ya es una frase)
+BACKCHANNEL_MAX_SECONDS = 1.5
+LONG_TURN_SECONDS = 2.0      # A.5: lo que hace «larga» a una intervencion vecina
+
+
+def _dur(seg):
+    return max(0.0, float(seg['end_seconds']) - float(seg['start_seconds']))
+
+
+def smooth_word_islands(unidades, min_seconds=MIN_ISLAND_SECONDS):
+    """Sobre la lista de (palabra, hablante): una isla —tramo de palabras
+    seguidas de un mismo hablante— de UNA palabra o de menos de `min_seconds`
+    se reetiqueta con la voz de sus vecinos: si ambos lados coinciden, esa; si
+    no, la del lado mas cercano en el tiempo. Se repite hasta que no quede
+    ninguna (tope de pasadas por seguridad)."""
+    unidades = list(unidades)
+    for _ in range(4):
+        # islas: [inicio, fin) de tramos consecutivos con el mismo hablante
+        islas, i = [], 0
+        while i < len(unidades):
+            j = i
+            while j < len(unidades) and unidades[j][1] == unidades[i][1]:
+                j += 1
+            islas.append((i, j))
+            i = j
+        if len(islas) < 2:
+            return unidades
+        cambios = 0
+        for k, (a, b) in enumerate(islas):
+            dur = float(unidades[b - 1][0]['end_seconds']) - float(unidades[a][0]['start_seconds'])
+            if not (b - a == 1 or dur < min_seconds):
+                continue
+            izq = unidades[islas[k - 1][1] - 1] if k > 0 else None
+            der = unidades[islas[k + 1][0]] if k + 1 < len(islas) else None
+            if izq is None and der is None:
+                continue
+            if izq is None or der is None:
+                nuevo = (der or izq)[1]
+            elif izq[1] == der[1]:
+                nuevo = izq[1]
+            else:
+                hueco_izq = float(unidades[a][0]['start_seconds']) - float(izq[0]['end_seconds'])
+                hueco_der = float(der[0]['start_seconds']) - float(unidades[b - 1][0]['end_seconds'])
+                nuevo = izq[1] if hueco_izq <= hueco_der else der[1]
+            if nuevo != unidades[a][1]:
+                for idx in range(a, b):
+                    unidades[idx] = (unidades[idx][0], nuevo)
+                cambios += 1
+        if not cambios:
+            break
+    return unidades
+
+
+def _other_speaker(merged, i):
+    """El hablante «de enfrente» de la frase i: si en la conversacion solo hay
+    otro, ese; si hay varios, el mas cercano en el tiempo que no sea el propio."""
+    propio = merged[i]['speaker_label']
+    otros = {m['speaker_label'] for m in merged if m['speaker_label'] and m['speaker_label'] != propio}
+    if len(otros) == 1:
+        return next(iter(otros))
+    for paso in range(1, len(merged)):
+        for j in (i - paso, i + paso):
+            if 0 <= j < len(merged) and merged[j]['speaker_label'] in otros:
+                return merged[j]['speaker_label']
+    return ''
+
+
+def reassign_backchannels(merged):
+    """A.5: frase de 1-2 palabras y <=1,5 s, rodeada por dos intervenciones
+    largas (>=2 s) del MISMO hablante que ella -> se atribuye al otro. Con los
+    81 casos medidos en el post 5, esta regla sola recupera la mayoria de los 62
+    mal atribuidos."""
+    if len(merged) < 3:
+        return merged
+    for i in range(1, len(merged) - 1):
+        s, prev, nxt = merged[i], merged[i - 1], merged[i + 1]
+        if not s['speaker_label']:
+            continue
+        if len(s['text'].split()) > BACKCHANNEL_MAX_WORDS or _dur(s) > BACKCHANNEL_MAX_SECONDS:
+            continue
+        if not (prev['speaker_label'] == nxt['speaker_label'] == s['speaker_label']):
+            continue
+        if _dur(prev) < LONG_TURN_SECONDS or _dur(nxt) < LONG_TURN_SECONDS:
+            continue
+        otro = _other_speaker(merged, i)
+        if otro:
+            s['speaker_label'] = otro
+    return merged
+
+
+def glue_short_sentences(merged, max_chars=600, min_seconds=MIN_ISLAND_SECONDS):
+    """A.4 a nivel de frase: una frase de UNA palabra (o de menos de 0,8 s) se
+    pega a la vecina del MISMO hablante — la anterior si puede, si no la
+    siguiente. Sin vecina del mismo hablante (un backchannel legitimo entre dos
+    intervenciones ajenas) se deja tal cual: ahi la palabra suelta ES la frase."""
+    out = []
+    i = 0
+    while i < len(merged):
+        s = merged[i]
+        corta = len(s['text'].split()) == 1 or _dur(s) < min_seconds
+        if corta and out and out[-1]['speaker_label'] == s['speaker_label'] \
+                and len(out[-1]['text']) + len(s['text']) < max_chars:
+            out[-1]['text'] = f"{out[-1]['text']} {s['text']}"
+            out[-1]['end_seconds'] = max(out[-1]['end_seconds'], s['end_seconds'])
+        elif corta and i + 1 < len(merged) \
+                and merged[i + 1]['speaker_label'] == s['speaker_label'] \
+                and len(merged[i + 1]['text']) + len(s['text']) < max_chars:
+            nxt = merged[i + 1]
+            nxt['text'] = f"{s['text']} {nxt['text']}"
+            nxt['start_seconds'] = min(nxt['start_seconds'], s['start_seconds'])
+        else:
+            out.append(s)
+        i += 1
+    return out
 
 
 def _transcribe_first_tranche(post, tmpdir):
@@ -559,12 +767,19 @@ def opus_rescan(post_id, forced=False):
     post = Post.objects.get(pk=post_id)
     if post.status != 'DONE' or (post.opus_rescanned and not forced):
         return 'skip'
-    if not DailyBudget.try_spend(COST_OPUS_RESCAN_EUR):
+    from .services import cost_deep_eur
+    if not DailyBudget.try_spend(cost_deep_eur(post)):   # 4.4-G: escala con la duracion
         return 'budget_exhausted'
     post.opus_rescanned = True
     post.save(update_fields=['opus_rescanned'])
     from apps.agents import verdict as verdict_agent
-    from apps.agents.catalog import model_for as _mf
+    from apps.agents.catalog import model_for as _mf, delivery_for as _df
+    # 4.4-G: el reanalisis profundo tambien respeta el metodo de envio del panel.
+    if _df('deep') == 'batch' and _submit_batch(post, model=_mf('deep')):
+        post.status = 'FULL_RUNNING'
+        post.full_started_at = timezone.now()
+        post.save(update_fields=['status', 'full_started_at'])
+        return 'batch_submitted'
     verdict_agent.run(post, model=_mf('deep'))  # la firma real es run(post, model=None)
     from apps.panel.services import alert_admin
     alert_admin('Reescaneo Opus ejecutado',

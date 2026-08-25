@@ -43,6 +43,15 @@ BY_ID = {m[0]: m for m in CATALOG}
 # Tareas que NECESITAN buscar en la web para hacer su trabajo.
 WEB_TASKS = ('verdict', 'deep')
 
+# 4.4-G (B.2, encargo del operador): tareas que TIENEN via de lotes en el
+# codigo. Las demas no la tienen porque no puede tenerla: el barrido y la
+# datacion frenan la tuberia (nadie espera 24 h a ver su transcripcion) y la
+# moderacion es en tiempo real (un mensaje del foro no puede esperar un dia a
+# saber si se publica). Para esas, `delivery_for` devuelve SIEMPRE 'direct' y
+# el panel lo dice en vez de ofrecer un selector que no manda. Un mando que
+# muestra un estado distinto del real es peor que no tener mando.
+BATCH_TASKS = ('verdict', 'deep')
+
 # 10 $ por 1.000 busquedas (precio Anthropic, verificado 2026-08-23).
 USD_PER_SEARCH = 0.01
 
@@ -86,7 +95,8 @@ def substitute(model_id, need_web=False):
 # clave        etiqueta                         por defecto            veces por vídeo
 TASKS = [
     ('sweep',     'Barrido de afirmaciones', 'claude-haiku-4-5-20251001', 'decenas'),
-    ('classify',  'Clasificador factual/opinión', 'claude-sonnet-4-6',    'una'),
+    ('classify',  'Clasificador factual/opinión (segunda opinión)', 'claude-sonnet-4-6',
+                  'solo si la regla dice opinión'),
     ('dating',    'Fecha del suceso',        'claude-haiku-4-5-20251001', 'una'),
     ('verdict',   'Veredictos con fuentes',  'claude-sonnet-4-6',         'una por afirmación'),
     ('moderation', 'Moderación del foro',    'claude-haiku-4-5-20251001', 'una por mensaje'),
@@ -112,9 +122,20 @@ def model_for(task):
 
 
 def delivery_for(task):
+    """4.4-G: UNICA fuente de verdad del metodo de envio. Antes,
+    `settings.USE_BATCH_API` mandaba por encima del panel en la rama de los
+    veredictos y David llevaba dos dias viendo «En el mostrador» mientras el
+    sistema usaba «Por correo». Hay candado (test) que prohibe leer
+    USE_BATCH_API desde apps/."""
+    if task not in BATCH_TASKS:
+        return 'direct'
     from apps.panel.models import SystemSetting
     valor = SystemSetting.get_str(f'delivery_{task}', '')
     return valor if valor in DELIVERY_KEYS else 'direct'
+
+
+def batchable(task):
+    return task in BATCH_TASKS
 
 
 # =========================================================================
@@ -167,8 +188,12 @@ def cost_per_hour_eur(task=None, full_transcript=True):
             total += (TOKENS_OUT_PER_CLAIM * CLAIMS_PER_HOUR / 1e6) * pout
         elif clave == 'sweep':
             total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (4000 / 1e6) * pout
-        elif clave in ('classify', 'dating'):
+        elif clave == 'dating':
             total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (500 / 1e6) * pout
+        elif clave == 'classify':
+            # 4.4-G: la segunda opinion SOLO se pide cuando la regla local dice
+            # opinion. Se estima como una llamada por video (techo, no media).
+            total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (300 / 1e6) * pout
     return round(total * USD_EUR, 2)
 
 

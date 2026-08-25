@@ -84,7 +84,7 @@ SETTINGS_DEF = [
     # 4.3-C (decisión de David): por defecto APAGADO.
     # 4.3-E (decisión de David): sin identificar a la mitad, no se valida.
     ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',
-     'Porcentaje mínimo de hablantes con nombre confirmado antes de poder marcar un vídeo como factual. 0 lo desactiva.', 'num'),
+     'Porcentaje mínimo de hablantes con nombre confirmado antes de que un vídeo pase a la verificación con fuentes: frena el voto Y el piloto automático, y se reanuda solo al confirmar nombres. 0 lo desactiva.', 'num'),
     # 4.4-B (decisión de David): el semáforo.
     ('auto_verify_daily_cap', 'Vídeos verificados solos al día',
      'Cuántos vídeos pasan solos a la verificación con fuentes cada día. Es el freno que '
@@ -147,6 +147,7 @@ def models_panel(request):
         filas.append({
             'key': clave, 'label': etiqueta, 'times': veces,
             'model': actual, 'delivery': catalog.delivery_for(clave),
+            'batchable': catalog.batchable(clave),   # 4.4-G: si no, el selector mentiria
             'substitute': catalog.label(catalog.substitute(actual)),
             'warning': catalog.warning_for(clave),
             'health': salud.get(actual),

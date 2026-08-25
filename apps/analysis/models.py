@@ -90,6 +90,16 @@ class Post(models.Model):
                           ('mod', 'Corregida por moderación')]
     event_date_source = models.CharField(max_length=8, choices=EVENT_DATE_SOURCES,
                                          blank=True, default='')
+    # 4.4-G (A.1 reformulado por David): cuantas voces hay, como PISTA para la
+    # diarizacion. La deduce el agente de datacion en el mismo viaje (coste cero)
+    # y moderacion puede corregirla desde la llave inglesa. No se pregunta jamas
+    # al usuario corriente.
+    speakers_count = models.PositiveSmallIntegerField(null=True, blank=True)
+    speakers_confidence = models.CharField(max_length=8, blank=True, default='')
+    SPEAKERS_SOURCES = [('', '—'), ('agent', 'Estimado por el sistema'),
+                        ('mod', 'Corregido por moderación')]
+    speakers_count_source = models.CharField(max_length=8, choices=SPEAKERS_SOURCES,
+                                             blank=True, default='')
     validation_deadline = models.DateTimeField(null=True, blank=True)
     opus_rescanned = models.BooleanField(default=False)  # candado: UNA vez por post
     # 4.2 D4: aviso de Trending enviado (se rearma al salir del umbral).

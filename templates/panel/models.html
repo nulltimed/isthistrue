@@ -14,6 +14,7 @@
     <li><strong>{% trans "En el mostrador (directo)" %}</strong>: {% trans "dejas el libro encima y haces las 80 preguntas seguidas. El libro se fotocopia una sola vez y te contestan en minutos." %}</li>
   </ul>
   <p class="hint">{% trans "Salen casi igual de precio, pero uno tarda un día y el otro minutos. Lo que NO conviene es mezclarlos mal: enviar por correo la transcripción entera es pagar 80 fotocopias y encima esperar." %}</p>
+  <p class="hint">{% trans "Solo los veredictos y el reanálisis profundo pueden ir por correo: son los únicos trabajos que no tienen a nadie esperando delante. El barrido, la fecha y la moderación van siempre al mostrador." %}</p>
   <p class="hint">{% trans "Debajo de todo esto sigue el fusible del presupuesto: aunque configures lo más caro en todas las tareas, cuando se agote el depósito diario el sistema para solo. El daño máximo de un despiste es un día, no la cuenta entera." %}</p>
 </details>
 
@@ -42,12 +43,17 @@
           <option value="{{ id }}" {% if id == r.model %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M{% if not web %} · {% trans "sin búsqueda web" %}{% endif %}</option>
           {% endfor %}
         </select></label>
+      {# 4.4-G: el selector de envio solo donde el codigo tiene via de lotes. #}
+      {% if r.batchable %}
       <label>{% trans "Envío" %}
         <select name="delivery_{{ r.key }}">
           {% for id, nombre in deliveries %}
           <option value="{{ id }}" {% if id == r.delivery %}selected{% endif %}>{{ nombre }}</option>
           {% endfor %}
         </select></label>
+      {% else %}
+      <span class="hint">{% trans "Envío: solo en el mostrador (esta tarea no puede esperar a un lote: frenaría la transcripción o el foro)." %}</span>
+      {% endif %}
     </div>
     <p class="hint">{% blocktrans with s=r.substitute %}Si no responde, lo sustituye: {{ s }}{% endblocktrans %}
       {% if r.health %}· {% if r.health.ok %}{% trans "comprobado" %}{% else %}<strong class="ko">{% trans "NO RESPONDE" %}</strong>{% endif %} {{ r.health.checked_at|date:'d/m H:i' }}{% endif %}</p>

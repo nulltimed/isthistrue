@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Confirmar relanzamiento" %}{% endblock %}
+{% block content %}
+{# 4.4-G (decisión de David): CUALQUIER etapa relanzada pide confirmación con el #}
+{# coste en pantalla. Dos clics para todas, sin JavaScript: este formulario es #}
+{# el segundo POST. #}
+<h1>{% icon 'wrench' 22 %} {% trans "Relanzar:" %} {{ opcion.label }}</h1>
+<p><strong>{{ post.title|default:post.url }}</strong></p>
+<div class="relaunch-confirm">
+  <p class="relaunch-cost">{% blocktrans with c=opcion.cost|floatformat:2 %}Coste estimado: {{ c }} €{% endblocktrans %}
+    <span class="hint">{% blocktrans with b=budget_left %}(quedan {{ b }} € en el depósito de hoy){% endblocktrans %}</span></p>
+  <p class="hint">{{ opcion.note }}</p>
+  {% if stage == 'cheap' %}
+    <p class="warning">{% icon 'flag' 14 %} {% trans "Se borran la transcripción, las voces y TODAS las identificaciones de este vídeo: tras separar de nuevo las voces, «Hablante 1» puede ser otra persona." %}</p>
+  {% endif %}
+  {% if stage == 'verdicts' or stage == 'deep' %}{% if ident_total and not gate_open %}
+    <p class="warning">{% icon 'flag' 14 %} {% blocktrans with n=ident total=ident_total m=ident_min %}Hablantes identificados: {{ n }} de {{ total }} (el mínimo es el {{ m }}%). Lo relanzas igualmente porque lo ordenas tú; las frases de quien no tenga nombre no llegarán a ninguna página de la wiki.{% endblocktrans %}</p>
+  {% endif %}{% endif %}
+  <form method="post" action="{% url 'post_relaunch' post.pk stage %}">{% csrf_token %}
+    <input type="hidden" name="confirm" value="1">
+    {% if stage == 'cheap' %}
+      <label>{% trans "Número de voces (opcional, corrección de moderación)" %}
+        <input type="number" name="speakers" min="1" max="20" value="{% if speakers_source == 'mod' %}{{ speakers_now }}{% endif %}" placeholder="{% if speakers_now %}{{ speakers_now }}{% else %}auto{% endif %}">
+      </label>
+      <p class="hint">{% trans "Si lo dejas vacío, el sistema lo deduce solo. Si lo rellenas, manda tu número." %}</p>
+    {% endif %}
+    <button>{% trans "Sí, relanzar" %}</button>
+    <a class="btn" href="{% url 'post_detail' post.pk %}">{% trans "Cancelar" %}</a>
+  </form>
+</div>
+{% endblock %}

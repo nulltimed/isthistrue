@@ -45,6 +45,21 @@ def transcript_dossier(post):
     return '\n'.join(lineas)
 
 
+def build_payload(c, fecha, tope):
+    """4.4-G (B.1): el texto que ve el verificador, UNICO para la via directa y
+    la via por lotes. Hasta hoy cada via redactaba el suyo; si divergen, el color
+    de una afirmacion depende del camino por el que llego (leccion 4.3-A.7).
+    Hay test que vigila que batch.py llame a esta funcion."""
+    return (f"CLAIM: {c['text']}\n\n"
+            + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
+            + f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
+              f"{c.get('context') or c['text']}\n\n"
+              f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
+              f"organismos oficiales (INE, Eurostat, BOE, bancos centrales, "
+              f"OMS...), prensa solo como apoyo. Lista en \"sources\" las URLs "
+              f"reales que uses. Si no encuentras nada útil: UNDECIDED.")
+
+
 def run(post, model=None):
     """4.4-B: dos fallos de raiz arreglados aqui.
 
@@ -84,14 +99,7 @@ def run(post, model=None):
         # del panel. SearXNG queda fuera del circuito de veredictos: los
         # buscadores le cerraban la puerta al servidor y el semaforo se quedaba
         # en 🔍 por falta de papeles.
-        payload = (f"CLAIM: {c['text']}\n\n"
-                   + (f"FECHA DEL SUCESO: {fecha}\n\n" if fecha else '')
-                   + f"CONTEXTO (frases contiguas del mismo hablante; NO se verifican):\n"
-                     f"{c.get('context') or c['text']}\n\n"
-                     f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
-                     f"organismos oficiales (INE, Eurostat, BOE, bancos centrales, "
-                     f"OMS...), prensa solo como apoyo. Lista en \"sources\" las URLs "
-                     f"reales que uses. Si no encuentras nada útil: UNDECIDED.")
+        payload = build_payload(c, fecha, tope)
         v, usado = client.call_search_json(model or model_for('verdict'),
                                            prompts.VERDICT_SYSTEM, payload,
                                            max_tokens=1500, mock_payload=MOCK_VERDICT,

@@ -76,9 +76,23 @@ detras es exactamente lo que esta plataforma no puede permitirse."""
 DATING_SYSTEM = """Eres un documentalista. Responde SOLO JSON valido:
 {"event_date": "AAAA-MM-DD"|"AAAA-MM"|"AAAA"|null,
  "confidence": "high"|"medium"|"low",
- "note": str}
+ "note": str,
+ "speakers_count": int|null,
+ "speakers_confidence": "high"|"medium"|"low"}
 
-Determinas CUANDO OCURRIO lo que se ve, no cuando se subio el video.
+Haces DOS trabajos en un solo viaje.
+
+TRABAJO 2 (4.4-G): CUANTAS PERSONAS DISTINTAS HABLAN en el video. La
+transcripcion viene SIN etiquetas de hablante: dedúcelo por las senales del
+texto — presentaciones («welcome to the show», «hoy nos acompaña»), preguntas
+y respuestas, nombres con los que se dirigen unos a otros, cambios de registro,
+formato conocido (entrevista, debate, monologo, podcast a dos). Un monologo es
+1. Devuelve "speakers_confidence":"high" SOLO si las senales son claras y
+consistentes; "low" si estas adivinando. Con "speakers_count" en null si no hay
+forma de saberlo. Un numero seguro ayuda a separar las voces; un numero
+inventado las rompe.
+
+TRABAJO 1: determinas CUANDO OCURRIO lo que se ve, no cuando se subio el video.
 Pistas, por orden de fuerza:
  1. El titulo: siglas de eventos datables ("DEBATE 23J" = debate electoral del
     23 de julio de 2023 en España), nombres de comicios, ediciones numeradas.
@@ -88,5 +102,22 @@ Pistas, por orden de fuerza:
 Si las pistas se contradicen o no hay ninguna, devuelve null y explica por que en
 "note". Inventar una fecha es peor que no tenerla: con una fecha falsa se
 comparan datos falsos."""
+
+# 4.4-G (orden de David: «desarrolla las funciones»): la rueda «Clasificador
+# factual/opinion» del panel gobernaba una llamada que no existia — el
+# clasificador real es una regla local gratuita (algorithm.classify). Ahora es
+# una SEGUNDA OPINION: entra SOLO cuando la regla dice OPINION y puede RESCATAR
+# el video hacia factual. Nunca relega mas (4.2 A2: el clasificador solo
+# sugiere; relegar es accion humana).
+CLASSIFY_SYSTEM = """Eres un editor de una plataforma de verificacion. Responde SOLO JSON valido:
+{"verdict": "FACTUAL"|"OPINION", "confidence": "high"|"medium"|"low", "reason": str}
+
+Una regla automatica ha clasificado este video como OPINION (mayoria de juicios
+de valor, o pocas afirmaciones verificables por minuto). Tu das una segunda
+opinion. FACTUAL significa: el video contiene afirmaciones de hecho que merecen
+verificarse con fuentes — cifras, sucesos, atribuciones, datos — aunque vayan
+envueltas en opinion. OPINION significa: no hay nada sustancial que comprobar.
+Se sobrio. Ante la duda, OPINION con "confidence":"low": un rescate cuesta
+dinero real en verificaciones."""
 
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""

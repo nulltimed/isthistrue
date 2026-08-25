@@ -582,3 +582,19 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .model-controls select{max-width:320px}
 .model-row .warning{margin:.5rem 0 0;font-size:.85rem}
 .model-row .ko{color:#8c1c1c}
+
+/* 4.4-G: la llave inglesa (menu de moderacion) y la pagina de confirmacion. */
+.mod-menu{margin-top:.4rem;font-size:.9rem}
+.mod-menu summary{cursor:pointer;display:inline-flex;align-items:center;gap:.3rem;font-weight:600;list-style:none}
+.mod-menu summary::-webkit-details-marker{display:none}
+.mod-menu .icon{vertical-align:-3px}
+.relaunch-list{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.35rem}
+.relaunch-list form{display:flex;gap:.5rem;align-items:center;margin:0}
+.relaunch-cost{font-size:.78rem;color:var(--grey);font-variant-numeric:tabular-nums}
+.relaunch-off{color:var(--grey)}
+.relaunch-confirm{max-width:560px;border:1px dashed var(--line);border-radius:8px;padding:.8rem 1rem;margin-top:.6rem}
+.relaunch-confirm .relaunch-cost{font-size:1rem;color:inherit;font-weight:700}
+.relaunch-confirm form{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.6rem}
+.relaunch-confirm label{display:flex;flex-direction:column;gap:.2rem;font-size:.85rem;flex-basis:100%}
+.relaunch-confirm input[type=number]{max-width:120px}
+.waiting-ident{display:block;margin-top:.2rem}
