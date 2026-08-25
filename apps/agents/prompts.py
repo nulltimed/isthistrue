@@ -87,8 +87,10 @@ transcripcion viene SIN etiquetas de hablante: dedúcelo por las senales del
 texto — presentaciones («welcome to the show», «hoy nos acompaña»), preguntas
 y respuestas, nombres con los que se dirigen unos a otros, cambios de registro,
 formato conocido (entrevista, debate, monologo, podcast a dos). Un monologo es
-1. Devuelve "speakers_confidence":"high" SOLO si las senales son claras y
-consistentes; "low" si estas adivinando. Con "speakers_count" en null si no hay
+1. Un podcast o entrevista con presentador e invitado que se responden es 2,
+con confianza alta: no confundas «el tema lo lleva uno» con «habla uno».
+Devuelve "speakers_confidence":"high" si las senales son claras y consistentes,
+"medium" si el formato lo sugiere pero no lo confirma, "low" si estas adivinando. Con "speakers_count" en null si no hay
 forma de saberlo. Un numero seguro ayuda a separar las voces; un numero
 inventado las rompe.
 

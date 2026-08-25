@@ -233,6 +233,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'wiki_index_people': '0',
     # 4.3-E: minimo de hablantes identificados para poder validar como factual.
     'min_identified_speakers_percent': '65',   # 4.4-G (David): del 50 al 65, y frena TODO
+    'diarize_second_pass_skew_percent': '20',  # 4.4-H: voz minoritaria por debajo -> segunda pasada (0 apaga)
     # 4.3-F: porcentaje del deposito diario a partir del cual un video espera en
     # cola en vez de analizarse al momento.
     'queue_threshold_percent': '50',

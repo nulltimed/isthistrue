@@ -62,8 +62,17 @@ def run_cheap_phase(self, post_id):
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
         from apps.agents.diarization import diarize
         _t1 = _time.monotonic()
-        turns = (diarize(audio_path, **diarization_hint(post))
+        pista = diarization_hint(post)
+        turns = (diarize(audio_path, **pista)
                  if (audio_path or settings.MOCK_AGENTS) else [])
+        # 4.4-H (David: «quiero que este sistema funcione sin intervencion
+        # humana»): si la separacion salio desequilibrada, el sistema REPITE la
+        # diarizacion diciendole el numero de voces. CPU, no dinero.
+        n2 = second_pass_speakers(turns, pista, post)
+        if n2 and audio_path and not settings.MOCK_AGENTS:
+            logger.info('Post %s: separación desequilibrada; segunda pasada con num_speakers=%d',
+                        post.pk, n2)
+            turns = diarize(audio_path, num_speakers=n2)
         post.diarize_seconds = round(_time.monotonic() - _t1, 1)
         post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
         logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
@@ -142,21 +151,65 @@ def _date_and_hint(post, transcript_text):
 
 def diarization_hint(post):
     """4.4-G (A.1, regla de David): que le decimos a pyannote sobre las voces.
-      · moderacion fijo N            -> num_speakers=N (quien manda, manda)
-      · agente, confianza alta, N>=2 -> min_speakers=2, max_speakers=N+1
-      · agente, confianza alta, N==1 -> num_speakers=1 (monologos BLINDADOS)
-      · duda (media/baja/sin dato)   -> automatico, como hasta hoy
+      · moderacion fijo N                  -> num_speakers=N (quien manda, manda)
+      · agente, alta o MEDIA, N>=2         -> min_speakers=2, max_speakers=N+1
+      · agente, confianza alta, N==1       -> num_speakers=1 (monologos BLINDADOS)
+      · duda (baja / sin dato / 1 sin fe)  -> automatico + red de seguridad
+    4.4-H: en el post 5 la pista fue «ninguna (automatico)» y todo siguio igual.
+    Un RANGO es inofensivo (pyannote elige dentro), asi que la confianza media
+    tambien lo abre; forzar un numero exacto sigue exigiendo confianza alta o
+    moderacion. Y para la duda existe second_pass_speakers().
     """
     n = post.speakers_count
     if not n:
         return {}
     if post.speakers_count_source == 'mod':
         return {'num_speakers': int(n)}
-    if post.speakers_confidence != 'high':
-        return {}
     if n == 1:
-        return {'num_speakers': 1}
+        return {'num_speakers': 1} if post.speakers_confidence == 'high' else {}
+    if post.speakers_confidence not in ('high', 'medium'):
+        return {}
     return {'min_speakers': 2, 'max_speakers': int(n) + 1}
+
+
+def diarize_skew_percent():
+    """Umbral (panel) por debajo del cual la voz minoritaria delata una
+    separacion desequilibrada. 0 desactiva la segunda pasada."""
+    from apps.panel.models import SystemSetting
+    return max(0, min(50, SystemSetting.get_int('diarize_second_pass_skew_percent', 20)))
+
+
+def second_pass_speakers(turns, hint, post):
+    """4.4-H · la red de seguridad SIN humanos. Devuelve el numero de voces con
+    el que repetir la diarizacion, o 0 si la primera pasada vale.
+
+    Medido por el operador (docs/47): en automatico pyannote dejaba 94,8/5,2 en
+    un dialogo; con num_speakers=2, 84,8/15,2. La senal de que ha ido mal es
+    una voz minoritaria RIDICULA (post 5: 8,5 % del tiempo). Regla:
+      · si alguien ya fijo el numero exacto (moderacion, monologo blindado) -> 0
+      · si solo hay una voz real -> 0 (un monologo no se parte: blindaje)
+      · si hay >=2 voces reales y la minoritaria queda por debajo del umbral
+        -> repetir con N = lo que dijo el agente (cualquier confianza, si dijo
+           >=2) o, si no dijo nada, el numero de voces reales que salio.
+    Cuesta CPU (otra diarizacion), nunca dinero.
+    """
+    if not turns or 'num_speakers' in (hint or {}):
+        return 0
+    umbral = diarize_skew_percent()
+    if umbral <= 0:
+        return 0
+    tiempo = {}
+    for ts, te, label in turns:
+        tiempo[label] = tiempo.get(label, 0.0) + max(0.0, te - ts)
+    total = sum(tiempo.values()) or 1.0
+    reales = len(tiempo)
+    if reales < 2:
+        return 0
+    minoria = min(tiempo.values()) * 100.0 / total
+    if minoria >= umbral:
+        return 0
+    n_agente = post.speakers_count or 0
+    return int(n_agente) if n_agente >= 2 else reales
 
 
 @shared_task

@@ -2998,6 +2998,10 @@ class Pase44G(TestCase):
         self.assertEqual(diarization_hint(post), {'num_speakers': 1})   # monólogo blindado
         post.speakers_count, post.speakers_confidence = 3, 'low'
         self.assertEqual(diarization_hint(post), {})                    # duda: automático
+        post.speakers_count, post.speakers_confidence = 2, 'medium'     # 4.4-H: el rango es inofensivo
+        self.assertEqual(diarization_hint(post), {'min_speakers': 2, 'max_speakers': 3})
+        post.speakers_count, post.speakers_confidence = 1, 'medium'     # un 1 sin fe no blinda
+        self.assertEqual(diarization_hint(post), {})
         post.speakers_count, post.speakers_count_source = 3, 'mod'
         self.assertEqual(diarization_hint(post), {'num_speakers': 3})   # moderación manda
 
@@ -3206,3 +3210,69 @@ class Pase44G(TestCase):
         self.assertGreater(costes['dating'], 0)
         self.assertLess(costes['dating'], costes['verdicts'])
         self.assertLessEqual(costes['verdicts'], costes['deep'])
+
+
+class Pase44H(TestCase):
+    """4.4-H — la separación de voces sin intervención humana.
+
+    Post 5 tras el 4.4-G: «Diarización con pista de voces: ninguna (automático)»
+    y la separación siguió en 91/8. La pista no cruzó su propia puerta (la
+    datación no dio confianza alta) y «ante la duda, automático» manda al modo
+    que falla. Ahora: la confianza media abre el rango, y si la primera pasada
+    sale desequilibrada el sistema repite la diarización con el número.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def _post(self, n, count=None, conf='', source=''):
+        post = Post.objects.create(
+            author=make_user(username=f'h{n}', email=f'h{n}@example.org'),
+            url=f'https://youtu.be/h44{n}', status='NEW', title=f'Vídeo H{n}',
+            speakers_count=count, speakers_confidence=conf, speakers_count_source=source)
+        return post
+
+    def test_la_separacion_desequilibrada_pide_segunda_pasada(self):
+        from apps.analysis.tasks import second_pass_speakers
+        # el post 5: 91/8 con dos voces reales y el agente sin opinión
+        turns = [(0, 91, 'SPEAKER_00'), (91, 100, 'SPEAKER_01')]
+        self.assertEqual(second_pass_speakers(turns, {}, self._post(1)), 2)
+        # el agente dijo 3 con confianza baja: se usa su número
+        self.assertEqual(second_pass_speakers(turns, {}, self._post(2, 3, 'low', 'agent')), 3)
+
+    def test_una_separacion_sana_no_se_repite(self):
+        from apps.analysis.tasks import second_pass_speakers
+        turns = [(0, 70, 'SPEAKER_00'), (70, 100, 'SPEAKER_01')]
+        self.assertEqual(second_pass_speakers(turns, {}, self._post(3)), 0)
+
+    def test_el_monologo_no_se_parte_ni_con_segunda_pasada(self):
+        from apps.analysis.tasks import second_pass_speakers
+        turns = [(0, 100, 'SPEAKER_00')]
+        self.assertEqual(second_pass_speakers(turns, {}, self._post(4, 2, 'low', 'agent')), 0)
+
+    def test_un_numero_ya_fijado_no_se_discute(self):
+        from apps.analysis.tasks import second_pass_speakers
+        turns = [(0, 95, 'SPEAKER_00'), (95, 100, 'SPEAKER_01')]
+        self.assertEqual(second_pass_speakers(turns, {'num_speakers': 2}, self._post(5)), 0)
+
+    def test_el_umbral_vive_en_el_panel_y_cero_lo_apaga(self):
+        from apps.analysis.tasks import second_pass_speakers, diarize_skew_percent
+        from apps.panel.models import SystemSetting
+        from config import settings as s
+        self.assertEqual(s.SETTING_DEFAULTS['diarize_second_pass_skew_percent'], '20')
+        self.assertEqual(diarize_skew_percent(), 20)
+        SystemSetting.objects.create(key='diarize_second_pass_skew_percent', value='0')
+        turns = [(0, 95, 'SPEAKER_00'), (95, 100, 'SPEAKER_01')]
+        self.assertEqual(second_pass_speakers(turns, {}, self._post(6)), 0)
+
+    def test_el_ajuste_esta_en_el_panel(self):
+        from apps.panel.views import SETTINGS_DEF
+        self.assertIn('diarize_second_pass_skew_percent', [d[0] for d in SETTINGS_DEF])
+
+    def test_la_fase_barata_repite_la_diarizacion_cuando_toca(self):
+        """La segunda pasada se llama de verdad con num_speakers, sobre el audio."""
+        src = open('apps/analysis/tasks.py', encoding='utf-8').read()
+        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        self.assertIn('second_pass_speakers(turns, pista, post)', cuerpo)
+        self.assertIn('diarize(audio_path, num_speakers=n2)', cuerpo)

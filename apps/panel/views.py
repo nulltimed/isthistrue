@@ -83,6 +83,8 @@ SETTINGS_DEF = [
      'Coste estimado de analizar un minuto. Fija el gasto que se reserva del presupuesto y la donación sugerida.', 'num'),
     # 4.3-C (decisión de David): por defecto APAGADO.
     # 4.3-E (decisión de David): sin identificar a la mitad, no se valida.
+    ('diarize_second_pass_skew_percent', 'Segunda pasada de voces si la minoritaria baja de (%)',
+     'Si tras separar voces la voz minoritaria queda por debajo de este porcentaje del tiempo, el sistema repite la separación indicándole el número de voces (cuesta CPU, no dinero). 0 lo desactiva.', 'num'),
     ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',
      'Porcentaje mínimo de hablantes con nombre confirmado antes de que un vídeo pase a la verificación con fuentes: frena el voto Y el piloto automático, y se reanuda solo al confirmar nombres. 0 lo desactiva.', 'num'),
     # 4.4-B (decisión de David): el semáforo.
