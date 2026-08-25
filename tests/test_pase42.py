@@ -3270,6 +3270,18 @@ class Pase44H(TestCase):
         from apps.panel.views import SETTINGS_DEF
         self.assertIn('diarize_second_pass_skew_percent', [d[0] for d in SETTINGS_DEF])
 
+    def test_el_aviso_de_manipulacion_se_apaga_al_relanzar_las_voces(self):
+        """4.4-H.1 (David): el aviso solo lo enciende el barrido de Haiku; el
+        relanzamiento de moderacion lo apaga hasta que el nuevo barrido hable."""
+        from apps.analysis.tasks import reset_for_cheap_phase
+        post = self._post(7)
+        post.manipulation_detected = True
+        post.save(update_fields=['manipulation_detected'])
+        reset_for_cheap_phase(post)
+        post.refresh_from_db()
+        self.assertFalse(post.manipulation_detected)
+        self.assertEqual(post.status, 'NEW')
+
     def test_la_fase_barata_repite_la_diarizacion_cuando_toca(self):
         """La segunda pasada se llama de verdad con num_speakers, sobre el audio."""
         src = open('apps/analysis/tasks.py', encoding='utf-8').read()

@@ -237,7 +237,12 @@ def reset_for_cheap_phase(post):
     post.name_proposals.all().delete()
     post.status = 'NEW'
     post.opus_rescanned = False
-    post.save(update_fields=['status', 'opus_rescanned'])
+    # 4.4-H.1 (nota de David): «Retórica manipulativa detectada en el barrido
+    # previo» NO aparece hasta que el barrido de Haiku lo diga; un relanzamiento
+    # lo apaga y solo el nuevo barrido puede volver a encenderlo. Antes, el
+    # aviso del analisis viejo seguia en pantalla la hora entera del reanalisis.
+    post.manipulation_detected = False
+    post.save(update_fields=['status', 'opus_rescanned', 'manipulation_detected'])
 
 
 def auto_verify_slot_free():
