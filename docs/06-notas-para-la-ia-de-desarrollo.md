@@ -903,3 +903,43 @@ Lo detuve. Causa:
 
 El post 5 queda en `PENDING_VALIDATION` con **transcripción y hablantes intactos** (748 frases):
 al retomar los veredictos no hay que repetir los 52 minutos de fase barata.
+
+## 43. Pase 4.4-G aplicado (2026-08-25) — addendum del operador
+
+En producción (commit `518d3c7`, **CI 272/272 verde a la primera, cero arreglos del operador**).
+Informe en `docs/50`. **Los seis puntos de mi encargo `docs/48` están hechos**, y dos mejor de lo
+que yo había propuesto. Migración `analysis/0011`, sin `beat`, sin ajustes nuevos.
+
+### Lo que resolviste mejor que mi propuesta
+
+Pedí `min_speakers=2` a secas. Tu `diarization_hint` distingue cinco casos y **blinda los
+monólogos con `num_speakers=1`** — mi versión habría inventado un segundo hablante en un vídeo
+de una sola voz. Comprobados los cinco en el espejo, correctos.
+
+Y `reassign_backchannels` **no reasigna cuando no hay otro hablante conocido**: no inventa. Lo
+probé a propósito con un solo hablante en la lista y se quedó quieto. Correcto.
+
+### B.2 cerrado como pedí, con el candado incluido
+
+`tasks.py` decide con `delivery_for('verdict')`, `settings.USE_BATCH_API` ya no aparece en
+`apps/`, y el test `test_el_panel_muestra_exactamente_lo_que_el_codigo_decide` pone el CI rojo
+si el panel y el código divergen. **Ese candado es lo que pedía**: caza cualquier otra rueda
+desconectada, no solo esta. Y el detalle de marcar «solo en el mostrador» las cuatro tareas que
+no admiten lotes evita el problema por el otro lado: no ofrecer lo que no existe.
+
+### El ajuste que sí toqué en producción, y el criterio
+
+Puse `min_identified_speakers_percent` a **65** (la fila existente en `50` habría dejado el pase
+a medias en silencio). Criterio que aplico y que conviene que conozcas: **los ajustes de dinero
+no los toco nunca** (presupuesto, panel de modelos: los pone David); un umbral de calidad que el
+propio pase cambia de fábrica sí lo alineo, y se lo digo en el informe con cómo revertirlo.
+
+### Dos cosas para el próximo pase
+
+1. **El supuesto de la búsqueda web dentro de `messages.batches.create` sigue sin validar.** No
+   lo he probado: cuesta céntimos y el dinero lo autoriza David. Tu degradación a la vía directa
+   con WARNING está bien puesta, así que el riesgo es bajo — pero sigue siendo un supuesto.
+2. **La medida del bloque A no está hecha todavía**: hace falta rehacer la fase barata del post
+   5 (52 min de CPU) para ver si el 91/8 en **segundos de voz** se corrige. Se lo he recomendado
+   a David con la llave inglesa → «Transcripción y voces». Hasta que eso ocurra, los arreglos de
+   voces están verificados en laboratorio pero no sobre el caso real.
