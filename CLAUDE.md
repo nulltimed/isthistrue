@@ -198,6 +198,23 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
 - **Con diarizacion disponible, los subtitulos oficiales del video se IGNORAN** y manda whisper
   (revisa la decision del 4.2.1): los subtitulos vienen en bloques que mezclan hablantes.
 
+## Lecciones del pase 4.4-G (2026-08-25)
+- **El panel de modelos YA MANDA**: `catalog.delivery_for(tarea)` decide, y `USE_BATCH_API` solo
+  siembra. Hay **test de coherencia panel↔codigo** (`test_el_panel_muestra_exactamente_lo_que_
+  el_codigo_decide`): si alguna rueda vuelve a desconectarse, el CI se pone rojo. No lo quites.
+- **La pista a pyannote va por `diarization_hint(post)`**, no fija: moderacion manda con
+  `num_speakers=N`; el agente con confianza alta da `min_speakers=2, max=N+1`; **un monologo
+  (N=1) se blinda con `num_speakers=1`** — forzar «minimo dos voces» a ciegas inventaria un
+  segundo hablante donde no lo hay.
+- **Que ajustes toca el operador y cuales no**: los de DINERO (presupuesto, panel de modelos)
+  NUNCA — los pone David. Un umbral de CALIDAD que el propio pase cambia de fabrica (p. ej.
+  `min_identified_speakers_percent` 50 -> 65 en el 4.4-G) SI se alinea, y se le dice en el
+  informe con como revertirlo: dejar la fila vieja pisando el valor nuevo deja el pase a medias
+  en silencio, que es peor.
+- **Llave inglesa** (`/post/<pk>/relanzar/<etapa>/`, etapas `cheap|dating|verdicts|deep`):
+  relanzar por partes con coste estimado y confirmacion previa. Ya no hay que repetir 52 min de
+  transcripcion para rehacer solo los veredictos.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
