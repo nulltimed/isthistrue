@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§40: TODA la historia técnica) y el informe del último pase (`docs/46`).
+> (§1-§42: TODA la historia técnica) y el informe del último pase (`docs/46`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §40) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §42) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -163,6 +163,18 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
+- 🔴 **DOS FALLOS ABIERTOS (2026-08-24), encargados a Fable en `docs/48`**:
+  (a) **`apps/agents/batch.py` no se migró en el 4.4-E**: sigue llamando a SearXNG (bloqueado)
+  mientras `verdict.py` ya usa `call_search_json`. Con `USE_BATCH_API=true` eso deja el análisis
+  6 h dando vueltas en búsquedas vacías — pasó con el post 5, lo detuve.
+  (b) **El panel de modelos NO manda en esa rama**: `/panel/modelos/` muestra
+  `delivery_verdict=direct` pero `tasks.py:215` decide con `settings.USE_BATCH_API`. El panel
+  miente. Pedido un **test de coherencia panel↔código**.
+  Y el **diagnóstico de la diarización** (`docs/47`): la causa medida es `pipeline(audio)` sin
+  `num_speakers` (`min_speakers=2` triplica la presencia del segundo hablante); el formato del
+  audio NO influye (hipótesis refutada con datos); el «hablante 3» son 7,7 s de fragmentos
+  sueltos; y el corte por palabras del 4.4-F necesita suelo mínimo (28,3 % de las frases son de
+  UNA palabra). **Post 5 detenido en `PENDING_VALIDATION` con transcripción y hablantes intactos.**
 - **Producción**: commit `dc68fa6` — **pase 4.4-F**: la **atribución de voces** deja de
   regalar las frases al hablante que domina. En conversación rápida pyannote emite turnos
   SOLAPADOS (uno largo del dominante con microturnos ajenos dentro) y «el de más solape» hacía
@@ -320,11 +332,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§40) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§42) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45,46` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45,46,47,48` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |

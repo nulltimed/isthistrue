@@ -873,3 +873,33 @@ Hay **81 reacciones breves** («Right», «Whoa», «Nice», «Okay», «I love 
 atribuyen al que monologa**. Heurística barata: una reacción de una palabra rodeada por dos
 intervenciones largas del MISMO hablante es casi seguro **del otro** — nadie se contesta a sí
 mismo.
+
+## 42. 🔴 La vía de lotes quedó a medias y el panel de modelos no manda (2026-08-24)
+
+**Encargo completo, con los dos bloques (diarización + lotes), en `docs/48`.** Este addendum es
+el aviso corto; el material para codificar está allí.
+
+El reanálisis del post 5 estuvo **2,6 h sin producir un solo veredicto** y le quedaban 3,4 más.
+Lo detuve. Causa:
+
+1. **`batch.py` no se migró en el 4.4-E.** `verdict.py` ya usa `call_search_json` (el modelo
+   busca), pero `apps/agents/batch.py:17` sigue con `search.search_with_status` — SearXNG,
+   bloqueado desde el 4.4-D. Con `search_retries=2` y espera de 20 s:
+   `90 afirmaciones × 4 consultas × 3 intentos × 20 s = 6 horas` de esperas vacías, y el lote
+   se habría enviado **sin fuentes** → 90 claims en 🔍 por el candado del 4.4-E.
+
+2. **🔴 El panel de modelos NO gobierna esa rama.** `/panel/modelos/` muestra
+   `delivery_verdict = direct`, pero `apps/analysis/tasks.py:215` decide con
+   `settings.USE_BATCH_API`, que está en `true` en el `.env`. **David lleva dos días viendo
+   «En el mostrador» mientras el sistema usaba «Por correo».**
+
+   Es el cuarto caso del mismo patrón en este proyecto —andamiaje montado, obra sin conectar:
+   `{% trans %}` sin catálogo, `logger` inexistente, página de persona inalcanzable— pero este
+   es peor: **el panel no está roto, está mintiendo**. Pido dos cosas: que
+   `delivery_for('verdict')` sea la única fuente de verdad (y `USE_BATCH_API` quede como valor
+   de siembra), y **un test de coherencia panel↔código** que recorra las tareas y falle si lo
+   que decide el código no es lo que muestra el panel. Ese candado cazaría de golpe cualquier
+   otra rueda desconectada.
+
+El post 5 queda en `PENDING_VALIDATION` con **transcripción y hablantes intactos** (748 frases):
+al retomar los veredictos no hay que repetir los 52 minutos de fase barata.
