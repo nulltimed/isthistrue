@@ -215,6 +215,21 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   relanzar por partes con coste estimado y confirmacion previa. Ya no hay que repetir 52 min de
   transcripcion para rehacer solo los veredictos.
 
+## Lecciones del pase 4.4-H (2026-08-26)
+- **Las voces se corrigen solas, en dos redes**: (1) la pista a pyannote se da tambien con
+  confianza MEDIA (un rango es inofensivo; fijar numero exacto sigue exigiendo confianza alta o
+  moderacion; un «1» dudoso ya NO blinda); (2) **segunda pasada automatica**: si tras separar,
+  la voz minoritaria queda bajo `diarize_second_pass_skew_percent` (20 %), se repite con
+  `num_speakers=N`. **Nunca parte un monologo ni discute un numero fijado por moderacion.**
+  Cuesta CPU (10-25 min), 0 EUR.
+- **Comprobar el RESULTADO vale mas que confiar en la pista.** Es la misma leccion del 4.4-E
+  (candado en el codigo, no ruego en el prompt) aplicada a pyannote: no basta con pedirle que
+  acierte, hay que mirar si acerto.
+- 📊 **Medida del 4.4-G sobre el post 5**: frases 748→404 y hablante fantasma 12→0 (los dos
+  arreglos funcionaron), pero el desequilibrio 90,7→**91,9 %** NO cambio porque el registro dijo
+  `Diarización con pista de voces: ninguna (automático)`. **Al verificar un arreglo de voces,
+  mirar SIEMPRE esa linea del log antes de concluir nada.**
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
