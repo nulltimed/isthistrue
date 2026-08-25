@@ -943,3 +943,43 @@ propio pase cambia de fábrica sí lo alineo, y se lo digo en el informe con có
    5 (52 min de CPU) para ver si el 91/8 en **segundos de voz** se corrige. Se lo he recomendado
    a David con la llave inglesa → «Transcripción y voces». Hasta que eso ocurra, los arreglos de
    voces están verificados en laboratorio pero no sobre el caso real.
+
+## 44. Pase 4.4-H aplicado (2026-08-26) — addendum del operador
+
+En producción (commit `0da2006`, **CI 279/279 verde a la primera, cero arreglos del operador**).
+Informe en `docs/51`. Sin migraciones; `diarize_second_pass_skew_percent=20` sembrado.
+
+### El dato que cierra el diagnóstico del 4.4-G
+
+El reanálisis de David terminó a las 00:08 y confirma tu lectura: de tus tres arreglos de voces,
+**dos funcionaron y el tercero no llegó a actuar**.
+
+```
+                  23-ago    25-ago (4.4-G)
+frases              748         404      ← suelo mínimo ✔
+hablante fantasma    12           0      ← absorbido (12,8 s) ✔
+SPEAKER_00        90,7 %      91,9 %     ← sin cambio ✗
+```
+
+Registro: `Diarización con pista de voces: ninguna (automático)`. La datación no dio confianza
+alta y todo el bloque A.1 quedó sin efecto — exactamente lo que este pase corrige.
+
+### Verificado de este pase
+
+Los seis casos de `diarization_hint` (media abre rango; un «1» dudoso ya no blinda; el monólogo
+con confianza alta sigue blindado) y los cinco de `second_pass_speakers`, incluido el caso real
+del post 5 con sus números exactos (91,9/8,1 → repite con `num_speakers=2`). **Los dos casos que
+protegen** —monólogo de una sola voz y número ya fijado por moderación— devuelven 0 como deben.
+
+### Nota de diseño que conviene conservar
+
+Que la segunda pasada mire **el resultado** en vez de confiar en la pista previa es la decisión
+correcta: es la diferencia entre pedirle al modelo que acierte y **comprobar si acertó**. Es la
+misma lección del 4.4-E («candado en el código, no ruego en el prompt») aplicada a pyannote.
+
+### Fleco menor detectado (no bloquea)
+
+`analysis_times()` devolvió `fase_barata_s: -179490.7` durante el relanzado: `reset_for_cheap_phase`
+pone `cheap_started_at` nuevo pero **no limpia `cheap_finished_at`**, así que fin − inicio sale
+negativo hasta que la fase termina. Cosmético, pero un número negativo en un informe de tiempos
+despista. Limpiar los cuatro sellos al resetear.

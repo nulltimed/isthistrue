@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-25 · Commit en producción: `518d3c7` · Estado del repo: pase 4.4-G (voces, lotes por el panel, llave inglesa) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-26 · Commit en producción: `0da2006` · Estado del repo: pase 4.4-H (las voces se arreglan solas) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§43: TODA la historia técnica) y el informe del último pase (`docs/50`).
+> (§1-§44: TODA la historia técnica) y el informe del último pase (`docs/51`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §43) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §44) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -163,7 +163,15 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `518d3c7` — **pase 4.4-G**, que cierra el encargo `docs/48`:
+- **Producción**: commit `0da2006` — **pase 4.4-H**: las voces se arreglan **sin intervención
+  humana**. (a) La pista a pyannote se da también con **confianza media** (un rango es
+  inofensivo; fijar número exacto sigue exigiendo confianza alta o moderación; un «1» dudoso ya
+  NO blinda). (b) **Segunda pasada automática** (`second_pass_speakers`): si tras la primera
+  separación la voz minoritaria queda bajo el **20 %** (`diarize_second_pass_skew_percent`), se
+  repite con `num_speakers=N`. **Nunca parte un monólogo ni discute un número ya fijado.** Cuesta
+  CPU (10-25 min extra), 0 €. 📊 **Resultado del 4.4-G medido en el post 5**: frases 748→404 y
+  fantasma 12→0 (ambos arreglos ✔), pero **90,7 %→91,9 % sin cambio** porque el registro dijo
+  «pista de voces: ninguna (automático)». Sobre el **pase 4.4-G**, que cierra el encargo `docs/48`:
   **el panel de modelos YA MANDA** (`delivery_for('verdict')` decide; `settings.USE_BATCH_API`
   fuera de `apps/`, solo siembra) **con test de coherencia panel↔código** que pone el CI rojo si
   divergen; **`batch.py` reescrito** para que el modelo busque sus fuentes (era la causa de las
@@ -344,11 +352,11 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§43) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§44) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
-| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45,46,47,48,50` |
+| Informes por pase | `docs/05,07,08,09,10,11,12,13,14,15,16,17,19,20,22,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,43,44,45,46,47,48,50,51` |
 | README operador 4.1 (matriz ML, hfcache, fallback PayPal) | `docs/18` |
 | Guías para David (Brevo/PayPal/backups/restic) | `docs/07-guias-david.md`, `docs/guia-restic-david.md`, `docs/05-activacion-servicios.md` |
 | Checklist general | `docs/04-checklist-verificacion.md` + install.md |
