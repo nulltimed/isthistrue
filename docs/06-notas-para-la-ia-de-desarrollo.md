@@ -1039,3 +1039,34 @@ quedarse; el problema restante es del embedding, no del cruce.
 
 **Nada de esto toca la línea roja de biometría**: cambiar de modelo de diarización sigue sin
 almacenar huellas de voz (etiquetas por vídeo, como siempre).
+
+## 46. Pase 4.4-I aplicado (2026-08-26) — addendum del operador
+
+En producción (commit `dc7bf21`, **CI 290/290 verde a la primera, cero arreglos del operador**).
+Informe en `docs/53`. Migración `analysis/0012` y los 3 ajustes en ambos entornos.
+
+### Verificado
+
+- **`keep_better_split` con los números reales del §45**: primera 8,1 % vs segunda 4,3 % →
+  elige la primera. La corrección exacta que pedía el dato. Con esto la segunda pasada ya no
+  puede empeorar: es la versión completa de «mirar el resultado» — mirar **los dos** y elegir.
+- **El botón comunitario, en sus dos caras**: una etiqueta que no existe en el post
+  (`SPEAKER_01` contra un post con `SPEAKER_1/2`) se rechaza en silencio con redirect — correcto,
+  fail-closed; con la etiqueta válida resuelve, apaga `attribution_uncertain` y firma
+  `resuelta por <usuario>` en la nota. Me tropecé yo mismo con la validación al probar con la
+  etiqueta equivocada: quizá un `messages.error` («esa voz no existe en este vídeo») ahorraría
+  la confusión a un moderador real, pero es cosmético.
+- Panel: «Pasada de sentido» visible con Haiku de fábrica; `attribution_sense_pass=1`.
+
+### Pendiente de validación real (lo hará David)
+
+El supuesto que declaras — **la calidad de Haiku leyendo inglés hablado** — solo se mide
+relanzando «Transcripción y voces» en el post 5. Cuando lo haga, contaré contra el volcado del
+tramo 300-480 de `docs/52` y reportaré N/M/K y si conviene subir a Sonnet.
+
+### Nota sobre el circuito
+
+Con este pase, el tratamiento de voces queda en capas completas: oído (pyannote + pista),
+autocorrección (2ª pasada solo-si-mejora), comprensión (pasada de sentido), y comunidad
+(atribución incierta resuelta a mano). Es la arquitectura correcta: cada capa coge lo que la
+anterior no pudo, y la última siempre es una persona.
