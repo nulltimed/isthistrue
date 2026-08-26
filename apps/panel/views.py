@@ -83,6 +83,8 @@ SETTINGS_DEF = [
      'Coste estimado de analizar un minuto. Fija el gasto que se reserva del presupuesto y la donación sugerida.', 'num'),
     # 4.3-C (decisión de David): por defecto APAGADO.
     # 4.3-E (decisión de David): sin identificar a la mitad, no se valida.
+    ('attribution_sense_pass', 'Pasada de sentido sobre las voces (1/0)',
+     'Tras separar las voces, el modelo de la tarea «Pasada de sentido» lee la conversación y corrige o marca como inciertas las frases que no cuadran con su hablante. Céntimos por vídeo. 0 lo desactiva.', 'num'),
     ('diarize_second_pass_skew_percent', 'Segunda pasada de voces si la minoritaria baja de (%)',
      'Si tras separar voces la voz minoritaria queda por debajo de este porcentaje del tiempo, el sistema repite la separación indicándole el número de voces (cuesta CPU, no dinero). 0 lo desactiva.', 'num'),
     ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',

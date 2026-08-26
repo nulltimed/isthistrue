@@ -598,3 +598,11 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .relaunch-confirm label{display:flex;flex-direction:column;gap:.2rem;font-size:.85rem;flex-basis:100%}
 .relaunch-confirm input[type=number]{max-width:120px}
 .waiting-ident{display:block;margin-top:.2rem}
+
+/* 4.4-I: frases de atribucion incierta y su cajon en «¿Quien habla?» */
+.segment .uncertain{font-size:.72rem;color:var(--amber);border:1px dashed currentColor;border-radius:4px;padding:0 .3rem;margin-left:.3rem;white-space:nowrap}
+.uncertain-box{margin:.4rem 0 .8rem;border:1px dashed var(--line);border-radius:8px;padding:.4rem .6rem;font-size:.85rem}
+.uncertain-box summary{cursor:pointer;font-weight:600}
+.uncertain-list{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.uncertain-form{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.2rem}
+.uncertain-form button.mini{color:#fff}

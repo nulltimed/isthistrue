@@ -152,5 +152,6 @@ def claims_for_person(person):
     out = ClaimAppearance.objects.none()
     for post_id, label in pairs:
         out = out | ClaimAppearance.objects.filter(
-            segment__post_id=post_id, segment__speaker_label=label)
+            segment__post_id=post_id, segment__speaker_label=label,
+            segment__attribution_uncertain=False)   # 4.4-I: sin dueno claro, sin ficha
     return out.select_related('claim', 'segment__post').distinct()

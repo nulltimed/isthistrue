@@ -3,6 +3,24 @@
     <aside class="speakers-col">
     {% regroup name_proposals by speaker_label as speaker_groups %}
     <h2>{% trans "¿Quién habla?" %}</h2>
+    {% if uncertain_rows %}
+    {# 4.4-I (David): las frases que la pasada de sentido no supo atribuir las #}
+    {# resuelve la comunidad aqui. No cuentan para el 65% ni van a la wiki. #}
+    <details class="uncertain-box" open>
+      <summary>{% blocktrans count n=uncertain_rows|length %}{{ n }} frase con atribución incierta{% plural %}{{ n }} frases con atribución incierta{% endblocktrans %}</summary>
+      <p class="hint">{% trans "El sistema no está seguro de quién dijo estas frases. Si lo sabes, dilo: no cuentan para nada hasta que alguien las resuelva." %}</p>
+      <ul class="uncertain-list">
+      {% for row in uncertain_rows %}
+        <li><a class="ts" href="#" onclick="seekTo({{ row.seg.start_seconds }});return false;">[{{ row.seg.start_seconds|floatformat:0 }}s]</a> <span class="text">{{ row.seg.text|truncatechars:90 }}</span>
+          {% if user.is_authenticated %}
+          <form method="post" action="{% url 'resolve_attribution' row.seg.pk %}" class="uncertain-form">{% csrf_token %}
+            {% for o in row.options %}<button class="mini spk-{{ o.color }}" name="speaker" value="{{ o.label }}">{% if o.name %}{{ o.name }}{% else %}{% trans "Hablante" %} {{ o.num }}{% endif %}</button>{% endfor %}
+          </form>
+          {% endif %}</li>
+      {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
     <p class="hint">{% trans "Propón o vota. El voto de moderador confirma en solitario. Solo figuras públicas tendrán página propia." %}</p>
     {% for row in speaker_rows %}{% with label=row.label num=row.num %}
       <div class="speaker-block" data-spk="{{ row.color }}">
@@ -51,7 +69,7 @@
         <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
              data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}">
           <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% if s.spk_name %}{{ s.spk_name }}{% else %}{% trans "Hablante" %} {{ s.spk_idx|add:1 }}{% endif %}</span>{% endif %}
-          <span class="text">{{ s.text }}</span>
+          <span class="text">{{ s.text }}</span>{% if s.attribution_uncertain %} <span class="uncertain" title="{{ s.attribution_note }}">{% trans "atribución incierta" %}</span>{% endif %}
           {# 4.4-B (decisión de David): en cuanto hay veredicto, la señal barata #}
           {# DESAPARECE y en su sitio va el semáforo real, enlazado a la ficha.  #}
           {% if s.claim %}

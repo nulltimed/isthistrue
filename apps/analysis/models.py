@@ -191,6 +191,12 @@ class TranscriptSegment(models.Model):
     signal = models.CharField(max_length=24, choices=SIGNALS, blank=True, default='')
     speaker_label = models.CharField(max_length=20, blank=True, default='')  # 'SPEAKER_1' (diarizacion 2B)
     opus_rescanned = models.BooleanField(default=False)  # 4.2 H5: UNA vez por oracion
+    # 4.4-I (David): la pasada de sentido puede no estar segura de quien dijo
+    # una frase. Marcada asi, la frase aparece en «¿Quien habla?» para que la
+    # comunidad la resuelva, NO cuenta para la puerta del 65 % y NO se cuelga
+    # de ninguna persona en la wiki hasta que alguien la resuelva.
+    attribution_uncertain = models.BooleanField(default=False)
+    attribution_note = models.CharField(max_length=160, blank=True, default='')
 
     class Meta:
         ordering = ['start_seconds']

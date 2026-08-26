@@ -204,11 +204,12 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'model_sweep': 'claude-haiku-4-5-20251001',
     'model_classify': 'claude-sonnet-4-6',
     'model_dating': 'claude-haiku-4-5-20251001',
+    'model_attribution': 'claude-haiku-4-5-20251001',   # 4.4-I
     'model_verdict': 'claude-sonnet-4-6',
     'model_moderation': 'claude-haiku-4-5-20251001',
     'model_deep': 'claude-opus-4-8',
     'delivery_sweep': 'direct', 'delivery_classify': 'direct',
-    'delivery_dating': 'direct', 'delivery_verdict': 'direct',
+    'delivery_dating': 'direct', 'delivery_verdict': 'direct', 'delivery_attribution': 'direct',
     'delivery_moderation': 'direct', 'delivery_deep': 'direct',
     'full_transcript_verdict': '1',     # decision de David: transcripcion entera
     'web_searches_per_claim': '3',      # 4.4-E: tope de busquedas del modelo por afirmacion
@@ -233,7 +234,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'wiki_index_people': '0',
     # 4.3-E: minimo de hablantes identificados para poder validar como factual.
     'min_identified_speakers_percent': '65',   # 4.4-G (David): del 50 al 65, y frena TODO
-    'diarize_second_pass_skew_percent': '20',  # 4.4-H: voz minoritaria por debajo -> segunda pasada (0 apaga)
+    'diarize_second_pass_skew_percent': '20',
+    'attribution_sense_pass': '1',             # 4.4-I: Haiku revisa quien dijo cada frase (0 apaga)  # 4.4-H: voz minoritaria por debajo -> segunda pasada (0 apaga)
     # 4.3-F: porcentaje del deposito diario a partir del cual un video espera en
     # cola en vez de analizarse al momento.
     'queue_threshold_percent': '50',

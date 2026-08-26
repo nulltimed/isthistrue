@@ -3288,3 +3288,168 @@ class Pase44H(TestCase):
         cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
         self.assertIn('second_pass_speakers(turns, pista, post)', cuerpo)
         self.assertIn('diarize(audio_path, num_speakers=n2)', cuerpo)
+
+
+class Pase44I(TestCase):
+    """4.4-I — la pasada de sentido (decisión de David, 2026-08-26).
+
+    docs/06 §45: con las dos voces del post 5, pyannote agrupaba «habla limpia»
+    contra «habla solapada» (91,9 → 95,7 forzando el número). Lo que el audio no
+    da lo da el texto: Haiku lee la conversación y corrige o marca. Las dudas
+    quedan como «atribución incierta»: se resuelven en «¿Quién habla?», no
+    cuentan para el 65 % y no se cuelgan de ninguna persona en la wiki.
+    """
+
+    def setUp(self):
+        from django.core.cache import cache as _c
+        _c.clear()
+
+    def _post(self, n, frases):
+        post = Post.objects.create(
+            author=make_user(username=f'i{n}', email=f'i{n}@example.org'),
+            url=f'https://youtu.be/i44{n}', status='PENDING_VALIDATION', title=f'Vídeo I{n}',
+            validation_deadline=timezone.now() + timedelta(days=2))
+        for i, (etq, texto) in enumerate(frases):
+            post.transcript_segments.create(start_seconds=i * 5.0, end_seconds=i * 5.0 + 4,
+                                            text=texto, speaker_label=etq,
+                                            signal='FACTUAL_UNVERIFIED')
+        return post
+
+    DIALOGO = [('SPEAKER_00', 'Light is a range of wavelengths that reach the eye.'),
+               ('SPEAKER_00', 'I love it a triumph of nineteenth century physics.'),
+               ('SPEAKER_00', 'So white light has which colors in it?'),
+               ('SPEAKER_00', 'Oh the colors Roy G Biv.'),
+               ('SPEAKER_01', 'Right.')]
+
+    def test_la_tarea_esta_en_el_panel_y_gobierna_una_llamada_real(self):
+        from apps.agents import catalog
+        self.assertIn('attribution', catalog.TASK_KEYS)
+        self.assertIn("model_for('attribution')",
+                      open('apps/agents/attribution.py', encoding='utf-8').read())
+        from config import settings as s
+        self.assertEqual(s.SETTING_DEFAULTS['attribution_sense_pass'], '1')
+        from apps.panel.views import SETTINGS_DEF
+        self.assertIn('attribution_sense_pass', [d[0] for d in SETTINGS_DEF])
+
+    def test_los_cambios_seguros_se_aplican_y_las_dudas_se_marcan(self):
+        from apps.agents import attribution
+        post = self._post(1, self.DIALOGO)
+        respuesta = {'changes': [
+            {'i': 1, 'action': 'split', 'speaker': 'SPEAKER_01', 'split_word': 4,
+             'confidence': 'high', 'reason': 'I love it es reacción'},
+            {'i': 3, 'action': 'relabel', 'speaker': 'SPEAKER_01', 'confidence': 'high',
+             'reason': 'responde a la pregunta'},
+            {'i': 2, 'action': 'relabel', 'speaker': 'SPEAKER_01', 'confidence': 'low',
+             'reason': 'no está claro quién pregunta'},
+        ]}
+        with mock.patch('apps.agents.client.call_json', return_value=respuesta):
+            out = attribution.run(post)
+        self.assertEqual(out, {'relabeled': 1, 'split': 1, 'uncertain': 1})
+        frases = list(post.transcript_segments.order_by('start_seconds', 'pk'))
+        textos = {f.text: f for f in frases}
+        # el split: «I love it» sigue en la voz original y el resto va a la otra
+        self.assertEqual(textos['I love it'].speaker_label, 'SPEAKER_00')
+        self.assertEqual(textos['a triumph of nineteenth century physics.'].speaker_label, 'SPEAKER_01')
+        self.assertLess(textos['I love it'].end_seconds,
+                        textos['a triumph of nineteenth century physics.'].end_seconds)
+        # el relabel seguro
+        self.assertEqual(textos['Oh the colors Roy G Biv.'].speaker_label, 'SPEAKER_01')
+        # la duda: se marca, NO se mueve
+        duda = textos['So white light has which colors in it?']
+        self.assertTrue(duda.attribution_uncertain)
+        self.assertEqual(duda.speaker_label, 'SPEAKER_00')
+
+    def test_solo_etiquetas_existentes_y_ningun_monologo_se_discute(self):
+        from apps.agents import attribution
+        post = self._post(2, self.DIALOGO)
+        respuesta = {'changes': [{'i': 0, 'action': 'relabel', 'speaker': 'SPEAKER_07',
+                                  'confidence': 'high', 'reason': 'x'}]}
+        with mock.patch('apps.agents.client.call_json', return_value=respuesta):
+            out = attribution.run(post)
+        self.assertEqual(out['relabeled'], 0)
+        self.assertEqual(out['uncertain'], 1)          # una etiqueta inventada = duda
+        mono = self._post(3, [('SPEAKER_00', 'Una frase.'), ('SPEAKER_00', 'Otra frase.')])
+        with mock.patch('apps.agents.client.call_json') as llamada:
+            self.assertEqual(attribution.run(mono), {'relabeled': 0, 'split': 0, 'uncertain': 0})
+        llamada.assert_not_called()
+
+    def test_el_ajuste_a_cero_apaga_la_pasada(self):
+        from apps.agents import attribution
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.create(key='attribution_sense_pass', value='0')
+        post = self._post(4, self.DIALOGO)
+        with mock.patch('apps.agents.client.call_json') as llamada:
+            attribution.run(post)
+        llamada.assert_not_called()
+
+    def test_un_fallo_del_modelo_deja_la_transcripcion_intacta(self):
+        from apps.agents import attribution
+        post = self._post(5, self.DIALOGO)
+        with mock.patch('apps.agents.client.call_json', return_value={'error': 'timeout'}):
+            self.assertEqual(attribution.run(post), {'relabeled': 0, 'split': 0, 'uncertain': 0})
+        self.assertFalse(post.transcript_segments.filter(attribution_uncertain=True).exists())
+
+    def test_la_pasada_ocurre_antes_del_barrido_en_la_fase_barata(self):
+        src = open('apps/analysis/tasks.py', encoding='utf-8').read()
+        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        self.assertLess(cuerpo.index('attribution.run(post)'), cuerpo.index('sweep.run(post)'))
+
+    def test_las_inciertas_no_cuentan_para_el_65_por_ciento(self):
+        from apps.analysis.services import speaker_identification
+        from apps.wiki.models import SpeakerNameProposal
+        post = self._post(6, self.DIALOGO)
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Neil', confirmed=True, source='user')
+        self.assertEqual(speaker_identification(post), (1, 2))
+        post.transcript_segments.filter(speaker_label='SPEAKER_01').update(attribution_uncertain=True)
+        self.assertEqual(speaker_identification(post), (1, 1))     # la voz dudosa no cuenta
+
+    def test_las_inciertas_no_se_cuelgan_de_ninguna_persona(self):
+        from apps.wiki.models import Claim, ClaimAppearance, Interlocutor, SpeakerNameProposal
+        from apps.wiki.naming import claims_for_person
+        post = self._post(7, self.DIALOGO)
+        persona = Interlocutor.objects.create(name='Neil', slug='neil', is_public_figure=True)
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00', candidate_name='Neil',
+                                           confirmed=True, source='user', interlocutor=persona)
+        seg = post.transcript_segments.first()
+        claim = Claim.objects.create(text_original='Light is a range of wavelengths.', color='GREEN')
+        ClaimAppearance.objects.create(claim=claim, segment=seg)
+        self.assertEqual(claims_for_person(persona).count(), 1)
+        seg.attribution_uncertain = True
+        seg.save(update_fields=['attribution_uncertain'])
+        self.assertEqual(claims_for_person(persona).count(), 0)
+
+    def test_la_comunidad_resuelve_una_frase_con_un_clic_y_sin_js(self):
+        post = self._post(8, self.DIALOGO)
+        seg = post.transcript_segments.get(text='Right.')
+        seg.attribution_uncertain = True
+        seg.save(update_fields=['attribution_uncertain'])
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('atribución incierta', html)
+        self.assertNotIn('/atribuir/', html)                 # sin sesión no se resuelve
+        u = make_user(username='i8b', email='i8b@example.org')
+        self.client.force_login(u)
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn(f'/frase/{seg.pk}/atribuir/', html)
+        with mock.patch('apps.analysis.services.try_autopilot') as piloto:
+            r = self.client.post(f'/frase/{seg.pk}/atribuir/', {'speaker': 'SPEAKER_00'})
+        self.assertEqual(r.status_code, 302)
+        piloto.assert_called_once()
+        seg.refresh_from_db()
+        self.assertEqual((seg.speaker_label, seg.attribution_uncertain), ('SPEAKER_00', False))
+        self.assertIn('i8b', seg.attribution_note)
+        # una voz que no existe en el post se rechaza
+        self.client.post(f'/frase/{seg.pk}/atribuir/', {'speaker': 'SPEAKER_09'})
+        seg.refresh_from_db()
+        self.assertEqual(seg.speaker_label, 'SPEAKER_00')
+
+    def test_la_segunda_pasada_solo_se_queda_si_reparte_mejor(self):
+        """docs/06 §45: la segunda pasada del post 5 dio 95,7/4,3, peor que la primera."""
+        from apps.analysis.tasks import keep_better_split, minority_share
+        primera = [(0, 92, 'SPEAKER_00'), (92, 100, 'SPEAKER_01')]
+        peor = [(0, 96, 'SPEAKER_00'), (96, 100, 'SPEAKER_01')]
+        mejor = [(0, 80, 'SPEAKER_00'), (80, 100, 'SPEAKER_01')]
+        post = self._post(9, self.DIALOGO)
+        self.assertIs(keep_better_split(primera, peor, post), primera)
+        self.assertIs(keep_better_split(primera, mejor, post), mejor)
+        self.assertEqual(minority_share([(0, 10, 'A')]), 0.0)

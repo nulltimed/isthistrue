@@ -72,7 +72,9 @@ def run_cheap_phase(self, post_id):
         if n2 and audio_path and not settings.MOCK_AGENTS:
             logger.info('Post %s: separación desequilibrada; segunda pasada con num_speakers=%d',
                         post.pk, n2)
-            turns = diarize(audio_path, num_speakers=n2)
+            # 4.4-I (docs/06 §45): la segunda pasada del post 5 salio PEOR
+            # (91,9 -> 95,7). Se mide y solo se queda si reparte MEJOR.
+            turns = keep_better_split(turns, diarize(audio_path, num_speakers=n2), post)
         post.diarize_seconds = round(_time.monotonic() - _t1, 1)
         post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
         logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
@@ -85,6 +87,13 @@ def run_cheap_phase(self, post_id):
             TranscriptSegment.objects.create(post=post, **seg)
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
+    # 4.4-I: la pasada de sentido, ANTES del barrido (las senales se anclan a la
+    # frase definitiva) y ANTES de proponer nombres (las inciertas no cuentan).
+    try:
+        from apps.agents import attribution
+        attribution.run(post)
+    except Exception as exc:                     # regla 5.7: nunca en silencio
+        logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
     generate_name_proposals.delay(post.pk)  # OCR de rotulos + contexto -> candidatos
 
     # Barrido universal Haiku: claims + señales + clickbait + adulto
@@ -177,6 +186,27 @@ def diarize_skew_percent():
     separacion desequilibrada. 0 desactiva la segunda pasada."""
     from apps.panel.models import SystemSetting
     return max(0, min(50, SystemSetting.get_int('diarize_second_pass_skew_percent', 20)))
+
+
+def minority_share(turns):
+    """% del tiempo de la voz minoritaria (0 si hay una sola voz o nada)."""
+    tiempo = {}
+    for ts, te, label in turns:
+        tiempo[label] = tiempo.get(label, 0.0) + max(0.0, te - ts)
+    if len(tiempo) < 2:
+        return 0.0
+    return min(tiempo.values()) * 100.0 / (sum(tiempo.values()) or 1.0)
+
+
+def keep_better_split(primera, segunda, post):
+    """4.4-I: de dos diarizaciones se queda la que reparte mejor el tiempo
+    (mayor cuota de la voz minoritaria). Un mecanismo que repite en frio sin
+    mirar el resultado puede empeorarlo; este lo mira."""
+    a, b = minority_share(primera), minority_share(segunda)
+    gana = segunda if b > a else primera
+    logger.info('Post %s: minoritaria 1ª pasada %.1f%% · 2ª pasada %.1f%% → se queda la %s',
+                post.pk, a, b, '2ª' if gana is segunda else '1ª')
+    return gana
 
 
 def second_pass_speakers(turns, hint, post):

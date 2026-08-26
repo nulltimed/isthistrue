@@ -98,6 +98,8 @@ TASKS = [
     ('classify',  'Clasificador factual/opinión (segunda opinión)', 'claude-sonnet-4-6',
                   'solo si la regla dice opinión'),
     ('dating',    'Fecha del suceso',        'claude-haiku-4-5-20251001', 'una'),
+    ('attribution', 'Pasada de sentido (quién dijo cada frase)', 'claude-haiku-4-5-20251001',
+                  'una por cada 120 frases'),
     ('verdict',   'Veredictos con fuentes',  'claude-sonnet-4-6',         'una por afirmación'),
     ('moderation', 'Moderación del foro',    'claude-haiku-4-5-20251001', 'una por mensaje'),
     ('deep',      'Reanálisis profundo',     'claude-opus-4-8',           'solo si se vota'),
@@ -190,6 +192,10 @@ def cost_per_hour_eur(task=None, full_transcript=True):
             total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (4000 / 1e6) * pout
         elif clave == 'dating':
             total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (500 / 1e6) * pout
+        elif clave == 'attribution':
+            # 4.4-I: la transcripcion entera etiquetada (x1,3 por los numeros y
+            # etiquetas) y una lista corta de correcciones de vuelta.
+            total += (TOKENS_TRANSCRIPT_HOUR * 1.3 / 1e6) * pin + (1500 / 1e6) * pout
         elif clave == 'classify':
             # 4.4-G: la segunda opinion SOLO se pide cuando la regla local dice
             # opinion. Se estima como una llamada por video (techo, no media).

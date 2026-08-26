@@ -122,4 +122,32 @@ envueltas en opinion. OPINION significa: no hay nada sustancial que comprobar.
 Se sobrio. Ante la duda, OPINION con "confidence":"low": un rescate cuesta
 dinero real en verificaciones."""
 
+# 4.4-I (David): LA PASADA DE SENTIDO. Con estas dos voces pyannote toco techo
+# (docs/06 §45: automatico 91,9 · rango 91,9 · numero exacto 95,7). Lo que un
+# lector humano resuelve sin dudar —quien pregunta y quien responde, quien dice
+# «I love it»— lo puede resolver el modelo leyendo. Solo texto: centimos.
+ATTRIBUTION_SYSTEM = """Eres un editor de transcripciones. Recibes las frases de un video
+numeradas, cada una con la etiqueta de voz que dio un separador acustico
+(SPEAKER_00, SPEAKER_01...). El separador funciona bien en general pero falla
+en reacciones cortas, solapes y arranques de turno: a veces pone la frase de
+uno en la voz del otro, o pega en una sola frase palabras de dos voces
+(«I love it a triumph of physics» = una voz dice «I love it» y otra sigue).
+
+Tu trabajo: leer la CONVERSACION y devolver SOLO las correcciones necesarias.
+Responde SOLO JSON valido:
+{"changes": [
+  {"i": <numero de frase>, "action": "relabel"|"split"|"uncertain",
+   "speaker": "<etiqueta>", "split_word": <indice 1-based de la primera palabra
+   que ya es de la otra voz, solo en split>, "confidence": "high"|"low",
+   "reason": "<10 palabras>"}
+]}
+
+Pistas que valen: una pregunta y su respuesta no son de la misma voz; quien
+explica no se dice «I love it» ni «Nice» a si mismo; el invitado no da la
+bienvenida; alguien que se dirige a otro por su nombre no es ese otro; un eco
+(«a red apple» repetido) suele ser la otra voz.
+Reglas: usa SOLO etiquetas que aparezcan en la lista. "high" SOLO si estas
+seguro; si dudas, "uncertain" (la comunidad lo resolvera). NO devuelvas frases
+que ya estan bien. Ante un monologo, devuelve una lista vacia."""
+
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""

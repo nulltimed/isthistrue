@@ -17,6 +17,7 @@ urlpatterns = [
     path('post/<int:pk>/unrelegate/', views.unrelegate, name='post_unrelegate'),
     path('post/<int:pk>/reanalizar/', views.reanalyze, name='post_reanalyze'),
     path('post/<int:pk>/relanzar/<str:stage>/', views.relaunch, name='post_relaunch'),  # 4.4-G
+    path('frase/<int:segment_id>/atribuir/', views.resolve_attribution, name='resolve_attribution'),  # 4.4-I
     path('post/<int:pk>/adelantar/', views.greenlight, name='post_greenlight'),  # 4.3-F
     path('post/<int:pk>/reply/', views.reply, name='post_reply'),
     path('mensaje/previsualizar/', views.md_preview, name='md_preview'),  # 4.3-G

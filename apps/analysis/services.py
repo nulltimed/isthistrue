@@ -60,9 +60,11 @@ def cast_vote(post, user, kind):
 
 
 def speaker_identification(post):
-    """(identificados, total) de hablantes de un post. Sin diarizacion, (0, 0)."""
+    """(identificados, total) de hablantes de un post. Sin diarizacion, (0, 0).
+    4.4-I: una frase de atribucion incierta no tiene dueno y no cuenta."""
     from apps.wiki.models import SpeakerNameProposal
     etiquetas = set(post.transcript_segments.exclude(speaker_label='')
+                    .filter(attribution_uncertain=False)
                     .values_list('speaker_label', flat=True))
     nombradas = set(SpeakerNameProposal.objects.filter(post=post, confirmed=True)
                     .values_list('speaker_label', flat=True)) & etiquetas

@@ -242,6 +242,10 @@ def _post_context(request, post):
     speaker_rows = [{'label': label, 'num': i + 1, 'color': i % 8,
                      'name': confirmadas.get(label, '')}
                     for label, i in sorted(idx.items(), key=lambda kv: kv[1])]
+    # 4.4-I: las frases de atribucion incierta se listan en «¿Quien habla?» para
+    # que la comunidad las resuelva (cualquier usuario con sesion, un clic).
+    uncertain_rows = [{'seg': s, 'options': speaker_rows}
+                      for s in segments if s.attribution_uncertain]
     hide_opinions = bool(u and u.hide_opinions)
     # 4.2 C4: el analisis y su hilo del foro son UNA sola pagina.
     from apps.forum.machina_glue import get_topic_for_post
@@ -286,6 +290,7 @@ def _post_context(request, post):
         'can_validate': identification_gate(post)[0],
         'waiting_ident': waiting_ident, 'ident_min': min_identified_percent(),
         'relaunch_rows': relaunch_rows,
+        'uncertain_rows': uncertain_rows,
         'page_obj': page_obj,
         'thread_total': page_obj.paginator.count if page_obj else 0,
         'first_unread_pk': first_unread_pk, 'newest_pk': newest_pk,
@@ -815,6 +820,29 @@ def search(request):
     return render(request, 'analysis/search.html',
                   {'q': q, 'scope': scope, 'results': results})
 
+
+
+@login_required
+def resolve_attribution(request, segment_id):
+    """4.4-I: un usuario con sesion resuelve una frase de atribucion incierta:
+    le pone la voz que corresponde. Sin JS (form POST). Queda en la nota de la
+    frase quien la resolvio, y se vuelve a probar el piloto automatico porque
+    la puerta del 65 % puede haberse abierto."""
+    from .models import TranscriptSegment
+    from .services import try_autopilot
+    seg = get_object_or_404(TranscriptSegment, pk=segment_id)
+    voz = request.POST.get('speaker', '')
+    etiquetas = set(seg.post.transcript_segments.exclude(speaker_label='')
+                    .values_list('speaker_label', flat=True))
+    if request.method != 'POST' or voz not in etiquetas:
+        return redirect('post_detail', pk=seg.post_id)
+    seg.speaker_label = voz
+    seg.attribution_uncertain = False
+    seg.attribution_note = f'resuelta por {request.user.username}'
+    seg.save(update_fields=['speaker_label', 'attribution_uncertain', 'attribution_note'])
+    try_autopilot(seg.post)
+    messages.success(request, 'Frase atribuida. Gracias.')
+    return redirect('post_detail', pk=seg.post_id)
 
 
 @login_required
