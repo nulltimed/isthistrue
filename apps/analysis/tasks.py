@@ -760,6 +760,18 @@ def _transcribe_first_tranche(post, tmpdir):
             logger.info('Transcripción tomada de subtítulos oficiales (%d cues, %s)',
                         len(cues), os.path.basename(vtt))
             return (cues, audio)
+    # Intervencion del operador (2026-08-26, orden de David): si hay GPU de
+    # Runpod configurada, whisper corre alli con large-v3 (mas oido y mejor
+    # puntuacion que small, impagable en CPU). Regla 5.7: si la GPU falla por lo
+    # que sea, la CPU sigue EXACTAMENTE como hasta hoy.
+    if settings.RUNPOD_API_KEY and settings.RUNPOD_WHISPER_ENDPOINT:
+        from apps.agents.gpu import transcribe_gpu
+        gpu_segs = transcribe_gpu(audio)
+        if gpu_segs:
+            logger.info('Transcripción en GPU Runpod (%s): %d segmentos',
+                        settings.WHISPER_GPU_MODEL, len(gpu_segs))
+            return (gpu_segs, audio)
+        logger.warning('GPU Runpod no disponible: transcripción en CPU (small)')
     model = WhisperModel('small', device='cpu', compute_type='int8')
     # 4.4-F: word_timestamps da el reloj de CADA PALABRA (algo mas lento en CPU,
     # ~+20%). Es lo que permite que una interjeccion de 1 s se atribuya a su voz.

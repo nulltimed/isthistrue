@@ -257,6 +257,10 @@ HF_TOKEN = os.getenv('HF_TOKEN', '')
 # barata (pyannote: 34 de los 52 min de cada analisis en CPU). Prepago: el saldo
 # de Runpod es el techo de gasto. Sin clave, todo sigue en CPU como hasta hoy.
 RUNPOD_API_KEY = os.getenv('RUNPOD_API_KEY', '')
+RUNPOD_WHISPER_ENDPOINT = os.getenv('RUNPOD_WHISPER_ENDPOINT', '')
+WHISPER_GPU_MODEL = os.getenv('WHISPER_GPU_MODEL', 'large-v3')
+RUNPOD_JOB_TIMEOUT = int(os.getenv('RUNPOD_JOB_TIMEOUT', '900'))
+RUNPOD_POLL_SECONDS = int(os.getenv('RUNPOD_POLL_SECONDS', '5'))
 
 # --- Turnstile / email ---
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')

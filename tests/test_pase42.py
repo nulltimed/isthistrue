@@ -3453,3 +3453,84 @@ class Pase44I(TestCase):
         self.assertIs(keep_better_split(primera, peor, post), primera)
         self.assertIs(keep_better_split(primera, mejor, post), mejor)
         self.assertEqual(minority_share([(0, 10, 'A')]), 0.0)
+
+
+class OperadorGPUWhisper(TestCase):
+    """Intervencion del operador (2026-08-26): transcripcion en GPU Runpod.
+    La regla que blindan estos tests es la 5.7: la GPU acelera, JAMAS bloquea —
+    cualquier fallo devuelve None y la CPU sigue como siempre."""
+
+    def test_sin_configurar_devuelve_none_sin_llamar_a_nada(self):
+        from apps.agents import gpu
+        with override_settings(RUNPOD_API_KEY='', RUNPOD_WHISPER_ENDPOINT=''):
+            self.assertIsNone(gpu.transcribe_gpu('/no/existe.mp3'))
+
+    def test_fallo_remoto_devuelve_none_no_revienta(self):
+        from apps.agents import gpu
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='ep'), \
+             mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+             mock.patch.object(gpu.httpx, 'post',
+                               side_effect=Exception('red caida')):
+            self.assertIsNone(gpu.transcribe_gpu('/x.mp3'))
+
+    def test_trabajo_fallido_en_runpod_devuelve_none(self):
+        from apps.agents import gpu
+        lanzado = mock.Mock()
+        lanzado.json.return_value = {'id': 'job1'}
+        lanzado.status_code = 200
+        estado = mock.Mock()
+        estado.json.return_value = {'status': 'FAILED'}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='ep',
+                               RUNPOD_POLL_SECONDS=0), \
+             mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+             mock.patch.object(gpu.httpx, 'post', return_value=lanzado), \
+             mock.patch.object(gpu.httpx, 'get', return_value=estado):
+            self.assertIsNone(gpu.transcribe_gpu('/x.mp3'))
+
+    def test_trabajo_completado_llega_en_formato_local(self):
+        """El contrato MEDIDO contra el endpoint real: words es una lista GLOBAL
+        (word_timestamps), separada de segments. El mapeo debe repartirlas por
+        reloj sin duplicar ninguna."""
+        from apps.agents import gpu
+        salida = {'segments': [{'start': 0.0, 'end': 2.0, 'text': ' hola mundo '},
+                               {'start': 2.0, 'end': 4.0, 'text': 'adios'}],
+                  'word_timestamps': [
+                      {'word': ' hola', 'start': 0.0, 'end': 0.9},
+                      {'word': ' mundo', 'start': 1.0, 'end': 1.9},
+                      {'word': ' adios', 'start': 2.1, 'end': 3.0}]}
+        lanzado = mock.Mock()
+        lanzado.json.return_value = {'id': 'job1'}
+        lanzado.status_code = 200
+        estado = mock.Mock()
+        estado.json.return_value = {'status': 'COMPLETED', 'output': salida,
+                                    'executionTime': 1234}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='ep',
+                               RUNPOD_POLL_SECONDS=0), \
+             mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+             mock.patch.object(gpu.httpx, 'post', return_value=lanzado), \
+             mock.patch.object(gpu.httpx, 'get', return_value=estado):
+            segs = gpu.transcribe_gpu('/x.mp3')
+        self.assertEqual(len(segs), 2)
+        self.assertEqual(segs[0]['text'], 'hola mundo')
+        self.assertEqual([w['text'] for w in segs[0]['words']], ['hola', 'mundo'])
+        self.assertEqual([w['text'] for w in segs[1]['words']], ['adios'])
+        self.assertEqual(segs[1]['start_seconds'], 2.0)
+
+    def test_timeout_local_cancela_el_trabajo_en_runpod(self):
+        """Un timeout nuestro NO puede dejar la GPU corriendo sola (dinero):
+        se llama a /cancel antes de rendirse."""
+        from apps.agents import gpu
+        lanzado = mock.Mock()
+        lanzado.json.return_value = {'id': 'job1'}
+        lanzado.status_code = 200
+        en_marcha = mock.Mock()
+        en_marcha.json.return_value = {'status': 'IN_PROGRESS'}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='ep',
+                               RUNPOD_POLL_SECONDS=0, RUNPOD_JOB_TIMEOUT=0), \
+             mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+             mock.patch.object(gpu.httpx, 'post', return_value=lanzado) as posts, \
+             mock.patch.object(gpu.httpx, 'get', return_value=en_marcha):
+            self.assertIsNone(gpu.transcribe_gpu('/x.mp3'))
+        urls = [c.args[0] for c in posts.call_args_list]
+        self.assertTrue(any('/cancel/job1' in u for u in urls),
+                        'el timeout local debe cancelar el trabajo remoto')
