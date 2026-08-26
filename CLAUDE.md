@@ -230,6 +230,18 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   `Diarización con pista de voces: ninguna (automático)`. **Al verificar un arreglo de voces,
   mirar SIEMPRE esa linea del log antes de concluir nada.**
 
+## Lecciones del pase 4.4-I (2026-08-26)
+- **El circuito de voces queda en CAPAS**: oido (pyannote+pista) → autocorreccion (2ª pasada
+  SOLO SI MEJORA: `keep_better_split` compara la cuota minoritaria de ambas y elige) →
+  comprension (pasada de sentido: Haiku lee y corrige o marca duda) → comunidad (atribucion
+  incierta, `POST /frase/<id>/atribuir/`, valida que la voz EXISTA en el post). Cada capa coge
+  lo que la anterior no pudo; la ultima siempre es una persona.
+- **Las frases de atribucion incierta NO cuentan** para la puerta del 65 % ni se cuelgan de
+  ninguna persona en la wiki: el sistema prefiere admitir que no sabe antes que atribuir mal.
+- **«Pasada de sentido» es tarea del panel de modelos** (Haiku de fabrica): como el resto del
+  panel, la ajusta David. Supuesto pendiente: su calidad leyendo ingles hablado (validar con el
+  post 5; si floja, subir a Sonnet cuesta centimos).
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
