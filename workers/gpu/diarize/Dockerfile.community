@@ -18,6 +18,12 @@ RUN python -c "from pyannote.audio import Pipeline; \
 Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', token='$HF_TOKEN'); \
 Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', token='$HF_TOKEN')"
 
+# Fix del operador (2026-08-26): en los hosts de Runpod (~128 nucleos) numpy/
+# OpenBLAS intenta desplegar hilos que el cgroup del contenedor no concede y
+# numpy.linalg.inv (setup PLDA de pyannote 4) se queda girando PARA SIEMPRE sin
+# error. Cazado con faulthandler. En el VPS (8 nucleos) jamas se manifesto.
+ENV OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+
 COPY handler.py .
 RUN python -c "import pyannote.audio, torch, runpod; print('pyannote', pyannote.audio.__version__, 'torch', torch.__version__)"
 CMD ["python", "-u", "handler.py"]

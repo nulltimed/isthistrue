@@ -26,6 +26,12 @@ RUN if [ "$PRELOAD_COMMUNITY" = "1" ]; then echo "intento community-1 ($COMMUNIT
 Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', use_auth_token='$HF_TOKEN')" \
     || echo 'community-1 no disponible en el build: la imagen sigue solo con 3.1'; fi
 
+# Fix del operador (2026-08-26): en los hosts de Runpod (~128 nucleos) numpy/
+# OpenBLAS intenta desplegar hilos que el cgroup del contenedor no concede y
+# numpy.linalg.inv (setup PLDA de pyannote 4) se queda girando PARA SIEMPRE sin
+# error. Cazado con faulthandler. En el VPS (8 nucleos) jamas se manifesto.
+ENV OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
+
 COPY handler.py .
 # Candado del build, como en el VPS: si la matriz se rompe, falla AQUI, no en Runpod.
 RUN python -c "import pyannote.audio, torch, runpod"
