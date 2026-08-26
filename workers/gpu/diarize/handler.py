@@ -81,6 +81,17 @@ def _kwargs(hint):
 def _run(pipeline, wav, **kw):
     t0 = time.monotonic()
     result = pipeline(wav, **kw)
+    # Fix del operador (2026-08-26): pyannote 4 devuelve DiarizeOutput, no la
+    # Annotation directa de pyannote 3; la Annotation con itertracks vive dentro.
+    # Se desenvuelve por atributos para que el MISMO handler sirva en ambas.
+    if not hasattr(result, 'itertracks'):
+        for _attr in ('speaker_diarization', 'diarization', 'annotation', 'prediction'):
+            _cand = getattr(result, _attr, None)
+            if _cand is not None and hasattr(_cand, 'itertracks'):
+                result = _cand
+                break
+        else:
+            raise RuntimeError('salida de pyannote sin itertracks: %r' % type(result))
     turns = [[round(turn.start, 3), round(turn.end, 3), str(label)]
              for turn, _, label in result.itertracks(yield_label=True)]
     return turns, round(time.monotonic() - t0, 2)
