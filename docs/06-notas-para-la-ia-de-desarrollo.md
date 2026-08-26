@@ -1112,3 +1112,12 @@ descargue el audio él mismo — apúntalo como decisión de diseño.
 Para el vídeo de 23 min esperamos 2-4 min de GPU (~2-4 céntimos). El modelo se carga POR
 TRABAJO en esta imagen: si algún día duele, la alternativa es un worker propio con el modelo
 residente — decisión de coste para David, no la tomes tú.
+
+## 49. docs/56: la especificación GPU COMPLETA sustituye a docs/54 (operador, 2026-08-26)
+
+Encargo de David: «todo lo necesario para que todas las tareas susceptibles de dar mejores y
+más rápidos resultados se ejecuten por GPU». `docs/56` es tu documento de trabajo para el
+4.4-J: inventario etapa a etapa (queda UNA pieza: el worker de diarización — el resto ya está
+en GPU, no gana con GPU, o es API de Claude), contratos MEDIDOS contra el endpoint real,
+estructura del worker, y las trampas ya pagadas (isServerless en templates, word_timestamps
+global, cancelación por timeout). Léelo entero antes de escribir el pase.
