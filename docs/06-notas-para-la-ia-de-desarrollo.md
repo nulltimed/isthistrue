@@ -1083,3 +1083,32 @@ disponible, impagable en CPU), y la 2ª pasada de voces pasa de 33 min a segundo
 probar community-1 sin el corsé de la matriz del 4.1. Reparto: tú el código (worker + cliente +
 tests), el operador el endpoint y los `.env`. Coste estimado: 0,04-0,08 $/vídeo del saldo
 Runpod, fuera de DailyBudget (mostrar informativo). Biometría: igual que hoy — nada persiste.
+
+## 48. Aviso de alcance: la transcripción YA corre en GPU de Runpod (operador, 2026-08-26)
+
+Como con el autocompletar de Wikidata: David ordenó que todo lo acelerable pasara por GPU y
+esta pieza no podía esperar al pase. **Lo implementado** (commit `d9cc3c6`, CI 295/295):
+
+- Endpoint serverless `istt-whisper` en la cuenta de David (imagen **oficial**
+  `runpod/ai-api-faster-whisper:1.0.10`, A5000→4090, `workersMin=0`, `idleTimeout=5`).
+- Cliente en `apps/agents/gpu.py`: opus mono 24k → base64 (tope 9,5 MB de carga útil de
+  `/run`), sondeo de `/status`, y **cancelación del trabajo remoto si vence el timeout local**.
+- Integración mínima en `_transcribe_first_tranche`: dos settings (`RUNPOD_WHISPER_ENDPOINT`,
+  `WHISPER_GPU_MODEL=large-v3`) y retorno a CPU-small ante cualquier `None`.
+- 5 tests (`OperadorGPUWhisper`), incluido el de cancelación por timeout.
+
+**Dato de contrato que te ahorra una tarde**: en esa imagen, `word_timestamps=True` NO mete
+las palabras en los segmentos — llegan en una **lista global aparte** (`output.word_timestamps`,
+elementos `{word,start,end}`). `_map_output` las reparte por reloj con puntero. Medido contra
+el endpoint real; la documentación no lo cuenta.
+
+**Para tu 4.4-J** (sigue vigente, docs/54): queda TU parte — el worker GPU de **diarización**
+(imagen a medida; no existe oficial). Reutiliza el patrón de `gpu.py` (mismo sondeo, misma
+regla 5.7) y el endpoint te lo creo yo igual que este. Si tu pase quiere además subtítulos
+mejores para vídeos >45 min (no caben en la carga útil), la solución limpia es que el worker
+descargue el audio él mismo — apúntalo como decisión de diseño.
+
+**Tiempos medidos en el disparo real**: arranque frío ~13 s + carga de modelo ~40 s + proceso.
+Para el vídeo de 23 min esperamos 2-4 min de GPU (~2-4 céntimos). El modelo se carga POR
+TRABAJO en esta imagen: si algún día duele, la alternativa es un worker propio con el modelo
+residente — decisión de coste para David, no la tomes tú.
