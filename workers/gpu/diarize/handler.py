@@ -44,14 +44,24 @@ def _pipeline(name):
 
 
 def _decode(audio_b64, workdir):
-    """opus/ogg base64 -> wav 16 kHz mono (lo que pyannote espera)."""
+    """opus/ogg base64 -> dict {waveform, sample_rate} para pyannote.
+
+    Fix del operador (2026-08-26): pyannote 4 lee FICHEROS via torchcodec, que
+    arrastra su propia matriz de FFmpeg y fallaba en el worker real. Decodificar
+    con ffmpeg a PCM crudo y entregar el tensor evita torchcodec POR COMPLETO y
+    funciona igual bajo pyannote 3 y 4 (ambos aceptan el dict)."""
+    import numpy as np
+    import torch
     src = os.path.join(workdir, 'in.ogg')
-    wav = os.path.join(workdir, 'in.wav')
     with open(src, 'wb') as f:
         f.write(base64.b64decode(audio_b64))
-    subprocess.run(['ffmpeg', '-y', '-i', src, '-ac', '1', '-ar', '16000', wav],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    return wav
+    proc = subprocess.run(['ffmpeg', '-y', '-i', src, '-f', 'f32le', '-ac', '1',
+                           '-ar', '16000', '-'],
+                          check=True, stdout=subprocess.PIPE,
+                          stderr=subprocess.DEVNULL)
+    onda = torch.from_numpy(
+        np.frombuffer(proc.stdout, dtype=np.float32).copy()).unsqueeze(0)
+    return {'waveform': onda, 'sample_rate': 16000}
 
 
 def _kwargs(hint):
