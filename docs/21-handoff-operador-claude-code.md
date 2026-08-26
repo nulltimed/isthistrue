@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-26 · Commit en producción: `afdc233` (RUNPOD_API_KEY activa y verificada: 50 USD de saldo) · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-26 · Commit en producción: `05d9ce1` (docs en `ef735b8`) — GPU COMPLETA operativa · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§49: TODA la historia técnica), el informe del último pase (`docs/53`) y la ESPECIFICACIÓN GPU COMPLETA (`docs/56`, sustituye a docs/54).
+> (§1-§50: TODA la historia técnica), el informe del último pase (`docs/58`) y la especificación GPU (`docs/56`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §49) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §50) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -163,6 +163,14 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
+- ✅ **GPU COMPLETA OPERATIVA (2026-08-26 tarde)**: el post 5 analizado de punta a punta por
+  GPU — voces+2ª pasada 66→**3 min** (22×), fase barata 83→**29 min**, ~7 céntimos. Imagen
+  vigente del worker de voces: **`ghcr.io/nulltimed/istt-diarize:4.4-J-slim`** (8,7 GB, torch
+  2.8, AMBOS modelos), endpoint `fpl2ql0qgk9ao4` en pool AMPERE_48, tope 15 min/trabajo,
+  `OMP_NUM_THREADS=4` VITAL (sin él, numpy gira eterno en hosts de 128 núcleos — cazado con el
+  faulthandler que VIVE en el handler). Las SIETE trampas de plataforma y sus candados: `docs/58`
+  (léelo antes de tocar Runpod). Reglas duras: un release NO recicla al worker caliente
+  (workersMax 0→1 sí); no matar workers inicializando; los pools de GPU pueden mentir.
 - 🎩 **GPU DE RUNPOD (2026-08-26, en dos piezas)**: (1) **transcripción** — endpoint
   `istt-whisper` (`mxqg9olrlfglni`, imagen oficial ai-api-faster-whisper:1.0.10, A5000→4090,
   workersMin=0), cliente `apps/agents/gpu.py` con cancelación por timeout, `large-v3`
@@ -388,7 +396,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§49) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§50) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
