@@ -1,0 +1,23 @@
+# Variante del worker con pyannote 4 (operador, 2026-08-26): community-1 EXIGE
+# torch>=2.8 y la base del Dockerfile principal lleva 2.4. Esta imagen usa la
+# base moderna y precarga LOS DOS modelos: si ambos cargan bajo pyannote 4, una
+# sola imagen sirve para comparar cambiando DIARIZE_GPU_MODEL en el .env.
+# Construir: docker build -f Dockerfile.community --build-arg HF_TOKEN=... -t <reg>/istt-diarize:4.4-J-p4 .
+FROM runpod/pytorch:1.1.0-cu1281-torch280-ubuntu2204
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN pip install --no-cache-dir "runpod>=1.7,<2" "pyannote.audio>=4,<5"
+
+ARG HF_TOKEN
+# Precarga de AMBOS con la firma nueva (token=). Si el 3.1 no cargara bajo
+# pyannote 4, este build FALLA y nos enteramos aqui, no en Runpod.
+RUN python -c "from pyannote.audio import Pipeline; \
+Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', token='$HF_TOKEN'); \
+Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', token='$HF_TOKEN')"
+
+COPY handler.py .
+RUN python -c "import pyannote.audio, torch, runpod; print('pyannote', pyannote.audio.__version__, 'torch', torch.__version__)"
+CMD ["python", "-u", "handler.py"]

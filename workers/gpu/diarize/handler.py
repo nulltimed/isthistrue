@@ -31,7 +31,12 @@ _pipelines = {}
 def _pipeline(name):
     from pyannote.audio import Pipeline
     if name not in _pipelines:
-        p = Pipeline.from_pretrained(name, use_auth_token=os.environ.get('HF_TOKEN'))
+        # Fix del operador (2026-08-26): pyannote 4 renombro use_auth_token -> token.
+        # Se inspecciona la firma para que el MISMO handler sirva en ambas imagenes.
+        import inspect
+        params = inspect.signature(Pipeline.from_pretrained).parameters
+        kw = 'use_auth_token' if 'use_auth_token' in params else 'token'
+        p = Pipeline.from_pretrained(name, **{kw: os.environ.get('HF_TOKEN')})
         if torch.cuda.is_available():
             p.to(torch.device('cuda'))
         _pipelines[name] = p
