@@ -163,6 +163,17 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
+- 🎩 **GPU DE RUNPOD (2026-08-26, en dos piezas)**: (1) **transcripción** — endpoint
+  `istt-whisper` (`mxqg9olrlfglni`, imagen oficial ai-api-faster-whisper:1.0.10, A5000→4090,
+  workersMin=0), cliente `apps/agents/gpu.py` con cancelación por timeout, `large-v3`
+  (`d9cc3c6`, 5 tests). (2) **diarización** — pase 4.4-J de Fable (`e9acf70`, CI 303/303):
+  worker propio `workers/gpu/diarize/` (imagen a construir por el operador →
+  `ghcr.io/nulltimed/istt-diarize:4.4-J`), 2ª pasada en el mismo viaje, política
+  (`keep_better_split`, fantasmas) SIEMPRE en el VPS. Trampas pagadas: `isServerless: true`
+  en templates (si no, el endpoint la rechaza); `word_timestamps` llega como lista GLOBAL;
+  el HF_TOKEN va como ARG de build Y como env del template. Especificación completa en
+  `docs/56`; guía del pase en `docs/57`. El gasto sale del saldo PREPAGO (50 USD) — verificar
+  con `{ myself { clientBalance } }`, JAMÁS imprimir la clave.
 - 🟢 **AUTORIZACIÓN PERMANENTE (2026-08-26)**: David — «no me avises para todo lo que tenga que
   ver con adelantar y subir la calidad de los análisis». Incluye gastar su saldo PREPAGO de
   Runpod (conector OAuth ya enlazado a su cuenta de Claude; `RUNPOD_API_KEY` en el `.env` de
