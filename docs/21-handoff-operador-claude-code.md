@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-26 · Commit en producción: `dc7bf21` · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-26 · Commit en producción: `dc7bf21` (con `7eb0871` pendiente de desplegar al terminar el análisis en vuelo) · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -163,6 +163,12 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
+- 🟢 **AUTORIZACIÓN PERMANENTE (2026-08-26)**: David — «no me avises para todo lo que tenga que
+  ver con adelantar y subir la calidad de los análisis». Incluye gastar su saldo PREPAGO de
+  Runpod (conector OAuth ya enlazado a su cuenta de Claude; `RUNPOD_API_KEY` en el `.env` de
+  producción — verificar con el patrón vacío/rellenado, JAMÁS imprimirla). NO cambia: presupuesto
+  de Anthropic y panel de modelos siguen siendo solo suyos; líneas rojas íntegras. Preferir
+  serverless; nunca dejar un Pod encendido. Siguiente hito: integración GPU de pyannote (4.4-J).
 - **Producción**: commit `dc7bf21` — **pase 4.4-I**: **la pasada de sentido**. Tras separar
   voces, Haiku LEE la conversación (trozos de 120 frases) y corrige reetiquetando o partiendo
   frases; **cuando duda, marca «atribución incierta»** (no cuenta para la puerta del 65 %, no se

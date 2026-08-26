@@ -242,6 +242,15 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
   panel, la ajusta David. Supuesto pendiente: su calidad leyendo ingles hablado (validar con el
   post 5; si floja, subir a Sonnet cuesta centimos).
 
+## Autorizacion permanente de David (2026-08-26): acelerar y mejorar los analisis
+David, literal: «no me avises para todo lo que tenga que ver con adelantar y subir la calidad
+de los analisis de los videos». El operador actua SIN preguntar en ese ambito, incluido el
+gasto del saldo PREPAGO de Runpod (el saldo cargado es el techo natural; conector OAuth en su
+cuenta de Claude; RUNPOD_API_KEY en el .env de produccion, jamas impresa ni commiteada).
+**NO cambia**: el presupuesto de Anthropic y el panel de modelos siguen siendo SOLO de David
+(«no toques, lo ajusto yo»), y las lineas rojas integras. Preferir endpoints SERVERLESS
+(facturan solo mientras procesan); jamas dejar un Pod encendido sin uso.
+
 ## CANDADO DE ESTÁTICOS (2026-08-13 — cumplir SIEMPRE)
 **Ningún despliegue está terminado sin el smoke-test de estáticos en verde**, en cada dominio:
 `curl -s -o /dev/null -w "CSS: %{http_code} %{size_download} bytes\n" https://<dominio>/static/css/main.css`
