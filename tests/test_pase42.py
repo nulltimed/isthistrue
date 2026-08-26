@@ -3652,3 +3652,17 @@ class Pase44J(TestCase):
         d = open(f'{base}/Dockerfile', encoding='utf-8').read()
         self.assertIn('from_pretrained', d)                   # pesos precargados en el build
         self.assertNotIn('ENV HF_TOKEN', d)                   # el token no queda en la imagen
+
+
+class OperadorNotaAcotada(TestCase):
+    """Fix del operador (2026-08-26): una razon larguisima de la pasada de
+    sentido no puede volver a tumbar la pasada entera (DataError en el post 5
+    con large-v3: attribution_note es varchar(160))."""
+
+    def test_la_nota_se_trunca_al_limite_del_campo(self):
+        from apps.agents.attribution import _nota
+        from apps.analysis.models import TranscriptSegment
+        tope = TranscriptSegment._meta.get_field('attribution_note').max_length
+        self.assertEqual(len(_nota('x' * 500)), tope)
+        self.assertEqual(_nota(None), '')
+        self.assertEqual(_nota('corta'), 'corta')

@@ -70,6 +70,16 @@ def run(post):
     return apply_changes(segments, etiquetas, cambios, post)
 
 
+def _nota(texto):
+    """Fix del operador (2026-08-26): attribution_note es varchar(160) y la razon
+    de la pasada de sentido viene del modelo SIN acotar — con large-v3 crecio y
+    un DataError tumbo la pasada ENTERA en el post 5. Se trunca al limite REAL
+    del campo (leido del modelo, no cableado)."""
+    from apps.analysis.models import TranscriptSegment
+    tope = TranscriptSegment._meta.get_field('attribution_note').max_length
+    return (texto or '')[:tope]
+
+
 def apply_changes(segments, etiquetas, cambios, post):
     """Aplica en la BD. relabel/split solo con confianza alta; todo lo demas
     marca la frase como incierta. Los indices son los de la lista ordenada."""
@@ -87,7 +97,7 @@ def apply_changes(segments, etiquetas, cambios, post):
         if accion == 'relabel' and seguro and voz in etiquetas and voz != s.speaker_label:
             s.speaker_label = voz
             s.attribution_uncertain = False
-            s.attribution_note = f'corregida por la pasada de sentido: {razon}'
+            s.attribution_note = _nota(f'corregida por la pasada de sentido: {razon}')
             s.save(update_fields=['speaker_label', 'attribution_uncertain', 'attribution_note'])
             out['relabeled'] += 1
         elif accion == 'split' and seguro and voz in etiquetas:
@@ -104,13 +114,13 @@ def apply_changes(segments, etiquetas, cambios, post):
             nuevo = type(s).objects.create(
                 post=post, start_seconds=round(corte, 2), end_seconds=s.end_seconds,
                 text=segunda, speaker_label=voz, signal=s.signal,
-                attribution_note=f'partida por la pasada de sentido: {razon}')
+                attribution_note=_nota(f'partida por la pasada de sentido: {razon}'))
             s.text, s.end_seconds = primera, round(corte, 2)
             s.save(update_fields=['text', 'end_seconds'])
             out['split'] += 1
         else:
             s.attribution_uncertain = True
-            s.attribution_note = razon or 'la pasada de sentido no está segura'
+            s.attribution_note = _nota(razon or 'la pasada de sentido no está segura')
             s.save(update_fields=['attribution_uncertain', 'attribution_note'])
             out['uncertain'] += 1
         tocados.add(i)
