@@ -983,3 +983,59 @@ misma lección del 4.4-E («candado en el código, no ruego en el prompt») apli
 pone `cheap_started_at` nuevo pero **no limpia `cheap_finished_at`**, así que fin − inicio sale
 negativo hasta que la fase termina. Cosmético, pero un número negativo en un informe de tiempos
 despista. Limpiar los cuatro sellos al resetear.
+
+## 45. La medida del 4.4-H sobre el post 5 (2026-08-26): el mecanismo funcionó, el resultado NO
+
+**Este es el dato que cierra el ciclo de voces, y hay que mirarlo de frente.** David relanzó
+«Transcripción y voces» sin rellenar nada, como pedía tu README. El registro muestra tu pase
+funcionando EXACTAMENTE como lo diseñaste:
+
+```
+00:56  Diarización con pista de voces: ninguna (automático)     ← 1ª pasada, sin dato
+01:29  Voces fantasma absorbidas: SPEAKER_02 (12.8 s)           ← red del 4.4-G ✔
+01:29  Post 5: separación desequilibrada; segunda pasada con num_speakers=2
+01:29  Diarización con pista de voces: {'num_speakers': 2}      ← red del 4.4-H ✔
+```
+
+Detectó el desequilibrio, repitió con el número exacto, y el cronómetro lo confirma
+(`diarizar_s: 3959` ≈ dos pasadas). **El mecanismo entero, impecable.**
+
+Y el resultado, medido en segundos de voz:
+
+```
+            23-ago    25-ago (4.4-G)   26-ago (4.4-H, 2ª pasada)
+SPEAKER_00   90,7 %      91,9 %            95,7 %
+SPEAKER_01    8,5 %       8,1 %             4,3 %
+frases         748         404               255
+```
+
+**Forzar `num_speakers=2` sobre el vídeo COMPLETO dio un reparto PEOR que el automático.** Mi
+experimento de docs/47 (84,8/15,2 con `num_speakers=2`) era sobre un tramo de 3 minutos con
+diálogo denso; sobre los 22,8 minutos completos, el clustering asigna aún más al dominante.
+Una lección de medición que asumo: **un experimento sobre un tramo no extrapola al vídeo
+entero**, y lo escribo para que ninguno de los dos volvamos a caer.
+
+### La conclusión honesta
+
+**La vía de configuración de pyannote 3.1 está agotada.** Hemos probado automático, rango, y
+número exacto: 91,9 / 91,9 / 95,7. Con estas dos voces concretas (dos hombres adultos, mismo
+estudio, interjecciones cortas), el modelo de embeddings no separa mejor, se le diga lo que se
+le diga. Los arreglos de post-proceso (suelo, fantasma, backchannels) SÍ funcionan y deben
+quedarse; el problema restante es del embedding, no del cruce.
+
+### Caminos que quedan (decisión de David, trabajo tuyo)
+
+1. **Probar `pyannote/speaker-diarization-community-1`** (sucesor del 3.1, mismo mecanismo de
+   token HF, sin coste de API). Es el candidato natural: mejor separación en voces parecidas.
+   OJO a la matriz fijada del 4.1 (torch 2.2.2+cpu): verificar compatibilidad ANTES, y si exige
+   subir torch, el candado del build (`import pyannote.audio`) cazará la ruptura.
+2. **Aceptar el límite y compensar con la UI**: el reparto real de un explainer con un
+   interlocutor que solo interjecta puede ser legítimamente 85/15; lo que es inaceptable es
+   atribuirle frases. La heurística de backchannels ya recupera parte; podría reforzarse.
+3. **Dejar de reintentar en frío**: la segunda pasada, visto esto, conviene que NO se dispare
+   cuando la primera ya fue con `num_speakers` exacto (ya es así) NI repetirse en vídeos donde
+   ya se midió que no mejora — quizá anotar en el Post que la segunda pasada no ganó nada, para
+   no pagar 33 min de CPU en cada relanzamiento futuro del mismo vídeo.
+
+**Nada de esto toca la línea roja de biometría**: cambiar de modelo de diarización sigue sin
+almacenar huellas de voz (etiquetas por vídeo, como siempre).

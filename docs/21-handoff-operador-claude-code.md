@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-26 · Commit en producción: `0da2006` · Estado del repo: pase 4.4-H (las voces se arreglan solas) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-26 · Commit en producción: `412d6a4` · Estado del repo: hotfix 4.4-H.1 en producción; ciclo de voces MEDIDO (§45 de docs/06) (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§44: TODA la historia técnica) y el informe del último pase (`docs/51`).
+> (§1-§45: TODA la historia técnica) y el informe del último pase (`docs/51`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §44) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §45) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -163,7 +163,16 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
-- **Producción**: commit `0da2006` — **pase 4.4-H**: las voces se arreglan **sin intervención
+- 📊 **CICLO DE VOCES, MEDIDO Y CERRADO (2026-08-26, §45 de docs/06)**: la segunda pasada del
+  4.4-H **actuó** («separación desequilibrada; segunda pasada con num_speakers=2») y el
+  resultado fue PEOR: 90,7 → 91,9 → **95,7 %** para el dominante. **La vía de configuración de
+  pyannote 3.1 está agotada** (automático, rango y número exacto probados sobre el caso real).
+  Los post-procesos (suelo, fantasma, backchannels) SÍ funcionan y se quedan. Caminos restantes
+  (decisión de David): probar `community-1` (ojo a la matriz torch 2.2.2 del 4.1), aceptar el
+  límite y reforzar backchannels, o no repetir la 2ª pasada en vídeos ya medidos. **Lección de
+  medición: un experimento sobre un tramo de 3 min NO extrapola al vídeo entero.**
+  Hotfix **4.4-H.1** desplegado (commit `412d6a4`): el aviso de retórica manipulativa se apaga
+  al relanzar voces. Sobre el **pase 4.4-H**: las voces se arreglan **sin intervención
   humana**. (a) La pista a pyannote se da también con **confianza media** (un rango es
   inofensivo; fijar número exacto sigue exigiendo confianza alta o moderación; un «1» dudoso ya
   NO blinda). (b) **Segunda pasada automática** (`second_pass_speakers`): si tras la primera
@@ -352,7 +361,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§44) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§45) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
