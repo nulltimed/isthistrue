@@ -18,7 +18,11 @@ ARG PRELOAD_COMMUNITY=1
 ENV HF_HOME=/models
 RUN python -c "from pyannote.audio import Pipeline; \
 Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', use_auth_token='$HF_TOKEN')"
-RUN if [ "$PRELOAD_COMMUNITY" = "1" ]; then python -c "from pyannote.audio import Pipeline; \
+# Fix del operador (2026-08-26): el «|| echo» de abajo CACHEA el intento fallido —
+# si community-1 estaba tras la puerta de condiciones al primer build, los rebuilds
+# reutilizaban el fallo para siempre. Subir este ARG obliga a reintentar la capa.
+ARG COMMUNITY_CACHEBUST=1
+RUN if [ "$PRELOAD_COMMUNITY" = "1" ]; then echo "intento community-1 ($COMMUNITY_CACHEBUST)"; python -c "from pyannote.audio import Pipeline; \
 Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', use_auth_token='$HF_TOKEN')" \
     || echo 'community-1 no disponible en el build: la imagen sigue solo con 3.1'; fi
 
