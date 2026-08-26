@@ -1,6 +1,6 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-26 · Commit en producción: `dc7bf21` (con `7eb0871` pendiente de desplegar al terminar el análisis en vuelo) · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
+**Última actualización: 2026-08-26 · Commit en producción: `afdc233` (RUNPOD_API_KEY activa y verificada: 50 USD de saldo) · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
 
 > **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
 > CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
@@ -10,7 +10,7 @@
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§46: TODA la historia técnica) y el informe del último pase (`docs/53`).
+> (§1-§47: TODA la historia técnica) y el informe del último pase (`docs/53`; encargo GPU en `docs/54`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -24,7 +24,7 @@
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §46) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §47) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -168,7 +168,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
   Runpod (conector OAuth ya enlazado a su cuenta de Claude; `RUNPOD_API_KEY` en el `.env` de
   producción — verificar con el patrón vacío/rellenado, JAMÁS imprimirla). NO cambia: presupuesto
   de Anthropic y panel de modelos siguen siendo solo suyos; líneas rojas íntegras. Preferir
-  serverless; nunca dejar un Pod encendido. Siguiente hito: integración GPU de pyannote (4.4-J).
+  serverless; nunca dejar un Pod encendido. Encargo 4.4-J ENTREGADO a Fable (`docs/54`): serverless Runpod, whisper large-v3, retorno a CPU. El operador creará el endpoint y pondrá RUNPOD_ENDPOINT_ID en los .env.
 - **Producción**: commit `dc7bf21` — **pase 4.4-I**: **la pasada de sentido**. Tras separar
   voces, Haiku LEE la conversación (trozos de 120 frases) y corrige reetiquetando o partiendo
   frases; **cuando duda, marca «atribución incierta»** (no cuenta para la puerta del 65 %, no se
@@ -377,7 +377,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§46) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§47) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |

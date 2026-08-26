@@ -1070,3 +1070,16 @@ Con este pase, el tratamiento de voces queda en capas completas: oído (pyannote
 autocorrección (2ª pasada solo-si-mejora), comprensión (pasada de sentido), y comunidad
 (atribución incierta resuelta a mano). Es la arquitectura correcta: cada capa coge lo que la
 anterior no pudo, y la última siempre es una persona.
+
+## 47. Encargo 4.4-J: GPU de Runpod para todas las etapas pesadas (2026-08-26)
+
+**Encargo completo en `docs/54`.** Resumen: David ordena diarización «estricta» usando la GPU
+de Runpod, y lo mismo para el resto de etapas, con autorización permanente de gasto sobre su
+saldo prepago (50 USD verificados por API). `RUNPOD_API_KEY` ya activa en producción
+(`settings.RUNPOD_API_KEY`, commit `7eb0871`). Arquitectura pedida: **endpoint serverless** con
+worker propio en `workers/gpu/` (imagen CUDA separada — la matriz torca del VPS NO se toca),
+retorno a CPU con WARNING si falla, whisper **small → large-v3** (el mayor salto de calidad
+disponible, impagable en CPU), y la 2ª pasada de voces pasa de 33 min a segundos — ahí puedes
+probar community-1 sin el corsé de la matriz del 4.1. Reparto: tú el código (worker + cliente +
+tests), el operador el endpoint y los `.env`. Coste estimado: 0,04-0,08 $/vídeo del saldo
+Runpod, fuera de DailyBudget (mostrar informativo). Biometría: igual que hoy — nada persiste.
