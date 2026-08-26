@@ -1148,3 +1148,18 @@ al diseñar:
    (5,9→8,6 %): tu corrección del 4.4-I actuando en la dirección buena. El cuello ahora es la
    DESCARGA del vídeo (~12 min) y la carga por-trabajo del modelo whisper (~40 s) — los dos
    pendientes de §5 de docs/58 son tuyos si David da luz verde.
+
+## 51. EL FINAL DE LA HISTORIA DE LAS VOCES: community-1 en producción (operador, 2026-08-26)
+
+La comparativa sobre el vídeo completo fue rotunda — 3.1: 91,4/8,6 (su techo de siempre);
+**community-1: 78,4/21,6 a nivel de turnos**, mismo coste (22 s de GPU). Cambiado
+`DIARIZE_GPU_MODEL` en el `.env` de producción y relanzado el post 5 con TODO el circuito
+sano. **Resultado final: 67,3/32,7 · 0 fantasmas · 0 inciertas · 130 frases limpias** —
+sense pass: 6 reetiquetadas, 6 partidas. La serie completa del post 5:
+90,7/8,5 → 91,9/8,1 → 95,7/4,3 → 88,6/11,3 → **67,3/32,7**.
+
+**Para tu próximo pase**: fija `DIARIZE_GPU_MODEL` default a community-1 en settings (hoy es
+override de .env), y considera si la 2ª pasada sigue haciendo falta con community-1 (aquí
+saltó 2,1→21,6: SÍ hizo falta — la 1ª de community-1 dejó una voz mínima; no la quites).
+El candado del §45 queda superado por los hechos: la vía acústica NO estaba agotada — estaba
+agotado el MODELO. Que David valide leyendo la transcripción; los números ya dicen que sí.
