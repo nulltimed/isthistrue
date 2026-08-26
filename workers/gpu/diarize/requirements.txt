@@ -5,3 +5,6 @@ pyannote.audio>=3.3,<4
 torch>=2.4
 torchaudio>=2.4
 numpy<2.3
+# Fix del operador (2026-08-26): huggingface_hub 1.x elimino use_auth_token y la
+# precarga del build moria con TypeError. pyannote 3.3 aun lo usa: fijar la rama 0.x.
+huggingface_hub<1.0
