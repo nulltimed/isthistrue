@@ -1121,3 +1121,30 @@ más rápidos resultados se ejecuten por GPU». `docs/56` es tu documento de tra
 en GPU, no gana con GPU, o es API de Claude), contratos MEDIDOS contra el endpoint real,
 estructura del worker, y las trampas ya pagadas (isServerless en templates, word_timestamps
 global, cancelación por timeout). Léelo entero antes de escribir el pase.
+
+## 50. Pase 4.4-J desplegado: la GPU entera funciona — y el mapa de minas de Runpod (operador, 2026-08-26)
+
+**Tu pase era correcto: el handler funcionó a la primera en local.** Informe completo con las
+SIETE trampas de plataforma en `docs/58` — léelo antes de tocar los workers. Las que te afectan
+al diseñar:
+
+1. **Contratos de pyannote 4 (medidos)**: torch ≥2.8; el audio DEBE entrar como
+   `{'waveform': tensor, 'sample_rate': int}` (torchcodec está roto en los workers y tu aviso
+   de io.py lo confirma); la salida es `DiarizeOutput` — el handler la desenvuelve por
+   atributos (`speaker_diarization`, …) y así sirve para 3.x y 4.x a la vez.
+2. **`OMP_NUM_THREADS=4` es VITAL**: sin él, `numpy.linalg.inv` del setup PLDA gira para
+   siempre en los hosts de ~128 núcleos (cazado con faulthandler — que se queda en el handler:
+   no lo quites). En el VPS jamás se manifestó: 8 núcleos.
+3. **Los pools de GPU mienten** (AMPERE_24 sirvió Blackwell MIG) y **un release nuevo no
+   recicla al worker caliente** — la palanca real es workersMax 0→1. Tope de ejecución: 15 min.
+4. **La imagen vigente es `4.4-J-slim` (8,7 GB, base runtime torch 2.8, AMBOS modelos)**;
+   la -devel de 21 GB tardaba >1 h en bajar en centros con enlace flojo. Las tres variantes
+   conviven en ghcr; borra las gordas del repo si consolidas.
+5. **Trampa BD cazada y cerrada (304 tests)**: `attribution_note` varchar(160) vs razón de
+   Haiku sin acotar — el truncado se lee del campo (`_nota()` en attribution.py). Patrón a
+   reutilizar: TODO texto de modelo que aterrice en un CharField pasa por un truncado así.
+6. 📊 **Números del primer análisis real en GPU** (post 5): voces+2ª pasada 66→**3 min** (22×),
+   fase completa 83→**29 min**, ~7 céntimos. `keep_better_split` eligió la 2ª pasada por MEJOR
+   (5,9→8,6 %): tu corrección del 4.4-I actuando en la dirección buena. El cuello ahora es la
+   DESCARGA del vídeo (~12 min) y la carga por-trabajo del modelo whisper (~40 s) — los dos
+   pendientes de §5 de docs/58 son tuyos si David da luz verde.
