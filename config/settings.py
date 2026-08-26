@@ -253,6 +253,10 @@ PROBE_TIMEOUT_SECONDS = int(os.getenv('PROBE_TIMEOUT_SECONDS', '12'))
 EMBEDDINGS_MODEL = os.getenv('EMBEDDINGS_MODEL', 'paraphrase-multilingual-MiniLM-L12-v2')
 EMBEDDINGS_DIM = 384  # MiniLM multilingue; congelado (antes 1024)
 HF_TOKEN = os.getenv('HF_TOKEN', '')
+# 4.4-J (autorizacion de David, 2026-08-26): GPU de Runpod para acelerar la fase
+# barata (pyannote: 34 de los 52 min de cada analisis en CPU). Prepago: el saldo
+# de Runpod es el techo de gasto. Sin clave, todo sigue en CPU como hasta hoy.
+RUNPOD_API_KEY = os.getenv('RUNPOD_API_KEY', '')
 
 # --- Turnstile / email ---
 TURNSTILE_SITE_KEY = os.getenv('TURNSTILE_SITE_KEY', '')
