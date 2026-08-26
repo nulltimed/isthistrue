@@ -98,6 +98,12 @@ def _run(pipeline, wav, **kw):
 
 
 def handler(job):
+    # Instrumentacion del operador (2026-08-26): en los workers reales la
+    # inferencia CUDA se colgaba SIN NINGUN mensaje (local en CPU: 2,5 s). Este
+    # vigia vuelca las pilas de todos los hilos cada 120 s: si vuelve a
+    # colgarse, el log del worker dira la LINEA exacta. Cero coste si va bien.
+    import faulthandler
+    faulthandler.dump_traceback_later(120, repeat=True, exit=False)
     inp = job.get('input') or {}
     audio = inp.get('audio_base64')
     if not audio:
