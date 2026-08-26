@@ -60,21 +60,9 @@ def run_cheap_phase(self, post_id):
         # a dos hablantes y sacaba un tercero de los restos). Coste anadido: cero.
         _date_and_hint(post, ' '.join(s.get('text', '') for s in segments))
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
-        from apps.agents.diarization import diarize
         _t1 = _time.monotonic()
         pista = diarization_hint(post)
-        turns = (diarize(audio_path, **pista)
-                 if (audio_path or settings.MOCK_AGENTS) else [])
-        # 4.4-H (David: «quiero que este sistema funcione sin intervencion
-        # humana»): si la separacion salio desequilibrada, el sistema REPITE la
-        # diarizacion diciendole el numero de voces. CPU, no dinero.
-        n2 = second_pass_speakers(turns, pista, post)
-        if n2 and audio_path and not settings.MOCK_AGENTS:
-            logger.info('Post %s: separación desequilibrada; segunda pasada con num_speakers=%d',
-                        post.pk, n2)
-            # 4.4-I (docs/06 §45): la segunda pasada del post 5 salio PEOR
-            # (91,9 -> 95,7). Se mide y solo se queda si reparte MEJOR.
-            turns = keep_better_split(turns, diarize(audio_path, num_speakers=n2), post)
+        turns = diarize_turns(post, audio_path, pista)
         post.diarize_seconds = round(_time.monotonic() - _t1, 1)
         post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
         logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
@@ -186,6 +174,40 @@ def diarize_skew_percent():
     separacion desequilibrada. 0 desactiva la segunda pasada."""
     from apps.panel.models import SystemSetting
     return max(0, min(50, SystemSetting.get_int('diarize_second_pass_skew_percent', 20)))
+
+
+def diarize_turns(post, audio_path, pista):
+    """4.4-J: DONDE corre el oido. GPU de Runpod primero (worker propio, con la
+    segunda pasada en el mismo viaje: segundos); si no hay GPU o falla, la CPU
+    EXACTAMENTE como hasta hoy. Toda la politica se queda aqui, en el VPS:
+    fantasmas absorbidos, y la segunda pasada solo se queda si reparte mejor
+    (docs/06 §45). En el espejo (MOCK) nunca se llama a la GPU."""
+    from apps.agents.diarization import diarize, absorb_ghost_speakers
+    if not (audio_path or settings.MOCK_AGENTS):
+        return []
+    if audio_path and not settings.MOCK_AGENTS and settings.RUNPOD_API_KEY \
+            and settings.RUNPOD_DIARIZE_ENDPOINT:
+        from apps.agents.gpu import diarize_gpu
+        # Siempre que haya duda se pide la segunda pasada (docs/56 §5): con el
+        # audio ya en la GPU cuesta segundos, no 33 minutos.
+        n2 = None if 'num_speakers' in pista else max(2, int(post.speakers_count or 0))
+        res = diarize_gpu(audio_path, pista, n2)
+        if res:
+            turns = absorb_ghost_speakers(res['turns'])
+            if res.get('turns_second_pass'):
+                turns = keep_better_split(turns, absorb_ghost_speakers(res['turns_second_pass']), post)
+            return turns
+        logger.warning('Post %s: la GPU no respondió; separación de voces en CPU', post.pk)
+    turns = diarize(audio_path, **pista)
+    # 4.4-H (David: «sin intervencion humana»): si la separacion salio
+    # desequilibrada, se repite diciendole el numero. 4.4-I (§45): solo se queda
+    # si reparte mejor. En CPU cuesta otros ~30 min: se pide solo con desequilibrio.
+    n2 = second_pass_speakers(turns, pista, post)
+    if n2 and audio_path and not settings.MOCK_AGENTS:
+        logger.info('Post %s: separación desequilibrada; segunda pasada con num_speakers=%d',
+                    post.pk, n2)
+        turns = keep_better_split(turns, diarize(audio_path, num_speakers=n2), post)
+    return turns
 
 
 def minority_share(turns):

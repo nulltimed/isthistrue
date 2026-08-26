@@ -71,6 +71,71 @@ def _map_output(out):
     return res or None
 
 
+def _run_job(ep, payload, etiqueta):
+    """Lanza un trabajo en un endpoint y lo sondea: el patron de transcribe_gpu,
+    compartido con la diarizacion (4.4-J). Devuelve `output` o None. Un timeout
+    nuestro cancela el trabajo remoto (dinero)."""
+    key = settings.RUNPOD_API_KEY
+    headers = {'Authorization': f'Bearer {key}'}
+    r = httpx.post(f'{RUN_BASE}/{ep}/run', headers=headers, timeout=60,
+                   json={'input': payload})
+    job_id = (r.json() or {}).get('id')
+    if not job_id:
+        logger.warning('GPU (%s): /run sin id de trabajo (HTTP %s)', etiqueta, r.status_code)
+        return None
+    deadline = time.monotonic() + settings.RUNPOD_JOB_TIMEOUT
+    while time.monotonic() < deadline:
+        time.sleep(settings.RUNPOD_POLL_SECONDS)
+        st = httpx.get(f'{RUN_BASE}/{ep}/status/{job_id}', headers=headers, timeout=30).json() or {}
+        estado = st.get('status')
+        if estado == 'COMPLETED':
+            logger.info('GPU (%s): completado en %s ms de GPU facturada',
+                        etiqueta, st.get('executionTime'))
+            return st.get('output') or {}
+        if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
+            logger.warning('GPU (%s): trabajo %s -> %s; se sigue en CPU', etiqueta, job_id, estado)
+            return None
+    httpx.post(f'{RUN_BASE}/{ep}/cancel/{job_id}', headers=headers, timeout=30)
+    logger.warning('GPU (%s): trabajo %s cancelado por timeout local; CPU', etiqueta, job_id)
+    return None
+
+
+def diarize_gpu(audio_path, hint=None, second_pass_n=None):
+    """4.4-J: separa voces en la GPU de Runpod (worker propio, workers/gpu/diarize).
+    Devuelve {'turns': [(s, e, label), ...], 'turns_second_pass': [...]|None,
+    'tiempos': {...}} o None ante cualquier impedimento: el llamante DEBE caer a
+    la CPU. La segunda pasada viaja en el MISMO trabajo (el audio ya esta en la
+    GPU); elegir entre las dos es politica del VPS (keep_better_split)."""
+    key, ep = settings.RUNPOD_API_KEY, settings.RUNPOD_DIARIZE_ENDPOINT
+    if not (key and ep):
+        return None
+    try:
+        b64 = _audio_to_opus_b64(audio_path)
+        if not b64:
+            return None
+        out = _run_job(ep, {'audio_base64': b64, 'hint': hint or {},
+                            'model': settings.DIARIZE_GPU_MODEL,
+                            'second_pass_num_speakers': second_pass_n}, 'diarización')
+        if not out or 'error' in out:
+            if out:
+                logger.warning('GPU (diarización): %s; se sigue en CPU', out.get('error'))
+            return None
+        turnos = [(float(t[0]), float(t[1]), str(t[2])) for t in (out.get('turns') or [])]
+        if not turnos:
+            return None
+        segunda = out.get('turns_second_pass')
+        segunda = ([(float(t[0]), float(t[1]), str(t[2])) for t in segunda]
+                   if segunda else None)
+        logger.info('GPU (diarización, %s): %d turnos, %d voces%s',
+                    out.get('model', settings.DIARIZE_GPU_MODEL), len(turnos),
+                    len({t[2] for t in turnos}), ' + segunda pasada' if segunda else '')
+        return {'turns': turnos, 'turns_second_pass': segunda,
+                'tiempos': out.get('tiempos') or {}}
+    except Exception as exc:
+        logger.warning('GPU Runpod (diarización) indisponible (%s); se sigue en CPU', exc)
+        return None
+
+
 def transcribe_gpu(audio_path):
     """Transcribe en la GPU de Runpod. Devuelve segmentos en el MISMO formato
     que la via CPU, o None ante cualquier impedimento (sin configurar, audio

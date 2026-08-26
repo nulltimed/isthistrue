@@ -1,0 +1,7 @@
+# Worker GPU de diarizacion (pase 4.4-J). Torch MODERNO: esta imagen no comparte
+# la matriz torch==2.2.2+cpu del VPS (esa es de la otra imagen y NO se toca).
+runpod>=1.7,<2
+pyannote.audio>=3.3,<4
+torch>=2.4
+torchaudio>=2.4
+numpy<2.3

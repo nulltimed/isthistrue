@@ -3018,7 +3018,8 @@ class Pase44G(TestCase):
     def test_la_datacion_ocurre_antes_de_separar_voces(self):
         src = open('apps/analysis/tasks.py', encoding='utf-8').read()
         cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
-        self.assertLess(cuerpo.index('_date_and_hint('), cuerpo.index('diarize(audio_path'))
+        # 4.4-J: el oido vive en diarize_turns (GPU o CPU); la datacion sigue antes.
+        self.assertLess(cuerpo.index('_date_and_hint('), cuerpo.index('diarize_turns(post, audio_path'))
         self.assertIn('diarization_hint(post)', cuerpo)
 
     def test_los_argumentos_de_pyannote_no_se_contradicen(self):
@@ -3285,7 +3286,7 @@ class Pase44H(TestCase):
     def test_la_fase_barata_repite_la_diarizacion_cuando_toca(self):
         """La segunda pasada se llama de verdad con num_speakers, sobre el audio."""
         src = open('apps/analysis/tasks.py', encoding='utf-8').read()
-        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        cuerpo = src[src.index('def diarize_turns'):src.index('def minority_share')]
         self.assertIn('second_pass_speakers(turns, pista, post)', cuerpo)
         self.assertIn('diarize(audio_path, num_speakers=n2)', cuerpo)
 
@@ -3534,3 +3535,120 @@ class OperadorGPUWhisper(TestCase):
         urls = [c.args[0] for c in posts.call_args_list]
         self.assertTrue(any('/cancel/job1' in u for u in urls),
                         'el timeout local debe cancelar el trabajo remoto')
+
+
+class Pase44J(TestCase):
+    """4.4-J — la separación de voces en la GPU de Runpod (docs/56).
+
+    Contrato simétrico al de whisper; la segunda pasada viaja en el mismo
+    trabajo; la POLÍTICA (fantasmas, keep_better_split) se queda en el VPS.
+    Regla 5.7: la GPU acelera, jamás bloquea — cualquier fallo → CPU como hoy.
+    """
+
+    def _post(self, n, count=None, conf='', source=''):
+        return Post.objects.create(
+            author=make_user(username=f'j{n}', email=f'j{n}@example.org'),
+            url=f'https://youtu.be/j44{n}', status='NEW', title=f'Vídeo J{n}',
+            speakers_count=count, speakers_confidence=conf, speakers_count_source=source)
+
+    def test_sin_configurar_devuelve_none_sin_llamar_a_nada(self):
+        from apps.agents import gpu
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT=''), \
+                mock.patch.object(gpu.httpx, 'post') as red:
+            self.assertIsNone(gpu.diarize_gpu('/x.mp3', {}, 2))
+        red.assert_not_called()
+
+    def test_fallo_remoto_o_error_del_worker_devuelven_none(self):
+        from apps.agents import gpu
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+                mock.patch.object(gpu.httpx, 'post', side_effect=Exception('red caída')):
+            self.assertIsNone(gpu.diarize_gpu('/x.mp3', {}, 2))
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+                mock.patch.object(gpu, '_run_job', return_value={'error': 'modelo no permitido'}):
+            self.assertIsNone(gpu.diarize_gpu('/x.mp3', {}, 2))
+
+    def test_el_contrato_del_worker_llega_como_turnos_locales(self):
+        from apps.agents import gpu
+        salida = {'turns': [[0.0, 10.0, 'SPEAKER_00'], [10.0, 14.0, 'SPEAKER_01']],
+                  'turns_second_pass': [[0.0, 8.0, 'SPEAKER_00'], [8.0, 14.0, 'SPEAKER_01']],
+                  'tiempos': {'diarize_s': 3.1, 'second_pass_s': 2.9}, 'model': 'x'}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+                mock.patch.object(gpu, '_run_job', return_value=salida) as trabajo:
+            res = gpu.diarize_gpu('/x.mp3', {'min_speakers': 2, 'max_speakers': 3}, 2)
+        self.assertEqual(res['turns'], [(0.0, 10.0, 'SPEAKER_00'), (10.0, 14.0, 'SPEAKER_01')])
+        self.assertEqual(res['turns_second_pass'][0], (0.0, 8.0, 'SPEAKER_00'))
+        carga = trabajo.call_args.args[1]
+        self.assertEqual(carga['hint'], {'min_speakers': 2, 'max_speakers': 3})
+        self.assertEqual(carga['second_pass_num_speakers'], 2)
+        self.assertEqual(carga['model'], 'pyannote/speaker-diarization-3.1')
+
+    def test_un_timeout_nuestro_cancela_el_trabajo_remoto(self):
+        from apps.agents import gpu
+        lanzado = mock.Mock(); lanzado.json.return_value = {'id': 'job9'}; lanzado.status_code = 200
+        estado = mock.Mock(); estado.json.return_value = {'status': 'IN_PROGRESS'}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep',
+                               RUNPOD_POLL_SECONDS=0, RUNPOD_JOB_TIMEOUT=0), \
+                mock.patch.object(gpu.httpx, 'post', return_value=lanzado) as post_http, \
+                mock.patch.object(gpu.httpx, 'get', return_value=estado):
+            self.assertIsNone(gpu._run_job('ep', {'x': 1}, 'prueba'))
+        self.assertTrue(any('/cancel/job9' in c.args[0] for c in post_http.call_args_list))
+
+    def test_la_politica_se_queda_en_el_vps(self):
+        """La GPU devuelve las dos pasadas; el VPS absorbe fantasmas y elige con
+        keep_better_split. Y siempre que hay duda se pide la segunda pasada."""
+        from apps.analysis import tasks
+        post = self._post(1, 2, 'medium', 'agent')
+        primera = [(0, 92, 'SPEAKER_00'), (92, 100, 'SPEAKER_01'), (100, 100.5, 'SPEAKER_02')]
+        mejor = [(0, 80, 'SPEAKER_00'), (80, 100, 'SPEAKER_01')]
+        res = {'turns': primera, 'turns_second_pass': mejor, 'tiempos': {}}
+        with override_settings(MOCK_AGENTS=False, RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch('apps.agents.gpu.diarize_gpu', return_value=res) as gpu_fn, \
+                mock.patch('apps.agents.diarization.diarize') as cpu:
+            turns = tasks.diarize_turns(post, '/x.mp3', {'min_speakers': 2, 'max_speakers': 3})
+        cpu.assert_not_called()
+        self.assertEqual(gpu_fn.call_args.args[2], 2)          # segunda pasada pedida
+        self.assertEqual(turns, mejor)                          # se quedó la mejor
+        # con numero exacto (moderacion) NO se pide segunda pasada
+        with override_settings(MOCK_AGENTS=False, RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch('apps.agents.gpu.diarize_gpu', return_value=res) as gpu_fn, \
+                mock.patch('apps.agents.diarization.diarize'):
+            tasks.diarize_turns(post, '/x.mp3', {'num_speakers': 2})
+        self.assertIsNone(gpu_fn.call_args.args[2])
+
+    def test_si_la_gpu_falla_la_cpu_sigue_como_hoy(self):
+        from apps.analysis import tasks
+        post = self._post(2)
+        with override_settings(MOCK_AGENTS=False, RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch('apps.agents.gpu.diarize_gpu', return_value=None), \
+                mock.patch('apps.agents.diarization.diarize',
+                           return_value=[(0, 70, 'SPEAKER_00'), (70, 100, 'SPEAKER_01')]) as cpu:
+            turns = tasks.diarize_turns(post, '/x.mp3', {})
+        cpu.assert_called_once()
+        self.assertEqual(len(turns), 2)
+
+    def test_el_espejo_nunca_llama_a_la_gpu(self):
+        from apps.analysis import tasks
+        post = self._post(3)
+        with override_settings(MOCK_AGENTS=True, RUNPOD_API_KEY='k', RUNPOD_DIARIZE_ENDPOINT='ep'), \
+                mock.patch('apps.agents.gpu.diarize_gpu') as gpu_fn:
+            turns = tasks.diarize_turns(post, None, {})
+        gpu_fn.assert_not_called()
+        self.assertEqual(len({t[2] for t in turns}), 2)
+
+    def test_el_worker_existe_y_no_persiste_nada(self):
+        import os
+        base = 'workers/gpu/diarize'
+        for f in ('Dockerfile', 'handler.py', 'requirements.txt'):
+            self.assertTrue(os.path.exists(f'{base}/{f}'), f)
+        h = open(f'{base}/handler.py', encoding='utf-8').read()
+        self.assertIn('runpod.serverless.start', h)
+        self.assertIn('second_pass_num_speakers', h)
+        self.assertIn('TemporaryDirectory', h)              # procesa y muere
+        for prohibido in ('torch.save', 'pickle', 'boto3', 'open(\'/runpod-volume'):
+            self.assertNotIn(prohibido, h, prohibido)
+        d = open(f'{base}/Dockerfile', encoding='utf-8').read()
+        self.assertIn('from_pretrained', d)                   # pesos precargados en el build
+        self.assertNotIn('ENV HF_TOKEN', d)                   # el token no queda en la imagen

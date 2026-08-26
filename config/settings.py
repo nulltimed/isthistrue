@@ -259,6 +259,9 @@ HF_TOKEN = os.getenv('HF_TOKEN', '')
 RUNPOD_API_KEY = os.getenv('RUNPOD_API_KEY', '')
 RUNPOD_WHISPER_ENDPOINT = os.getenv('RUNPOD_WHISPER_ENDPOINT', '')
 WHISPER_GPU_MODEL = os.getenv('WHISPER_GPU_MODEL', 'large-v3')
+# 4.4-J: separacion de voces en GPU (worker propio). Vacio = CPU como siempre.
+RUNPOD_DIARIZE_ENDPOINT = os.getenv('RUNPOD_DIARIZE_ENDPOINT', '')
+DIARIZE_GPU_MODEL = os.getenv('DIARIZE_GPU_MODEL', 'pyannote/speaker-diarization-3.1')
 RUNPOD_JOB_TIMEOUT = int(os.getenv('RUNPOD_JOB_TIMEOUT', '900'))
 RUNPOD_POLL_SECONDS = int(os.getenv('RUNPOD_POLL_SECONDS', '5'))
 
