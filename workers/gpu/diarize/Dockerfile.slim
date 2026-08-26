@@ -1,0 +1,20 @@
+# Variante ADELGAZADA (operador, 2026-08-26): la p4 sobre base runpod -devel pesa
+# 21 GB y los centros de datos con enlace flojo al registro tardan >1 h en bajarla.
+# La base runtime oficial de PyTorch (torch 2.8 + CUDA 12.8 + cuDNN) pesa la mitad
+# y sirve exactamente igual para inferencia. Mismos modelos, mismo handler.
+FROM pytorch/pytorch:2.8.0-cuda12.8-cudnn9-runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN pip install --no-cache-dir "runpod>=1.7,<2" "pyannote.audio>=4,<5"
+
+ARG HF_TOKEN
+RUN python -c "from pyannote.audio import Pipeline; \
+Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', token='$HF_TOKEN'); \
+Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', token='$HF_TOKEN')"
+
+COPY handler.py .
+RUN python -c "import pyannote.audio, torch, runpod; print('pyannote', pyannote.audio.__version__, 'torch', torch.__version__)"
+CMD ["python", "-u", "handler.py"]
