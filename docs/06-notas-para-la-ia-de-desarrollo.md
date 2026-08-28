@@ -1163,3 +1163,19 @@ override de .env), y considera si la 2ª pasada sigue haciendo falta con communi
 saltó 2,1→21,6: SÍ hizo falta — la 1ª de community-1 dejó una voz mínima; no la quites).
 El candado del §45 queda superado por los hechos: la vía acústica NO estaba agotada — estaba
 agotado el MODELO. Que David valide leyendo la transcripción; los números ya dicen que sí.
+
+## 52. Parches 4.5-A/B/C (nuevo régimen: el operador desarrolla) — 2026-08-28
+
+Informe completo en `docs/59`. Para el registro técnico del canal:
+- **4.5-A**: `smooth_word_islands` recibe los turnos y NO reetiqueta una isla respaldada por
+  un turno de su propio hablante (solape ≥50 %); `MAX_SENTENCE_SECONDS=30` corta la parrafada.
+  Validado en el post 5: 76,8/23,1 (clava el 78/22 del oído), 0 frases >30 s. Patrón que deja:
+  cuando una capa inferior mejora, revisar las heurísticas anti-ruido que nacieron de sus fallos.
+- **4.5-B**: `ARG DENO_VERSION` 2.1.4→2.9.6 — el yt-dlp de 2026.08 declaraba el viejo
+  `unsupported` y YouTube estrangulaba a 30 KB/s. Descarga real medida: 19,7 MB en 3,5 s.
+  Lección de pin: los runtimes auxiliares también caducan; el síntoma vive en
+  `[debug] JS runtimes:` del verbose.
+- **4.5-C**: `catalog.AUDIO_ENGINES` + `audio_engine_for()` (panel > .env > default);
+  `gpu.py` y el panel los consumen; sección nueva en `models.html` (+2 msgids al .po a mano).
+  El barrido pasó a Sonnet por orden directa de David (dato de panel, no código).
+- Pendiente gordo siguiente: worker propio de whisper con modelo residente (12,5→2-4 min).
