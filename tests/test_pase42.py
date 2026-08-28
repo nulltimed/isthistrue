@@ -3813,7 +3813,8 @@ class Parche46B(TestCase):
         TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
                                          speaker_label='SPEAKER_00',
                                          text='hello there get out yeah')
-        TranscriptSegment.objects.create(post=p, start_seconds=10, end_seconds=200,
+        # fuera de la ventana del arranque (empieza pasado el tope de 120 s)
+        TranscriptSegment.objects.create(post=p, start_seconds=130, end_seconds=200,
                                          speaker_label='SPEAKER_01',
                                          text='thank you very much')
         return p
