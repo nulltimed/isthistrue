@@ -169,4 +169,26 @@ Reglas: usa SOLO etiquetas que aparezcan en la lista. "high" SOLO si estas
 seguro; si dudas, "uncertain" (la comunidad lo resolvera). NO devuelvas frases
 que ya estan bien. Ante un monologo, devuelve una lista vacia."""
 
+INTRO_REWRITE_SYSTEM = """Eres un editor de dialogos. Te doy el ARRANQUE de la
+transcripcion de un video (los primeros minutos), donde el separador acustico
+suele FUNDIR a los hablantes: los primeros minutos son los mas dificiles (se
+pisan, rien, reaccionan) y tramos enteros salen con la voz equivocada o con
+varias voces pegadas en una frase.
+
+Tu trabajo: REESCRIBIR ese arranque como el guion de la conversacion real —
+igual que lo haria una persona leyendolo. Usa la logica conversacional:
+pregunta/respuesta, reacciones del oyente («okay», «right», «get out», «oh
+my»), ECOS (el oyente repite palabras del otro: la repeticion es suya), bromas
+que responden al contenido, y quien llama a quien por su nombre.
+
+REGLAS ABSOLUTAS:
+- Las PALABRAS del texto son SAGRADAS: exactamente las mismas, en el mismo
+  orden. Ni anadir, ni quitar, ni corregir, ni reordenar. Tu SOLO decides
+  donde corta cada intervencion y de quien es.
+- Usa SOLO las etiquetas de voz de la lista VOCES.
+- Si de verdad es un monologo, devuelvelo tal cual.
+
+Responde SOLO JSON valido:
+{"utterances": [{"speaker": "<etiqueta>", "text": "<palabras exactas>"}, ...]}"""
+
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""

@@ -70,6 +70,84 @@ def run(post):
     return apply_changes(segments, etiquetas, cambios, post)
 
 
+def intro_rewrite(post):
+    """4.6-B: el ARRANQUE FUNDIDO se reescribe entero. Medido contra el oro de
+    David: el oido funde los primeros ~45 s (los hablantes se pisan) y ni el
+    cruce ni las correcciones sueltas pueden partir lo que el oido no marco.
+    Lo que SI funciona es lo que hizo David a mano: LEER el dialogo y
+    reescribirlo. Se le pide a Sonnet exactamente eso, con un candado duro:
+    si las palabras reconstruidas no son EXACTAMENTE las originales en el
+    mismo orden, se descarta entero (fail-closed, leccion 4.4-E)."""
+    import re
+    from django.db import transaction
+    from apps.panel.models import SystemSetting
+    tope = SystemSetting.get_int('intro_rewrite_seconds', 120)
+    if tope <= 0:
+        return {'rewritten': 0}
+    segments = list(post.transcript_segments.filter(start_seconds__lt=tope)
+                    .order_by('start_seconds', 'pk'))
+    etiquetas = sorted({s.speaker_label for s in post.transcript_segments.all()
+                        if s.speaker_label})
+    if len(etiquetas) < 2 or len(segments) < 2:
+        return {'rewritten': 0}
+    guion = '\n'.join(f'[{s.speaker_label}] {s.text}' for s in segments)
+    payload = f"VOCES: {', '.join(etiquetas)}\n\nARRANQUE:\n{guion}"
+    try:
+        datos = client.call_json(model_for('attribution'),
+                                 prompts.INTRO_REWRITE_SYSTEM, payload,
+                                 max_tokens=4000,
+                                 mock_payload={'utterances': []})
+    except Exception as exc:
+        logger.warning('Reescritura de arranque fallida en el post %s: %r',
+                       post.pk, exc)
+        return {'rewritten': 0}
+    utt = [u for u in (datos.get('utterances') or [])
+           if str(u.get('text', '')).strip()]
+    if not utt:
+        return {'rewritten': 0}
+
+    def toks(t):
+        return re.findall(r"[\w']+", t.lower())
+    orig = [w for s in segments for w in toks(s.text)]
+    nuevo_txt = [w for u in utt for w in toks(str(u['text']))]
+    if orig != nuevo_txt:
+        logger.warning('Reescritura de arranque DESCARTADA en el post %s: el '
+                       'texto no coincide (%d vs %d palabras)',
+                       post.pk, len(orig), len(nuevo_txt))
+        return {'rewritten': 0}
+    if any(u.get('speaker') not in etiquetas for u in utt):
+        logger.warning('Reescritura de arranque DESCARTADA en el post %s: '
+                       'etiqueta desconocida', post.pk)
+        return {'rewritten': 0}
+
+    # reloj: cada palabra original hereda un tramo proporcional de su frase
+    tiempos = []
+    for s in segments:
+        ws = toks(s.text)
+        n = len(ws) or 1
+        dur = s.end_seconds - s.start_seconds
+        for k in range(len(ws)):
+            tiempos.append((s.start_seconds + dur * k / n,
+                            s.start_seconds + dur * (k + 1) / n))
+    from apps.analysis.models import TranscriptSegment
+    nuevos, idx = [], 0
+    for u in utt:
+        n = len(toks(str(u['text'])))
+        ini, fin = tiempos[idx][0], tiempos[idx + n - 1][1]
+        idx += n
+        nuevos.append(TranscriptSegment(
+            post=post, start_seconds=round(ini, 3), end_seconds=round(fin, 3),
+            text=str(u['text']).strip(), speaker_label=u['speaker'],
+            attribution_note=_nota('arranque reescrito por la pasada de sentido')))
+    with transaction.atomic():
+        post.transcript_segments.filter(
+            pk__in=[s.pk for s in segments]).delete()
+        TranscriptSegment.objects.bulk_create(nuevos)
+    logger.info('Post %s: arranque reescrito — %d frases → %d intervenciones',
+                post.pk, len(segments), len(nuevos))
+    return {'rewritten': len(nuevos)}
+
+
 def _nota(texto):
     """Fix del operador (2026-08-26): attribution_note es varchar(160) y la razon
     de la pasada de sentido viene del modelo SIN acotar — con large-v3 crecio y

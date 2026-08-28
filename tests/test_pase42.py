@@ -3799,3 +3799,73 @@ class Parche46A(TestCase):
         d = json.load(open(ruta, encoding='utf-8'))
         self.assertEqual(len(d['lineas']), 31)
         self.assertTrue(all(q in ('N', 'I') for q, _t in d['lineas']))
+
+
+class Parche46B(TestCase):
+    """4.6-B — la reescritura del arranque fundido, con su candado de palabras
+    sagradas: o el texto reconstruido es IDENTICO, o no se toca nada."""
+
+    def _post_con_arranque(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        User = get_user_model()
+        u = User.objects.create_user('u46b', 'u46b@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x46b', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
+                                         speaker_label='SPEAKER_00',
+                                         text='hello there get out yeah')
+        TranscriptSegment.objects.create(post=p, start_seconds=10, end_seconds=200,
+                                         speaker_label='SPEAKER_01',
+                                         text='thank you very much')
+        return p
+
+    def test_reescritura_valida_se_aplica_con_reloj_proporcional(self):
+        from apps.agents import attribution
+        p = self._post_con_arranque()
+        respuesta = {'utterances': [
+            {'speaker': 'SPEAKER_00', 'text': 'hello there'},
+            {'speaker': 'SPEAKER_01', 'text': 'get out'},
+            {'speaker': 'SPEAKER_00', 'text': 'yeah'},
+        ]}
+        with mock.patch.object(attribution.client, 'call_json',
+                               return_value=respuesta):
+            r = attribution.intro_rewrite(p)
+        self.assertEqual(r['rewritten'], 3)
+        segs = list(p.transcript_segments.order_by('start_seconds'))
+        self.assertEqual([s.text for s in segs][:3],
+                         ['hello there', 'get out', 'yeah'])
+        self.assertEqual(segs[1].speaker_label, 'SPEAKER_01')
+        self.assertLess(segs[0].end_seconds, segs[1].end_seconds)
+        self.assertEqual(segs[3].text, 'thank you very much')  # fuera del tope: intacta
+
+    def test_texto_distinto_se_descarta_entero(self):
+        """El modelo 'corrigio' una palabra: candado cerrado, nada cambia."""
+        from apps.agents import attribution
+        p = self._post_con_arranque()
+        respuesta = {'utterances': [
+            {'speaker': 'SPEAKER_00', 'text': 'hello there get out YES'},
+        ]}
+        with mock.patch.object(attribution.client, 'call_json',
+                               return_value=respuesta):
+            r = attribution.intro_rewrite(p)
+        self.assertEqual(r['rewritten'], 0)
+        self.assertEqual(p.transcript_segments.count(), 2)
+
+    def test_etiqueta_desconocida_se_descarta(self):
+        from apps.agents import attribution
+        p = self._post_con_arranque()
+        respuesta = {'utterances': [
+            {'speaker': 'SPEAKER_09', 'text': 'hello there get out yeah'},
+        ]}
+        with mock.patch.object(attribution.client, 'call_json',
+                               return_value=respuesta):
+            self.assertEqual(attribution.intro_rewrite(p)['rewritten'], 0)
+
+    def test_monologo_no_se_toca(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u46b2', 'u46b2@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x46b2', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
+                                         speaker_label='SPEAKER_00', text='solo yo')
+        self.assertEqual(attribution.intro_rewrite(p)['rewritten'], 0)

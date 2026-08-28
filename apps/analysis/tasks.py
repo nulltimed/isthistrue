@@ -80,6 +80,8 @@ def run_cheap_phase(self, post_id):
     try:
         from apps.agents import attribution
         attribution.run(post)
+        # 4.6-B: y el ARRANQUE, que el oido funde, se reescribe leyendo
+        attribution.intro_rewrite(post)
     except Exception as exc:                     # regla 5.7: nunca en silencio
         logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
     generate_name_proposals.delay(post.pk)  # OCR de rotulos + contexto -> candidatos

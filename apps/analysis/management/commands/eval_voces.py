@@ -36,7 +36,7 @@ class Command(BaseCommand):
             objetivo = set(toks)
             mejor, mejor_score = None, 0.0
             # ventana: desde un poco antes del cursor hacia delante
-            for i in range(max(0, cursor - 2), min(len(segs), cursor + 12)):
+            for i in range(max(0, cursor - 4), min(len(segs), cursor + 30)):
                 inter = len(objetivo & seg_tokens[i])
                 score = inter / max(len(objetivo), 1)
                 # para lineas cortas exigir que TODO el texto este contenido
