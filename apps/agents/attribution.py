@@ -106,8 +106,19 @@ def intro_rewrite(post):
     total = sum(cuota.values()) or 1
     reparto = ' · '.join(f'{k}: {v / total * 100:.0f}% del video'
                          for k, v in sorted(cuota.items(), key=lambda x: -x[1]))
+    # 4.6-F: el ANCLA ACUSTICA — el oido falla en las interjecciones cortas,
+    # pero un turno LARGO y continuo es justo donde es de fiar. Se cita al
+    # modelo la frase mas larga del arranque con su voz medida: con un punto
+    # fijo, el razonamiento relativo (nombres, ecos, turnos) encadena la
+    # paridad correcta hacia atras. Sin esto, los primeros segundos son
+    # textualmente INDECIDIBLES y la votacion los cruzaba en firme.
+    ancla = max(segments, key=lambda x: x.end_seconds - x.start_seconds)
+    cita = ' '.join(ancla.text.split()[:12])
     payload = (f"VOCES: {', '.join(etiquetas)}\n"
-               f"CUOTA GLOBAL (quien explica es el dominante): {reparto}\n\n"
+               f"CUOTA GLOBAL (quien explica es el dominante): {reparto}\n"
+               f"ANCLA ACUSTICA FIABLE (medida en un turno largo y continuo): "
+               f"las palabras «{cita}...» son de {ancla.speaker_label}. "
+               f"Encadena el resto de la conversacion a partir de este hecho.\n\n"
                f"ARRANQUE:\n{guion}")
     def toks(t):
         return re.findall(r"[\w']+", t.lower())
