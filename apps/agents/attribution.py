@@ -88,7 +88,10 @@ def intro_rewrite(post):
                     .order_by('start_seconds', 'pk'))
     etiquetas = sorted({s.speaker_label for s in post.transcript_segments.all()
                         if s.speaker_label})
-    if len(etiquetas) < 2 or len(segments) < 2:
+    # Con MENOS de dos voces en el post no hay nada que repartir; pero UNA sola
+    # frase en la ventana si cuenta: el arranque fundido en un unico bloque es
+    # exactamente el sintoma clasico (lo cazo el test del 4.6-B).
+    if len(etiquetas) < 2 or not segments:
         return {'rewritten': 0}
     guion = '\n'.join(f'[{s.speaker_label}] {s.text}' for s in segments)
     payload = f"VOCES: {', '.join(etiquetas)}\n\nARRANQUE:\n{guion}"
