@@ -164,7 +164,16 @@ def transcribe_gpu(audio_path):
                        json={'input': {'audio_base64': b64,
                                        'model': _modelo_oido(),
                                        'word_timestamps': True,
-                                       'beam_size': 5}})
+                                       'beam_size': 5,
+                                       # 4.6-A: los dos artefactos que David cazo
+                                       # contra su referencia de oro (bucle «you
+                                       # can measure and...» y un parrafo entero
+                                       # duplicado) son el fallo clasico de
+                                       # whisper condicionando en su propia
+                                       # salida. La via CPU siempre llevo VAD;
+                                       # la GPU lo habia perdido.
+                                       'condition_on_previous_text': False,
+                                       'enable_vad': True}})
         job_id = (r.json() or {}).get('id')
         if not job_id:
             logger.warning('GPU: /run sin id de trabajo (HTTP %s)', r.status_code)

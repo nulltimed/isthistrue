@@ -3770,3 +3770,32 @@ class Parche45C(TestCase):
         self.assertEqual(audio_engine_for('whisper_gpu'), 'turbo')
         self.assertEqual(audio_engine_for('diarize_gpu'),
                          'pyannote/speaker-diarization-3.1')
+
+
+class Parche46A(TestCase):
+    """4.6-A — el liston de oro de David y el blindaje anti-alucinaciones."""
+
+    def test_whisper_gpu_pide_vad_y_sin_condicionar(self):
+        """Los dos artefactos que David cazo contra su referencia (bucle de
+        repeticion y parrafo duplicado) exigen condition_on_previous_text=False
+        y VAD — la via CPU siempre llevo VAD y la GPU lo habia perdido."""
+        from apps.agents import gpu
+        lanzado = mock.Mock(); lanzado.json.return_value = {'id': 'j'}
+        estado = mock.Mock(); estado.json.return_value = {'status': 'FAILED'}
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='ep',
+                               RUNPOD_POLL_SECONDS=0), \
+             mock.patch.object(gpu, '_audio_to_opus_b64', return_value='QUJD'), \
+             mock.patch.object(gpu.httpx, 'post', return_value=lanzado) as posts, \
+             mock.patch.object(gpu.httpx, 'get', return_value=estado):
+            gpu.transcribe_gpu('/x.mp3')
+        entrada = posts.call_args_list[0].kwargs['json']['input']
+        self.assertIs(entrada['condition_on_previous_text'], False)
+        self.assertIs(entrada['enable_vad'], True)
+
+    def test_la_referencia_de_oro_es_json_valido_y_alterna_voces(self):
+        import json, os
+        from apps.analysis import golden
+        ruta = os.path.join(os.path.dirname(golden.__file__), 'post5.json')
+        d = json.load(open(ruta, encoding='utf-8'))
+        self.assertEqual(len(d['lineas']), 31)
+        self.assertTrue(all(q in ('N', 'I') for q, _t in d['lineas']))

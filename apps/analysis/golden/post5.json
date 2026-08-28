@@ -1,0 +1,42 @@
+{
+  "post_id": 5,
+  "descripcion": "Referencia de ORO escrita por David (2026-08-28): los primeros ~100 s del post 5, quien dice que. N=Neil (voz dominante), I=interlocutor 2.",
+  "notas": [
+    "Alucinacion de whisper cazada por David: bucle 'you can measure and you can measure...' donde Neil dice 'that prevented psychology from maturing'.",
+    "Solape real: I dice 'into an actual science' MIENTRAS N dice 'out of its original state'.",
+    "Parrafo 'so what else can we measure about light...' salio DUPLICADO en la transcripcion (otra alucinacion de repeticion)."
+  ],
+  "lineas": [
+    ["N", "chuck i probably got one of the most important explainers i'll ever deliver"],
+    ["I", "get out"],
+    ["N", "yeah"],
+    ["I", "oh my"],
+    ["N", "may i"],
+    ["I", "we've had a lot of explainers i am thoroughly intrigued"],
+    ["N", "all right so coming into the 19th century"],
+    ["I", "okay"],
+    ["N", "the 1800s"],
+    ["I", "1800s"],
+    ["N", "we're discovering the laws of physics"],
+    ["I", "yes"],
+    ["N", "and we know that light exists and you can put it through a prism and you get colors then we realize well if it's light and it's moving through space are there any other properties of this light that we can measure because no science achieves maturity without a system of measurement"],
+    ["I", "oh look at that"],
+    ["N", "that's not me that's logan clendenning"],
+    ["I", "logan clendenning"],
+    ["N", "by the way this is one of the forces that prevented psychology from maturing out of its original state"],
+    ["I", "right"],
+    ["N", "because how do you measure someone's thoughts"],
+    ["I", "because how do you measure someone's thoughts"],
+    ["N", "freud tried and he has you know the interpretation of dreams"],
+    ["I", "right"],
+    ["N", "but if you can't measure it it just makes it really hard to systematize what you're talking about and so"],
+    ["I", "so you say that because you have a problem with your mother tell me how you feel about your parents"],
+    ["N", "so what else can we measure about light it's how bright it is we can measure its color but wait a minute we learn that light is also made of particles and we gave a name to those particles we call them photons and depending on how you measure the light it can manifest as a particle or as a wave it's the same thing our brain just can't handle the truth that it is simultaneously a particle and a wave"],
+    ["I", "i don't blame us"],
+    ["N", "back in the day we tried to embrace the word wavicle"],
+    ["I", "no i'm just gonna come out and say no to that"],
+    ["N", "apparently so did everybody else"],
+    ["I", "yeah"],
+    ["N", "so if it has a wavelength what happens if i change the wavelength the light changes color oh my gosh okay so color and wavelength go together"]
+  ]
+}

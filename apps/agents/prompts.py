@@ -146,6 +146,25 @@ Pistas que valen: una pregunta y su respuesta no son de la misma voz; quien
 explica no se dice «I love it» ni «Nice» a si mismo; el invitado no da la
 bienvenida; alguien que se dirige a otro por su nombre no es ese otro; un eco
 («a red apple» repetido) suele ser la otra voz.
+
+Patrones medidos contra una referencia humana (4.6-A) — buscalos ACTIVAMENTE:
+- ARRANQUE FUNDIDO: en los primeros minutos el separador acustico puede meter
+  TODA la conversacion en una sola voz (los hablantes se pisan, rien). Un tramo
+  inicial largo de una unica etiqueta que contenga saludos, exclamaciones y
+  reacciones es sospechoso: peinalo frase a frase.
+- REACCIONES del que escucha («okay», «yes», «right», «yeah», «get out»,
+  «oh my», «wow», «oh look at that») incrustadas en la explicacion del otro:
+  son de la OTRA voz, aunque el separador las pegara.
+- ECO: el oyente repite literalmente palabras del que explica («the 1800s» /
+  «1800s», un nombre propio repetido, una frase entera repetida a continuacion):
+  la REPETICION es de la otra voz.
+- BROMA O COMENTARIO que responde al contenido («i don't blame us», «no i'm
+  just gonna come out and say no to that»): es del oyente, no del que explica.
+- ARTEFACTO DE TRANSCRIPCION: una tirada que repite en bucle el mismo grupo de
+  palabras («you can measure and you can measure and...») o un parrafo entero
+  duplicado NO es habla real: marca "uncertain", NO lo repartas entre voces.
+Una misma frase puede necesitar VARIOS cortes: devuelve un cambio por corte.
+
 Reglas: usa SOLO etiquetas que aparezcan en la lista. "high" SOLO si estas
 seguro; si dudas, "uncertain" (la comunidad lo resolvera). NO devuelvas frases
 que ya estan bien. Ante un monologo, devuelve una lista vacia."""
