@@ -61,6 +61,23 @@
   </div>
   {% endfor %}
 
+  {# 4.5-C (orden de David): los motores de AUDIO en GPU tambien se eligen aqui. #}
+  <h2 class="panel-sub">{% trans "Motores de audio (en tu GPU de Runpod)" %}</h2>
+  <p class="hint">{% trans "No son modelos de Claude: son el oído (transcripción) y el separador de voces. Corren en tu GPU serverless y se pagan del saldo prepago de Runpod, fuera del presupuesto de Anthropic." %}</p>
+  {% for a in audio_rows %}
+  <div class="model-row">
+    <div class="model-head"><strong>{{ a.label }}</strong></div>
+    <div class="model-controls">
+      <label>{% trans "Modelo" %}
+        <select name="model_{{ a.key }}">
+          {% for id, nombre in a.options %}
+          <option value="{{ id }}" {% if id == a.model %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select></label>
+    </div>
+  </div>
+  {% endfor %}
+
   <button class="wide">{% trans "Guardar" %}</button>
 </form>
 {% endblock %}

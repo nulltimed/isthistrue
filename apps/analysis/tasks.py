@@ -817,7 +817,7 @@ def _transcribe_first_tranche(post, tmpdir):
         gpu_segs = transcribe_gpu(audio)
         if gpu_segs:
             logger.info('Transcripción en GPU Runpod (%s): %d segmentos',
-                        settings.WHISPER_GPU_MODEL, len(gpu_segs))
+                        __import__('apps.agents.catalog', fromlist=['audio_engine_for']).audio_engine_for('whisper_gpu'), len(gpu_segs))
             return (gpu_segs, audio)
         logger.warning('GPU Runpod no disponible: transcripción en CPU (small)')
     model = WhisperModel('small', device='cpu', compute_type='int8')

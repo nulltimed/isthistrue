@@ -1232,3 +1232,9 @@ msgid "%(n)s frase con atribución incierta"
 msgid_plural "%(n)s frases con atribución incierta"
 msgstr[0] "%(n)s sentence with uncertain attribution"
 msgstr[1] "%(n)s sentences with uncertain attribution"
+
+msgid "Motores de audio (en tu GPU de Runpod)"
+msgstr "Audio engines (on your Runpod GPU)"
+
+msgid "No son modelos de Claude: son el oído (transcripción) y el separador de voces. Corren en tu GPU serverless y se pagan del saldo prepago de Runpod, fuera del presupuesto de Anthropic."
+msgstr "These are not Claude models: they are the ear (transcription) and the voice separator. They run on your serverless GPU and are paid from your prepaid Runpod balance, outside the Anthropic budget."

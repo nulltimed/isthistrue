@@ -105,6 +105,42 @@ TASKS = [
     ('deep',      'Reanálisis profundo',     'claude-opus-4-8',           'solo si se vota'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
+
+# =========================================================================
+# 4.5-C (orden de David, 2026-08-28): «elección de modelos según el caso» —
+# el caso también incluye OÍR y SEPARAR VOCES. Estos motores corren en la GPU
+# de Runpod (no son modelos de Claude); hasta hoy vivían solo en el .env,
+# invisibles para el panel. Resolución: panel > .env > primera opción.
+AUDIO_ENGINES = [
+    ('whisper_gpu', 'Transcripción (whisper en la GPU)',
+     [('large-v3', 'large-v3 — el mejor oído (recomendado)'),
+      ('turbo', 'turbo — casi large-v3 y más rápido'),
+      ('medium', 'medium — intermedio'),
+      ('small', 'small — el de la era CPU')],
+     'WHISPER_GPU_MODEL'),
+    ('diarize_gpu', 'Separación de voces (pyannote en la GPU)',
+     [('pyannote/speaker-diarization-community-1',
+       'community-1 — distingue voces parecidas (recomendado)'),
+      ('pyannote/speaker-diarization-3.1', '3.1 — el clásico')],
+     'DIARIZE_GPU_MODEL'),
+]
+AUDIO_KEYS = [a[0] for a in AUDIO_ENGINES]
+
+
+def audio_engine_for(key):
+    """Modelo del motor de audio `key`. Panel > .env > primera opción."""
+    from django.conf import settings as djsettings
+    from apps.panel.models import SystemSetting
+    for k, _titulo, opciones, env_attr in AUDIO_ENGINES:
+        if k != key:
+            continue
+        validas = [o for o, _ in opciones]
+        valor = SystemSetting.get_str(f'model_{key}', '')
+        if valor in validas:
+            return valor
+        env_val = getattr(djsettings, env_attr, '')
+        return env_val if env_val in validas else validas[0]
+    raise KeyError(key)
 TASK_DEFAULTS = {t[0]: t[2] for t in TASKS}
 
 # Métodos de envío (la analogía del correo y el mostrador, §guía)

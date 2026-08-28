@@ -137,6 +137,12 @@ def models_panel(request):
         SystemSetting.objects.update_or_create(
             key='full_transcript_verdict',
             defaults={'value': '1' if request.POST.get('full_transcript') == 'on' else '0'})
+        # 4.5-C: los motores de audio GPU tambien se guardan desde aqui
+        for clave, _titulo, opciones, _env in catalog.AUDIO_ENGINES:
+            valor = request.POST.get(f'model_{clave}', '')
+            if valor in [o for o, _ in opciones]:
+                SystemSetting.objects.update_or_create(
+                    key=f'model_{clave}', defaults={'value': valor})
         AuditLog.objects.create(user=request.user, action='update_models',
                                 detail=f'coste/hora estimado: {catalog.cost_per_hour_eur()} EUR')
         messages.success(request, f'Guardado. Coste estimado de una hora de vídeo: '
@@ -156,8 +162,12 @@ def models_panel(request):
             'warning': catalog.warning_for(clave),
             'health': salud.get(actual),
         })
+    audio_rows = [{'key': k, 'label': titulo, 'options': opciones,
+                   'model': catalog.audio_engine_for(k)}
+                  for k, titulo, opciones, _env in catalog.AUDIO_ENGINES]
     return render(request, 'panel/models.html', {
-        'rows': filas, 'catalog': catalog.CATALOG, 'deliveries': catalog.DELIVERY,
+        'rows': filas, 'audio_rows': audio_rows,
+        'catalog': catalog.CATALOG, 'deliveries': catalog.DELIVERY,
         'full_transcript': catalog.full_transcript_enabled_setting(),
         'cost_now': catalog.cost_per_hour_eur(),
         'cost_light': catalog.cost_per_hour_eur(full_transcript=False),

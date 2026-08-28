@@ -3729,3 +3729,44 @@ class Parche45A(TestCase):
         for m in out:
             self.assertLessEqual(m['end_seconds'] - m['start_seconds'],
                                  MAX_SENTENCE_SECONDS + 1.0)
+
+
+class Parche45C(TestCase):
+    """4.5-C — los motores de audio GPU se eligen en el panel (orden de David:
+    «elección de modelos según el caso», y el caso incluye oír y separar)."""
+
+    def test_resolucion_panel_gana_a_env_y_a_default(self):
+        from apps.agents.catalog import audio_engine_for
+        from apps.panel.models import SystemSetting
+        with override_settings(DIARIZE_GPU_MODEL='pyannote/speaker-diarization-3.1'):
+            self.assertEqual(audio_engine_for('diarize_gpu'),
+                             'pyannote/speaker-diarization-3.1')  # .env manda sin panel
+            SystemSetting.objects.update_or_create(
+                key='model_diarize_gpu',
+                defaults={'value': 'pyannote/speaker-diarization-community-1'})
+            self.assertEqual(audio_engine_for('diarize_gpu'),
+                             'pyannote/speaker-diarization-community-1')  # panel gana
+
+    def test_un_valor_invalido_no_cuela(self):
+        from apps.agents.catalog import audio_engine_for
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='model_whisper_gpu', defaults={'value': 'gpt-5-turbo'})
+        with override_settings(WHISPER_GPU_MODEL=''):
+            self.assertEqual(audio_engine_for('whisper_gpu'), 'large-v3')  # cae al default
+
+    def test_el_panel_guarda_y_muestra_los_motores(self):
+        from apps.agents.catalog import audio_engine_for, TASK_KEYS
+        User = get_user_model()
+        u = User.objects.create_superuser('boss45c', 'b45c@x.com', 'x')
+        self.client.force_login(u)
+        r = self.client.get('/panel/modelos/')
+        self.assertContains(r, 'model_whisper_gpu')
+        self.assertContains(r, 'model_diarize_gpu')
+        datos = {f'model_{k}': 'claude-sonnet-4-6' for k in TASK_KEYS}
+        datos['model_whisper_gpu'] = 'turbo'
+        datos['model_diarize_gpu'] = 'pyannote/speaker-diarization-3.1'
+        self.client.post('/panel/modelos/', datos)
+        self.assertEqual(audio_engine_for('whisper_gpu'), 'turbo')
+        self.assertEqual(audio_engine_for('diarize_gpu'),
+                         'pyannote/speaker-diarization-3.1')

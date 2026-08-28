@@ -29,6 +29,18 @@ RUN_BASE = 'https://api.runpod.ai/v2'
 MAX_B64_BYTES = 9_500_000
 
 
+def _modelo_oido():
+    """4.5-C: el modelo de whisper lo decide el panel (panel > .env > default)."""
+    from apps.agents.catalog import audio_engine_for
+    return audio_engine_for('whisper_gpu')
+
+
+def _modelo_voces():
+    """4.5-C: el modelo de pyannote lo decide el panel."""
+    from apps.agents.catalog import audio_engine_for
+    return audio_engine_for('diarize_gpu')
+
+
 def _audio_to_opus_b64(audio_path):
     """Recomprime a opus mono 24k (ffmpeg, ya en la imagen) y codifica base64.
     None si no cabe en la carga util de /run o si ffmpeg falla."""
@@ -114,7 +126,7 @@ def diarize_gpu(audio_path, hint=None, second_pass_n=None):
         if not b64:
             return None
         out = _run_job(ep, {'audio_base64': b64, 'hint': hint or {},
-                            'model': settings.DIARIZE_GPU_MODEL,
+                            'model': _modelo_voces(),
                             'second_pass_num_speakers': second_pass_n}, 'diarización')
         if not out or 'error' in out:
             if out:
@@ -127,7 +139,7 @@ def diarize_gpu(audio_path, hint=None, second_pass_n=None):
         segunda = ([(float(t[0]), float(t[1]), str(t[2])) for t in segunda]
                    if segunda else None)
         logger.info('GPU (diarización, %s): %d turnos, %d voces%s',
-                    out.get('model', settings.DIARIZE_GPU_MODEL), len(turnos),
+                    out.get('model', _modelo_voces()), len(turnos),
                     len({t[2] for t in turnos}), ' + segunda pasada' if segunda else '')
         return {'turns': turnos, 'turns_second_pass': segunda,
                 'tiempos': out.get('tiempos') or {}}
@@ -150,7 +162,7 @@ def transcribe_gpu(audio_path):
         headers = {'Authorization': f'Bearer {key}'}
         r = httpx.post(f'{RUN_BASE}/{ep}/run', headers=headers, timeout=60,
                        json={'input': {'audio_base64': b64,
-                                       'model': settings.WHISPER_GPU_MODEL,
+                                       'model': _modelo_oido(),
                                        'word_timestamps': True,
                                        'beam_size': 5}})
         job_id = (r.json() or {}).get('id')
@@ -165,7 +177,7 @@ def transcribe_gpu(audio_path):
             estado = st.get('status')
             if estado == 'COMPLETED':
                 logger.info('GPU: transcripcion %s en %s ms de GPU facturada',
-                            settings.WHISPER_GPU_MODEL, st.get('executionTime'))
+                            _modelo_oido(), st.get('executionTime'))
                 return _map_output(st.get('output') or {})
             if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
                 logger.warning('GPU: trabajo %s -> %s; se sigue en CPU',
