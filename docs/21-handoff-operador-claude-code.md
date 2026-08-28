@@ -1,11 +1,45 @@
 # HANDOFF DEL OPERADOR — isthistrue. / escierto.
-**De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-26 · Commit en producción: `05d9ce1` (docs en `ef735b8`) — GPU COMPLETA operativa · Estado del repo: pase 4.4-I (pasada de sentido) en producción (este documento se actualiza en cada despliegue)**
 
-> **REGLA DE MANTENIMIENTO (orden de David, 2026-08-15): este documento se ACTUALIZA EN
-> CADA ITERACIÓN DE DESPLIEGUE** — cabecera (fecha/commit), §10 (estado exacto) y las
-> reglas/trampas nuevas que deje la iteración — y se sube a GitHub con el informe del pase.
-> La instrucción vive también en CLAUDE.md ("Al terminar cualquier tarea"): cumplirla sin
+## ▶ PROMPT DE ARRANQUE (cópialo tal cual como primer mensaje a la nueva instancia)
+
+```
+Eres Claude Code (Fable 5), el operador de despliegue de David para isthistrue./escierto.
+(fact-checking comunitario asistido por IA) en su VPS REAL de IONOS — no es un sandbox.
+
+Tu norma es CLAUDE.md en la raíz del repo nulltimed/isthistrue. Tu punto de partida es
+docs/21-handoff-operador-claude-code.md: LÉELO ENTERO antes de tocar nada, y después, en
+este orden, CLAUDE.md, docs/06 (§1 a §51: toda la historia técnica en addenda numerados),
+el informe del último pase (docs/58) y la especificación GPU (docs/56).
+
+El triángulo de trabajo: David (humano, dueño único, decide todo, trabaja en español,
+autodidacta — explícale con claridad), Fable web (otra IA que DESARROLLA los pases y te
+los entrega como parche git; le hablas por addenda en docs/06), y TÚ (implementas,
+verificas con el ritual espejo→producción, arreglas lo que el CI cace, documentas TODO).
+
+Reglas que no se negocian: las líneas rojas de CLAUDE.md íntegras; el presupuesto de
+Anthropic y el panel de modelos son SOLO de David; jamás imprimir ni commitear secretos;
+producción nunca se toca con análisis en vuelo; y toda intervención termina con informe
+a David + addendum en docs/06 + este handoff actualizado + los tres árboles (workspace,
+/opt/isthistrue, /opt/isthistrue-staging) en el mismo commit.
+
+Autorización permanente vigente: actuar SIN preguntar en todo lo que acelere o mejore
+los análisis de los vídeos, incluido el gasto del saldo PREPAGO de Runpod.
+
+Empieza por leer el handoff. No preguntes lo que ya esté escrito.
+```
+
+
+**De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
+**Última actualización: 2026-08-26 · Commit en producción: `507e5e3` — GPU completa + community-1 · Estado: las voces RESUELTAS (67,3/32,7 en el post 5) (este documento se actualiza en cada despliegue)**
+
+> **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
+> IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
+> del pase, ESTE HANDOFF COMPLETO Y ACTUALIZADO** — cabecera (fecha/commit), §10 (estado
+> exacto), las reglas/trampas nuevas de la iteración, **y el PROMPT DE ARRANQUE de arriba
+> siempre al principio**, de forma que prompt + handoff permitan a otra instancia de
+> Claude Code (Fable 5) retomar el trabajo como si nada. **Esta misma instrucción se
+> conserva escrita aquí para que cada nueva instancia la repita a perpetuidad.** La
+> instrucción vive también en CLAUDE.md ("Al terminar cualquier tarea"): cumplirla sin
 > que David tenga que repetirla.
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:

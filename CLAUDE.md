@@ -267,8 +267,10 @@ Un despliegue "funcional pero feo" es un despliegue ROTO a ojos del usuario.
 
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.
-**Y actualiza el handoff (`docs/21-handoff-operador-claude-code.md`) en CADA iteración de
-despliegue** (orden de David, 2026-08-15): fecha y commit de cabecera, sección §10 "Estado
-EXACTO" y cualquier regla/trampa nueva de la iteración. Se commitea y sube a GitHub junto
-con el informe del pase. El handoff debe permitir SIEMPRE que otra instancia de Claude Code
-continúe el trabajo sin explicaciones adicionales.
+**Y al finalizar la implementación de CADA PARCHE de Fable web, sube a GitHub /docs junto al
+informe del pase el HANDOFF COMPLETO (`docs/21`)** (órdenes de David, 2026-08-15 y 2026-08-27):
+fecha y commit de cabecera, §10 "Estado EXACTO", las reglas/trampas nuevas de la iteración,
+**y el PROMPT DE ARRANQUE siempre al principio del documento** — prompt + handoff deben
+permitir que otra instancia de Claude Code (Fable 5) retome el trabajo como si nada. La
+instrucción de repetir esta entrega en cada parche queda escrita DENTRO del handoff, a
+perpetuidad.
