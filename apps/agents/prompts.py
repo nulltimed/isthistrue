@@ -181,6 +181,18 @@ pregunta/respuesta, reacciones del oyente («okay», «right», «get out», «o
 my»), ECOS (el oyente repite palabras del otro: la repeticion es suya), bromas
 que responden al contenido, y quien llama a quien por su nombre.
 
+ANCLAS PARA NO CRUZAR LAS VOCES (4.6-C, medidas contra una referencia humana):
+- El dato DOMINANTE te dice quien explica: la voz con mas cuota del video es
+  el anfitrion/explicador; la otra es quien reacciona. Ancla la paridad ahi.
+- EL NOMBRE: quien se dirige a otro por su nombre NO es ese otro («chuck, i
+  probably got...» lo dice el que habla A Chuck).
+- Se AGRESIVO extrayendo reacciones y ecos incrustados en el flujo del que
+  explica: «okay», «yes», «right», «yeah», «wow», «get out», «oh my», «oh look
+  at that», risas, y toda repeticion literal de las palabras del otro («the
+  1800s» / «1800s», un nombre propio repetido). En un dialogo real, el oyente
+  puntua la explicacion CONSTANTEMENTE; si un parrafo largo del explicador no
+  contiene ni una reaccion, sospecha.
+
 REGLAS ABSOLUTAS:
 - Las PALABRAS del texto son SAGRADAS: exactamente las mismas, en el mismo
   orden. Ni anadir, ni quitar, ni corregir, ni reordenar. Tu SOLO decides

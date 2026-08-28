@@ -94,7 +94,18 @@ def intro_rewrite(post):
     if len(etiquetas) < 2 or not segments:
         return {'rewritten': 0}
     guion = '\n'.join(f'[{s.speaker_label}] {s.text}' for s in segments)
-    payload = f"VOCES: {', '.join(etiquetas)}\n\nARRANQUE:\n{guion}"
+    # 4.6-C: el ancla de paridad — la cuota GLOBAL de cada voz en el video
+    from collections import defaultdict
+    cuota = defaultdict(float)
+    for s2 in post.transcript_segments.all():
+        if s2.speaker_label:
+            cuota[s2.speaker_label] += s2.end_seconds - s2.start_seconds
+    total = sum(cuota.values()) or 1
+    reparto = ' · '.join(f'{k}: {v / total * 100:.0f}% del video'
+                         for k, v in sorted(cuota.items(), key=lambda x: -x[1]))
+    payload = (f"VOCES: {', '.join(etiquetas)}\n"
+               f"CUOTA GLOBAL (quien explica es el dominante): {reparto}\n\n"
+               f"ARRANQUE:\n{guion}")
     try:
         datos = client.call_json(model_for('attribution'),
                                  prompts.INTRO_REWRITE_SYSTEM, payload,
