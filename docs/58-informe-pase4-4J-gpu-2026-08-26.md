@@ -78,3 +78,26 @@ el vídeo completo** — la medición está corriendo mientras escribo esto; res
   descargue él mismo es la mejora natural (cuidado: URLs de googlevideo atadas a IP).
 - `DIARIZE_GPU_MODEL` es conmutables por `.env`; si la medición de community-1 gana, el
   cambio de default es una línea.
+
+---
+
+## 6. Aclaraciones de David (2026-08-27) — respondidas y vigentes
+
+**«¿Tengo que cambiar algo en el `.env`?»** No: el operador ya puso
+`DIARIZE_GPU_MODEL=pyannote/speaker-diarization-community-1` en el `.env` de producción
+(autorización de calidad), y es la configuración que produjo el 67,3/32,7. Pendiente solo de
+Fable: fijar ese valor como default de fábrica en `settings.py` para que el `.env` no tenga
+que decirlo.
+
+**«¿`OMP_NUM_THREADS=4` significa que pyannote no aprovecha toda la GPU?»** No — esa variable
+limita **hilos de CPU**, no la GPU. Afecta únicamente a un cálculo auxiliar de numpy (la
+inversión de matriz del setup PLDA, una vez, al cargar el modelo), que sin el límite se
+quedaba colgado para siempre en los hosts de ~128 núcleos ANTES de llegar a usar la GPU. La
+separación de voces corre entera en los núcleos CUDA sin ninguna restricción: 22 s el vídeo
+completo (vs 33-66 min en CPU). Cinturón del vestíbulo; el motor va a tope.
+
+**«¿Se usa pyannote 3 o 4? Quiero la más moderna.»** Se usa la más moderna en todo el camino
+real: la imagen activa (`4.4-J-slim`) lleva **pyannote.audio 4.0.7** ejecutando
+**community-1** (el modelo más nuevo de la familia). pyannote 3 solo queda en el retorno a
+CPU del VPS — la red de seguridad que únicamente actúa si la GPU no responde, y que es
+deliberadamente la matriz vieja y estable de la máquina de producción.
