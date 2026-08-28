@@ -93,7 +93,10 @@ def intro_rewrite(post):
     # exactamente el sintoma clasico (lo cazo el test del 4.6-B).
     if len(etiquetas) < 2 or not segments:
         return {'rewritten': 0}
-    guion = '\n'.join(f'[{s.speaker_label}] {s.text}' for s in segments)
+    # 4.6-D: el guion entra SIN etiquetas — las del oido estan fundidas en el
+    # arranque y anclaban al modelo a conservarlas. David separo este dialogo
+    # sin mas herramienta que leerlo; que el modelo haga lo mismo.
+    guion = '\n'.join(s.text for s in segments)
     # 4.6-C: el ancla de paridad — la cuota GLOBAL de cada voz en el video
     from collections import defaultdict
     cuota = defaultdict(float)

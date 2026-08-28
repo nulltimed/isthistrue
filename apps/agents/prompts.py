@@ -176,7 +176,9 @@ pisan, rien, reaccionan) y tramos enteros salen con la voz equivocada o con
 varias voces pegadas en una frase.
 
 Tu trabajo: REESCRIBIR ese arranque como el guion de la conversacion real —
-igual que lo haria una persona leyendolo. Usa la logica conversacional:
+igual que lo haria una persona leyendolo. El texto llega SIN etiquetas a
+proposito: las que dio el separador acustico en este tramo NO son fiables.
+Decide tu quien dice cada cosa, solo por el sentido. Usa la logica conversacional:
 pregunta/respuesta, reacciones del oyente («okay», «right», «get out», «oh
 my»), ECOS (el oyente repite palabras del otro: la repeticion es suya), bromas
 que responden al contenido, y quien llama a quien por su nombre.
