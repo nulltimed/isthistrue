@@ -3870,3 +3870,54 @@ class Parche46B(TestCase):
         TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
                                          speaker_label='SPEAKER_00', text='solo yo')
         self.assertEqual(attribution.intro_rewrite(p)['rewritten'], 0)
+
+
+class Parche46E(TestCase):
+    """4.6-E — la reescritura del arranque vota por mayoria de 3: el ruido de
+    una muestra unica (55-61% oscilando en el liston) se cancela votando."""
+
+    def test_la_mayoria_gana_en_la_palabra_disputada(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u46e', 'u46e@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x46e', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
+                                         speaker_label='SPEAKER_00',
+                                         text='hello there get out')
+        TranscriptSegment.objects.create(post=p, start_seconds=130, end_seconds=200,
+                                         speaker_label='SPEAKER_01', text='bye')
+        base = [{'speaker': 'SPEAKER_00', 'text': 'hello there'},
+                {'speaker': 'SPEAKER_01', 'text': 'get out'}]
+        disidente = [{'speaker': 'SPEAKER_00', 'text': 'hello there get out'}]
+        respuestas = [{'utterances': base}, {'utterances': disidente},
+                      {'utterances': base}]
+        with mock.patch.object(attribution.client, 'call_json',
+                               side_effect=respuestas):
+            r = attribution.intro_rewrite(p)
+        self.assertEqual(r['rewritten'], 2)
+        segs = list(p.transcript_segments.order_by('start_seconds'))
+        self.assertEqual(segs[0].text, 'hello there')
+        self.assertEqual(segs[0].speaker_label, 'SPEAKER_00')
+        self.assertEqual(segs[1].text, 'get out')
+        self.assertEqual(segs[1].speaker_label, 'SPEAKER_01')
+
+    def test_muestra_invalida_no_vota_pero_las_validas_siguen(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u46e2', 'u46e2@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x46e2', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
+                                         speaker_label='SPEAKER_00',
+                                         text='hello there get out')
+        TranscriptSegment.objects.create(post=p, start_seconds=130, end_seconds=200,
+                                         speaker_label='SPEAKER_01', text='bye')
+        buena = {'utterances': [{'speaker': 'SPEAKER_01', 'text': 'hello there get out'}]}
+        rota = {'utterances': [{'speaker': 'SPEAKER_00', 'text': 'texto inventado'}]}
+        with mock.patch.object(attribution.client, 'call_json',
+                               side_effect=[rota, buena, rota]):
+            r = attribution.intro_rewrite(p)
+        self.assertEqual(r['rewritten'], 1)
+        self.assertEqual(p.transcript_segments.order_by('start_seconds')[0].speaker_label,
+                         'SPEAKER_01')

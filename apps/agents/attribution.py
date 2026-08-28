@@ -109,33 +109,71 @@ def intro_rewrite(post):
     payload = (f"VOCES: {', '.join(etiquetas)}\n"
                f"CUOTA GLOBAL (quien explica es el dominante): {reparto}\n\n"
                f"ARRANQUE:\n{guion}")
-    try:
-        datos = client.call_json(model_for('attribution'),
-                                 prompts.INTRO_REWRITE_SYSTEM, payload,
-                                 max_tokens=4000,
-                                 mock_payload={'utterances': []})
-    except Exception as exc:
-        logger.warning('Reescritura de arranque fallida en el post %s: %r',
-                       post.pk, exc)
-        return {'rewritten': 0}
-    utt = [u for u in (datos.get('utterances') or [])
-           if str(u.get('text', '')).strip()]
-    if not utt:
-        return {'rewritten': 0}
-
     def toks(t):
         return re.findall(r"[\w']+", t.lower())
     orig = [w for s in segments for w in toks(s.text)]
-    nuevo_txt = [w for u in utt for w in toks(str(u['text']))]
-    if orig != nuevo_txt:
-        logger.warning('Reescritura de arranque DESCARTADA en el post %s: el '
-                       'texto no coincide (%d vs %d palabras)',
-                       post.pk, len(orig), len(nuevo_txt))
+
+    # 4.6-E: TRES reescrituras y voto por mayoria palabra a palabra. Las
+    # iteraciones 4.6-B/C/D oscilaban 55-61%: cada muestra unica tiraba los
+    # dados y volteaba lineas distintas. Como el candado garantiza palabras
+    # identicas, cada palabra puede recibir un voto de voz por muestra.
+    muestras = []
+    for _ in range(3):
+        try:
+            datos = client.call_json(model_for('attribution'),
+                                     prompts.INTRO_REWRITE_SYSTEM, payload,
+                                     max_tokens=4000,
+                                     mock_payload={'utterances': []})
+        except Exception as exc:
+            logger.warning('Reescritura de arranque: muestra fallida en el '
+                           'post %s: %r', post.pk, exc)
+            continue
+        utt = [u for u in (datos.get('utterances') or [])
+               if str(u.get('text', '')).strip()]
+        if not utt:
+            continue
+        nuevo_txt = [w for u in utt for w in toks(str(u['text']))]
+        if nuevo_txt != orig:
+            logger.warning('Reescritura de arranque: muestra descartada en el '
+                           'post %s (texto no coincide: %d vs %d palabras)',
+                           post.pk, len(orig), len(nuevo_txt))
+            continue
+        if any(u.get('speaker') not in etiquetas for u in utt):
+            logger.warning('Reescritura de arranque: muestra descartada en el '
+                           'post %s (etiqueta desconocida)', post.pk)
+            continue
+        muestras.append(utt)
+    if not muestras:
         return {'rewritten': 0}
-    if any(u.get('speaker') not in etiquetas for u in utt):
-        logger.warning('Reescritura de arranque DESCARTADA en el post %s: '
-                       'etiqueta desconocida', post.pk)
-        return {'rewritten': 0}
+
+    from collections import Counter
+    def voz_por_palabra(utt):
+        out = []
+        for u in utt:
+            out.extend([u['speaker']] * len(toks(str(u['text']))))
+        return out
+    votos_muestra = [voz_por_palabra(m) for m in muestras]
+    final = []
+    for i in range(len(orig)):
+        c = Counter(v[i] for v in votos_muestra)
+        final.append(c.most_common(1)[0][0])
+
+    # reconstruir las intervenciones sobre el TEXTO CRUDO (puntuacion intacta):
+    # cada palabra cruda hereda el voto de su primer token normalizado; una
+    # "palabra" sin tokens (solo signos) se pega a la anterior.
+    crudo = ' '.join(s.text for s in segments).split()
+    utt = []
+    idx = 0
+    for w in crudo:
+        k = len(toks(w))
+        voz = final[idx] if k else (utt[-1]['speaker'] if utt else final[0])
+        if utt and utt[-1]['speaker'] == voz:
+            utt[-1]['text'] += ' ' + w
+            utt[-1]['_fin'] = idx + max(k, 1) - 1 if k else utt[-1]['_fin']
+        else:
+            utt.append({'speaker': voz, 'text': w, '_ini': idx,
+                        '_fin': idx + max(k, 1) - 1})
+        idx += k
 
     # reloj: cada palabra original hereda un tramo proporcional de su frase
     tiempos = []
@@ -147,11 +185,10 @@ def intro_rewrite(post):
             tiempos.append((s.start_seconds + dur * k / n,
                             s.start_seconds + dur * (k + 1) / n))
     from apps.analysis.models import TranscriptSegment
-    nuevos, idx = [], 0
+    nuevos = []
     for u in utt:
-        n = len(toks(str(u['text'])))
-        ini, fin = tiempos[idx][0], tiempos[idx + n - 1][1]
-        idx += n
+        ini = tiempos[min(u['_ini'], len(tiempos) - 1)][0]
+        fin = tiempos[min(u['_fin'], len(tiempos) - 1)][1]
         nuevos.append(TranscriptSegment(
             post=post, start_seconds=round(ini, 3), end_seconds=round(fin, 3),
             text=str(u['text']).strip(), speaker_label=u['speaker'],
@@ -160,8 +197,8 @@ def intro_rewrite(post):
         post.transcript_segments.filter(
             pk__in=[s.pk for s in segments]).delete()
         TranscriptSegment.objects.bulk_create(nuevos)
-    logger.info('Post %s: arranque reescrito — %d frases → %d intervenciones',
-                post.pk, len(segments), len(nuevos))
+    logger.info('Post %s: arranque reescrito por mayoria de %d — %d frases → %d intervenciones',
+                post.pk, len(muestras), len(segments), len(nuevos))
     return {'rewritten': len(nuevos)}
 
 
