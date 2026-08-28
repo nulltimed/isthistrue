@@ -3666,3 +3666,66 @@ class OperadorNotaAcotada(TestCase):
         self.assertEqual(len(_nota('x' * 500)), tope)
         self.assertEqual(_nota(None), '')
         self.assertEqual(_nota('corta'), 'corta')
+
+
+class Parche45A(TestCase):
+    """4.5-A (primer parche del nuevo regimen) — el suavizado consulta al oido.
+    Sintoma cazado por David en el post 5: «frases» de 45 s con las DOS voces
+    mezcladas. Causa: la regla anti-islas del 4.4-G, nacida cuando pyannote 3.1
+    fallaba, reetiquetaba en cascada las intervenciones cortas REALES que
+    community-1 ya acierta."""
+
+    def test_la_isla_respaldada_por_su_turno_se_conserva(self):
+        """Un «Okay.» de 0,5 s CON turno propio del oido ya no se lo queda la
+        voz dominante: sale como frase suya."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0.0, 4.9, 'SPEAKER_00'), (5.0, 5.6, 'SPEAKER_01'),
+                 (5.7, 12.0, 'SPEAKER_00')]
+        raw = [{'start_seconds': 0.0, 'end_seconds': 12.0,
+                'text': 'The 1800s. Okay. We discover the laws.',
+                'words': [{'start': 0.5, 'end': 1.5, 'text': 'The'},
+                          {'start': 1.6, 'end': 2.5, 'text': '1800s.'},
+                          {'start': 5.1, 'end': 5.5, 'text': 'Okay.'},
+                          {'start': 6.0, 'end': 7.0, 'text': 'We'},
+                          {'start': 7.1, 'end': 8.0, 'text': 'discover'},
+                          {'start': 8.1, 'end': 9.0, 'text': 'the'},
+                          {'start': 9.1, 'end': 10.0, 'text': 'laws.'}]}]
+        out = merge_into_sentences(raw, turns)
+        por_texto = {m['text']: m['speaker_label'] for m in out}
+        self.assertIn('Okay.', por_texto)
+        self.assertEqual(por_texto['Okay.'], 'SPEAKER_01')
+        self.assertEqual(por_texto['The 1800s.'], 'SPEAKER_00')
+
+    def test_la_isla_sin_respaldo_se_suaviza_como_siempre(self):
+        """Una palabra suelta que NINGUN turno avala sigue siendo ruido del
+        solape: se pega a la voz que la rodea (la regla del 4.4-G vive)."""
+        from apps.analysis.tasks import merge_into_sentences
+        turns = [(0.0, 12.0, 'SPEAKER_00')]  # el oido solo oyo a UNO aqui
+        raw = [{'start_seconds': 0.0, 'end_seconds': 12.0,
+                'text': 'The 1800s okay we discover the laws.',
+                'words': [{'start': 0.5, 'end': 1.5, 'text': 'The'},
+                          {'start': 1.6, 'end': 2.5, 'text': '1800s'},
+                          {'start': 5.1, 'end': 5.5, 'text': 'okay'},
+                          {'start': 6.0, 'end': 7.0, 'text': 'we'},
+                          {'start': 7.1, 'end': 8.0, 'text': 'discover'},
+                          {'start': 8.1, 'end': 9.0, 'text': 'the'},
+                          {'start': 9.1, 'end': 10.0, 'text': 'laws.'}]}]
+        out = merge_into_sentences(raw, turns)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]['speaker_label'], 'SPEAKER_00')
+
+    def test_ninguna_frase_supera_el_tope_de_duracion(self):
+        """Una parrafada sin puntuacion de un solo hablante se corta al tope:
+        jamas otra «frase» de 45 segundos."""
+        from apps.analysis.tasks import merge_into_sentences, MAX_SENTENCE_SECONDS
+        turns = [(0.0, 70.0, 'SPEAKER_00')]
+        palabras = [{'start': float(i), 'end': i + 0.8, 'text': f'palabra{i}'}
+                    for i in range(0, 70, 1)]
+        raw = [{'start_seconds': 0.0, 'end_seconds': 70.0,
+                'text': ' '.join(w['text'] for w in palabras),
+                'words': palabras}]
+        out = merge_into_sentences(raw, turns)
+        self.assertGreater(len(out), 1)
+        for m in out:
+            self.assertLessEqual(m['end_seconds'] - m['start_seconds'],
+                                 MAX_SENTENCE_SECONDS + 1.0)

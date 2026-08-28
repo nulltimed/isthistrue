@@ -576,14 +576,15 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
     # hablante: es ruido del solape. Se pega a la voz que la rodea. Los
     # backchannels legitimos («Right.», «Whoa») se recuperan despues (A.5).
     if por_palabra:
-        unidades = smooth_word_islands(unidades)
+        unidades = smooth_word_islands(unidades, turns)
 
     merged, current = [], None
     for seg, spk in unidades:
         text = seg['text'].strip()
         if (current is not None and current['speaker_label'] == spk
                 and not _SENTENCE_END.search(current['text'])
-                and len(current['text']) + len(text) < max_chars):
+                and len(current['text']) + len(text) < max_chars
+                and seg['end_seconds'] - current['start_seconds'] <= MAX_SENTENCE_SECONDS):
             current['text'] = f"{current['text']} {text}"
             current['end_seconds'] = seg['end_seconds']
         else:
@@ -603,6 +604,9 @@ def merge_into_sentences(raw_segments, turns, max_chars=600):
 
 
 MIN_ISLAND_SECONDS = 0.8     # A.4: por debajo, un tramo no es un cambio de voz
+MAX_SENTENCE_SECONDS = 30.0  # 4.5-A: ninguna frase puede durar mas que esto — una
+                             # «frase» de 45 s con dos voces dentro fue el sintoma
+                             # que David cazo en el post 5
 BACKCHANNEL_MAX_WORDS = 2    # A.5: «Right», «I love it» (tres ya es una frase)
 BACKCHANNEL_MAX_SECONDS = 1.5
 LONG_TURN_SECONDS = 2.0      # A.5: lo que hace «larga» a una intervencion vecina
@@ -612,12 +616,32 @@ def _dur(seg):
     return max(0.0, float(seg['end_seconds']) - float(seg['start_seconds']))
 
 
-def smooth_word_islands(unidades, min_seconds=MIN_ISLAND_SECONDS):
+def smooth_word_islands(unidades, turns=None, min_seconds=MIN_ISLAND_SECONDS):
     """Sobre la lista de (palabra, hablante): una isla —tramo de palabras
     seguidas de un mismo hablante— de UNA palabra o de menos de `min_seconds`
     se reetiqueta con la voz de sus vecinos: si ambos lados coinciden, esa; si
     no, la del lado mas cercano en el tiempo. Se repite hasta que no quede
-    ninguna (tope de pasadas por seguridad)."""
+    ninguna (tope de pasadas por seguridad).
+
+    4.5-A (parche del operador): ANTES DE REETIQUETAR SE CONSULTA EL MAPA DEL
+    OIDO. Esta regla nacio cuando pyannote 3.1 fallaba y las islas diminutas
+    eran ruido; con community-1 las islas cortas suelen ser intervenciones
+    REALES («okay», «yes») y la regla vieja se las regalaba a la voz dominante
+    en cascada — las «frases» de 45 s con dos voces mezcladas del post 5. Regla
+    nueva: una isla RESPALDADA por un turno de su propio hablante (solape >=50%
+    de la isla) se conserva; solo se suaviza la isla que ningun turno avala."""
+
+    def _respaldada(a, b, etiqueta):
+        if not turns:
+            return False
+        ini = float(unidades[a][0]['start_seconds'])
+        fin = float(unidades[b - 1][0]['end_seconds'])
+        dur = max(fin - ini, 0.01)
+        for (ts, te, label) in turns:
+            if label == etiqueta and min(fin, te) - max(ini, ts) >= 0.5 * dur:
+                return True
+        return False
+
     unidades = list(unidades)
     for _ in range(4):
         # islas: [inicio, fin) de tramos consecutivos con el mismo hablante
@@ -635,6 +659,8 @@ def smooth_word_islands(unidades, min_seconds=MIN_ISLAND_SECONDS):
             dur = float(unidades[b - 1][0]['end_seconds']) - float(unidades[a][0]['start_seconds'])
             if not (b - a == 1 or dur < min_seconds):
                 continue
+            if _respaldada(a, b, unidades[a][1]):
+                continue  # 4.5-A: el oido dice que esta voz hablo aqui — se respeta
             izq = unidades[islas[k - 1][1] - 1] if k > 0 else None
             der = unidades[islas[k + 1][0]] if k + 1 < len(islas) else None
             if izq is None and der is None:
