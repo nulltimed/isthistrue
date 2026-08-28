@@ -42,6 +42,12 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 > instrucción vive también en CLAUDE.md ("Al terminar cualquier tarea"): cumplirla sin
 > que David tenga que repetirla.
 
+> 🔄 **CAMBIO DE RÉGIMEN (orden de David, 2026-08-27)**: el operador es ahora TAMBIÉN el
+> desarrollador — David ya no usa Claude web. Los cambios se agrupan en PARCHES numerados
+> (serie 4.5-A…) subidos a GitHub, reversibles uno a uno. El ritual, los candados y las
+> líneas rojas NO cambian. El handoff y los informes de pase en docs/06 se mantienen por
+> si David reactiva Claude web algún día.
+
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
 > (§1-§51: TODA la historia técnica), el informe del último pase (`docs/58`) y la especificación GPU (`docs/56`).

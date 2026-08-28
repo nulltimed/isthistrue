@@ -56,6 +56,15 @@ ejecutar sus pasos directamente.
 - El espejo SIEMPRE con MOCK_AGENTS=true (jamás gasta presupuesto de API).
 - Backdoors: cero. El SSH de administrador de David se conserva; el usuario `i` no tiene shell.
 
+## NUEVO REGIMEN (orden de David, 2026-08-27): el operador ES el desarrollador
+David, literal: «tú, Claude Code Fable 5 serás la 100% encargada de todos los cambios y
+parches del sistema (ya no usaré Claude web)». Metodo: agrupar cambios y errores acumulados
+en PARCHES numerados (serie 4.5-A, 4.5-B...) que se suben a GitHub como commits — si un
+parche falla, siempre se puede volver al anterior. El ritual NO cambia (CI → espejo →
+produccion, con todos los candados). Se MANTIENEN el handoff (docs/21, con su prompt de
+arranque) y el informe de pase estilo «para Fable web» en docs/06, por si David cambia de
+idea. El protocolo de abajo queda como historico.
+
 ## Protocolo de entregas de la IA de desarrollo (Fable)
 **Formato VIGENTE desde el pase 4.2: PARCHE GIT sobre el main real.** Llega un ZIP con
 `pase-X.patch` + `README_OPERADOR_pase-X.md`:
