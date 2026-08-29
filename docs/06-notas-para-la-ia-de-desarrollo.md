@@ -1179,3 +1179,20 @@ Informe completo en `docs/59`. Para el registro técnico del canal:
   `gpu.py` y el panel los consumen; sección nueva en `models.html` (+2 msgids al .po a mano).
   El barrido pasó a Sonnet por orden directa de David (dato de panel, no código).
 - Pendiente gordo siguiente: worker propio de whisper con modelo residente (12,5→2-4 min).
+
+## 53. Bloque 4.6 (A-F): la campaña del arranque — y la especificación del 4.7 (2026-08-29)
+
+Informe completo con la serie del listón en `docs/60`. Técnica nueva que queda en el código:
+**reescritura del arranque con candado de palabras sagradas + votación por mayoría de 3**
+(`attribution.intro_rewrite`) — el patrón es reutilizable para cualquier corrección de texto
+por modelo: N muestras, validación dura por muestra, voto por unidad.
+
+**Techo medido**: los primeros ~7 s son indecidibles por texto (paridad cruzada sistemática
+pese a nombre+cuota+ancla). **Especificación del 4.7 — la vía acústica de grano fino**: el
+worker GPU de diarización debe devolver, además de `turns`, una pista de verificación por
+tramo corto: similitud coseno de cada ventana (p. ej. 0,5 s) contra los centroides de las
+voces DEL PROPIO VIDEO (embeddings efímeros en el worker, que muere tras el trabajo — NADA se
+persiste: línea roja de biometría intacta). Con `scores: [[t0,t1,{S00:0.8,S01:0.2}],...]` en
+la salida, el arranque se decide con física: la reescritura recibiría esos scores como ancla
+POR PALABRA en vez de una cita única. pyannote expone los embeddings del pipeline; es tamaño
+medio de worker + cliente. El listón (`eval_voces`) ya está listo para medirlo en minutos.
