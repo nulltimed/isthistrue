@@ -3987,3 +3987,52 @@ class Parche47A(TestCase):
                                                defaults={'value': '0'})
         self.assertEqual(attribution.drop_reactions(p), 0)
         self.assertEqual(p.transcript_segments.count(), 1)
+
+
+class Parche47B(TestCase):
+    """4.7-B — el motor conjunto AssemblyAI, primer eslabon de la cadena
+    AssemblyAI → GPU → CPU. Regla 5.7: cualquier fallo devuelve None y el
+    siguiente eslabon sigue."""
+
+    def test_mapeo_de_utterances_a_formato_local(self):
+        from apps.agents import assembly
+        datos = {'status': 'completed', 'language_code': 'en', 'utterances': [
+            {'speaker': 'A', 'start': 250, 'end': 3900, 'text': 'Hello there.',
+             'words': [{'text': 'Hello', 'start': 250, 'end': 900},
+                       {'text': 'there.', 'start': 950, 'end': 1400}]},
+            {'speaker': 'B', 'start': 4000, 'end': 4600, 'text': 'Get out.',
+             'words': [{'text': 'Get', 'start': 4000, 'end': 4200},
+                       {'text': 'out.', 'start': 4250, 'end': 4600}]},
+            {'speaker': 'A', 'start': 4700, 'end': 6000, 'text': 'So the century.',
+             'words': []},
+        ]}
+        out = assembly._map(datos)
+        self.assertEqual(len(out), 3)
+        self.assertEqual(out[0]['speaker_label'], 'SPEAKER_00')
+        self.assertEqual(out[1]['speaker_label'], 'SPEAKER_01')
+        self.assertEqual(out[2]['speaker_label'], 'SPEAKER_00')
+        self.assertAlmostEqual(out[0]['start_seconds'], 0.25)
+        self.assertAlmostEqual(out[1]['end_seconds'], 4.6)
+        self.assertEqual(out[0]['words'][0]['text'], 'Hello')
+
+    def test_sin_clave_duerme_sin_llamar_a_nada(self):
+        from apps.agents import assembly
+        with override_settings(ASSEMBLYAI_API_KEY=''):
+            self.assertIsNone(assembly.transcribe_diarize('/no/existe.mp3'))
+
+    def test_fallo_remoto_cede_al_siguiente_eslabon(self):
+        from apps.agents import assembly
+        with override_settings(ASSEMBLYAI_API_KEY='k', ASSEMBLYAI_TIMEOUT=1), \
+             mock.patch.object(assembly.httpx, 'post',
+                               side_effect=Exception('red caida')), \
+             mock.patch.object(assembly, 'open',
+                               mock.mock_open(read_data=b'x'), create=True):
+            self.assertIsNone(assembly.transcribe_diarize('/x.mp3'))
+
+    def test_el_panel_puede_apagar_el_eslabon(self):
+        from apps.agents import assembly
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='audio_engine_assemblyai',
+                                               defaults={'value': '0'})
+        with override_settings(ASSEMBLYAI_API_KEY='k'):
+            self.assertIsNone(assembly.transcribe_diarize('/x.mp3'))

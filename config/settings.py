@@ -258,6 +258,10 @@ HF_TOKEN = os.getenv('HF_TOKEN', '')
 # de Runpod es el techo de gasto. Sin clave, todo sigue en CPU como hasta hoy.
 RUNPOD_API_KEY = os.getenv('RUNPOD_API_KEY', '')
 RUNPOD_WHISPER_ENDPOINT = os.getenv('RUNPOD_WHISPER_ENDPOINT', '')
+# 4.7-B (decision de David): motor conjunto AssemblyAI — transcripcion y voces
+# cosidas de fabrica. Cadena: AssemblyAI -> GPU Runpod -> CPU. Sin clave, duerme.
+ASSEMBLYAI_API_KEY = os.getenv('ASSEMBLYAI_API_KEY', '')
+ASSEMBLYAI_TIMEOUT = int(os.getenv('ASSEMBLYAI_TIMEOUT', '900'))
 WHISPER_GPU_MODEL = os.getenv('WHISPER_GPU_MODEL', 'large-v3')
 # 4.4-J: separacion de voces en GPU (worker propio). Vacio = CPU como siempre.
 RUNPOD_DIARIZE_ENDPOINT = os.getenv('RUNPOD_DIARIZE_ENDPOINT', '')

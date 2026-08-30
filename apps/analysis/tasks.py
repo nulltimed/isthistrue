@@ -61,8 +61,12 @@ def run_cheap_phase(self, post_id):
         _date_and_hint(post, ' '.join(s.get('text', '') for s in segments))
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
         _t1 = _time.monotonic()
-        pista = diarization_hint(post)
-        turns = diarize_turns(post, audio_path, pista)
+        if segments and segments[0].get('speaker_label'):
+            # 4.7-B: AssemblyAI ya trajo las voces cosidas — no hay nada que cruzar
+            turns = None
+        else:
+            pista = diarization_hint(post)
+            turns = diarize_turns(post, audio_path, pista)
         post.diarize_seconds = round(_time.monotonic() - _t1, 1)
         post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
         logger.info('Post %s: transcribir %.1fs · diarizar %.1fs (%d min de vídeo)',
@@ -70,7 +74,12 @@ def run_cheap_phase(self, post_id):
                     round((post.duration_seconds or 0) / 60))
         # 4.2 D1 (decision de David): la unidad de transcripcion y de ANALISIS es la
         # FRASE COMPLETA por hablante; el timestamp es el inicio de esa frase.
-        merged = merge_into_sentences(segments, turns)
+        if turns is None:
+            # 4.7-B: intervenciones de fabrica; solo el tope de duracion de casa
+            merged = [{k: v for k, v in seg.items() if k != 'words'}
+                      for seg in segments]
+        else:
+            merged = merge_into_sentences(segments, turns)
         for seg in merged:
             TranscriptSegment.objects.create(post=post, **seg)
     finally:
@@ -797,6 +806,15 @@ def _transcribe_first_tranche(post, tmpdir):
     files = sorted(os.listdir(tmpdir))
     audio = next((os.path.join(tmpdir, f) for f in files if not f.endswith('.vtt')), None)
     vtt = next((os.path.join(tmpdir, f) for f in files if f.endswith('.vtt')), None)
+    # 4.7-B (decision de David): PRIMER ESLABON — AssemblyAI, el motor conjunto.
+    # Si responde, las intervenciones llegan YA con su hablante y el resto de la
+    # cadena (subtitulos, whisper, pyannote) no hace falta. Si no, todo sigue
+    # exactamente como hasta hoy (regla 5.7).
+    from apps.agents import assembly
+    aai = assembly.transcribe_diarize(audio)
+    if aai:
+        logger.info('Transcripción y voces por AssemblyAI: %d intervenciones', len(aai))
+        return (aai, audio)
     # 4.4-F (decision de David, revisa la del 4.2.1): cuando VA A HABER separacion
     # de voces, whisper manda — sus tiempos por palabra permiten atribuir bien las
     # frases. Los subtitulos humanos vienen en bloques que mezclan hablantes y solo
