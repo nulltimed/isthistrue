@@ -34,23 +34,33 @@ class Command(BaseCommand):
         seg_tokens = [set(_tokens(s.text)) for s in segs]
 
         # 1) casar cada linea de oro con su segmento (en orden, cursor movil)
+        # v3 (4.7-B.2): las REACCIONES CORTAS son anclas ambiguas — un «oh my»
+        # casaba con otro «oh my» de un minuto posterior, arrastraba el cursor
+        # y todo lo real quedaba fuera de ventana. Reglas: solo las lineas
+        # LARGAS (>=4 tokens) mueven el cursor; las cortas buscan CERCA
+        # (cursor-1 .. cursor+8), primer contenido que las contenga, y no
+        # arrastran nada.
         casadas, cursor = [], 0
         for quien, texto, tipo in lineas:
             toks = _tokens(texto)
             objetivo = set(toks)
+            corta = len(toks) <= 3
             mejor, mejor_score = None, 0.0
-            # ventana: desde un poco antes del cursor hacia delante
-            for i in range(max(0, cursor - 4), min(len(segs), cursor + 30)):
-                inter = len(objetivo & seg_tokens[i])
-                score = inter / max(len(objetivo), 1)
-                # para lineas cortas exigir que TODO el texto este contenido
-                if len(toks) <= 3 and ' '.join(toks) not in ' '.join(_tokens(segs[i].text)):
+            ini = max(0, cursor - 1 if corta else cursor - 4)
+            fin = min(len(segs), cursor + (8 if corta else 30))
+            for i in range(ini, fin):
+                if corta:
+                    if ' '.join(toks) in ' '.join(_tokens(segs[i].text)):
+                        mejor, mejor_score = i, 1.0
+                        break              # el PRIMERO cercano, no el mejor
                     continue
+                score = len(objetivo & seg_tokens[i]) / max(len(objetivo), 1)
                 if score > mejor_score:
                     mejor, mejor_score = i, score
             if mejor is not None and mejor_score >= 0.5:
                 casadas.append((quien, texto, tipo, mejor))
-                cursor = max(cursor, mejor)
+                if not corta:
+                    cursor = max(cursor, mejor)
             else:
                 casadas.append((quien, texto, tipo, None))
 
