@@ -4248,3 +4248,53 @@ class Parche49A(TestCase):
             services.notify(u, 'hola', '/x/')
         correo.assert_not_called()
         self.assertEqual(Notification.objects.filter(user=u).count(), 1)
+
+
+class Parche49B(TestCase):
+    """4.9-B — las reacciones conocidas se extirpan de DENTRO de las
+    intervenciones del motor conjunto, por frase completa."""
+
+    def _utt(self, texto, palabras):
+        return {'start_seconds': palabras[0]['start'],
+                'end_seconds': palabras[-1]['end'], 'text': texto,
+                'speaker_label': 'SPEAKER_00', 'words': palabras}
+
+    def test_la_reaccion_incrustada_desaparece_y_el_contenido_se_parte(self):
+        from apps.agents.attribution import excise_embedded_reactions
+        ws = [{'start': i, 'end': i + 0.9, 'text': t} for i, t in enumerate(
+            ['The', '1800s.', 'Okay.', 'We', 'discover', 'the', 'laws.'])]
+        seg = self._utt('The 1800s. Okay. We discover the laws.', ws)
+        out, fuera = excise_embedded_reactions([seg])
+        self.assertEqual(fuera, 1)
+        self.assertEqual([o['text'] for o in out],
+                         ['The 1800s.', 'We discover the laws.'])
+        self.assertAlmostEqual(out[1]['start_seconds'], 3)
+
+    def test_right_en_mitad_de_frase_jamas_se_toca(self):
+        from apps.agents.attribution import excise_embedded_reactions
+        ws = [{'start': i, 'end': i + 0.9, 'text': t} for i, t in enumerate(
+            ['All', 'right', 'so', 'coming', 'into', 'the', 'century.'])]
+        seg = self._utt('All right so coming into the century.', ws)
+        out, fuera = excise_embedded_reactions([seg])
+        self.assertEqual(fuera, 0)
+        self.assertEqual(len(out), 1)
+
+    def test_la_base_aprendida_tambien_extirpa(self):
+        from apps.agents.attribution import excise_embedded_reactions
+        from apps.analysis.models import InnocuousPhrase
+        InnocuousPhrase.objects.create(text_norm='holy mackerel')
+        ws = [{'start': i, 'end': i + 0.9, 'text': t} for i, t in enumerate(
+            ['Facts', 'here.', 'Holy', 'mackerel!', 'More', 'facts', 'here.'])]
+        seg = self._utt('Facts here. Holy mackerel! More facts here.', ws)
+        out, fuera = excise_embedded_reactions([seg])
+        self.assertEqual(fuera, 1)
+        self.assertEqual([o['text'] for o in out],
+                         ['Facts here.', 'More facts here.'])
+
+    def test_desalineado_no_se_opera(self):
+        from apps.agents.attribution import excise_embedded_reactions
+        seg = self._utt('Two sentences. Here okay.',
+                        [{'start': 0, 'end': 1, 'text': 'solo-una-palabra'}])
+        out, fuera = excise_embedded_reactions([seg])
+        self.assertEqual(fuera, 0)
+        self.assertEqual(out[0]['text'], 'Two sentences. Here okay.')

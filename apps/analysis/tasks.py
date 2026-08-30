@@ -77,7 +77,13 @@ def run_cheap_phase(self, post_id):
         # 4.2 D1 (decision de David): la unidad de transcripcion y de ANALISIS es la
         # FRASE COMPLETA por hablante; el timestamp es el inicio de esa frase.
         if turns is None:
-            # 4.7-B: intervenciones de fabrica; solo el tope de duracion de casa
+            # 4.7-B: intervenciones de fabrica. 4.9-B: antes de guardar, las
+            # reacciones conocidas incrustadas se extirpan por frase completa.
+            from apps.agents.attribution import excise_embedded_reactions
+            segments, fuera = excise_embedded_reactions(segments)
+            if fuera:
+                logger.info('Post %s: %d reacciones incrustadas extirpadas',
+                            post.pk, fuera)
             merged = [{k: v for k, v in seg.items() if k != 'words'}
                       for seg in segments]
         else:

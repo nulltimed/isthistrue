@@ -320,6 +320,68 @@ REACTION_LEXICON = {
 }
 
 
+def excise_embedded_reactions(segments):
+    """4.9-B: las reacciones CONOCIDAS (lexico + base aprendida) se extirpan de
+    DENTRO de las intervenciones del motor conjunto, por FRASE COMPLETA — un
+    «Okay.» o un «1800s.» incrustado en el parrafo del explicador desaparece;
+    un «right» en mitad de una frase con contenido («all right so...») jamas
+    se toca. Trabaja sobre la lista cruda (con words) ANTES de guardar.
+    Deterministico y gratis."""
+    import re
+    from apps.analysis.models import InnocuousPhrase
+
+    def norm(t):
+        return ' '.join(re.findall(r"[\w']+", t.lower()))
+
+    aprendidas = set(InnocuousPhrase.objects.values_list('text_norm', flat=True))
+
+    def es_reaccion(frase_norm):
+        if not frase_norm or len(frase_norm.split()) > 8:
+            return False
+        return (frase_norm in REACTION_LEXICON
+                or all(w in REACTION_LEXICON for w in frase_norm.split())
+                or frase_norm in aprendidas)
+
+    out = []
+    nonlocal_extirpadas = [0]
+    for seg in segments:
+        words = seg.get('words') or []
+        frases = [f for f in re.split(r'(?<=[.!?])\s+', seg.get('text', ''))
+                  if f.strip()]
+        if len(frases) < 2 or not words:
+            out.append(seg)
+            continue
+        # alinear cada frase con su tramo de words por conteo de tokens
+        partes, wi = [], 0
+        for f in frases:
+            n = len(norm(f).split())
+            tramo = words[wi:wi + n]
+            wi += n
+            partes.append((f, tramo))
+        if wi != len(words):        # desalineado: no operar (fail-closed)
+            out.append(seg)
+            continue
+        grupo = []                   # frases contiguas que se conservan
+        def volcar():
+            if not grupo:
+                return
+            texto = ' '.join(f for f, _t in grupo)
+            ws = [w for _f, t in grupo for w in t]
+            out.append({'start_seconds': ws[0]['start'],
+                        'end_seconds': ws[-1]['end'], 'text': texto,
+                        'speaker_label': seg.get('speaker_label'),
+                        'words': ws})
+        for f, tramo in partes:
+            if es_reaccion(norm(f)) and tramo:
+                volcar()
+                grupo.clear()
+                nonlocal_extirpadas[0] += 1
+            else:
+                grupo.append((f, tramo))
+        volcar()
+    return out, nonlocal_extirpadas[0]
+
+
 def drop_reactions(post):
     """4.7-A (regla de David, 2026-08-30): la web analiza AFIRMACIONES; una
     reaccion suelta del oyente no contiene ninguna y solo mete ruido. Se
