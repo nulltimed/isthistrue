@@ -2,6 +2,18 @@
 {% block title %}{% trans "Panel · Ajustes" %}{% endblock %}
 {% block content %}
 {% include 'partials/panel_nav.html' %}
+
+{# 4.9-A: cada centimo a la vista — lo gastado ESTE MES por proveedor #}
+<div class="month-costs">
+  <h2 class="panel-sub">{% trans "Gastado este mes" %}</h2>
+  <table class="cost-table">
+    {% for nombre, eur, cuenta in gasto_mes %}
+    <tr><td>{{ nombre }}</td><td>{{ eur|floatformat:2 }} €{% if cuenta is not None %} · {{ cuenta }} {% trans "emails" %}{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+  <p class="hint">{% trans "Los topes de cada proveedor están más abajo, entre los ajustes. Al llegar a un tope nada se rompe: cada servicio cae a su alternativa (AssemblyAI→GPU, GPU→CPU, email→campana)." %}</p>
+</div>
+
 <form method="post">{% csrf_token %}
 
   {% if reg %}

@@ -178,6 +178,18 @@ class ValidationVote(models.Model):
         unique_together = ('post', 'user', 'kind')
 
 
+class CostEntry(models.Model):
+    """4.9-A: un apunte del libro de cuentas — cada gasto real, con su post
+    cuando lo hay. De aqui salen el desglose por analisis (transparencia con
+    las donaciones) y los topes mensuales por proveedor."""
+    post = models.ForeignKey('Post', null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name='costs')
+    provider = models.CharField(max_length=20)   # anthropic|assemblyai|runpod|brevo
+    concept = models.CharField(max_length=40)
+    eur = models.DecimalField(max_digits=8, decimal_places=4)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
 class InnocuousPhrase(models.Model):
     """4.8-B (politica de David, 2026-08-30): frases sin informacion factual
     que un separador atribuyo a una voz fantasma. Sonnet decide UNA sola cosa
@@ -247,6 +259,10 @@ class DailyBudget(models.Model):
                 return False
             row.spent_eur = models.F('spent_eur') + amount_eur
             row.save(update_fields=['spent_eur'])
+            # 4.9-A: el mismo peaje deja apunte en el libro, colgado del post
+            # en curso del worker (transparencia de donaciones).
+            from apps.analysis import costs
+            costs.record('anthropic', 'analisis', amount_eur)
             return True
 
 

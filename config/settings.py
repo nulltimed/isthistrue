@@ -179,7 +179,14 @@ SWEEP_MAX_TOKENS = int(os.getenv('SWEEP_MAX_TOKENS', '8000'))  # techo de respue
 #   panel = el MANDO EN VIVO. Una vez sembrado, lo que se guarde en /panel/settings/
 #           manda sobre el .env (decision congelada: umbrales en SystemSetting).
 # Si una clave nunca se sembro, get_int cae aqui: el .env sigue siendo la verdad.
-SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
+SETTING_DEFAULTS = {
+    # 4.9-A: el libro de cuentas — tarifas y topes por proveedor
+    'assemblyai_monthly_cap_eur': '20',
+    'aai_usd_per_hour': '0.40',
+    'runpod_monthly_cap_eur': '15',
+    'runpod_gpu_usd_per_hour': '0.35',
+    'brevo_monthly_email_cap': '3000',
+    'brevo_eur_per_email': '0',k: os.getenv(k.upper(), v) for k, v in {
     'opinion_ratio_percent': '70',
     'minutes_per_factual_claim': '5',
     'votes_to_validate': '5',

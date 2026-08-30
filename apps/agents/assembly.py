@@ -27,11 +27,23 @@ def _activo():
         SystemSetting.get_int('audio_engine_assemblyai', 1) > 0
 
 
-def transcribe_diarize(audio_path, hint=None):
+def transcribe_diarize(audio_path, hint=None, post=None):
     """Sube el audio y devuelve la lista de intervenciones YA atribuidas, en el
     formato local ({start_seconds, end_seconds, text, speaker_label, words}),
     o None ante cualquier impedimento: el llamante DEBE caer al motor GPU."""
     if not _activo():
+        return None
+    # 4.9-A: el TOPE mensual — si este analisis lo rebasaria, cae a la GPU
+    from apps.panel.models import SystemSetting
+    from apps.analysis import costs
+    from apps.agents.catalog import USD_EUR
+    tarifa = float(SystemSetting.get_str('aai_usd_per_hour', '0.40') or 0.40)
+    dur_h = ((getattr(post, 'duration_seconds', 0) or 1500) / 3600.0)
+    estimado = round(dur_h * tarifa * USD_EUR, 4)
+    tope = float(SystemSetting.get_str('assemblyai_monthly_cap_eur', '20') or 20)
+    if costs.month_total('assemblyai') + estimado > tope:
+        logger.warning('Tope mensual de AssemblyAI alcanzado (%.2f €): este '
+                       'analisis cae a la GPU', tope)
         return None
     H = {'authorization': settings.ASSEMBLYAI_API_KEY}
     try:
@@ -71,6 +83,11 @@ def transcribe_diarize(audio_path, hint=None):
             logger.warning('AssemblyAI: trabajo %s -> %s (%s)', tid,
                            datos.get('status'), str(datos.get('error'))[:150])
             return None
+        # 4.9-A: apunte en el libro — duracion REAL que factura AAI
+        seg_audio = datos.get('audio_duration') or (
+            getattr(post, 'duration_seconds', 0) or 0)
+        costs.record('assemblyai', 'transcripcion+voces',
+                     round(seg_audio / 3600.0 * tarifa * USD_EUR, 4), post=post)
         return _map(datos)
     except Exception as exc:
         logger.warning('AssemblyAI indisponible (%r); se sigue con la GPU', exc)

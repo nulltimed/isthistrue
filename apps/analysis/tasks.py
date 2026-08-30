@@ -34,6 +34,8 @@ def run_cheap_phase(self, post_id):
 
     post = Post.objects.get(pk=post_id)
     from .services import cost_cheap_eur
+    from apps.analysis import costs as _costs
+    _costs.set_post(post)   # 4.9-A: los apuntes Anthropic se cuelgan del post
     if not DailyBudget.try_spend(max(COST_CHEAP_EUR, cost_cheap_eur(post))):
         post.status = 'NEW'  # se reintentara cuando haya deposito
         post.save(update_fields=['status'])
@@ -417,6 +419,8 @@ def run_full_analysis(self, post_id):
 
     post = Post.objects.get(pk=post_id)
     from .services import cost_full_eur
+    from apps.analysis import costs as _costs
+    _costs.set_post(post)   # 4.9-A
     if not DailyBudget.try_spend(max(COST_FULL_EUR, cost_full_eur(post))):
         return 'budget_exhausted'  # beat lo reintentara; cola congelada si corte mensual
 
@@ -813,7 +817,7 @@ def _transcribe_first_tranche(post, tmpdir):
     # cadena (subtitulos, whisper, pyannote) no hace falta. Si no, todo sigue
     # exactamente como hasta hoy (regla 5.7).
     from apps.agents import assembly
-    aai = assembly.transcribe_diarize(audio, hint=diarization_hint(post))
+    aai = assembly.transcribe_diarize(audio, hint=diarization_hint(post), post=post)
     if aai:
         logger.info('Transcripción y voces por AssemblyAI: %d intervenciones', len(aai))
         return (aai, audio)

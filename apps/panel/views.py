@@ -48,6 +48,19 @@ SETTINGS_DEF = [
      'Lo que el proyecto se permite gastar al mes sin contar donaciones. El límite DIARIO sale de aquí: se divide entre los días del mes.', 'num'),
     ('budget_hard_ceiling_eur', 'Techo duro mensual (€)',
      'Tope absoluto que no se supera ni con donaciones. Es el airbag: déjalo por encima del presupuesto base para que las donaciones tengan margen.', 'num'),
+    # --- 4.9-A (orden de David): cada céntimo a donde se necesita ---
+    ('assemblyai_monthly_cap_eur', 'Tope mensual de AssemblyAI (€)',
+     'El oído de la web (transcripción y voces). Si el mes llega a este tope, los análisis nuevos usan la GPU de reserva en vez de AssemblyAI — nada se para, solo cambia de motor. Un vídeo de 23 min cuesta ~0,10-0,15 €.', 'num'),
+    ('aai_usd_per_hour', 'Tarifa de AssemblyAI ($ por hora de audio)',
+     'Lo que cobra AssemblyAI por hora de audio transcrito. Solo se usa para CALCULAR el gasto: cámbiala si ellos cambian precios.', 'num'),
+    ('runpod_monthly_cap_eur', 'Tope mensual de Runpod (€)',
+     'La GPU de reserva. Si el mes llega a este tope, los análisis caen a la CPU del servidor (más lentos, gratis). Tu saldo prepago sigue siendo el techo absoluto.', 'num'),
+    ('runpod_gpu_usd_per_hour', 'Tarifa de la GPU ($ por hora)',
+     'Lo que cobra Runpod por hora de GPU encendida (A40 ≈ 0,35). Solo para calcular el gasto.', 'num'),
+    ('brevo_monthly_email_cap', 'Tope mensual de emails (Brevo)',
+     'Máximo de emails al mes. Al llegar, los avisos siguen llegando por la campana de la web pero dejan de enviarse por email hasta el mes siguiente. Ajústalo al límite de tu plan de pago.', 'num'),
+    ('brevo_eur_per_email', 'Coste por email (€)',
+     'Si tu plan incluye los emails, déjalo en 0: el contador sirve igual para el tope. Si pagas por email extra, pon aquí el precio unitario.', 'num'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
     ('opinion_ratio_percent', 'Umbral de opinión (%)',
@@ -174,6 +187,17 @@ def models_panel(request):
     })
 
 
+def _gasto_mes():
+    """4.9-A: los totales del mes por proveedor, para la vista de ajustes."""
+    from apps.analysis.costs import month_total, month_count
+    return [
+        ('Anthropic (análisis con Claude)', month_total('anthropic'), None),
+        ('AssemblyAI (oído: transcripción y voces)', month_total('assemblyai'), None),
+        ('Runpod (GPU de reserva)', month_total('runpod'), None),
+        ('Brevo (emails)', month_total('brevo'), month_count('brevo')),
+    ]
+
+
 def settings_panel(request):
     """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro.
     4.3-F: tambien el dinero. El limite diario NO se escribe: se deriva del mensual
@@ -199,7 +223,8 @@ def settings_panel(request):
     # sección DESTACADA arriba del panel, aparte de los umbrales técnicos.
     reg = next((r for r in rows if r['key'] == 'registration_open'), None)
     others = [r for r in rows if r['key'] != 'registration_open']
-    return render(request, 'panel/settings.html', {'rows': others, 'reg': reg})
+    return render(request, 'panel/settings.html', {
+        'gasto_mes': _gasto_mes(),'rows': others, 'reg': reg})
 
 
 @staff_member_required

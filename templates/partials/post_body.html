@@ -191,3 +191,16 @@
 
   {% comment %} La transcripción vive ahora en la columna derecha de la rejilla (arriba). {% endcomment %}
   {% if user.is_authenticated %}<form method="post" action="{% url 'post_upvote' post.pk %}" style="display:inline">{% csrf_token %}<button class="mini">▲ Votar ({{ post.votes.count }})</button></form>{% endif %}
+
+{% if costes_total is not None %}
+{# 4.9-A: el libro de cuentas del analisis — solo staff. Cada centimo, a la vista. #}
+<div class="cost-box">
+  <strong>{% trans "Coste de este análisis" %}</strong>
+  <table class="cost-table">
+    {% for f in costes_filas %}
+    <tr><td>{{ f.provider }}</td><td>{{ f.concept }}</td><td>{{ f.eur|floatformat:4 }} €</td></tr>
+    {% endfor %}
+    <tr><th colspan="2">{% trans "Total" %}</th><th>{{ costes_total|floatformat:4 }} €</th></tr>
+  </table>
+</div>
+{% endif %}

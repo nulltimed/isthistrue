@@ -197,6 +197,11 @@ def _post_context(request, post):
     """4.3-A.2 L2: contexto del post — lo comparten la pagina completa y el
     fragmento que se intercambia EN EL SITIO (sin recargar, sin mover el scroll)
     cuando el analisis termina."""
+    # 4.9-A: el libro de cuentas del analisis, para el staff (transparencia)
+    costes_filas = costes_total = None
+    if request.user.is_authenticated and request.user.is_staff:
+        from apps.analysis.costs import post_breakdown
+        costes_filas, costes_total = post_breakdown(post)
     u = request.user if request.user.is_authenticated else None
     from django.db.models import Count, Q
     # 4.3-A.5 O1 (fallo de raíz): SIN order_by la BD devolvía los segmentos en orden
@@ -273,6 +278,7 @@ def _post_context(request, post):
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
     return {
+        'costes_filas': costes_filas, 'costes_total': costes_total,
         'post': post, 'segments': segments, 'embed': build_embed(post),
         'hide_opinions': hide_opinions,
         'votes_validate': post.distinct_validation_votes('VALIDATE'),

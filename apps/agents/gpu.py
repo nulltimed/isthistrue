@@ -83,6 +83,18 @@ def _map_output(out):
     return res or None
 
 
+def _tope_runpod_ok(etiqueta):
+    """4.9-A: tope mensual de Runpod del panel — al llegar, se cae a CPU."""
+    from apps.panel.models import SystemSetting
+    from apps.analysis import costs
+    tope = float(SystemSetting.get_str('runpod_monthly_cap_eur', '15') or 15)
+    if costs.month_total('runpod') >= tope:
+        logger.warning('Tope mensual de Runpod alcanzado (%.2f €) — %s en CPU',
+                       tope, etiqueta)
+        return False
+    return True
+
+
 def _run_job(ep, payload, etiqueta):
     """Lanza un trabajo en un endpoint y lo sondea: el patron de transcribe_gpu,
     compartido con la diarizacion (4.4-J). Devuelve `output` o None. Un timeout
@@ -103,6 +115,15 @@ def _run_job(ep, payload, etiqueta):
         if estado == 'COMPLETED':
             logger.info('GPU (%s): completado en %s ms de GPU facturada',
                         etiqueta, st.get('executionTime'))
+            # 4.9-A: apunte en el libro de cuentas (tarifa del panel)
+            from apps.panel.models import SystemSetting
+            from apps.analysis import costs
+            from apps.agents.catalog import USD_EUR
+            tarifa = float(SystemSetting.get_str('runpod_gpu_usd_per_hour',
+                                                 '0.35') or 0.35)
+            costs.record('runpod', etiqueta,
+                         round((st.get('executionTime') or 0) / 3.6e6
+                               * tarifa * USD_EUR, 4))
             return st.get('output') or {}
         if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
             logger.warning('GPU (%s): trabajo %s -> %s; se sigue en CPU', etiqueta, job_id, estado)
@@ -119,7 +140,7 @@ def diarize_gpu(audio_path, hint=None, second_pass_n=None):
     la CPU. La segunda pasada viaja en el MISMO trabajo (el audio ya esta en la
     GPU); elegir entre las dos es politica del VPS (keep_better_split)."""
     key, ep = settings.RUNPOD_API_KEY, settings.RUNPOD_DIARIZE_ENDPOINT
-    if not (key and ep):
+    if not (key and ep) or not _tope_runpod_ok('voces'):
         return None
     try:
         b64 = _audio_to_opus_b64(audio_path)
@@ -153,7 +174,7 @@ def transcribe_gpu(audio_path):
     que la via CPU, o None ante cualquier impedimento (sin configurar, audio
     demasiado grande, fallo o timeout remoto): el llamante DEBE caer a CPU."""
     key, ep = settings.RUNPOD_API_KEY, settings.RUNPOD_WHISPER_ENDPOINT
-    if not (key and ep):
+    if not (key and ep) or not _tope_runpod_ok('whisper'):
         return None
     try:
         b64 = _audio_to_opus_b64(audio_path)

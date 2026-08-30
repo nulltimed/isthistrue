@@ -4172,3 +4172,79 @@ class Parche48A(TestCase):
                                return_value=r) as llamada:
             attribution.adjudicate_minor_voices(p)
         self.assertEqual(llamada.call_args.args[0], 'claude-haiku-4-5-20251001')
+
+
+class Parche49A(TestCase):
+    """4.9-A — el libro de cuentas: cada centimo a donde se necesita, y el
+    desglose por analisis para la transparencia con las donaciones."""
+
+    def _post(self):
+        from apps.analysis.models import Post
+        User = get_user_model()
+        u = User.objects.create_user(f'u49{Post.objects.count()}',
+                                     f'u49{Post.objects.count()}@x.com', 'x')
+        return Post.objects.create(url=f'https://youtu.be/x49{Post.objects.count()}',
+                                   author=u)
+
+    def test_el_apunte_se_registra_y_el_desglose_suma(self):
+        from apps.analysis import costs
+        p = self._post()
+        costs.record('assemblyai', 'transcripcion+voces', 0.12, post=p)
+        costs.record('anthropic', 'analisis', 0.05, post=p)
+        filas, total = costs.post_breakdown(p)
+        self.assertEqual(len(filas), 2)
+        self.assertAlmostEqual(total, 0.17)
+        self.assertAlmostEqual(costs.month_total('assemblyai'), 0.12)
+
+    def test_el_peaje_anthropic_cuelga_el_apunte_del_post_en_curso(self):
+        from apps.analysis import costs
+        from apps.analysis.models import DailyBudget
+        p = self._post()
+        costs.set_post(p)
+        try:
+            self.assertTrue(DailyBudget.try_spend(0.03))
+        finally:
+            costs.set_post(None)
+        filas, total = costs.post_breakdown(p)
+        self.assertAlmostEqual(total, 0.03)
+        self.assertEqual(filas[0]['provider'], 'anthropic')
+
+    def test_el_tope_de_assemblyai_hace_caer_a_la_gpu(self):
+        from apps.agents import assembly
+        from apps.analysis import costs
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='assemblyai_monthly_cap_eur', defaults={'value': '0.10'})
+        costs.record('assemblyai', 'transcripcion+voces', 0.12)
+        with override_settings(ASSEMBLYAI_API_KEY='k'):
+            self.assertIsNone(assembly.transcribe_diarize('/x.mp3'))
+
+    def test_el_tope_de_runpod_hace_caer_a_cpu(self):
+        from apps.agents import gpu
+        from apps.analysis import costs
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='runpod_monthly_cap_eur', defaults={'value': '0.05'})
+        costs.record('runpod', 'whisper', 0.06)
+        with override_settings(RUNPOD_API_KEY='k', RUNPOD_WHISPER_ENDPOINT='e',
+                               RUNPOD_DIARIZE_ENDPOINT='e'):
+            self.assertIsNone(gpu.transcribe_gpu('/x.mp3'))
+            self.assertIsNone(gpu.diarize_gpu('/x.mp3'))
+
+    def test_el_tope_de_emails_calla_el_email_pero_no_la_campana(self):
+        from apps.accounts import services
+        from apps.accounts.models import Notification
+        from apps.analysis import costs
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='brevo_monthly_email_cap', defaults={'value': '1'})
+        costs.record('brevo', 'email', 0.0001)   # cupo ya consumido
+        User = get_user_model()
+        u = User.objects.create_user('u49mail', 'u49mail@x.com', 'x',
+                                     notify_mode='INSTANT')
+        u.quiet_night = False
+        u.save()
+        with mock.patch.object(services, 'send_mail') as correo:
+            services.notify(u, 'hola', '/x/')
+        correo.assert_not_called()
+        self.assertEqual(Notification.objects.filter(user=u).count(), 1)
