@@ -34,35 +34,53 @@ class Command(BaseCommand):
         seg_tokens = [set(_tokens(s.text)) for s in segs]
 
         # 1) casar cada linea de oro con su segmento (en orden, cursor movil)
-        # v3 (4.7-B.2): las REACCIONES CORTAS son anclas ambiguas — un «oh my»
-        # casaba con otro «oh my» de un minuto posterior, arrastraba el cursor
-        # y todo lo real quedaba fuera de ventana. Reglas: solo las lineas
-        # LARGAS (>=4 tokens) mueven el cursor; las cortas buscan CERCA
-        # (cursor-1 .. cursor+8), primer contenido que las contenga, y no
-        # arrastran nada.
-        casadas, cursor = [], 0
+        # v4 (4.7-B.3): ALINEAMIENTO MONOTONO por programacion dinamica.
+        # El casador codicioso con cursor era fragil: cualquier casado espurio
+        # hacia delante («oh look at that» con un «look at that» del minuto 8)
+        # arrastraba el cursor y dejaba TODA la verdad detras. Las lineas del
+        # oro estan ordenadas: se calcula el emparejamiento GLOBAL optimo que
+        # respeta ese orden (indices no decrecientes), exacto y sin cursor.
+        def _score(tk, objetivo, i):
+            if len(tk) <= 4:
+                return 1.0 if ' '.join(tk) in ' '.join(_tokens(segs[i].text)) else 0.0
+            return len(objetivo & seg_tokens[i]) / max(len(objetivo), 1)
+
+        L, S = len(lineas), len(segs)
+        puntos = []
         for quien, texto, tipo in lineas:
-            toks = _tokens(texto)
-            objetivo = set(toks)
-            corta = len(toks) <= 3
-            mejor, mejor_score = None, 0.0
-            ini = max(0, cursor - 1 if corta else cursor - 4)
-            fin = min(len(segs), cursor + (8 if corta else 30))
-            for i in range(ini, fin):
-                if corta:
-                    if ' '.join(toks) in ' '.join(_tokens(segs[i].text)):
-                        mejor, mejor_score = i, 1.0
-                        break              # el PRIMERO cercano, no el mejor
-                    continue
-                score = len(objetivo & seg_tokens[i]) / max(len(objetivo), 1)
-                if score > mejor_score:
-                    mejor, mejor_score = i, score
-            if mejor is not None and mejor_score >= 0.5:
-                casadas.append((quien, texto, tipo, mejor))
-                if not corta:
-                    cursor = max(cursor, mejor)
+            tk = _tokens(texto)
+            objetivo = set(tk)
+            fila = [_score(tk, objetivo, i) for i in range(S)]
+            puntos.append([f if f >= 0.5 else 0.0 for f in fila])
+        # M[l][i]: mejor suma usando lineas 0..l con ultimo seg usado <= i
+        NEG = 0.0
+        M = [[NEG] * (S + 1) for _ in range(L + 1)]
+        elec = [[None] * (S + 1) for _ in range(L + 1)]
+        for l in range(1, L + 1):
+            for i in range(1, S + 1):
+                # opcion A: la linea l no casa aqui (hereda)
+                mejor, quien_e = M[l][i - 1], elec[l][i - 1]
+                if M[l - 1][i] > mejor:
+                    mejor, quien_e = M[l - 1][i], None
+                # opcion B: casar la linea l en el seg i-1
+                cand = M[l - 1][i] + puntos[l - 1][i - 1]
+                if puntos[l - 1][i - 1] > 0 and cand > mejor:
+                    mejor, quien_e = cand, i - 1
+                M[l][i], elec[l][i] = mejor, quien_e
+        # backtrack
+        asignado = [None] * L
+        l, i = L, S
+        while l > 0 and i > 0:
+            e = elec[l][i]
+            if e is not None and M[l][i] == M[l - 1][i] + puntos[l - 1][e] and e == i - 1:
+                asignado[l - 1] = e
+                l -= 1
+            elif M[l][i] == M[l][i - 1]:
+                i -= 1
             else:
-                casadas.append((quien, texto, tipo, None))
+                l -= 1
+        casadas = [(q, t, tp, asignado[k])
+                   for k, (q, t, tp) in enumerate(lineas)]
 
         # 2) inferir el mapeo etiqueta->N/I por mayoria
         from collections import Counter
