@@ -82,6 +82,8 @@ def run_cheap_phase(self, post_id):
         attribution.run(post)
         # 4.6-B: y el ARRANQUE, que el oido funde, se reescribe leyendo
         attribution.intro_rewrite(post)
+        # 4.7-A: y las reacciones sueltas se retiran (la web analiza afirmaciones)
+        attribution.drop_reactions(post)
     except Exception as exc:                     # regla 5.7: nunca en silencio
         logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
     generate_name_proposals.delay(post.pk)  # OCR de rotulos + contexto -> candidatos

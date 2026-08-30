@@ -24,14 +24,18 @@ class Command(BaseCommand):
         ruta = os.path.join(os.path.dirname(__file__), '..', '..', 'golden',
                             f'post{post_id}.json')
         oro = json.load(open(ruta, encoding='utf-8'))
-        lineas = oro['lineas']
+        # v2 (criterio de David): cada linea trae tipo — sustancial | reaccion |
+        # charla. Una reaccion/charla OMITIDA cuenta como acierto; la sustancia
+        # se mide a muerte.
+        lineas = [(l[0], l[1], (l[2] if len(l) > 2 else 'sustancial'))
+                  for l in oro['lineas']]
         segs = list(TranscriptSegment.objects.filter(post_id=post_id)
                     .order_by('start_seconds', 'pk'))
         seg_tokens = [set(_tokens(s.text)) for s in segs]
 
         # 1) casar cada linea de oro con su segmento (en orden, cursor movil)
         casadas, cursor = [], 0
-        for quien, texto in lineas:
+        for quien, texto, tipo in lineas:
             toks = _tokens(texto)
             objetivo = set(toks)
             mejor, mejor_score = None, 0.0
@@ -45,15 +49,15 @@ class Command(BaseCommand):
                 if score > mejor_score:
                     mejor, mejor_score = i, score
             if mejor is not None and mejor_score >= 0.5:
-                casadas.append((quien, texto, mejor))
+                casadas.append((quien, texto, tipo, mejor))
                 cursor = max(cursor, mejor)
             else:
-                casadas.append((quien, texto, None))
+                casadas.append((quien, texto, tipo, None))
 
         # 2) inferir el mapeo etiqueta->N/I por mayoria
         from collections import Counter
         votos = Counter()
-        for quien, _t, i in casadas:
+        for quien, _t, _tipo, i in casadas:
             if i is not None:
                 votos[(segs[i].speaker_label, quien)] += 1
         etiquetas = {e for (e, _q) in votos}
@@ -62,23 +66,32 @@ class Command(BaseCommand):
             mapeo[e] = max(('N', 'I'), key=lambda q: votos.get((e, q), 0))
 
         # 3) puntuar
-        bien = mal = perdidas = 0
+        sust_bien = sust_total = 0
+        react_ok = react_mal = 0
         detalles = []
-        for quien, texto, i in casadas:
-            if i is None:
-                perdidas += 1
-                detalles.append(f'  PERDIDA  [{quien}] {texto[:70]}')
-            elif mapeo.get(segs[i].speaker_label) == quien:
-                bien += 1
-            else:
-                mal += 1
-                detalles.append(f'  MAL      [{quien}] {texto[:70]}  '
-                                f'(cayo en {segs[i].speaker_label} → '
-                                f'{mapeo.get(segs[i].speaker_label)})')
-        total = len(lineas)
-        self.stdout.write(f'ORO post {post_id}: {bien}/{total} correctas '
-                          f'({100 * bien / total:.0f}%) · {mal} mal atribuidas · '
-                          f'{perdidas} perdidas (absorbidas en otra frase)')
+        for quien, texto, tipo, i in casadas:
+            if tipo == 'sustancial':
+                sust_total += 1
+                if i is None:
+                    detalles.append(f'  PERDIDA sustancial [{quien}] {texto[:60]}')
+                elif mapeo.get(segs[i].speaker_label) == quien:
+                    sust_bien += 1
+                else:
+                    detalles.append(f'  MAL sustancial [{quien}] {texto[:60]}  '
+                                    f'(cayo en {segs[i].speaker_label})')
+            else:  # reaccion / charla: omitida = acierto (criterio de David)
+                if i is None or mapeo.get(segs[i].speaker_label) == quien:
+                    react_ok += 1
+                else:
+                    react_mal += 1
+                    detalles.append(f'  visible mal atribuida ({tipo}) '
+                                    f'[{quien}] {texto[:55]}')
+        self.stdout.write(
+            f'ORO post {post_id} · LO QUE IMPORTA (sustancial): '
+            f'{sust_bien}/{sust_total} ({100 * sust_bien / max(sust_total, 1):.0f}%)')
+        self.stdout.write(
+            f'  reacciones/charla: {react_ok} bien resueltas (omitidas o '
+            f'correctas) · {react_mal} visibles mal atribuidas')
         self.stdout.write(f'mapeo inferido: {mapeo}')
         for d in detalles:
             self.stdout.write(d)

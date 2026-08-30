@@ -3921,3 +3921,66 @@ class Parche46E(TestCase):
         self.assertEqual(r['rewritten'], 1)
         self.assertEqual(p.transcript_segments.order_by('start_seconds')[0].speaker_label,
                          'SPEAKER_01')
+
+
+class Parche47A(TestCase):
+    """4.7-A — la regla de David: la web analiza AFIRMACIONES; las reacciones
+    que cortan al orador se marcan (reescritura) o se retiran (sueltas)."""
+
+    def test_la_reaccion_votada_se_omite_del_transcript(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u47a', 'u47a@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x47a', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=10,
+                                         speaker_label='SPEAKER_00',
+                                         text='hello there get out folks')
+        TranscriptSegment.objects.create(post=p, start_seconds=130, end_seconds=200,
+                                         speaker_label='SPEAKER_01', text='bye')
+        r = {'utterances': [
+            {'speaker': 'SPEAKER_00', 'tipo': 'voz', 'text': 'hello there'},
+            {'speaker': 'SPEAKER_01', 'tipo': 'reaccion', 'text': 'get out'},
+            {'speaker': 'SPEAKER_00', 'tipo': 'voz', 'text': 'folks'},
+        ]}
+        with mock.patch.object(attribution.client, 'call_json', return_value=r):
+            res = attribution.intro_rewrite(p)
+        self.assertEqual(res['omitted'], 1)
+        textos = [s.text for s in p.transcript_segments.order_by('start_seconds')]
+        self.assertNotIn('get out', ' | '.join(textos))
+        self.assertIn('hello there', textos)
+
+    def test_reaccion_suelta_y_eco_se_retiran_pero_el_contenido_no(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u47a2', 'u47a2@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x47a2', author=u)
+        datos = [(0, 5, 'SPEAKER_00', 'the tower is 300 meters tall'),
+                 (5, 6, 'SPEAKER_01', 'okay'),                      # lexico
+                 (6, 9, 'SPEAKER_00', 'and it was finished in 1889'),
+                 (9, 10, 'SPEAKER_01', 'finished in 1889'),         # eco
+                 (10, 14, 'SPEAKER_01', 'but is that actually true')]  # contenido
+        for a, b, l, t in datos:
+            TranscriptSegment.objects.create(post=p, start_seconds=a,
+                                             end_seconds=b, speaker_label=l, text=t)
+        n = attribution.drop_reactions(p)
+        self.assertEqual(n, 2)
+        textos = [s.text for s in p.transcript_segments.order_by('start_seconds')]
+        self.assertEqual(textos, ['the tower is 300 meters tall',
+                                  'and it was finished in 1889',
+                                  'but is that actually true'])
+
+    def test_el_filtro_se_apaga_desde_el_panel(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        from apps.panel.models import SystemSetting
+        User = get_user_model()
+        u = User.objects.create_user('u47a3', 'u47a3@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x47a3', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=1,
+                                         speaker_label='SPEAKER_01', text='okay')
+        SystemSetting.objects.update_or_create(key='reaction_filter',
+                                               defaults={'value': '0'})
+        self.assertEqual(attribution.drop_reactions(p), 0)
+        self.assertEqual(p.transcript_segments.count(), 1)

@@ -149,7 +149,8 @@ def intro_rewrite(post):
                            'post %s (texto no coincide: %d vs %d palabras)',
                            post.pk, len(orig), len(nuevo_txt))
             continue
-        if any(u.get('speaker') not in etiquetas for u in utt):
+        if any(u.get('speaker') not in etiquetas
+               and u.get('tipo') != 'reaccion' for u in utt):
             logger.warning('Reescritura de arranque: muestra descartada en el '
                            'post %s (etiqueta desconocida)', post.pk)
             continue
@@ -159,9 +160,13 @@ def intro_rewrite(post):
 
     from collections import Counter
     def voz_por_palabra(utt):
+        # 4.7-A: una reaccion vota 'R' — si la mayoria dice R, la palabra se
+        # OMITE del transcript (regla de David: la web analiza afirmaciones;
+        # las reacciones que cortan al orador se quitan de en medio).
         out = []
         for u in utt:
-            out.extend([u['speaker']] * len(toks(str(u['text']))))
+            voto = 'R' if u.get('tipo') == 'reaccion' else u['speaker']
+            out.extend([voto] * len(toks(str(u['text']))))
         return out
     votos_muestra = [voz_por_palabra(m) for m in muestras]
     final = []
@@ -195,6 +200,8 @@ def intro_rewrite(post):
         for k in range(len(ws)):
             tiempos.append((s.start_seconds + dur * k / n,
                             s.start_seconds + dur * (k + 1) / n))
+    omitidas = sum(1 for u in utt if u['speaker'] == 'R')
+    utt = [u for u in utt if u['speaker'] != 'R']
     from apps.analysis.models import TranscriptSegment
     nuevos = []
     for u in utt:
@@ -208,9 +215,50 @@ def intro_rewrite(post):
         post.transcript_segments.filter(
             pk__in=[s.pk for s in segments]).delete()
         TranscriptSegment.objects.bulk_create(nuevos)
-    logger.info('Post %s: arranque reescrito por mayoria de %d — %d frases → %d intervenciones',
-                post.pk, len(muestras), len(segments), len(nuevos))
-    return {'rewritten': len(nuevos)}
+    logger.info('Post %s: arranque reescrito por mayoria de %d — %d frases → '
+                '%d intervenciones (+%d reacciones omitidas)',
+                post.pk, len(muestras), len(segments), len(nuevos), omitidas)
+    return {'rewritten': len(nuevos), 'omitted': omitidas}
+
+
+REACTION_LEXICON = {
+    'okay', 'ok', 'yeah', 'yes', 'right', 'wow', 'whoa', 'nice', 'great',
+    'sure', 'exactly', 'totally', 'absolutely', 'damn', 'oh', 'oh my',
+    'oh my gosh', 'oh my god', 'get out', 'no way', 'oh wow', 'mm-hmm',
+    'uh-huh', 'oh look at that', 'i love it', 'look at that', 'there you go',
+    'come on', 'oh boy', 'gotcha', 'huh',
+}
+
+
+def drop_reactions(post):
+    """4.7-A (regla de David, 2026-08-30): la web analiza AFIRMACIONES; una
+    reaccion suelta del oyente no contiene ninguna y solo mete ruido. Se
+    OMITEN las frases-reaccion independientes: lexico, o eco literal de la
+    frase vecina (hasta 8 palabras). Configurable: reaction_filter=0 apaga."""
+    import re
+    from apps.panel.models import SystemSetting
+    if SystemSetting.get_int('reaction_filter', 1) <= 0:
+        return 0
+    def norm(t):
+        return ' '.join(re.findall(r"[\w']+", t.lower()))
+    segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
+    fuera = []
+    for i, s2 in enumerate(segs):
+        n = norm(s2.text)
+        palabras = n.split()
+        if not palabras or len(palabras) > 8:
+            continue
+        es_lexico = n in REACTION_LEXICON or all(
+            w in REACTION_LEXICON for w in palabras)
+        vecinos = [segs[j] for j in (i - 1, i + 1) if 0 <= j < len(segs)]
+        es_eco = any(n and n in norm(v.text) and v.pk != s2.pk for v in vecinos)
+        if es_lexico or es_eco:
+            fuera.append(s2.pk)
+    if fuera:
+        post.transcript_segments.filter(pk__in=fuera).delete()
+        logger.info('Post %s: %d reacciones sueltas omitidas del transcript',
+                    post.pk, len(fuera))
+    return len(fuera)
 
 
 def _nota(texto):

@@ -202,7 +202,16 @@ REGLAS ABSOLUTAS:
 - Usa SOLO las etiquetas de voz de la lista VOCES.
 - Si de verdad es un monologo, devuelvelo tal cual.
 
+REACCIONES (4.7-A, regla del dueno de la web): la web analiza AFIRMACIONES.
+Una interjeccion, eco o muletilla del oyente («okay», «yeah», «right», «get
+out», «oh my», «wow», «1800s» repitiendo al otro, un nombre propio repetido)
+NO se adjudica: se marca con "tipo": "reaccion" y el sistema la OMITE. Ante la
+duda entre dos voces para una reaccion, marcala reaccion y deja de sufrir.
+Las intervenciones CON CONTENIDO (explicaciones, afirmaciones, preguntas
+reales, bromas elaboradas) llevan "tipo": "voz" y su hablante.
+
 Responde SOLO JSON valido:
-{"utterances": [{"speaker": "<etiqueta>", "text": "<palabras exactas>"}, ...]}"""
+{"utterances": [{"speaker": "<etiqueta>", "tipo": "voz"|"reaccion",
+                 "text": "<palabras exactas>"}, ...]}"""
 
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""
