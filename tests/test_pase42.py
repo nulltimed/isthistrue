@@ -4369,3 +4369,27 @@ class Parche410A(TestCase):
         p.aai_job_id = 'OTRO'
         p.save()
         self.assertEqual(resume_after_aai(p.pk, 'tid-123'), 'stale')
+
+
+class CandadoDelPanel(TestCase):
+    """Hotfix 2026-08-30 (reporte de David): /panel/settings/ nacio SIN candado
+    (4.3-F) y un anonimo podia LEER y ESCRIBIR los ajustes — presupuestos
+    incluidos. Este test-barrera recorre TODAS las URLs del panel y exige que
+    el anonimo jamas vea un 200."""
+
+    def test_ninguna_url_del_panel_responde_200_a_un_anonimo(self):
+        from apps.panel import urls as panel_urls
+        for patron in panel_urls.urlpatterns:
+            ruta = '/panel/' + str(patron.pattern)
+            if '<' in ruta:
+                continue        # las parametrizadas exigen pk: fuera de alcance
+            r = self.client.get(ruta)
+            self.assertNotEqual(
+                r.status_code, 200,
+                f'{ruta} responde 200 a un anonimo — candado ausente')
+
+    def test_un_anonimo_no_puede_escribir_ajustes(self):
+        from apps.panel.models import SystemSetting
+        self.client.post('/panel/settings/', {'budget_base_eur': '9999'})
+        fila = SystemSetting.objects.filter(key='budget_base_eur').first()
+        self.assertNotEqual(getattr(fila, 'value', None), '9999')

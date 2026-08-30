@@ -198,6 +198,7 @@ def _gasto_mes():
     ]
 
 
+@staff_member_required
 def settings_panel(request):
     """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro.
     4.3-F: tambien el dinero. El limite diario NO se escribe: se deriva del mensual
