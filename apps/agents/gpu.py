@@ -83,6 +83,16 @@ def _map_output(out):
     return res or None
 
 
+def _apunte_runpod(concepto, ms):
+    from apps.panel.models import SystemSetting
+    from apps.analysis import costs
+    from apps.agents.catalog import USD_EUR
+    tarifa = float(SystemSetting.get_str('runpod_gpu_usd_per_hour', '0.35')
+                   or 0.35)
+    costs.record('runpod', concepto,
+                 round((ms or 0) / 3.6e6 * tarifa * USD_EUR, 4))
+
+
 def _tope_runpod_ok(etiqueta):
     """4.9-A: tope mensual de Runpod del panel — al llegar, se cae a CPU."""
     from apps.panel.models import SystemSetting
@@ -115,15 +125,7 @@ def _run_job(ep, payload, etiqueta):
         if estado == 'COMPLETED':
             logger.info('GPU (%s): completado en %s ms de GPU facturada',
                         etiqueta, st.get('executionTime'))
-            # 4.9-A: apunte en el libro de cuentas (tarifa del panel)
-            from apps.panel.models import SystemSetting
-            from apps.analysis import costs
-            from apps.agents.catalog import USD_EUR
-            tarifa = float(SystemSetting.get_str('runpod_gpu_usd_per_hour',
-                                                 '0.35') or 0.35)
-            costs.record('runpod', etiqueta,
-                         round((st.get('executionTime') or 0) / 3.6e6
-                               * tarifa * USD_EUR, 4))
+            _apunte_runpod(etiqueta, st.get('executionTime'))  # 4.9-A
             return st.get('output') or {}
         if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
             logger.warning('GPU (%s): trabajo %s -> %s; se sigue en CPU', etiqueta, job_id, estado)
@@ -208,6 +210,7 @@ def transcribe_gpu(audio_path):
             if estado == 'COMPLETED':
                 logger.info('GPU: transcripcion %s en %s ms de GPU facturada',
                             _modelo_oido(), st.get('executionTime'))
+                _apunte_runpod('whisper', st.get('executionTime'))
                 return _map_output(st.get('output') or {})
             if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
                 logger.warning('GPU: trabajo %s -> %s; se sigue en CPU',

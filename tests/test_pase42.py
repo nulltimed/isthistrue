@@ -4154,9 +4154,9 @@ class Parche48A(TestCase):
         from apps.agents.assembly import _pista_aai
         self.assertEqual(_pista_aai({'num_speakers': 2}),
                          {'speakers_expected': 2})
-        self.assertEqual(_pista_aai({'min_speakers': 2, 'max_speakers': 3}),
-                         {'min_speakers_expected': 2,
-                          'max_speakers_expected': 3})
+        # 4.9-C: la API real RECHAZA min/max (400) aunque su doc los pinte —
+        # un rango NO viaja; solo el numero exacto.
+        self.assertEqual(_pista_aai({'min_speakers': 2, 'max_speakers': 3}), {})
         self.assertEqual(_pista_aai(None), {})
 
     def test_la_criba_usa_el_modelo_del_panel(self):

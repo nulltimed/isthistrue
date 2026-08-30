@@ -97,16 +97,13 @@ def transcribe_diarize(audio_path, hint=None, post=None):
 def _pista_aai(hint):
     """Traduce nuestra pista (num/min/max_speakers) al dialecto de AssemblyAI
     (speakers_expected / min_ / max_speakers_expected)."""
+    # 4.9-C (medido contra la API real): speakers_expected FUNCIONA;
+    # min/max_speakers_expected — que su propia documentacion describe — los
+    # RECHAZA con 400 y tumbaba el eslabon entero. Solo viaja el numero exacto.
     hint = hint or {}
-    out = {}
     if hint.get('num_speakers'):
-        out['speakers_expected'] = int(hint['num_speakers'])
-    else:
-        if hint.get('min_speakers'):
-            out['min_speakers_expected'] = int(hint['min_speakers'])
-        if hint.get('max_speakers'):
-            out['max_speakers_expected'] = int(hint['max_speakers'])
-    return out
+        return {'speakers_expected': int(hint['num_speakers'])}
+    return {}
 
 
 def _map(datos):
