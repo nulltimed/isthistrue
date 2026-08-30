@@ -1253,3 +1253,9 @@ msgstr "emails"
 
 msgid "Los topes de cada proveedor están más abajo, entre los ajustes. Al llegar a un tope nada se rompe: cada servicio cae a su alternativa (AssemblyAI→GPU, GPU→CPU, email→campana)."
 msgstr "Each provider's caps are below, among the settings. Hitting a cap breaks nothing: each service falls back to its alternative (AssemblyAI→GPU, GPU→CPU, email→bell)."
+
+msgid "Coste acumulado de este vídeo"
+msgstr "Total cost of this video"
+
+msgid "Incluye reanálisis: es todo lo que este vídeo ha costado de verdad."
+msgstr "Reanalyses included: everything this video has actually cost."

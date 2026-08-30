@@ -1209,3 +1209,14 @@ falsos negativos de motor. Los 4.6-* (reescritura, votación, filtro de reaccion
 actuando sobre el material AAI y suman. El techo del §53 (verificación acústica de grano
 fino en el worker GPU) queda ARCHIVADO: el motor conjunto lo disuelve; el worker GPU pasa a
 red de seguridad.
+
+## 55. Bloques 4.8-4.9: política científica + libro de cuentas (2026-08-30)
+
+Informe en `docs/62`. Claves técnicas del canal: `InnocuousPhrase` (0013) y `CostEntry`
+(0014) con `costs.py` (apunte thread-local del post en curso, validando existencia — el
+fantasma de rollback reventaba FK dentro del peaje). `excise_embedded_reactions` opera sobre
+las words del motor conjunto por FRASE COMPLETA con alineamiento fail-closed. **Trampa de
+proveedor medida**: la doc de AssemblyAI describe `min/max_speakers_expected` y su API los
+rechaza con 400 — solo `speakers_expected` existe de verdad; regla: contratos contra la API
+VIVA, jamás contra el folleto (segunda vez: word_timestamps de Runpod). Topes con
+degradación AAI→GPU→CPU y email→campana. El desglose por post es ACUMULADO adrede.

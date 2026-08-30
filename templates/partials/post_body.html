@@ -195,7 +195,8 @@
 {% if costes_total is not None %}
 {# 4.9-A: el libro de cuentas del analisis — solo staff. Cada centimo, a la vista. #}
 <div class="cost-box">
-  <strong>{% trans "Coste de este análisis" %}</strong>
+  <strong>{% trans "Coste acumulado de este vídeo" %}</strong>
+  <p class="hint">{% trans "Incluye reanálisis: es todo lo que este vídeo ha costado de verdad." %}</p>
   <table class="cost-table">
     {% for f in costes_filas %}
     <tr><td>{{ f.provider }}</td><td>{{ f.concept }}</td><td>{{ f.eur|floatformat:4 }} €</td></tr>
