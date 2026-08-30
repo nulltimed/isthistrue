@@ -229,12 +229,19 @@ def intro_rewrite(post):
 
 
 def adjudicate_minor_voices(post):
-    """4.8-A: si el motor detecto voces DE MAS (fantasmas con cuota minima),
-    sus frases se reparten LEYENDO entre las dos principales — o se marcan
-    reaccion y se omiten. Cazado por David en el post 5: AssemblyAI invento un
-    hablante 3 con 18 exclamaciones de Chuck y de Neil (3,8% del tiempo).
-    Fail-soft integral: cualquier duda deja la frase como esta."""
+    """4.8-B (politica de David, 2026-08-30): con las frases de voces FANTASMA
+    no se adivina el hablante — o es cientifico o no se afirma. Sonnet decide
+    SOLO si la frase contiene informacion factual: si NO, se elimina y se
+    aprende para siempre (InnocuousPhrase); si SI, se marca atribucion
+    INCIERTA y la comunidad la resuelve — excluida de la verificacion y de la
+    wiki hasta entonces. Fail-soft integral."""
+    import re
     from collections import defaultdict
+    from apps.analysis.models import InnocuousPhrase
+
+    def norm(t):
+        return ' '.join(re.findall(r"[\w']+", t.lower()))[:200]
+
     segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
     dur = defaultdict(float)
     for s2 in segs:
@@ -243,48 +250,65 @@ def adjudicate_minor_voices(post):
     if len(dur) <= 2:
         return {'adjudicated': 0}
     orden = sorted(dur, key=lambda k: -dur[k])
-    mayores, menores = orden[:2], orden[2:]
+    menores = orden[2:]
     total = sum(dur.values()) or 1
     if sum(dur[m] for m in menores) / total > 0.15:
         return {'adjudicated': 0}   # demasiada voz "menor": quiza es real
     fantasmas = [s2 for s2 in segs if s2.speaker_label in menores]
     if not fantasmas:
         return {'adjudicated': 0}
-    idx = {s2.pk: i for i, s2 in enumerate(segs)}
-    bloques = []
-    for n, s2 in enumerate(fantasmas):
-        i = idx[s2.pk]
-        ctx = segs[max(0, i - 2):i] + segs[i + 1:i + 3]
-        alrededor = ' / '.join(f'[{c.speaker_label}] {c.text[:60]}' for c in ctx)
-        bloques.append(f'FANTASMA {n}: «{s2.text[:120]}»\n  contexto: {alrededor}')
-    payload = (f"VOCES PRINCIPALES: {mayores[0]} (domina) y {mayores[1]}\n\n"
-               + '\n'.join(bloques))
-    try:
-        datos = client.call_json(model_for('attribution'),
-                                 prompts.ADJUDICATE_SYSTEM, payload,
-                                 max_tokens=2000,
-                                 mock_payload={'decisiones': []})
-    except Exception as exc:
-        logger.warning('Adjudicacion de fantasmas fallida en el post %s: %r',
-                       post.pk, exc)
-        return {'adjudicated': 0}
-    hechas = omitidas = 0
-    for d in (datos.get('decisiones') or []):
-        try:
-            s2 = fantasmas[int(d.get('n'))]
-        except (TypeError, ValueError, IndexError):
-            continue
-        if d.get('tipo') == 'reaccion':
+
+    # 1º: la base de frases inocuas YA aprendidas — gratis y sin adivinanza
+    borradas = 0
+    pendientes = []
+    for s2 in fantasmas:
+        n = norm(s2.text)
+        fila = InnocuousPhrase.objects.filter(text_norm=n).first()
+        if fila:
+            fila.times_seen += 1
+            fila.save(update_fields=['times_seen'])
             s2.delete()
-            omitidas += 1
-        elif d.get('speaker') in mayores:
-            s2.speaker_label = d['speaker']
-            s2.attribution_note = _nota('fantasma adjudicado por lectura')
-            s2.save(update_fields=['speaker_label', 'attribution_note'])
-            hechas += 1
-    logger.info('Post %s: fantasmas adjudicados — %d reasignados, %d omitidos '
-                'de %d', post.pk, hechas, omitidas, len(fantasmas))
-    return {'adjudicated': hechas + omitidas}
+            borradas += 1
+        else:
+            pendientes.append(s2)
+
+    # 2º: las nuevas, a Sonnet — SOLO la pregunta factual
+    if pendientes:
+        bloques = [f'FRASE {n}: «{s2.text[:150]}»'
+                   for n, s2 in enumerate(pendientes)]
+        try:
+            datos = client.call_json(model_for('attribution'),
+                                     prompts.ADJUDICATE_SYSTEM,
+                                     '\n'.join(bloques), max_tokens=1500,
+                                     mock_payload={'decisiones': []})
+        except Exception as exc:
+            logger.warning('Criba de fantasmas fallida en el post %s: %r',
+                           post.pk, exc)
+            datos = {'decisiones': []}
+        for d in (datos.get('decisiones') or []):
+            try:
+                s2 = pendientes[int(d.get('n'))]
+            except (TypeError, ValueError, IndexError):
+                continue
+            if d.get('factual') is False:
+                InnocuousPhrase.objects.get_or_create(
+                    text_norm=norm(s2.text),
+                    defaults={'first_post': post})
+                s2.delete()
+                borradas += 1
+            else:
+                s2.attribution_uncertain = True
+                s2.attribution_note = _nota(
+                    'voz dudosa del separador; contiene información: '
+                    'la comunidad decide de quién es')
+                s2.save(update_fields=['attribution_uncertain',
+                                       'attribution_note'])
+    inciertas = len(fantasmas) - borradas
+    logger.info('Post %s: criba de fantasmas — %d inocuas eliminadas '
+                '(la base aprende), %d con información → INCIERTAS para la '
+                'comunidad', post.pk, borradas, inciertas)
+    return {'adjudicated': len(fantasmas), 'deleted': borradas,
+            'uncertain': inciertas}
 
 
 REACTION_LEXICON = {
@@ -316,6 +340,10 @@ def drop_reactions(post):
             continue
         es_lexico = n in REACTION_LEXICON or all(
             w in REACTION_LEXICON for w in palabras)
+        if not es_lexico:
+            # 4.8-B: la base APRENDIDA de frases inocuas tambien cuenta
+            from apps.analysis.models import InnocuousPhrase
+            es_lexico = InnocuousPhrase.objects.filter(text_norm=n).exists()
         # Un ECO es una REPETICION: solo puede serlo respecto del segmento
         # ANTERIOR. Comparar tambien con el siguiente hacia que dos copias
         # identicas se aniquilaran mutuamente — el original sustancial moria

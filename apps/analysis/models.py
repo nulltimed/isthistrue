@@ -178,6 +178,19 @@ class ValidationVote(models.Model):
         unique_together = ('post', 'user', 'kind')
 
 
+class InnocuousPhrase(models.Model):
+    """4.8-B (politica de David, 2026-08-30): frases sin informacion factual
+    que un separador atribuyo a una voz fantasma. Sonnet decide UNA sola cosa
+    (¿contiene informacion verificable?); si no, la frase se elimina del
+    transcript y se guarda aqui NORMALIZADA. La base CRECE con cada video y
+    los siguientes la consultan antes que a nadie: cero coste, cero adivinanza."""
+    text_norm = models.CharField(max_length=200, unique=True)
+    times_seen = models.PositiveIntegerField(default=1)
+    first_post = models.ForeignKey('Post', null=True, blank=True,
+                                   on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class TranscriptSegment(models.Model):
     """Transcripcion sincronizada: SIEMPRE y en todos lados, timestamps clicables."""
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='transcript_segments')
