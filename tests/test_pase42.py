@@ -4036,3 +4036,26 @@ class Parche47B(TestCase):
                                                defaults={'value': '0'})
         with override_settings(ASSEMBLYAI_API_KEY='k'):
             self.assertIsNone(assembly.transcribe_diarize('/x.mp3'))
+
+
+class Parche47B1(TestCase):
+    """4.7-B.1 — el oro de David cazo la aniquilacion mutua: dos copias de la
+    misma frase (original + eco) se borraban LAS DOS. El eco es la repeticion:
+    solo se compara contra el segmento ANTERIOR."""
+
+    def test_el_original_sobrevive_y_solo_cae_el_eco(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u47b1', 'u47b1@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x47b1', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=3,
+                                         speaker_label='SPEAKER_00',
+                                         text='how do you measure thoughts')
+        TranscriptSegment.objects.create(post=p, start_seconds=3, end_seconds=5,
+                                         speaker_label='SPEAKER_01',
+                                         text='how do you measure thoughts')
+        n = attribution.drop_reactions(p)
+        self.assertEqual(n, 1)
+        restante = p.transcript_segments.get()
+        self.assertEqual(restante.speaker_label, 'SPEAKER_00')  # el ORIGINAL

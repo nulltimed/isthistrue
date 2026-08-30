@@ -250,8 +250,13 @@ def drop_reactions(post):
             continue
         es_lexico = n in REACTION_LEXICON or all(
             w in REACTION_LEXICON for w in palabras)
-        vecinos = [segs[j] for j in (i - 1, i + 1) if 0 <= j < len(segs)]
-        es_eco = any(n and n in norm(v.text) and v.pk != s2.pk for v in vecinos)
+        # Un ECO es una REPETICION: solo puede serlo respecto del segmento
+        # ANTERIOR. Comparar tambien con el siguiente hacia que dos copias
+        # identicas se aniquilaran mutuamente — el original sustancial moria
+        # junto al eco (lo cazo el oro de David: 24 omisiones, sustancia
+        # perdida). Fix 4.7-B.1.
+        prev = segs[i - 1] if i > 0 else None
+        es_eco = bool(prev) and n and n in norm(prev.text)
         if es_lexico or es_eco:
             fuera.append(s2.pk)
     if fuera:
