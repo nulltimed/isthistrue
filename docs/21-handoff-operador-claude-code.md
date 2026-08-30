@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-08-30 · Commit en producción: ver git — bloques 4.8-4.9: política científica de los fantasmas (criba factual + base InnocuousPhrase que APRENDE), libro de cuentas CostEntry con topes por proveedor (AAI→GPU→CPU, email→campana) y desglose acumulado por vídeo; oro v3 de 41 líneas: sustancial 14/16 (88%) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-08-30 · Commit en producción: `966edc1` — 4.10-A: TIMBRE de AssemblyAI (webhook /aai-hook/ con secreto derivado; encargar-y-soltar; cola común _after_segments; deploys ya no matan transcripciones). Estreno real: mañana (airbag diario cortó tras 5,54 € de validaciones) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
@@ -50,7 +50,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§55: TODA la historia técnica), el informe del último pase (`docs/62`) y la especificación GPU (`docs/56`).
+> (§1-§56: TODA la historia técnica), el informe del último pase (`docs/63`) y la especificación GPU (`docs/56`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -64,7 +64,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §55) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §56) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -442,7 +442,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§55) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§56) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |

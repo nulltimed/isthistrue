@@ -1220,3 +1220,14 @@ proveedor medida**: la doc de AssemblyAI describe `min/max_speakers_expected` y 
 rechaza con 400 — solo `speakers_expected` existe de verdad; regla: contratos contra la API
 VIVA, jamás contra el folleto (segunda vez: word_timestamps de Runpod). Topes con
 degradación AAI→GPU→CPU y email→campana. El desglose por post es ACUMULADO adrede.
+
+## 56. Parche 4.10-A: el timbre de AssemblyAI (2026-08-30)
+
+Informe en `docs/63`. Canal técnico: `submit_async`/`fetch_result` en assembly.py
+(webhook_url + webhook_auth_header_name/value — el secreto se DERIVA de SECRET_KEY, nada
+nuevo en el .env); sentinela `_AaiSubmitted` en `_transcribe_first_tranche`;
+`resume_after_aai` + **`_after_segments` (la cola común extraída de run_cheap_phase — tocarla
+UNA vez sirve a las dos vías)**; vista `aai_webhook` csrf_exempt idempotente respondiendo
+<10 s; `run_cheap_phase(skip_charge, skip_aai)` para relanzar sin recobrar. El estreno real
+quedó para mañana: el airbag diario cortó (5,54/6,45 € gastados hoy en validaciones — el
+libro lo hizo visible). Post en NEW; el beat lo relanza solo.
