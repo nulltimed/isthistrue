@@ -28,11 +28,18 @@ def current_post():
 
 def record(provider, concept, eur, post=None):
     """Un apunte. Jamas rompe el analisis por un fallo contable (regla 5.7)."""
-    from .models import CostEntry
+    from .models import CostEntry, Post
     try:
         if eur is None or float(eur) <= 0:
             return
-        CostEntry.objects.create(post=post or current_post(),
+        candidato = post or current_post()
+        # el post del hilo puede ser un fantasma (test/rollback/borrado): si ya
+        # no existe, el apunte va sin post — jamas una violacion de FK dentro
+        # de la transaccion del peaje.
+        if candidato is not None and not Post.objects.filter(
+                pk=candidato.pk).exists():
+            candidato = None
+        CostEntry.objects.create(post=candidato,
                                  provider=provider, concept=concept,
                                  eur=Decimal(str(round(float(eur), 4))))
     except Exception:

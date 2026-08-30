@@ -86,6 +86,7 @@ def run_cheap_phase(self, post_id):
             TranscriptSegment.objects.create(post=post, **seg)
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
+        _costs.set_post(None)   # 4.9-A: higiene del hilo del worker
     # 4.4-I: la pasada de sentido, ANTES del barrido (las senales se anclan a la
     # frase definitiva) y ANTES de proponer nombres (las inciertas no cuentan).
     try:
