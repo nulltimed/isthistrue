@@ -1196,3 +1196,16 @@ persiste: línea roja de biometría intacta). Con `scores: [[t0,t1,{S00:0.8,S01:
 la salida, el arranque se decide con física: la reescritura recibiría esos scores como ancla
 POR PALABRA en vez de una cita única. pyannote expone los embeddings del pipeline; es tamaño
 medio de worker + cliente. El listón (`eval_voces`) ya está listo para medirlo en minutos.
+
+## 54. Bloque 4.7: AssemblyAI gana el duelo — 93% sustancial (2026-08-30)
+
+Informe en `docs/61`. Registro técnico: motor en `apps/agents/assembly.py` (HTTP crudo, sin
+SDK — cero dependencias nuevas; header `authorization` SIN Bearer; `speech_models` como array
+con fallback; utterances en ms y letras → SPEAKER_NN por orden de aparición). Cadena en
+`_transcribe_first_tranche` (primer eslabón) + rama `turns is None` en `run_cheap_phase`
+(voces de fábrica → sin cruce). El liston es ahora un ALINEAMIENTO MONOTONO por DP
+(`eval_voces` v4) — el casador codicioso con cursor era estructuralmente frágil y dio tres
+falsos negativos de motor. Los 4.6-* (reescritura, votación, filtro de reacciones) SIGUEN
+actuando sobre el material AAI y suman. El techo del §53 (verificación acústica de grano
+fino en el worker GPU) queda ARCHIVADO: el motor conjunto lo disuelve; el worker GPU pasa a
+red de seguridad.
