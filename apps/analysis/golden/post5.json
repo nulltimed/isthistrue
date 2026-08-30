@@ -1,6 +1,6 @@
 {
  "post_id": 5,
- "descripcion": "Referencia de ORO escrita por David (2026-08-28): los primeros ~100 s del post 5, quien dice que. N=Neil (voz dominante), I=interlocutor 2.",
+ "descripcion": "Referencia de ORO escrita por David (2026-08-28): los primeros ~100 s del post 5, quien dice que. N=Neil (voz dominante), I=interlocutor 2. v3 (2026-08-30): +10 lineas de David repartidas por TODO el video (155-681 s) y «may i» corregida a I.",
  "notas": [
   "Alucinacion de whisper cazada por David: bucle 'you can measure and you can measure...' donde Neil dice 'that prevented psychology from maturing'.",
   "Solape real: I dice 'into an actual science' MIENTRAS N dice 'out of its original state'.",
@@ -28,7 +28,7 @@
    "reaccion"
   ],
   [
-   "N",
+   "I",
    "may i",
    "reaccion"
   ],
@@ -161,6 +161,56 @@
    "N",
    "so if it has a wavelength what happens if i change the wavelength the light changes color oh my gosh okay so color and wavelength go together",
    "sustancial"
+  ],
+  [
+   "I",
+   "oh my man",
+   "reaccion"
+  ],
+  [
+   "I",
+   "you do it you pimp",
+   "charla"
+  ],
+  [
+   "I",
+   "why am i so attracted to you girl",
+   "charla"
+  ],
+  [
+   "I",
+   "oh my god there's hope for me yet",
+   "charla"
+  ],
+  [
+   "I",
+   "they're 2 great takes that go great together",
+   "charla"
+  ],
+  [
+   "N",
+   "that is not what i said",
+   "sustancial"
+  ],
+  [
+   "I",
+   "and then one day black red yellow brown will all be white",
+   "charla"
+  ],
+  [
+   "N",
+   "that's exactly it's a that's odd",
+   "charla"
+  ],
+  [
+   "N",
+   "that would be infrared",
+   "sustancial"
+  ],
+  [
+   "I",
+   "that's still big",
+   "charla"
   ]
  ],
  "criterio": "Regla de David (2026-08-30): la web analiza AFIRMACIONES ROTUNDAS. Una reaccion/eco OMITIDA cuenta como acierto; lo sustancial se mide a muerte."

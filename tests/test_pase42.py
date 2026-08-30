@@ -4059,3 +4059,59 @@ class Parche47B1(TestCase):
         self.assertEqual(n, 1)
         restante = p.transcript_segments.get()
         self.assertEqual(restante.speaker_label, 'SPEAKER_00')  # el ORIGINAL
+
+
+class Parche48A(TestCase):
+    """4.8-A — el fantasma del motor se reparte LEYENDO (cazado por David:
+    AssemblyAI invento un hablante 3 con exclamaciones de los dos reales)."""
+
+    def _post_con_fantasma(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        User = get_user_model()
+        u = User.objects.create_user('u48a', f'u48a{Post.objects.count()}@x.com', 'x')
+        p = Post.objects.create(url=f'https://youtu.be/x48a{Post.objects.count()}', author=u)
+        datos = [(0, 100, 'SPEAKER_00', 'the explanation of physics continues here'),
+                 (100, 130, 'SPEAKER_01', 'a real question from the cohost'),
+                 (130, 133, 'SPEAKER_02', 'you do it you pimp'),
+                 (133, 200, 'SPEAKER_00', 'more physics explanation goes on')]
+        for a, b, l, t in datos:
+            TranscriptSegment.objects.create(post=p, start_seconds=a,
+                                             end_seconds=b, speaker_label=l, text=t)
+        return p
+
+    def test_el_fantasma_se_reasigna_a_una_voz_principal(self):
+        from apps.agents import attribution
+        p = self._post_con_fantasma()
+        r = {'decisiones': [{'n': 0, 'speaker': 'SPEAKER_01', 'tipo': 'voz'}]}
+        with mock.patch.object(attribution.client, 'call_json', return_value=r):
+            res = attribution.adjudicate_minor_voices(p)
+        self.assertEqual(res['adjudicated'], 1)
+        s = p.transcript_segments.get(text__contains='pimp')
+        self.assertEqual(s.speaker_label, 'SPEAKER_01')
+
+    def test_el_fantasma_reaccion_se_omite(self):
+        from apps.agents import attribution
+        p = self._post_con_fantasma()
+        r = {'decisiones': [{'n': 0, 'speaker': 'SPEAKER_00', 'tipo': 'reaccion'}]}
+        with mock.patch.object(attribution.client, 'call_json', return_value=r):
+            attribution.adjudicate_minor_voices(p)
+        self.assertFalse(p.transcript_segments.filter(text__contains='pimp').exists())
+
+    def test_con_dos_voces_no_hay_nada_que_adjudicar(self):
+        from apps.analysis.models import Post, TranscriptSegment
+        from apps.agents import attribution
+        User = get_user_model()
+        u = User.objects.create_user('u48a3', 'u48a3@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x48a3', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=9,
+                                         speaker_label='SPEAKER_00', text='a')
+        TranscriptSegment.objects.create(post=p, start_seconds=9, end_seconds=12,
+                                         speaker_label='SPEAKER_01', text='b')
+        self.assertEqual(attribution.adjudicate_minor_voices(p)['adjudicated'], 0)
+
+    def test_la_pista_viaja_en_el_dialecto_de_assemblyai(self):
+        from apps.agents.assembly import _pista_aai
+        self.assertEqual(_pista_aai({'num_speakers': 2}), {'speakers_expected': 2})
+        self.assertEqual(_pista_aai({'min_speakers': 2, 'max_speakers': 3}),
+                         {'min_speakers_expected': 2, 'max_speakers_expected': 3})
+        self.assertEqual(_pista_aai(None), {})

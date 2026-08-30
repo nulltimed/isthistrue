@@ -91,6 +91,8 @@ def run_cheap_phase(self, post_id):
         attribution.run(post)
         # 4.6-B: y el ARRANQUE, que el oido funde, se reescribe leyendo
         attribution.intro_rewrite(post)
+        # 4.8-A: las voces fantasma del motor se reparten leyendo
+        attribution.adjudicate_minor_voices(post)
         # 4.7-A: y las reacciones sueltas se retiran (la web analiza afirmaciones)
         attribution.drop_reactions(post)
     except Exception as exc:                     # regla 5.7: nunca en silencio
@@ -811,7 +813,7 @@ def _transcribe_first_tranche(post, tmpdir):
     # cadena (subtitulos, whisper, pyannote) no hace falta. Si no, todo sigue
     # exactamente como hasta hoy (regla 5.7).
     from apps.agents import assembly
-    aai = assembly.transcribe_diarize(audio)
+    aai = assembly.transcribe_diarize(audio, hint=diarization_hint(post))
     if aai:
         logger.info('Transcripción y voces por AssemblyAI: %d intervenciones', len(aai))
         return (aai, audio)

@@ -27,7 +27,7 @@ def _activo():
         SystemSetting.get_int('audio_engine_assemblyai', 1) > 0
 
 
-def transcribe_diarize(audio_path):
+def transcribe_diarize(audio_path, hint=None):
     """Sube el audio y devuelve la lista de intervenciones YA atribuidas, en el
     formato local ({start_seconds, end_seconds, text, speaker_label, words}),
     o None ante cualquier impedimento: el llamante DEBE caer al motor GPU."""
@@ -49,7 +49,11 @@ def transcribe_diarize(audio_path):
                                'speech_models': ['universal-3-5-pro',
                                                  'universal-2'],
                                'speaker_labels': True,
-                               'language_detection': True})
+                               'language_detection': True,
+                               # 4.8-A: la pista de voces que ya sabemos
+                               # (moderacion o relanzamiento) viaja al motor —
+                               # sin ella invento un fantasma en el post 5.
+                               **_pista_aai(hint)})
         tid = sub.json().get('id')
         if not tid:
             logger.warning('AssemblyAI: submit sin id (HTTP %s): %s',
@@ -71,6 +75,21 @@ def transcribe_diarize(audio_path):
     except Exception as exc:
         logger.warning('AssemblyAI indisponible (%r); se sigue con la GPU', exc)
         return None
+
+
+def _pista_aai(hint):
+    """Traduce nuestra pista (num/min/max_speakers) al dialecto de AssemblyAI
+    (speakers_expected / min_ / max_speakers_expected)."""
+    hint = hint or {}
+    out = {}
+    if hint.get('num_speakers'):
+        out['speakers_expected'] = int(hint['num_speakers'])
+    else:
+        if hint.get('min_speakers'):
+            out['min_speakers_expected'] = int(hint['min_speakers'])
+        if hint.get('max_speakers'):
+            out['max_speakers_expected'] = int(hint['max_speakers'])
+    return out
 
 
 def _map(datos):

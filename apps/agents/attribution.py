@@ -57,6 +57,13 @@ def run(post):
             logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
             return vacio
         if 'error' in datos:
+            # 4.8-A: un JSON invalido puntual no puede tumbar la pasada — se
+            # reintenta UNA vez (el modelo muestrea distinto).
+            datos = client.call_json(model_for('attribution'),
+                                     prompts.ATTRIBUTION_SYSTEM, payload,
+                                     max_tokens=1500,
+                                     mock_payload=MOCK_ATTRIBUTION)
+        if 'error' in datos:
             logger.warning('Pasada de sentido fallida en el post %s: %s', post.pk, datos.get('error'))
             return vacio
         for c in datos.get('changes') or []:
@@ -219,6 +226,65 @@ def intro_rewrite(post):
                 '%d intervenciones (+%d reacciones omitidas)',
                 post.pk, len(muestras), len(segments), len(nuevos), omitidas)
     return {'rewritten': len(nuevos), 'omitted': omitidas}
+
+
+def adjudicate_minor_voices(post):
+    """4.8-A: si el motor detecto voces DE MAS (fantasmas con cuota minima),
+    sus frases se reparten LEYENDO entre las dos principales — o se marcan
+    reaccion y se omiten. Cazado por David en el post 5: AssemblyAI invento un
+    hablante 3 con 18 exclamaciones de Chuck y de Neil (3,8% del tiempo).
+    Fail-soft integral: cualquier duda deja la frase como esta."""
+    from collections import defaultdict
+    segs = list(post.transcript_segments.all().order_by('start_seconds', 'pk'))
+    dur = defaultdict(float)
+    for s2 in segs:
+        if s2.speaker_label:
+            dur[s2.speaker_label] += s2.end_seconds - s2.start_seconds
+    if len(dur) <= 2:
+        return {'adjudicated': 0}
+    orden = sorted(dur, key=lambda k: -dur[k])
+    mayores, menores = orden[:2], orden[2:]
+    total = sum(dur.values()) or 1
+    if sum(dur[m] for m in menores) / total > 0.15:
+        return {'adjudicated': 0}   # demasiada voz "menor": quiza es real
+    fantasmas = [s2 for s2 in segs if s2.speaker_label in menores]
+    if not fantasmas:
+        return {'adjudicated': 0}
+    idx = {s2.pk: i for i, s2 in enumerate(segs)}
+    bloques = []
+    for n, s2 in enumerate(fantasmas):
+        i = idx[s2.pk]
+        ctx = segs[max(0, i - 2):i] + segs[i + 1:i + 3]
+        alrededor = ' / '.join(f'[{c.speaker_label}] {c.text[:60]}' for c in ctx)
+        bloques.append(f'FANTASMA {n}: «{s2.text[:120]}»\n  contexto: {alrededor}')
+    payload = (f"VOCES PRINCIPALES: {mayores[0]} (domina) y {mayores[1]}\n\n"
+               + '\n'.join(bloques))
+    try:
+        datos = client.call_json(model_for('attribution'),
+                                 prompts.ADJUDICATE_SYSTEM, payload,
+                                 max_tokens=2000,
+                                 mock_payload={'decisiones': []})
+    except Exception as exc:
+        logger.warning('Adjudicacion de fantasmas fallida en el post %s: %r',
+                       post.pk, exc)
+        return {'adjudicated': 0}
+    hechas = omitidas = 0
+    for d in (datos.get('decisiones') or []):
+        try:
+            s2 = fantasmas[int(d.get('n'))]
+        except (TypeError, ValueError, IndexError):
+            continue
+        if d.get('tipo') == 'reaccion':
+            s2.delete()
+            omitidas += 1
+        elif d.get('speaker') in mayores:
+            s2.speaker_label = d['speaker']
+            s2.attribution_note = _nota('fantasma adjudicado por lectura')
+            s2.save(update_fields=['speaker_label', 'attribution_note'])
+            hechas += 1
+    logger.info('Post %s: fantasmas adjudicados — %d reasignados, %d omitidos '
+                'de %d', post.pk, hechas, omitidas, len(fantasmas))
+    return {'adjudicated': hechas + omitidas}
 
 
 REACTION_LEXICON = {

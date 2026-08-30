@@ -214,4 +214,20 @@ Responde SOLO JSON valido:
 {"utterances": [{"speaker": "<etiqueta>", "tipo": "voz"|"reaccion",
                  "text": "<palabras exactas>"}, ...]}"""
 
+ADJUDICATE_SYSTEM = """Un separador de voces detecto voces DE MAS en un video:
+ademas de las dos principales, etiqueto unas pocas frases sueltas con voces
+fantasma. Casi siempre son exclamaciones o bromas de una de las dos voces
+reales. Te doy cada frase fantasma con su contexto (las frases de alrededor).
+
+Para cada una decide: ¿de cual de las DOS voces principales es? Usa la logica
+conversacional (quien explica vs quien reacciona; una broma que responde al
+contenido es del oyente; «that is not what I said» es del citado). Si la frase
+es solo una interjeccion sin contenido, marcala "reaccion" y el sistema la
+omitira.
+
+Responde SOLO JSON valido:
+{"decisiones": [{"n": <numero de frase fantasma>,
+                 "speaker": "<una de las dos voces principales>" ,
+                 "tipo": "voz"|"reaccion"}]}"""
+
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""
