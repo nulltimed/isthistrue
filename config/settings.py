@@ -181,6 +181,7 @@ SWEEP_MAX_TOKENS = int(os.getenv('SWEEP_MAX_TOKENS', '8000'))  # techo de respue
 # Si una clave nunca se sembro, get_int cae aqui: el .env sigue siendo la verdad.
 SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 4.9-A: el libro de cuentas — tarifas y topes por proveedor
+    'aai_webhook': '1',
     'assemblyai_monthly_cap_eur': '20',
     'aai_usd_per_hour': '0.40',
     'runpod_monthly_cap_eur': '15',
@@ -269,6 +270,11 @@ RUNPOD_WHISPER_ENDPOINT = os.getenv('RUNPOD_WHISPER_ENDPOINT', '')
 # cosidas de fabrica. Cadena: AssemblyAI -> GPU Runpod -> CPU. Sin clave, duerme.
 ASSEMBLYAI_API_KEY = os.getenv('ASSEMBLYAI_API_KEY', '')
 ASSEMBLYAI_TIMEOUT = int(os.getenv('ASSEMBLYAI_TIMEOUT', '900'))
+# 4.10-A: el TIMBRE — AssemblyAI nos avisa al terminar (webhook) y el worker
+# queda libre mientras cocinan. El secreto viaja en cabecera y se valida.
+AAI_WEBHOOK_BASE = os.getenv('AAI_WEBHOOK_BASE', 'https://isthistrue.xyztserver.com')
+import hashlib as _hashlib
+AAI_WEBHOOK_SECRET = _hashlib.sha256((SECRET_KEY + 'aai-hook').encode()).hexdigest()[:32]
 WHISPER_GPU_MODEL = os.getenv('WHISPER_GPU_MODEL', 'large-v3')
 # 4.4-J: separacion de voces en GPU (worker propio). Vacio = CPU como siempre.
 RUNPOD_DIARIZE_ENDPOINT = os.getenv('RUNPOD_DIARIZE_ENDPOINT', '')

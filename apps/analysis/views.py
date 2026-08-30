@@ -3,6 +3,7 @@ import re
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models, transaction
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.accounts.models import AnalysisCredit
 from apps.embeds.adapters import detect_platform, build_embed
@@ -902,3 +903,34 @@ def donations_page(request):
         'donated': donated, 'goal': goal, 'base': base, 'cap': cap,
         'paypal_url': paypal.value if paypal else '',
         'count': Donation.objects.count()})
+
+
+@csrf_exempt
+def aai_webhook(request):
+    """4.10-A: el TIMBRE de AssemblyAI. Valida el secreto de cabecera, responde
+    rapido (su plazo es 10 s) y delega TODO al worker. Idempotente: un post ya
+    resuelto o un id desconocido devuelven 200 y no hacen nada."""
+    import json as _json
+    from django.conf import settings as djs
+    from django.http import HttpResponse, HttpResponseForbidden
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    if request.headers.get('X-Istt-Hook') != djs.AAI_WEBHOOK_SECRET:
+        return HttpResponseForbidden('no')
+    try:
+        cuerpo = _json.loads(request.body.decode() or '{}')
+    except Exception:
+        return HttpResponse('mal cuerpo', status=200)   # no reintenteis esto
+    tid = cuerpo.get('transcript_id') or ''
+    from .models import Post
+    post = Post.objects.filter(aai_job_id=tid).first() if tid else None
+    if post is None:
+        return HttpResponse('desconocido', status=200)
+    from .tasks import resume_after_aai, run_cheap_phase
+    if cuerpo.get('status') == 'completed':
+        resume_after_aai.delay(post.pk, tid)
+    else:
+        post.aai_job_id = ''
+        post.save(update_fields=['aai_job_id'])
+        run_cheap_phase.delay(post.pk, skip_charge=True, skip_aai=True)
+    return HttpResponse('ok')

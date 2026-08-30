@@ -4298,3 +4298,74 @@ class Parche49B(TestCase):
         out, fuera = excise_embedded_reactions([seg])
         self.assertEqual(fuera, 0)
         self.assertEqual(out[0]['text'], 'Two sentences. Here okay.')
+
+
+class Parche410A(TestCase):
+    """4.10-A — el TIMBRE de AssemblyAI: encargar y soltar; el webhook continua.
+    El camarero ya no se queda plantado en la cocina."""
+
+    def _post(self):
+        from apps.analysis.models import Post
+        User = get_user_model()
+        u = User.objects.create_user(f'u410{Post.objects.count()}',
+                                     f'u410{Post.objects.count()}@x.com', 'x')
+        return Post.objects.create(url=f'https://youtu.be/x410{Post.objects.count()}',
+                                   author=u, status='CHEAP_RUNNING',
+                                   aai_job_id='tid-123')
+
+    def test_el_encargo_lleva_timbre_y_secreto(self):
+        from apps.agents import assembly
+        from django.conf import settings as djs
+        subida = mock.Mock(); subida.json.return_value = {'upload_url': 'u'}
+        encargo = mock.Mock(); encargo.json.return_value = {'id': 'tid-9'}
+        with override_settings(ASSEMBLYAI_API_KEY='k'), \
+             mock.patch.object(assembly, 'open',
+                               mock.mock_open(read_data=b'x'), create=True), \
+             mock.patch.object(assembly.httpx, 'post',
+                               side_effect=[subida, encargo]) as llamadas:
+            tid = assembly.submit_async('/x.mp3')
+        self.assertEqual(tid, 'tid-9')
+        cuerpo = llamadas.call_args_list[1].kwargs['json']
+        self.assertTrue(cuerpo['webhook_url'].endswith('/aai-hook/'))
+        self.assertEqual(cuerpo['webhook_auth_header_name'], 'X-Istt-Hook')
+        self.assertEqual(cuerpo['webhook_auth_header_value'],
+                         djs.AAI_WEBHOOK_SECRET)
+
+    def test_el_timbre_sin_secreto_se_rechaza(self):
+        r = self.client.post('/aai-hook/', data='{}',
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 403)
+
+    def test_el_timbre_completed_despacha_la_reanudacion(self):
+        from django.conf import settings as djs
+        from apps.analysis import tasks
+        p = self._post()
+        with mock.patch.object(tasks.resume_after_aai, 'delay') as d:
+            r = self.client.post(
+                '/aai-hook/',
+                data='{"transcript_id": "tid-123", "status": "completed"}',
+                content_type='application/json',
+                headers={'X-Istt-Hook': djs.AAI_WEBHOOK_SECRET})
+        self.assertEqual(r.status_code, 200)
+        d.assert_called_once_with(p.pk, 'tid-123')
+
+    def test_el_timbre_con_error_relanza_por_gpu_sin_recobrar(self):
+        from django.conf import settings as djs
+        from apps.analysis import tasks
+        p = self._post()
+        with mock.patch.object(tasks.run_cheap_phase, 'delay') as d:
+            self.client.post(
+                '/aai-hook/',
+                data='{"transcript_id": "tid-123", "status": "error"}',
+                content_type='application/json',
+                headers={'X-Istt-Hook': djs.AAI_WEBHOOK_SECRET})
+        d.assert_called_once_with(p.pk, skip_charge=True, skip_aai=True)
+        p.refresh_from_db()
+        self.assertEqual(p.aai_job_id, '')
+
+    def test_un_timbre_obsoleto_no_hace_nada(self):
+        from apps.analysis.tasks import resume_after_aai
+        p = self._post()
+        p.aai_job_id = 'OTRO'
+        p.save()
+        self.assertEqual(resume_after_aai(p.pk, 'tid-123'), 'stale')

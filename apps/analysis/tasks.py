@@ -26,8 +26,15 @@ COST_OPUS_RESCAN_EUR = 0.40  # Opus: 5-7x Sonnet; solo posts muy votados, 1 vez
 #  mandaba la segunda. Se conserva el valor vigente y se borra el duplicado.)
 
 
+class _AaiSubmitted(Exception):
+    """4.10-A: sentinela — el trabajo quedo encargado CON TIMBRE; esta tarea
+    termina aqui y resume_after_aai continuara cuando AssemblyAI llame."""
+    def __init__(self, job_id):
+        self.job_id = job_id
+
+
 @shared_task(bind=True, max_retries=2)
-def run_cheap_phase(self, post_id):
+def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
     """Transcripcion faster-whisper (primer tramo) + barrido Haiku + clasificacion."""
     from .models import Post, TranscriptSegment, DailyBudget
     from apps.agents import sweep, algorithm
@@ -36,7 +43,8 @@ def run_cheap_phase(self, post_id):
     from .services import cost_cheap_eur
     from apps.analysis import costs as _costs
     _costs.set_post(post)   # 4.9-A: los apuntes Anthropic se cuelgan del post
-    if not DailyBudget.try_spend(max(COST_CHEAP_EUR, cost_cheap_eur(post))):
+    if not skip_charge and not DailyBudget.try_spend(
+            max(COST_CHEAP_EUR, cost_cheap_eur(post))):
         post.status = 'NEW'  # se reintentara cuando haya deposito
         post.save(update_fields=['status'])
         return 'budget_exhausted'
@@ -54,7 +62,13 @@ def run_cheap_phase(self, post_id):
         # portada y campana ("suscrito a 10 posts, saber cual habla de un plumazo").
         import time as _time
         _t0 = _time.monotonic()
-        segments, audio_path = _transcribe_first_tranche(post, tmpdir)
+        try:
+            segments, audio_path = _transcribe_first_tranche(
+                post, tmpdir, skip_aai=skip_aai)
+        except _AaiSubmitted as enc:
+            post.aai_job_id = enc.job_id
+            post.save(update_fields=['aai_job_id'])
+            return 'awaiting_aai_webhook'   # el timbre continuara
         post.transcribe_seconds = round(_time.monotonic() - _t0, 1)
         # 4.4-G (A.1 reformulado por David): la DATACION va ahora AQUI, antes de
         # separar voces, porque el mismo viaje de Haiku trae tambien cuantas voces
@@ -93,6 +107,61 @@ def run_cheap_phase(self, post_id):
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
         _costs.set_post(None)   # 4.9-A: higiene del hilo del worker
+    return _after_segments(post)
+
+
+
+
+@shared_task(bind=True, max_retries=2)
+def resume_after_aai(self, post_id, transcript_id):
+    """4.10-A: suena el timbre — recoger el trabajo de AssemblyAI y terminar la
+    fase barata. Si algo falla, se relanza por la cadena GPU→CPU SIN volver a
+    cobrar el presupuesto (ya se cobro al encargar)."""
+    from .models import Post, TranscriptSegment
+    from apps.agents import assembly
+    from apps.analysis import costs as _costs
+    post = Post.objects.get(pk=post_id)
+    if post.status != 'CHEAP_RUNNING' or post.aai_job_id != transcript_id:
+        logger.info('Timbre ignorado para el post %s (trabajo %s: obsoleto)',
+                    post_id, transcript_id)
+        return 'stale'
+    _costs.set_post(post)
+    try:
+        segments = assembly.fetch_result(transcript_id, post=post)
+        post.aai_job_id = ''
+        post.save(update_fields=['aai_job_id'])
+        if not segments:
+            logger.warning('Post %s: AssemblyAI no entrego — relanzando por '
+                           'GPU→CPU sin recobrar', post_id)
+            TranscriptSegment.objects.filter(post=post).delete()
+            run_cheap_phase.delay(post_id, skip_charge=True, skip_aai=True)
+            return 'fallback_gpu'
+        logger.info('Transcripción y voces por AssemblyAI (timbre): %d '
+                    'intervenciones', len(segments))
+        _date_and_hint(post, ' '.join(x.get('text', '') for x in segments))
+        from apps.agents.attribution import excise_embedded_reactions
+        segments, fuera = excise_embedded_reactions(segments)
+        if fuera:
+            logger.info('Post %s: %d reacciones incrustadas extirpadas',
+                        post.pk, fuera)
+        for seg in segments:
+            TranscriptSegment.objects.create(
+                post=post, **{k: v for k, v in seg.items() if k != 'words'})
+        if post.cheap_started_at:
+            post.transcribe_seconds = round(
+                (timezone.now() - post.cheap_started_at).total_seconds(), 1)
+        post.diarize_seconds = 0.0
+        post.save(update_fields=['transcribe_seconds', 'diarize_seconds'])
+    finally:
+        _costs.set_post(None)
+    return _after_segments(post)
+
+
+def _after_segments(post):
+    """4.10-A: la cola comun de la fase barata — todo lo que ocurre una vez
+    existen los segmentos. La usan run_cheap_phase (via sincrona) y
+    resume_after_aai (cuando suena el timbre)."""
+    from apps.agents import sweep, algorithm
     # 4.4-I: la pasada de sentido, ANTES del barrido (las senales se anclan a la
     # frase definitiva) y ANTES de proponer nombres (las inciertas no cuentan).
     try:
@@ -143,7 +212,6 @@ def run_cheap_phase(self, post_id):
         return 'auto_verifying'
     notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
     return 'pending_validation'
-
 
 def _date_and_hint(post, transcript_text):
     """Datacion + pista de voces en un viaje. Datar es una ayuda, no un requisito:
@@ -771,7 +839,7 @@ def glue_short_sentences(merged, max_chars=600, min_seconds=MIN_ISLAND_SECONDS):
     return out
 
 
-def _transcribe_first_tranche(post, tmpdir):
+def _transcribe_first_tranche(post, tmpdir, skip_aai=False):
     """yt-dlp audio -> faster-whisper small-int8 (CPU) del tramo inicial del video
     (techo settings.TRANSCRIBE_MAX_SECONDS; 4.3-A.8: 90 min, antes 20 cableados).
     En MOCK_AGENTS devuelve segmentos ficticios para probar sin descargar nada."""
@@ -824,10 +892,18 @@ def _transcribe_first_tranche(post, tmpdir):
     # cadena (subtitulos, whisper, pyannote) no hace falta. Si no, todo sigue
     # exactamente como hasta hoy (regla 5.7).
     from apps.agents import assembly
-    aai = assembly.transcribe_diarize(audio, hint=diarization_hint(post), post=post)
-    if aai:
-        logger.info('Transcripción y voces por AssemblyAI: %d intervenciones', len(aai))
-        return (aai, audio)
+    from apps.panel.models import SystemSetting
+    if not skip_aai and SystemSetting.get_int('aai_webhook', 1) > 0:
+        # 4.10-A: CON TIMBRE — encargar y soltar; el webhook continuara
+        tid = assembly.submit_async(audio, hint=diarization_hint(post), post=post)
+        if tid:
+            raise _AaiSubmitted(tid)
+        # el encargo fallo: se sigue por la cadena de siempre (GPU→CPU)
+    elif not skip_aai:
+        aai = assembly.transcribe_diarize(audio, hint=diarization_hint(post), post=post)
+        if aai:
+            logger.info('Transcripción y voces por AssemblyAI: %d intervenciones', len(aai))
+            return (aai, audio)
     # 4.4-F (decision de David, revisa la del 4.2.1): cuando VA A HABER separacion
     # de voces, whisper manda — sus tiempos por palabra permiten atribuir bien las
     # frases. Los subtitulos humanos vienen en bloques que mezclan hablantes y solo

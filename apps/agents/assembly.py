@@ -94,6 +94,85 @@ def transcribe_diarize(audio_path, hint=None, post=None):
         return None
 
 
+def submit_async(audio_path, hint=None, post=None):
+    """4.10-A (orden de David): el envio CON TIMBRE. Sube el audio, encarga el
+    trabajo con webhook y devuelve el id — el worker queda LIBRE; AssemblyAI
+    llamara a /aai-hook/ al terminar y resume_after_aai continuara. None ante
+    cualquier impedimento: el llamante cae al motor GPU como siempre."""
+    if not _activo():
+        return None
+    from apps.panel.models import SystemSetting
+    from apps.analysis import costs
+    from apps.agents.catalog import USD_EUR
+    tarifa = float(SystemSetting.get_str('aai_usd_per_hour', '0.40') or 0.40)
+    dur_h = ((getattr(post, 'duration_seconds', 0) or 1500) / 3600.0)
+    tope = float(SystemSetting.get_str('assemblyai_monthly_cap_eur', '20') or 20)
+    if costs.month_total('assemblyai') + dur_h * tarifa * USD_EUR > tope:
+        logger.warning('Tope mensual de AssemblyAI alcanzado: cae a la GPU')
+        return None
+    H = {'authorization': settings.ASSEMBLYAI_API_KEY}
+    try:
+        with open(audio_path, 'rb') as f:
+            up = httpx.post(f'{BASE}/v2/upload', headers=H, content=f.read(),
+                            timeout=300)
+        url = up.json().get('upload_url')
+        if not url:
+            logger.warning('AssemblyAI: subida sin upload_url (HTTP %s)',
+                           up.status_code)
+            return None
+        sub = httpx.post(f'{BASE}/v2/transcript', timeout=60,
+                         headers={**H, 'content-type': 'application/json'},
+                         json={'audio_url': url,
+                               'speech_models': ['universal-3-5-pro',
+                                                 'universal-2'],
+                               'speaker_labels': True,
+                               'language_detection': True,
+                               'webhook_url':
+                                   f'{settings.AAI_WEBHOOK_BASE}/aai-hook/',
+                               'webhook_auth_header_name': 'X-Istt-Hook',
+                               'webhook_auth_header_value':
+                                   settings.AAI_WEBHOOK_SECRET,
+                               **_pista_aai(hint)})
+        tid = sub.json().get('id')
+        if not tid:
+            logger.warning('AssemblyAI: submit sin id (HTTP %s): %s',
+                           sub.status_code, str(sub.text)[:150])
+            return None
+        logger.info('AssemblyAI: trabajo %s encargado CON TIMBRE — worker libre',
+                    tid)
+        return tid
+    except Exception as exc:
+        logger.warning('AssemblyAI indisponible (%r); se sigue con la GPU', exc)
+        return None
+
+
+def fetch_result(transcript_id, post=None):
+    """Recoge un trabajo terminado (lo llama resume_after_aai tras el timbre).
+    Devuelve los segmentos en formato local o None (→ el llamante relanza por
+    la via GPU). Deja el apunte contable con la duracion REAL facturada."""
+    from apps.panel.models import SystemSetting
+    from apps.analysis import costs
+    from apps.agents.catalog import USD_EUR
+    H = {'authorization': settings.ASSEMBLYAI_API_KEY}
+    try:
+        datos = httpx.get(f'{BASE}/v2/transcript/{transcript_id}', headers=H,
+                          timeout=60).json()
+    except Exception as exc:
+        logger.warning('AssemblyAI: no se pudo recoger %s (%r)',
+                       transcript_id, exc)
+        return None
+    if datos.get('status') != 'completed':
+        logger.warning('AssemblyAI: %s -> %s (%s)', transcript_id,
+                       datos.get('status'), str(datos.get('error'))[:150])
+        return None
+    tarifa = float(SystemSetting.get_str('aai_usd_per_hour', '0.40') or 0.40)
+    seg_audio = datos.get('audio_duration') or (
+        getattr(post, 'duration_seconds', 0) or 0)
+    costs.record('assemblyai', 'transcripcion+voces',
+                 round(seg_audio / 3600.0 * tarifa * USD_EUR, 4), post=post)
+    return _map(datos)
+
+
 def _pista_aai(hint):
     """Traduce nuestra pista (num/min/max_speakers) al dialecto de AssemblyAI
     (speakers_expected / min_ / max_speakers_expected)."""

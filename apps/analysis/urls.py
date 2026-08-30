@@ -5,6 +5,7 @@ from apps.panel.dsa import complaint_form
 from django.views.generic import TemplateView
 
 urlpatterns = [
+    path('aai-hook/', views.aai_webhook, name='aai_webhook'),  # 4.10-A
     path('', views.index, name='index'),
     path('submit/', views.submit, name='submit'),
     path('analizar/', views.submit),  # alias en español (guia 3.9 lo nombra asi)
