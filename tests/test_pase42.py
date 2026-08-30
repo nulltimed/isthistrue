@@ -3798,7 +3798,10 @@ class Parche46A(TestCase):
         ruta = os.path.join(os.path.dirname(golden.__file__), 'post5.json')
         d = json.load(open(ruta, encoding='utf-8'))
         self.assertEqual(len(d['lineas']), 31)
-        self.assertTrue(all(q in ('N', 'I') for q, _t in d['lineas']))
+        # v2 (4.7-A): cada linea es [quien, texto, tipo]
+        self.assertTrue(all(l[0] in ('N', 'I') for l in d['lineas']))
+        self.assertTrue(all(l[2] in ('sustancial', 'reaccion', 'charla')
+                            for l in d['lineas']))
 
 
 class Parche46B(TestCase):
