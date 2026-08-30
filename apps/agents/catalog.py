@@ -103,6 +103,10 @@ TASKS = [
     ('verdict',   'Veredictos con fuentes',  'claude-sonnet-4-6',         'una por afirmación'),
     ('moderation', 'Moderación del foro',    'claude-haiku-4-5-20251001', 'una por mensaje'),
     ('deep',      'Reanálisis profundo',     'claude-opus-4-8',           'solo si se vota'),
+    # 4.8-B (orden de David): la CRIBA FACTUAL de las frases de voces fantasma
+    # (¿contiene información verificable?) tiene su propia rueda en el panel.
+    ('innocuous', 'Criba factual de frases dudosas', 'claude-sonnet-4-6',
+                  'solo si el separador inventa voces'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
 

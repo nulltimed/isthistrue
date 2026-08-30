@@ -277,7 +277,7 @@ def adjudicate_minor_voices(post):
         bloques = [f'FRASE {n}: «{s2.text[:150]}»'
                    for n, s2 in enumerate(pendientes)]
         try:
-            datos = client.call_json(model_for('attribution'),
+            datos = client.call_json(model_for('innocuous'),
                                      prompts.ADJUDICATE_SYSTEM,
                                      '\n'.join(bloques), max_tokens=1500,
                                      mock_payload={'decisiones': []})

@@ -4063,56 +4063,112 @@ class Parche47B1(TestCase):
 
 
 class Parche48A(TestCase):
-    """4.8-A — el fantasma del motor se reparte LEYENDO (cazado por David:
-    AssemblyAI invento un hablante 3 con exclamaciones de los dos reales)."""
+    """4.8-B (politica cientifica de David): con las frases de voces FANTASMA
+    no se adivina el hablante. Sin informacion factual → se eliminan y la base
+    InnocuousPhrase las aprende para siempre; con informacion → INCIERTAS y
+    la comunidad decide."""
 
-    def _post_con_fantasma(self):
+    def _post_con_fantasma(self, texto='you do it you pimp'):
         from apps.analysis.models import Post, TranscriptSegment
         User = get_user_model()
-        u = User.objects.create_user('u48a', f'u48a{Post.objects.count()}@x.com', 'x')
-        p = Post.objects.create(url=f'https://youtu.be/x48a{Post.objects.count()}', author=u)
-        datos = [(0, 100, 'SPEAKER_00', 'the explanation of physics continues here'),
+        u = User.objects.create_user(f'u48a{Post.objects.count()}',
+                                     f'u48a{Post.objects.count()}@x.com', 'x')
+        p = Post.objects.create(url=f'https://youtu.be/x48a{Post.objects.count()}',
+                                author=u)
+        datos = [(0, 100, 'SPEAKER_00', 'the explanation of physics continues'),
                  (100, 130, 'SPEAKER_01', 'a real question from the cohost'),
-                 (130, 133, 'SPEAKER_02', 'you do it you pimp'),
+                 (130, 133, 'SPEAKER_02', texto),
                  (133, 200, 'SPEAKER_00', 'more physics explanation goes on')]
         for a, b, l, t in datos:
             TranscriptSegment.objects.create(post=p, start_seconds=a,
-                                             end_seconds=b, speaker_label=l, text=t)
+                                             end_seconds=b, speaker_label=l,
+                                             text=t)
         return p
 
-    def test_el_fantasma_se_reasigna_a_una_voz_principal(self):
+    def test_sin_informacion_se_elimina_y_la_base_aprende(self):
         from apps.agents import attribution
+        from apps.analysis.models import InnocuousPhrase
         p = self._post_con_fantasma()
-        r = {'decisiones': [{'n': 0, 'speaker': 'SPEAKER_01', 'tipo': 'voz'}]}
+        r = {'decisiones': [{'n': 0, 'factual': False}]}
         with mock.patch.object(attribution.client, 'call_json', return_value=r):
             res = attribution.adjudicate_minor_voices(p)
-        self.assertEqual(res['adjudicated'], 1)
-        s = p.transcript_segments.get(text__contains='pimp')
-        self.assertEqual(s.speaker_label, 'SPEAKER_01')
+        self.assertEqual(res['deleted'], 1)
+        self.assertFalse(p.transcript_segments.filter(
+            text__contains='pimp').exists())
+        self.assertTrue(InnocuousPhrase.objects.filter(
+            text_norm='you do it you pimp').exists())
 
-    def test_el_fantasma_reaccion_se_omite(self):
+    def test_con_informacion_queda_incierta_jamas_adivinada(self):
         from apps.agents import attribution
-        p = self._post_con_fantasma()
-        r = {'decisiones': [{'n': 0, 'speaker': 'SPEAKER_00', 'tipo': 'reaccion'}]}
+        p = self._post_con_fantasma(texto='the tower is 300 meters tall')
+        r = {'decisiones': [{'n': 0, 'factual': True}]}
         with mock.patch.object(attribution.client, 'call_json', return_value=r):
-            attribution.adjudicate_minor_voices(p)
-        self.assertFalse(p.transcript_segments.filter(text__contains='pimp').exists())
+            res = attribution.adjudicate_minor_voices(p)
+        self.assertEqual(res['uncertain'], 1)
+        s2 = p.transcript_segments.get(text__contains='300 meters')
+        self.assertTrue(s2.attribution_uncertain)
+        self.assertEqual(s2.speaker_label, 'SPEAKER_02')  # NO se adivino
 
-    def test_con_dos_voces_no_hay_nada_que_adjudicar(self):
+    def test_la_base_aprendida_actua_gratis_sin_llamar_a_sonnet(self):
+        from apps.agents import attribution
+        from apps.analysis.models import InnocuousPhrase
+        InnocuousPhrase.objects.create(text_norm='you do it you pimp')
+        p = self._post_con_fantasma()
+        with mock.patch.object(attribution.client, 'call_json') as llamada:
+            res = attribution.adjudicate_minor_voices(p)
+        llamada.assert_not_called()
+        self.assertEqual(res['deleted'], 1)
+        self.assertEqual(InnocuousPhrase.objects.get(
+            text_norm='you do it you pimp').times_seen, 2)
+
+    def test_drop_reactions_consulta_la_base(self):
+        from apps.agents import attribution
+        from apps.analysis.models import Post, TranscriptSegment, InnocuousPhrase
+        InnocuousPhrase.objects.create(text_norm='holy mackerel')
+        User = get_user_model()
+        u = User.objects.create_user('u48b4', 'u48b4@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x48b4', author=u)
+        TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=5,
+                                         speaker_label='SPEAKER_00',
+                                         text='a real factual sentence here')
+        TranscriptSegment.objects.create(post=p, start_seconds=5, end_seconds=6,
+                                         speaker_label='SPEAKER_01',
+                                         text='Holy mackerel!')
+        self.assertEqual(attribution.drop_reactions(p), 1)
+        self.assertEqual(p.transcript_segments.count(), 1)
+
+    def test_con_dos_voces_no_hay_nada_que_cribar(self):
         from apps.analysis.models import Post, TranscriptSegment
         from apps.agents import attribution
         User = get_user_model()
-        u = User.objects.create_user('u48a3', 'u48a3@x.com', 'x')
-        p = Post.objects.create(url='https://youtu.be/x48a3', author=u)
+        u = User.objects.create_user('u48a5', 'u48a5@x.com', 'x')
+        p = Post.objects.create(url='https://youtu.be/x48a5', author=u)
         TranscriptSegment.objects.create(post=p, start_seconds=0, end_seconds=9,
                                          speaker_label='SPEAKER_00', text='a')
         TranscriptSegment.objects.create(post=p, start_seconds=9, end_seconds=12,
                                          speaker_label='SPEAKER_01', text='b')
-        self.assertEqual(attribution.adjudicate_minor_voices(p)['adjudicated'], 0)
+        self.assertEqual(
+            attribution.adjudicate_minor_voices(p)['adjudicated'], 0)
 
     def test_la_pista_viaja_en_el_dialecto_de_assemblyai(self):
         from apps.agents.assembly import _pista_aai
-        self.assertEqual(_pista_aai({'num_speakers': 2}), {'speakers_expected': 2})
+        self.assertEqual(_pista_aai({'num_speakers': 2}),
+                         {'speakers_expected': 2})
         self.assertEqual(_pista_aai({'min_speakers': 2, 'max_speakers': 3}),
-                         {'min_speakers_expected': 2, 'max_speakers_expected': 3})
+                         {'min_speakers_expected': 2,
+                          'max_speakers_expected': 3})
         self.assertEqual(_pista_aai(None), {})
+
+    def test_la_criba_usa_el_modelo_del_panel(self):
+        """Orden de David: el modelo de la criba factual se elige en el panel
+        (tarea 'innocuous'), no hereda a ciegas el de la pasada de sentido."""
+        from apps.agents import attribution
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='model_innocuous', defaults={'value': 'claude-haiku-4-5-20251001'})
+        p = self._post_con_fantasma()
+        r = {'decisiones': [{'n': 0, 'factual': False}]}
+        with mock.patch.object(attribution.client, 'call_json',
+                               return_value=r) as llamada:
+            attribution.adjudicate_minor_voices(p)
+        self.assertEqual(llamada.call_args.args[0], 'claude-haiku-4-5-20251001')
