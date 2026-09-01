@@ -2,7 +2,7 @@
 from django.http import JsonResponse
 from .models import Claim
 
-LICENSE = 'CC-BY-SA-4.0 — atribucion: isthistrue.xyztserver.com'
+LICENSE = 'CC-BY-SA-4.0 — atribucion: esestocierto.com'
 
 
 def claims_list(request):

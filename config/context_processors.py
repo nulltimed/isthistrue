@@ -19,7 +19,10 @@ def logo_variant(request):
     interfaz sigue mandandolo el selector ES-EN. wikitrue y cualquier otro host
     -> isthistrue (documentado en README de operador)."""
     host = request.get_host().split(':')[0].lower()
-    return {'logo_variant': 'escierto' if host.startswith('escierto') else 'isthistrue'}
+    # 5.0-A (dominio nuevo de David): esestocierto.com es la casa — marca en
+    # espanol; los hosts historicos conservan su variante para las redirecciones.
+    es = host.startswith('escierto') or 'esestocierto' in host
+    return {'logo_variant': 'escierto' if es else 'isthistrue'}
 
 
 def quota_banner(request):

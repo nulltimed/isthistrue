@@ -272,7 +272,7 @@ ASSEMBLYAI_API_KEY = os.getenv('ASSEMBLYAI_API_KEY', '')
 ASSEMBLYAI_TIMEOUT = int(os.getenv('ASSEMBLYAI_TIMEOUT', '900'))
 # 4.10-A: el TIMBRE — AssemblyAI nos avisa al terminar (webhook) y el worker
 # queda libre mientras cocinan. El secreto viaja en cabecera y se valida.
-AAI_WEBHOOK_BASE = os.getenv('AAI_WEBHOOK_BASE', 'https://isthistrue.xyztserver.com')
+AAI_WEBHOOK_BASE = os.getenv('AAI_WEBHOOK_BASE', 'https://esestocierto.com')  # 5.0-A
 import hashlib as _hashlib
 AAI_WEBHOOK_SECRET = _hashlib.sha256((SECRET_KEY + 'aai-hook').encode()).hexdigest()[:32]
 WHISPER_GPU_MODEL = os.getenv('WHISPER_GPU_MODEL', 'large-v3')

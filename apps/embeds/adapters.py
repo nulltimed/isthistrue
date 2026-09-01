@@ -109,7 +109,8 @@ def build_embed(post, start_seconds=0):
                 f'frameborder="0" loading="lazy" height="152" '
                 f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
     if p == 'twitch' and vid:
-        return (f'<iframe src="https://player.twitch.tv/?video={vid}&parent=isthistrue.xyztserver.com'
+        return (f'<iframe src="https://player.twitch.tv/?video={vid}&parent=esestocierto.com'
+                f'&parent=wiki.esestocierto.com&parent=isthistrue.xyztserver.com'
                 f'&parent=escierto.xyztserver.com&autoplay=false&time={s}s" '
                 f'frameborder="0" allowfullscreen loading="lazy" '
                 f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
