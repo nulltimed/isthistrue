@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-01 · Commit en producción: `e5a9c38` — 5.0-A: MUDANZA a esestocierto.com (única entrada; wiki.esestocierto.com; 301 desde los históricos EN EL NGINX DEL HOST; certs snap-certbot autorrenovando; Brevo desde mail.esestocierto.com verificado; timbre re-apuntado). El primer vuelo real del webhook completó solo (post 5 → DONE) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-01 · Commit en producción: `1c8c1bb` — 5.0-B: MARCA NUEVA (logo máquina de escribir «esesto»/«cierto?», pestaña esestocierto?, favicon lupa negra) + decisiones de la wiki-red registradas en §58. ⏰ RECORDATORIO ACTIVO: avisar a David sobre abrir las fichas a Google DENTRO DE 5 ITERACIONES (contador: 5.0-B=1) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
@@ -50,7 +50,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 > Lee este documento ENTERO antes de tocar nada. Después lee, en este orden:
 > `CLAUDE.md` (raíz del repo — tu norma), `docs/06-notas-para-la-ia-de-desarrollo.md`
-> (§1-§57: TODA la historia técnica), el informe del último pase (`docs/64`) y la especificación GPU (`docs/56`).
+> (§1-§58: TODA la historia técnica), el informe del último pase (`docs/64`) y la especificación GPU (`docs/56`).
 > Con esos tres + este handoff, puedes continuar como si fueras yo.
 
 ---
@@ -64,7 +64,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 | **TÚ** (Claude Code, "el operador") | Esta instancia | IMPLEMENTAS: aplicas los pases, verificas, despliegas con el ritual, arreglas lo que el CI/espejo cace, documentas TODO, y mantienes GitHub = /opt = espejo |
 
 **El canal operador→IA dev es `docs/06-notas-para-la-ia-de-desarrollo.md`**: tras cada pase
-añades un addendum numerado (vas por el §57) con bugs encontrados, reglas nuevas y flecos.
+añades un addendum numerado (vas por el §58) con bugs encontrados, reglas nuevas y flecos.
 Fable lo lee antes del siguiente pase — y ha demostrado que lo incorpora (sus guías citan
 tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
 
@@ -442,7 +442,7 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 | Qué | Dónde |
 |---|---|
 | Norma del operador | `CLAUDE.md` (raíz del repo; copia espejo en /home/claude/CLAUDE.md) |
-| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§57) |
+| Historia técnica completa | `docs/06-notas-para-la-ia-de-desarrollo.md` (§1-§58) |
 | **Registro técnico de las intervenciones del operador** | `docs/34-registro-tecnico-intervenciones-operador.md` (causa raíz + regla de cada fix) |
 | **Mapa de TODO lo implementado** | `docs/32-mapa-de-lo-implementado.md` (inventario del código real) |
 | **Decisiones pendientes de David** | `docs/33-decisiones-pendientes.md` (bloques A/B/C con recomendación) |
