@@ -1240,3 +1240,17 @@ Informe en `docs/64`. Canal técnico: los 301 viven en el nginx del HOST
 ya es la casa nueva (y fijado en .env). El primer vuelo real del timbre completó de punta a
 punta (relanzamiento nocturno → webhook → DONE). Siguiente: 5.0-B (slugs de posts) y la
 serie 5.1 de la wiki-red cuando David decida las tres cuestiones abiertas.
+
+
+## 58. Decisiones de David para la wiki-red + marca nueva (2026-09-01)
+
+**Wiki 5.1 (desbloqueada)**: los TEMAS se crean cuando un post alcanza los votos suficientes
+para analizar sus claims (emergen del flujo, no a mano). Cada interviniente identificado
+tendra su wiki con: analisis de sus intervenciones, GRAFICOS generados en tiempo real, y
+listado interactivo de todos sus claims analizados con enlace al post. Idioma por defecto de
+la portada: castellano. **Google/noindex: NO tocar aun — David pidio que se le recuerde
+DENTRO DE 5 ITERACIONES (contador: parche 5.0-B = 1).**
+
+**Marca (5.0-B)**: logo a maquina de escribir — «esesto» blanco con contorno negro +
+«cierto?» negro con contorno blanco; pestaña del navegador: «esestocierto?»; favicon: lupa
+simple negra (SVG + PNGs regenerados con Pillow, invariante de 3 favicons intacta).

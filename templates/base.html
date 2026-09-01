@@ -2,7 +2,7 @@
 <html lang="{{ request.LANGUAGE_CODE|default:'es' }}">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{% block title %}{% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}{% endblock %}</title>
+<title>{% block title %}esestocierto?{% endblock %}</title>
 {% block og %}
 <meta property="og:site_name" content="isthistrue.">
 <meta property="og:title" content="isthistrue. / escierto.">
@@ -23,7 +23,7 @@
     <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
   </form>
   <div class="masthead">
-    <a class="logo" href="/">{% if logo_variant == 'escierto' %}<img src="{% static 'img/logo-es.svg' %}" alt="escierto.">{% else %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% endif %}</a>
+    <a class="logo" href="/">{% if logo_variant == 'escierto' %}<img src="{% static 'img/logo-es.svg' %}" alt="esestocierto?">{% else %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% endif %}</a>
 
   </div>
   <nav>

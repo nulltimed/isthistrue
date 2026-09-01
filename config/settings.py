@@ -96,7 +96,7 @@ CACHES = {
                             'LOCATION': '/tmp/machina_attachments'},
 }
 HAYSTACK_CONNECTIONS = {'default': {'ENGINE': 'haystack.backends.simple_backend.SimpleEngine'}}
-MACHINA_FORUM_NAME = 'isthistrue.'
+MACHINA_FORUM_NAME = 'esestocierto?'
 MACHINA_MARKUP_LANGUAGE = ('markdown2.markdown', {'safe_mode': 'escape'})  # Markdown basico, HTML escapado
 MACHINA_MARKUP_WIDGET = 'django.forms.Textarea'
 
