@@ -1231,3 +1231,12 @@ UNA vez sirve a las dos vías)**; vista `aai_webhook` csrf_exempt idempotente re
 <10 s; `run_cheap_phase(skip_charge, skip_aai)` para relanzar sin recobrar. El estreno real
 quedó para mañana: el airbag diario cortó (5,54/6,45 € gastados hoy en validaciones — el
 libro lo hizo visible). Post en NEW; el beat lo relanza solo.
+
+## 57. Parche 5.0-A: mudanza a esestocierto.com (2026-09-01)
+
+Informe en `docs/64`. Canal técnico: los 301 viven en el nginx del HOST
+(`/etc/nginx/sites-enabled/isthistrue.conf`, con el mapeo wikitrue→wiki.esestocierto.com);
+`esestocierto.conf` sirve la casa nueva con `Host $host` real. AAI_WEBHOOK_BASE por defecto
+ya es la casa nueva (y fijado en .env). El primer vuelo real del timbre completó de punta a
+punta (relanzamiento nocturno → webhook → DONE). Siguiente: 5.0-B (slugs de posts) y la
+serie 5.1 de la wiki-red cuando David decida las tres cuestiones abiertas.
