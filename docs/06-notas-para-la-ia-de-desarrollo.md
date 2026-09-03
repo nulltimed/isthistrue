@@ -1288,3 +1288,13 @@ con mejora progresiva, «Videos donde aparece», y URL raiz estilo Wikipedia
 recordatorio de Google quedo RESETEADO por David el 03-09 (proxima cuenta: 5.1-B=2).
 Pendientes de la serie: B (malla pgvector + coapariciones + autoenlaces) y C (temas
 por umbral de votos). Informe: docs/67.
+
+## 62. Hotfix 5.1-A.1: la raiz del subdominio wiki ES la wiki (2026-09-03)
+
+Reporte de David a los minutos del estreno: wiki.esestocierto.com servia la portada
+GENERAL (los tres dominios comparten la app) y el enlace «Wiki» del menu iba a
+/wiki/cambios/ (era su sustituta antes de existir portada). Fix: `index()` detecta
+hosts `wiki.*`/`wikitrue.*` y renderiza la portada de la wiki; el menu enlaza a
+/wiki/. 3 tests (host `wiki.testserver` añadido a settings_test). OJO espejo: sus
+settings FUERZAN ALLOWED_HOSTS a stagings/localhost — un host wiki.* alli da 400
+por diseño; la rama de host se valida en el CI, no en el espejo.
