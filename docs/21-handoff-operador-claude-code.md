@@ -203,6 +203,17 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
 
+- 🧰 **CUENTA COMPLETA + LEGALES (5.0-D/E/F, 2026-09-03 tarde)**: URL canonica ya SIN
+  numero (`/post/<slug>/`, slug unico, duplicado `-2`, titulo solo-numeros `-video`;
+  migracion 0017); reset/cambio de contraseña, cambio de email (token firmado con el email
+  dentro — sin migracion), exportacion RGPD, desbloqueos y 2FA TOTP (QR SVG; el login pide
+  el codigo ANTES de abrir sesion); legales completos ES/EN sin plantillas + Contacto en el
+  footer. Trampas: `effective_level` es METODO; el anti-reutilizacion TOTP exige `last_t=-1`
+  en tests; cada `{% trans %}` nuevo VA al .po (candado i18n); un `.bak` en sites-enabled SE
+  CARGA (server_name duplicado ignorado en silencio — los .bak van a /root/nginx-baks).
+  Correo del dominio en el host (orden expresa de David): buzon webmaster@ (Dovecot
+  passwd-file) + alias postmaster/abuse/david → david@xyztserver.com; backups
+  /root/mail-baks-*; PENDIENTE de David el MX en IONOS.
 - 🔗 **URL LEGIBLE (5.0-C, 2026-09-03)**: canónica `/post/<slug>/<pk>/` (slug del primer
   título, inmutable); numérica y slugs viejos hacen 301 conservando la query. Los enlaces
   internos siguen numéricos a propósito (aterrizan por el 301); las plantillas de listados
