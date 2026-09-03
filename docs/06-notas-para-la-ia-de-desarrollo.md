@@ -1254,3 +1254,13 @@ DENTRO DE 5 ITERACIONES (contador: parche 5.0-B = 1).**
 **Marca (5.0-B)**: logo a maquina de escribir — «esesto» blanco con contorno negro +
 «cierto?» negro con contorno blanco; pestaña del navegador: «esestocierto?»; favicon: lupa
 simple negra (SVG + PNGs regenerados con Pillow, invariante de 3 favicons intacta).
+
+## 59. Parche 5.0-C: URL legible del post (2026-09-03)
+
+Formato elegido por David: `/post/nombre-del-video-legible/<pk>/`. El slug nace UNA vez
+del primer titulo y no cambia (las URLs compartidas no se rompen); la numerica vieja y
+los slugs desactualizados hacen 301 conservando la query. `reverse('post_detail', pk=...)`
+sigue valido en todo el codigo; la canonica es `post_detail_slug` y solo la usa
+`get_absolute_url`. Informe completo: docs/65. Ademas, el remitente de email de
+produccion es ya `no-reply@esestocierto.com` (Brevo autenticado por David: brevo-code +
+DKIM + SPF verificados en DNS).
