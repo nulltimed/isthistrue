@@ -1,5 +1,5 @@
 {% extends 'base.html' %}{% load i18n %}
-{% block title %}{{ person.name }} — {% if request.LANGUAGE_CODE == 'en' %}isthistrue.{% else %}escierto.{% endif %}{% endblock %}
+{% block title %}{{ person.name }} — esestocierto?{% endblock %}
 {% block og %}
 <meta property="og:site_name" content="isthistrue.">
 <meta property="og:title" content="{{ person.name }}">
@@ -20,6 +20,39 @@
   </header>
 
   <p class="hint person-legal">{% trans "Recuento estrictamente factual de afirmaciones atribuidas a esta figura pública mediante identificación participativa con Wikidata. El semáforo califica afirmaciones concretas, nunca a la persona. Toda atribución es reclamable en el" %} <a href="{% url 'complaint_form' %}">{% trans "canal de reclamaciones" %}</a>.</p>
+
+  {% if stats.total %}
+  <section class="person-stats">
+    <h2>{% trans "Análisis de sus intervenciones" %}</h2>
+    <div class="person-charts">
+      <figure class="chart-donut-box">
+        <div class="chart-donut" role="img" aria-label="{% trans 'Reparto de afirmaciones por veredicto' %}" style="background:{{ stats.donut_css }}"><span></span></div>
+        <figcaption>
+          <ul class="chart-leyenda">
+            {% for l in stats.donut_leyenda %}
+            <li><i style="background:{{ l.css }}"></i> {{ l.titulo }}: <strong>{{ l.n }}</strong> ({{ l.pct }}%)</li>
+            {% endfor %}
+          </ul>
+        </figcaption>
+      </figure>
+      <figure class="chart-barras-box">
+        <div class="chart-barras" role="img" aria-label="{% trans 'Afirmaciones analizadas por mes' %}">
+          {% for b in stats.barras %}
+          <div class="chart-barra" title="{{ b.label }}: {{ b.n }}">
+            <i style="height:{{ b.pct }}%"></i><em>{{ b.label }}</em>
+          </div>
+          {% endfor %}
+        </div>
+        <figcaption class="hint">{% trans "Afirmaciones analizadas por mes (últimos 12)" %}</figcaption>
+      </figure>
+    </div>
+    <p class="hint">{% blocktrans with f=stats.frases v=stats.videos|length %}{{ f }} frases atribuidas en {{ v }} vídeos.{% endblocktrans %}</p>
+  </section>
+
+  <div class="claims-filtro" hidden>
+    <input type="search" id="filtro-texto" placeholder="{% trans 'Filtrar afirmaciones…' %}" aria-label="{% trans 'Filtrar afirmaciones…' %}">
+  </div>
+  {% endif %}
 
   {% for g in grupos %}
     <section class="claim-group group-{{ g.color }}">
@@ -46,5 +79,18 @@
       </ul>
     </section>
   {% endif %}
+
+  {% if stats.videos %}
+  <section class="claim-group">
+    <h2>{% trans "Vídeos donde aparece" %} <span class="badge">{{ stats.videos|length }}</span></h2>
+    <ul class="post-list">
+      {% for f in stats.videos %}
+      <li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url|truncatechars:90 }}</a>
+        <span class="hint">{{ f.post.created_at|date:'d/m/Y' }} · {% blocktrans count n=f.n %}{{ n }} afirmación suya{% plural %}{{ n }} afirmaciones suyas{% endblocktrans %}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 </article>
+<script src="/static/js/persona.js" defer></script>
 {% endblock %}

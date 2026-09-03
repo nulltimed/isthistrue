@@ -7,6 +7,7 @@ from django.urls import path, include
 from machina import urls as machina_urls
 from apps.wiki.feeds import RecentVerdictsFeed, RecentChangesFeed
 from apps.wiki.api import claims_list, claim_detail
+from apps.wiki import views as wiki_views
 from django.views.generic import RedirectView
 
 urlpatterns = [
@@ -30,4 +31,8 @@ urlpatterns = [
     path('rss/cambios/', RecentChangesFeed(), name='rss_changes'),
     path('', include('apps.analysis.urls')),
     re_path(r'^media/(?P<path>.*)$', media_serve, name='media'),
+    # 5.1-A (decision de David): la ficha de persona al estilo Wikipedia —
+    # wiki.esestocierto.com/pedro-sanchez. Cazatodo AL FINAL: solo atrapa lo que
+    # ninguna otra ruta reclamo, y sin ficha con ese nombre responde 404.
+    path('<slug:slug>/', wiki_views.person_page, name='person_page_root'),
 ]

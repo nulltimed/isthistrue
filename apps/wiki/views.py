@@ -110,7 +110,9 @@ def person_page(request, slug):
     return render(request, 'analysis/person_detail.html',
                   {'person': person, 'appearances': appearances, 'grupos': grupos,
                    'sin_color': sin_color, 'total': len(appearances),
-                   'indexable': people_indexable()})
+                   'indexable': people_indexable(),
+                   # 5.1-A: analisis de sus intervenciones + graficos en tiempo real
+                   'stats': person_stats(person, appearances)})
 
 
 def follow_claim(request, slug):
@@ -124,3 +126,125 @@ def follow_claim(request, slug):
         if not created:
             obj.delete()
     return redirect(f'/wiki/claim/{slug}/')
+
+
+# ------------------------- 5.1-A: la wiki-red -------------------------
+# Decision de David (docs/06 §58): la wiki como red interconectada. Portada
+# propia, ficha de persona con analisis de sus intervenciones, graficos en
+# tiempo real (CSS puro calculado de la BD en cada peticion: cero librerias)
+# y listado interactivo de claims con enlace al post.
+
+# Colores de los graficos (mismos tonos que el semaforo).
+CHART_COLORS = {'GREEN': '#16a34a', 'AMBER': '#d97706', 'RED': '#dc2626',
+                'GREY': '#9ca3af', 'SIN': '#e5e7eb'}
+MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+         'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+
+
+def _pares_confirmados(person):
+    from .models import SpeakerNameProposal
+    return list(SpeakerNameProposal.objects.filter(
+        confirmed=True, interlocutor=person).values_list('post_id', 'speaker_label'))
+
+
+def _frases_atribuidas(person):
+    """Cuantas frases (segmentos) tiene atribuidas esta persona en total."""
+    from apps.analysis.models import TranscriptSegment
+    from django.db.models import Q
+    pares = _pares_confirmados(person)
+    if not pares:
+        return 0
+    filtro = Q()
+    for post_id, label in pares:
+        filtro |= Q(post_id=post_id, speaker_label=label)
+    return TranscriptSegment.objects.filter(filtro, attribution_uncertain=False).count()
+
+
+def _donut(conteo, total):
+    """Segmentos del donut como gradiente conico CSS + leyenda."""
+    if not total:
+        return '', []
+    orden = [('GREEN', 'Verificadas'), ('AMBER', 'Con matices'),
+             ('RED', 'Desmentidas'), ('GREY', 'Opiniones y predicciones')]
+    decididos = {c for c, _ in orden}
+    sin = sum(n for c, n in conteo.items() if c not in decididos)
+    partes, leyenda, acum = [], [], 0.0
+    filas = [(c, t, conteo.get(c, 0)) for c, t in orden] + [('SIN', 'Sin decidir aún', sin)]
+    for color, titulo, n in filas:
+        if not n:
+            continue
+        pct = n * 100.0 / total
+        partes.append(f'{CHART_COLORS[color]} {acum:.2f}% {acum + pct:.2f}%')
+        leyenda.append({'css': CHART_COLORS[color], 'titulo': titulo,
+                        'n': n, 'pct': round(pct)})
+        acum += pct
+    return 'conic-gradient(' + ', '.join(partes) + ')', leyenda
+
+
+def _barras_por_mes(appearances, meses=12):
+    """Afirmaciones analizadas por mes (los ultimos N), para las barras."""
+    from collections import Counter
+    from django.utils import timezone
+    hoy = timezone.now()
+    claves = []
+    y, m = hoy.year, hoy.month
+    for _ in range(meses):
+        claves.append((y, m))
+        m -= 1
+        if m == 0:
+            y, m = y - 1, 12
+    claves.reverse()
+    cuenta = Counter((a.claim.created_at.year, a.claim.created_at.month)
+                     for a in appearances)
+    tope = max([cuenta.get(k, 0) for k in claves] + [1])
+    return [{'label': MESES[m - 1], 'n': cuenta.get((y, m), 0),
+             'pct': round(cuenta.get((y, m), 0) * 100.0 / tope)}
+            for (y, m) in claves]
+
+
+def _videos_de(appearances):
+    """Videos donde aparece, con su recuento de afirmaciones (mas reciente primero)."""
+    vistos = {}
+    for a in appearances:
+        p = a.segment.post
+        fila = vistos.setdefault(p.pk, {'post': p, 'n': 0})
+        fila['n'] += 1
+    return sorted(vistos.values(), key=lambda f: f['post'].created_at, reverse=True)
+
+
+def person_stats(person, appearances):
+    from collections import Counter
+    conteo = Counter(a.claim.color for a in appearances)
+    total = len(appearances)
+    gradiente, leyenda = _donut(conteo, total)
+    return {'total': total,
+            'frases': _frases_atribuidas(person),
+            'videos': _videos_de(appearances),
+            'donut_css': gradiente, 'donut_leyenda': leyenda,
+            'barras': _barras_por_mes(appearances)}
+
+
+def wiki_home(request):
+    """Portada de la wiki: las personas con ficha, los ultimos cambios y los
+    numeros del proyecto. En castellano por defecto (decision de David)."""
+    from collections import Counter
+    from .naming import claims_for_person
+    personas = []
+    for p in Interlocutor.objects.filter(is_public_figure=True).order_by('name'):
+        apps_ = list(claims_for_person(p))
+        if not apps_:
+            continue
+        conteo = Counter(a.claim.color for a in apps_)
+        personas.append({'person': p, 'total': len(apps_),
+                         'verdes': conteo.get('GREEN', 0),
+                         'ambar': conteo.get('AMBER', 0),
+                         'rojas': conteo.get('RED', 0)})
+    personas.sort(key=lambda f: -f['total'])
+    versions = ClaimVersion.objects.select_related('claim').order_by('-created_at')[:15]
+    totales = {'claims': Claim.objects.count(),
+               'decididos': Claim.objects.filter(
+                   color__in=['GREEN', 'AMBER', 'RED', 'GREY']).count(),
+               'personas': len(personas)}
+    return render(request, 'wiki/home.html',
+                  {'personas': personas, 'versions': versions, 'totales': totales,
+                   'indexable': people_indexable()})

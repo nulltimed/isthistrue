@@ -1,0 +1,45 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Wiki de verificaciones" %} — esestocierto?{% endblock %}
+{% block content %}
+<h1>{% trans "Wiki de verificaciones" %}</h1>
+<p class="hint">{% trans "Cada afirmación analizada tiene su página, con fuentes y su historial de cambios. Cada figura pública identificada por la comunidad, su ficha. Todo enlazado con todo." %}</p>
+
+<div class="wiki-totales">
+  <div><strong>{{ totales.claims }}</strong> {% trans "afirmaciones analizadas" %}</div>
+  <div><strong>{{ totales.decididos }}</strong> {% trans "con veredicto" %}</div>
+  <div><strong>{{ totales.personas }}</strong> {% trans "figuras públicas con ficha" %}</div>
+</div>
+
+<h2>{% trans "Personas" %}</h2>
+{% if personas %}
+<ul class="person-grid">
+  {% for f in personas %}
+  <li class="person-card">
+    <a href="/persona/{{ f.person.slug }}/">
+      {% if f.person.photo_url %}<img src="{{ f.person.photo_url }}" alt="" loading="lazy">{% else %}<span class="person-card-hueco" aria-hidden="true">?</span>{% endif %}
+      <strong>{{ f.person.name }}</strong>
+    </a>
+    {% if f.person.description %}<span class="hint">{{ f.person.description }}</span>{% endif %}
+    <span class="person-card-nums">
+      <span class="badge">{{ f.total }} {% trans "afirmaciones" %}</span>
+      {% if f.verdes %}<span class="chip chip-verde">🟢 {{ f.verdes }}</span>{% endif %}
+      {% if f.ambar %}<span class="chip chip-ambar">🟡 {{ f.ambar }}</span>{% endif %}
+      {% if f.rojas %}<span class="chip chip-roja">🔴 {{ f.rojas }}</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint">{% trans "Todavía no hay figuras públicas con afirmaciones atribuidas. Las fichas nacen cuando la comunidad identifica a los hablantes de los vídeos." %}</p>
+{% endif %}
+
+<h2>{% trans "Últimos cambios" %} <a class="hint" href="{% url 'recent_changes' %}">({% trans "ver todos" %})</a></h2>
+<ul class="post-list">
+  {% for v in versions %}
+  <li><a href="/wiki/claim/{{ v.claim.slug|default:v.claim.pk }}/">{{ v.claim.text_original|truncatechars:120 }}</a>
+    <span class="hint">{{ v.get_color_display }} · {{ v.created_at|date:'d/m/Y H:i' }}</span></li>
+  {% empty %}<li class="hint">{% trans "Aún no hay cambios registrados." %}</li>{% endfor %}
+</ul>
+
+<p class="hint">{% trans "¿Buscas algo concreto?" %} <a href="/buscar/">{% trans "El buscador rastrea afirmaciones, transcripciones y mensajes." %}</a></p>
+{% endblock %}

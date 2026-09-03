@@ -4601,3 +4601,62 @@ class Parche50F_Legales(TestCase):
     def test_el_footer_lleva_el_contacto(self):
         html = self.client.get('/legal/cookies/').content.decode()
         self.assertIn('mailto:webmaster@esestocierto.com', html)
+
+
+class Parche51A_WikiRed(TestCase):
+    """5.1-A: la wiki-red — portada propia, ficha de persona con análisis de
+    intervenciones y gráficos en tiempo real, y la URL raíz estilo Wikipedia
+    (wiki.esestocierto.com/pedro-sanchez)."""
+
+    def _escena(self):
+        from apps.wiki.models import (Claim, ClaimAppearance, Interlocutor,
+                                      SpeakerNameProposal)
+        autor = make_user(username='w51', email='w51@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/w51',
+                                   title='Debate de prueba wiki')
+        seg = post.transcript_segments.create(start_seconds=0, end_seconds=4,
+                                              text='La Luna es de queso',
+                                              speaker_label='SPEAKER_00')
+        persona = Interlocutor.objects.create(name='Ana Pública', slug='ana-publica',
+                                              base_slug='ana-publica',
+                                              is_public_figure=True,
+                                              wikidata_id='Q999999')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Ana Pública',
+                                           confirmed=True, interlocutor=persona)
+        claim = Claim.objects.create(text_original='La Luna es de queso',
+                                     color='RED', slug='la-luna-es-de-queso')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='la luna...')
+        return persona, post, claim
+
+    def test_la_portada_de_la_wiki_existe_y_lista_a_la_persona(self):
+        persona, _, _ = self._escena()
+        r = self.client.get('/wiki/')
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn('Ana Pública', html)
+        self.assertIn('/persona/ana-publica/', html)
+
+    def test_la_url_raiz_estilo_wikipedia_sirve_la_ficha(self):
+        self._escena()
+        r = self.client.get('/ana-publica/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Ana Pública', r.content.decode())
+
+    def test_la_url_raiz_no_inventa_fichas(self):
+        self._escena()
+        self.assertEqual(self.client.get('/no-existe-tal-persona/').status_code, 404)
+
+    def test_la_ficha_lleva_graficos_y_videos(self):
+        self._escena()
+        html = self.client.get('/persona/ana-publica/').content.decode()
+        self.assertIn('conic-gradient', html, 'falta el donut en tiempo real')
+        self.assertIn('chart-barras', html, 'faltan las barras por mes')
+        self.assertIn('Debate de prueba wiki', html, 'falta la lista de vídeos')
+        self.assertIn('persona.js', html, 'falta el filtro interactivo')
+        self.assertIn('/post/debate-de-prueba-wiki/', html,
+                      'el vídeo no enlaza a su post')
+
+    def test_el_cazatodo_no_pisa_las_rutas_existentes(self):
+        for url in ['/wiki/', '/buscar/', '/foro/', '/mas18/']:
+            self.assertNotEqual(self.client.get(url).status_code, 404, url)

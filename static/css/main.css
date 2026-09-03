@@ -612,3 +612,27 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .inline-mini input{flex:1;min-width:0}
 .otp-qr{display:flex;justify-content:center;margin:.8rem 0}
 .otp-qr svg{width:200px;height:200px;background:#fff;padding:8px;border-radius:6px}
+
+/* 5.1-A: wiki-red — portada y graficos de la ficha de persona */
+.wiki-totales{display:flex;gap:1.2rem;flex-wrap:wrap;margin:.8rem 0 1.4rem;padding:.7rem 1rem;
+  background:var(--card);border:1px solid var(--line);border-radius:8px}
+.wiki-totales strong{font-size:1.3rem;margin-right:.3rem}
+.person-grid{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.8rem}
+.person-card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.8rem;display:flex;flex-direction:column;gap:.35rem}
+.person-card a{display:flex;align-items:center;gap:.6rem;text-decoration:none}
+.person-card img,.person-card-hueco{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
+.person-card-hueco{display:inline-flex;align-items:center;justify-content:center;background:var(--line);font-weight:700}
+.person-card-nums{display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.chip{font-size:.78rem;padding:.05rem .4rem;border-radius:99px;border:1px solid var(--line)}
+.person-stats{margin:1.2rem 0}
+.person-charts{display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-start}
+.chart-donut{width:150px;height:150px;border-radius:50%;position:relative}
+.chart-donut span{position:absolute;inset:32px;background:var(--card);border-radius:50%}
+.chart-leyenda{list-style:none;padding:0;margin:.6rem 0 0;font-size:.9rem}
+.chart-leyenda i{display:inline-block;width:.8em;height:.8em;border-radius:3px;margin-right:.35em;vertical-align:-.05em}
+.chart-barras{display:flex;align-items:flex-end;gap:5px;height:110px}
+.chart-barra{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;width:22px}
+.chart-barra i{display:block;width:100%;min-height:2px;background:var(--accent,#2563eb);border-radius:3px 3px 0 0}
+.chart-barra em{font-style:normal;font-size:.65rem;color:var(--muted,#6b7280);margin-top:.2rem}
+.claims-filtro{margin:.8rem 0}
+.claims-filtro input{width:100%;max-width:420px}

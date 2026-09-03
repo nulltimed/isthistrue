@@ -1377,3 +1377,61 @@ msgstr "Can't scan it?"
 
 msgid "¿Olvidaste tu contraseña?"
 msgstr "Forgot your password?"
+
+# ---- 5.1-A: la wiki-red (2026-09-03) ----
+msgid "Afirmaciones analizadas por mes"
+msgstr "Claims analysed per month"
+
+msgid "Afirmaciones analizadas por mes (últimos 12)"
+msgstr "Claims analysed per month (last 12)"
+
+msgid "Análisis de sus intervenciones"
+msgstr "Analysis of their statements"
+
+msgid "Aún no hay cambios registrados."
+msgstr "No changes recorded yet."
+
+msgid "Cada afirmación analizada tiene su página, con fuentes y su historial de cambios. Cada figura pública identificada por la comunidad, su ficha. Todo enlazado con todo."
+msgstr "Every analysed claim has its own page, with sources and its change history. Every public figure identified by the community, their profile. Everything linked to everything."
+
+msgid "El buscador rastrea afirmaciones, transcripciones y mensajes."
+msgstr "The search covers claims, transcripts and messages."
+
+msgid "Filtrar afirmaciones…"
+msgstr "Filter claims…"
+
+msgid "Personas"
+msgstr "People"
+
+msgid "Reparto de afirmaciones por veredicto"
+msgstr "Claims by verdict"
+
+msgid "Todavía no hay figuras públicas con afirmaciones atribuidas. Las fichas nacen cuando la comunidad identifica a los hablantes de los vídeos."
+msgstr "No public figures with attributed claims yet. Profiles are born when the community identifies the speakers in the videos."
+
+msgid "Vídeos donde aparece"
+msgstr "Videos where they appear"
+
+msgid "Wiki de verificaciones"
+msgstr "Verification wiki"
+
+msgid "afirmaciones"
+msgstr "claims"
+
+msgid "afirmaciones analizadas"
+msgstr "claims analysed"
+
+msgid "con veredicto"
+msgstr "with a verdict"
+
+msgid "figuras públicas con ficha"
+msgstr "public figures with a profile"
+
+msgid "ver todos"
+msgstr "see all"
+
+msgid "¿Buscas algo concreto?"
+msgstr "Looking for something specific?"
+
+msgid "Últimos cambios"
+msgstr "Latest changes"

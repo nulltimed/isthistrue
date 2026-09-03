@@ -4,7 +4,8 @@ from .cards import claim_card
 
 from django.views.generic import RedirectView
 urlpatterns = [
-    path('', RedirectView.as_view(url='/wiki/cambios/', permanent=False)),
+    # 5.1-A: la wiki tiene PORTADA propia (antes redirigia a cambios).
+    path('', views.wiki_home, name='wiki_home'),
     path('cambios/', views.recent_changes, name='recent_changes'),
     # 4.3-C: la ficha vive en la RAIZ (/persona/...), igual en escierto, isthistrue
     # y wikitrue. Esta ruta antigua bajo /wiki/ se conserva y redirige, para no
