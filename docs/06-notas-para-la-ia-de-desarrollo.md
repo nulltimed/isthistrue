@@ -1278,3 +1278,13 @@ anti-reutilizacion TOTP exige `last_t=-1` en tests; el candado i18n exige cada
 `{% trans %}` nuevo en el .po; un `.bak` en sites-enabled se CARGA (server_name
 duplicado se ignora en silencio). Informe: docs/66. ⏰ El recordatorio de Google se
 ENTREGO a David en este informe (contador 5/5).
+
+## 61. Parche 5.1-A: la wiki-red, cimientos (2026-09-03)
+
+Portada propia en /wiki/, ficha de persona con graficos en tiempo real (CSS puro:
+donut conic-gradient + barras por mes, calculados por peticion), filtro interactivo
+con mejora progresiva, «Videos donde aparece», y URL raiz estilo Wikipedia
+(cazatodo `<slug>/` AL FINAL del urlconf — no pisa nada, sin ficha 404). El
+recordatorio de Google quedo RESETEADO por David el 03-09 (proxima cuenta: 5.1-B=2).
+Pendientes de la serie: B (malla pgvector + coapariciones + autoenlaces) y C (temas
+por umbral de votos). Informe: docs/67.

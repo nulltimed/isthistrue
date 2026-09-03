@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-03 (tarde) · Commit en producción: `0028760` — 5.0-D (URL sin número: /post/nombre-legible/, slug único con -2, www→sin www), 5.0-E (cuenta completa: reset y cambio de contraseña, cambio de email, exportación RGPD, desbloqueos, 2FA TOTP) y 5.0-F (legales completos ES/EN + Contacto en footer). Correo del dominio: buzón webmaster@esestocierto.com + alias postmaster/abuse/david en el Postfix/Dovecot del host (orden expresa de David; backups /root/mail-baks-*; PENDIENTE de David: MX en IONOS `@ MX 10 mail.xyztserver.com`). Informe docs/66, §60. ⏰ Google: RESETEADO por David el 03-09 tras el aviso — volver a recordárselo DENTRO DE 5 ITERACIONES (contador reiniciado: la próxima cuenta 1) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-03 (noche) · Commit en producción: `0f2de2c` — 5.1-A: LA WIKI-RED (portada /wiki/, ficha de persona con gráficos en tiempo real CSS y filtro interactivo, URL raíz estilo Wikipedia con cazatodo al final del urlconf). Antes, mismo día: 5.0-D/E/F + correo del dominio (ver §10). PENDIENTE de David: MX en IONOS (`@ MX 10 mail.xyztserver.com`). Serie 5.1 restante: B (malla pgvector) y C (temas por umbral de votos). ⏰ Google: RESETEADO por David el 03-09 — recordar en 5 iteraciones (5.1-A=1) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
