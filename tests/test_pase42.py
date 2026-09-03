@@ -4660,3 +4660,21 @@ class Parche51A_WikiRed(TestCase):
     def test_el_cazatodo_no_pisa_las_rutas_existentes(self):
         for url in ['/wiki/', '/buscar/', '/foro/', '/mas18/']:
             self.assertNotEqual(self.client.get(url).status_code, 404, url)
+
+
+class Parche51A1_RaizDelSubdominio(TestCase):
+    """5.1-A.1 (reporte de David): wiki.esestocierto.com enseñaba la portada
+    GENERAL en su raiz, y el enlace «Wiki» del menu iba a la pagina de cambios."""
+
+    def test_la_raiz_del_subdominio_wiki_es_la_portada_de_la_wiki(self):
+        r = self.client.get('/', HTTP_HOST='wiki.testserver')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Wiki de verificaciones', r.content.decode())
+
+    def test_la_raiz_del_dominio_principal_sigue_siendo_la_general(self):
+        r = self.client.get('/')
+        self.assertNotIn('Wiki de verificaciones', r.content.decode())
+
+    def test_el_menu_enlaza_a_la_portada_de_la_wiki(self):
+        html = self.client.get('/').content.decode()
+        self.assertIn('href="/wiki/">Wiki</a>', html)

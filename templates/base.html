@@ -29,7 +29,7 @@
   <nav>
     <a href="/">{% trans "Portada" %}</a>
     <a href="/foro/">{% trans "Foro" %}</a>
-    <a href="{% url 'recent_changes' %}">Wiki</a>
+    <a href="{% url 'wiki_home' %}">Wiki</a>
     <a href="{% url 'search' %}">{% trans "Buscar" %}</a>
     {% if user.is_authenticated %}
       <a href="{% url 'submit' %}" class="primary">{% icon 'search' 15 %} {% trans "Analizar un vídeo" %}</a>

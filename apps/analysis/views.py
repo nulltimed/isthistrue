@@ -15,6 +15,12 @@ from .tasks import run_cheap_phase
 
 def index(request):
     """Portada Fase 3: Recientes / Mas votados (7 dias) / Reincidentes / Por tema / Off-Topic."""
+    # 5.1-A.1 (reporte de David): en el subdominio de la wiki, la RAIZ es la
+    # portada de la wiki — como en Wikipedia. El resto de rutas no cambian.
+    host = request.get_host().split(':')[0]
+    if host.startswith('wiki.') or host.startswith('wikitrue.'):
+        from apps.wiki.views import wiki_home
+        return wiki_home(request)
     from django.db.models import Count, Q
     from django.utils import timezone as tz
     from .models import TOPICS, Channel
