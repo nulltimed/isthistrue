@@ -1,7 +1,22 @@
 {% extends 'base.html' %}{% load i18n %}{% block content %}
 {% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/cookies.html' %}{% else %}
 <h1>Política de cookies</h1>
-<p><em>[PLANTILLA — revisar antes de publicar.]</em></p>
-<p>Este sitio usa únicamente cookies técnicas imprescindibles: sesión de usuario y protección CSRF. No hay cookies de publicidad ni de analítica de terceros. Cloudflare Turnstile puede establecer cookies técnicas anti-abuso en el registro.</p>
-<p>Además, todas las páginas cargan el software del botón de donaciones de PayPal (banner de la cabecera); PayPal puede establecer sus propias cookies técnicas al mostrarse el botón. Consulta la política de cookies de PayPal para el detalle.</p>
+
+<p>Este sitio usa <strong>únicamente cookies técnicas imprescindibles</strong>, las que
+la ley no obliga a consentir porque sin ellas la web no funciona:</p>
+<ul>
+  <li><strong>sessionid</strong> — mantiene tu sesión iniciada.</li>
+  <li><strong>csrftoken</strong> — protege los formularios contra falsificaciones.</li>
+  <li><strong>idioma</strong> — recuerda el idioma de la interfaz que elegiste.</li>
+</ul>
+<p><strong>No hay cookies de publicidad ni de analítica</strong>, ni propias ni de
+terceros: nadie te sigue por esta web.</p>
+<p>Dos servicios externos pueden establecer sus propias cookies técnicas al cargarse:
+el botón de donaciones de <strong>PayPal</strong> (presente en la cabecera) y
+<strong>Cloudflare Turnstile</strong> (anti-abuso del registro, cuando está activo).
+Consulta sus políticas para el detalle; nosotros no leemos esas cookies.</p>
+<p>Como solo hay cookies técnicas, no se muestra banner de consentimiento: no hay nada
+que consentir ni que rechazar.</p>
+
+<p class="hint">Versión del 3 de septiembre de 2026.</p>
 {% endif %}{% endblock %}

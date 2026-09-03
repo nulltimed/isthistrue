@@ -1,8 +1,45 @@
 {% extends 'base.html' %}{% load i18n %}{% block content %}
 {% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/aviso_legal.html' %}{% else %}
 <h1>Aviso legal</h1>
-<p><em>[PLANTILLA — David debe revisar y completar los campos entre corchetes antes de publicar. Esto es una guía, no asesoramiento jurídico.]</em></p>
-<p>Titular del sitio: <strong>David Souto Apariz</strong> · Contacto: <strong>contact@xyztserver.com</strong> · Domicilio a efectos de notificaciones: <strong>[APARTADO DE CORREOS — pendiente de contratar]</strong>.<br>Proyecto sin ánimo de lucro; asociación en proceso de constitución — al inscribirse en el registro correspondiente, la titularidad pasará a la asociación.</p>
-<p>isthistrue. / escierto. es un proyecto sin ánimo de lucro de verificación comunitaria de contenidos. El código es libre (AGPL-3.0) y los datos de la wiki se publican bajo CC-BY-SA. No se almacena contenido multimedia de terceros: los contenidos se muestran mediante los reproductores oficiales de cada plataforma.</p>
-<p>Las verificaciones expresan el resultado de una metodología documentada (<a href="{% url 'methodology' %}">cómo verificamos</a>) con fuentes enlazadas y reproducibles; no constituyen juicios sobre personas. Existe un <a href="{% url 'complaint_form' %}">canal de reclamaciones</a> con acuse de recibo y un procedimiento prioritario para autores del contenido analizado (SLA público de 7 días).</p>
+
+<h2>Titular del sitio</h2>
+<p><strong>David Souto Apariz</strong>, persona física, como responsable del proyecto
+<strong>esestocierto?</strong> (esestocierto.com), proyecto sin ánimo de lucro de
+verificación comunitaria de contenidos. Existe una asociación sin ánimo de lucro en
+proceso de constitución; al inscribirse en el registro correspondiente, la titularidad
+del sitio pasará a la asociación y este aviso se actualizará.</p>
+<p>Contacto: <a href="mailto:webmaster@esestocierto.com">webmaster@esestocierto.com</a> ·
+Domicilio a efectos de notificaciones: apartado de correos (en trámite; mientras tanto,
+el correo electrónico anterior es el canal válido de notificación).</p>
+
+<h2>Qué es este sitio</h2>
+<p>esestocierto? analiza vídeos públicos con ayuda de inteligencia artificial y de la
+comunidad: transcribe lo que se dice, identifica afirmaciones verificables y las
+contrasta con fuentes enlazadas y reproducibles. Las verificaciones expresan el
+resultado de una <a href="{% url 'methodology' %}">metodología documentada</a>;
+<strong>se verifican afirmaciones, nunca personas</strong>, y ningún resultado
+constituye un juicio de valor sobre nadie.</p>
+<p>No se almacena contenido multimedia de terceros: los vídeos se muestran mediante los
+reproductores oficiales de cada plataforma, que conservan el control del contenido. No
+se almacenan huellas de voz ni ningún otro dato biométrico.</p>
+
+<h2>Propiedad intelectual y licencias</h2>
+<p>El código del sitio es software libre bajo licencia
+<a href="https://github.com/nulltimed/isthistrue" rel="noopener">AGPL-3.0</a>. Los datos
+de la wiki de verificaciones se publican bajo licencia CC-BY-SA. Las marcas, nombres y
+contenidos de los vídeos analizados pertenecen a sus titulares.</p>
+
+<h2>Rectificaciones y reclamaciones</h2>
+<p>Existe un <a href="{% url 'complaint_form' %}">canal de reclamaciones</a> con acuse
+de recibo y un procedimiento prioritario para los autores del contenido analizado
+(plazo público de respuesta: 7 días). Cualquier error señalado con fuentes se corrige y
+el cambio queda registrado públicamente en el historial de la wiki.</p>
+
+<h2>Legislación aplicable</h2>
+<p>Este sitio se rige por la legislación española y, en materia de protección de datos,
+por el RGPD y la LOPDGDD. Para cualquier controversia serán competentes los juzgados y
+tribunales que correspondan conforme a la normativa aplicable.</p>
+
+<p class="hint">Versión del 3 de septiembre de 2026. Redacción de buena fe pendiente de
+revisión letrada; si detectas un error, escríbenos.</p>
 {% endif %}{% endblock %}

@@ -1,8 +1,65 @@
 {% extends 'base.html' %}{% load i18n %}{% block content %}
 {% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/privacidad.html' %}{% else %}
 <h1>Política de privacidad</h1>
-<p><em>[PLANTILLA — revisar antes de publicar; guía, no asesoramiento jurídico.]</em></p>
-<p>Responsable: <strong>David Souto Apariz</strong> (contact@xyztserver.com; asociación sin ánimo de lucro en proceso de constitución). Datos tratados: email, contraseña (cifrada), fecha de nacimiento (verificación de edad, mínimo 14 años — art. 7 LOPDGDD), actividad en la plataforma. Finalidad: prestar el servicio, moderación y seguridad. Base jurídica: ejecución del servicio solicitado e interés legítimo en la seguridad.</p>
-<p>Encargados: Brevo (email transaccional), Cloudflare (anti-abuso Turnstile), Anthropic (procesamiento de análisis; no se envían datos personales de usuarios en los análisis), IONOS (alojamiento, UE).</p>
-<p>Derechos: acceso, rectificación, supresión, oposición y portabilidad. Puedes eliminar tu cuenta desde tu panel (Mi cuenta → Eliminar cuenta) o escribiendo a contact@xyztserver.com. Autoridad de control: AEPD (aepd.es). No se elaboran perfiles publicitarios ni se venden datos. No se almacenan huellas de voz ni datos biométricos.</p>
+
+<h2>Responsable</h2>
+<p><strong>David Souto Apariz</strong> (proyecto esestocierto?, sin ánimo de lucro;
+asociación en proceso de constitución). Contacto para todo lo relativo a tus datos:
+<a href="mailto:webmaster@esestocierto.com">webmaster@esestocierto.com</a>.</p>
+
+<h2>Qué datos tratamos y para qué</h2>
+<ul>
+  <li><strong>Cuenta</strong>: email, nombre de usuario, contraseña (siempre cifrada;
+      nadie puede leerla) y fecha de nacimiento — solo para verificar la edad mínima de
+      14 años (art. 7 LOPDGDD) y el acceso al contenido para adultos.</li>
+  <li><strong>Actividad</strong>: tus posts, votos, mensajes y ajustes, para prestar el
+      servicio, moderar y mantener la seguridad.</li>
+  <li><strong>Perfil opcional</strong>: avatar y firma, si decides ponerlos.</li>
+</ul>
+<p>Base jurídica: la ejecución del servicio que solicitas al registrarte y el interés
+legítimo en la seguridad de la plataforma. <strong>No se elaboran perfiles
+publicitarios, no se venden datos y no hay analítica de terceros.</strong></p>
+
+<h2>Lo que NO tratamos</h2>
+<p>Los análisis de vídeos procesan <strong>contenido público</strong> (lo que se dice en
+un vídeo publicado), no datos personales de nuestros usuarios: a los proveedores de IA
+no se les envía quién eres ni qué haces en la plataforma. No se almacenan huellas de voz
+ni ningún dato biométrico.</p>
+
+<h2>Quién nos ayuda a prestar el servicio (encargados)</h2>
+<ul>
+  <li><strong>IONOS</strong> — alojamiento del servidor (Unión Europea).</li>
+  <li><strong>Brevo</strong> — envío de emails transaccionales (verificación, avisos).</li>
+  <li><strong>Anthropic</strong> — análisis por IA del contenido público de los vídeos (EE.&nbsp;UU.).</li>
+  <li><strong>AssemblyAI</strong> — transcripción y separación de voces del audio de los
+      vídeos públicos (EE.&nbsp;UU.). El audio no se conserva tras el proceso.</li>
+  <li><strong>Runpod</strong> — proceso de audio en GPU bajo demanda; los contenedores se
+      destruyen al terminar cada trabajo y nada persiste.</li>
+  <li><strong>PayPal</strong> — donaciones; PayPal trata tus datos de pago según su
+      propia política (nosotros no vemos ni guardamos datos de tarjeta).</li>
+  <li><strong>Cloudflare Turnstile</strong> — protección anti-abuso del registro, cuando
+      está activa.</li>
+</ul>
+<p>Las transferencias fuera de la UE se amparan en las garantías previstas por el RGPD
+(cláusulas contractuales tipo o marcos de adecuación vigentes de cada proveedor).</p>
+
+<h2>Cuánto tiempo</h2>
+<p>Mientras tu cuenta exista. Si la eliminas, la cuenta desaparece y tus mensajes quedan
+anónimos (sin autor). Los registros técnicos de seguridad se conservan el tiempo
+imprescindible.</p>
+
+<h2>Tus derechos</h2>
+<p>Acceso, rectificación, supresión, oposición, limitación y portabilidad. Y no hace
+falta escribir para lo esencial:</p>
+<ul>
+  <li><strong>Suprimir</strong>: Mi cuenta → Eliminar mi cuenta.</li>
+  <li><strong>Portabilidad</strong>: Mi cuenta → Exportar mis datos (descarga JSON).</li>
+  <li><strong>Rectificar</strong>: tus datos se editan desde Mi cuenta.</li>
+</ul>
+<p>Para todo lo demás: <a href="mailto:webmaster@esestocierto.com">webmaster@esestocierto.com</a>.
+Autoridad de control: Agencia Española de Protección de Datos (<a href="https://www.aepd.es"
+rel="noopener">aepd.es</a>).</p>
+
+<p class="hint">Versión del 3 de septiembre de 2026. Redacción de buena fe pendiente de
+revisión letrada.</p>
 {% endif %}{% endblock %}

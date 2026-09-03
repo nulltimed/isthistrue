@@ -1,6 +1,37 @@
 {% extends 'base.html' %}{% load i18n %}{% block content %}
 {% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/condiciones.html' %}{% else %}
 <h1>Condiciones de uso</h1>
-<p><em>[PLANTILLA — revisar antes de publicar.]</em></p>
-<p>Edad mínima: 14 años. Cada cuenta dispone de cupos de análisis gratuitos según nivel; los cupos dependen del presupuesto del proyecto, sostenido por donaciones. Normas: no acosar, no suplantar, no spam, no contenido ilegal. La moderación combina agentes automáticos y moderadores humanos; toda decisión automática puede revisarse por un humano a través del <a href="{% url 'complaint_form' %}">canal de reclamaciones</a>. El semáforo se aplica a afirmaciones, nunca a personas. El servicio se presta "tal cual", sin garantía de disponibilidad, y puede suspenderse por mantenimiento.</p>
+
+<h2>La cuenta</h2>
+<p>Edad mínima: <strong>14 años</strong>. Una persona, una cuenta. Cada cuenta dispone
+de cupos de análisis gratuitos según su nivel de confianza; los cupos dependen del
+presupuesto del proyecto, sostenido por donaciones, y pueden variar.</p>
+
+<h2>Las normas</h2>
+<p>No acosar, no suplantar identidades, no spam, no contenido ilegal, no intentar
+manipular las verificaciones ni los votos. La moderación combina agentes automáticos y
+moderadores humanos; <strong>toda decisión automática puede ser revisada por un
+humano</strong> a través del <a href="{% url 'complaint_form' %}">canal de
+reclamaciones</a>.</p>
+
+<h2>Lo que significan los resultados</h2>
+<p>El semáforo de verificación se aplica a <strong>afirmaciones concretas</strong>,
+nunca a personas, y refleja lo que dicen las fuentes enlazadas en el momento del
+análisis, según la <a href="{% url 'methodology' %}">metodología pública</a>. Un
+resultado puede cambiar si aparecen fuentes nuevas; el historial de cambios es público.
+Nada de lo publicado constituye asesoramiento profesional de ningún tipo.</p>
+
+<h2>Tu contenido</h2>
+<p>Conservas los derechos de lo que escribes. Al publicarlo aquí concedes al proyecto la
+licencia necesaria para mostrarlo y moderarlo; los datos de la wiki de verificaciones se
+publican bajo CC-BY-SA. Si eliminas tu cuenta, tus mensajes quedan anónimos.</p>
+
+<h2>El servicio</h2>
+<p>Se presta «tal cual», sin garantía de disponibilidad, y puede suspenderse por
+mantenimiento. Podemos actualizar estas condiciones; los cambios relevantes se
+anunciarán en el sitio. Contacto:
+<a href="mailto:webmaster@esestocierto.com">webmaster@esestocierto.com</a>.</p>
+
+<p class="hint">Versión del 3 de septiembre de 2026. Redacción de buena fe pendiente de
+revisión letrada.</p>
 {% endif %}{% endblock %}

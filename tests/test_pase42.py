@@ -4576,3 +4576,23 @@ class Parche50E_CuentaCompleta(TestCase):
         r = self.client.post('/accounts/login/', {'username': u.username,
                                                   'password': 'ContraseñaLarga9'})
         self.assertEqual(self.client.session.get('_auth_user_id'), str(u.pk))
+
+
+class Parche50F_Legales(TestCase):
+    """5.0-F: legales redactados de verdad (fin de las plantillas-borrador) y
+    contacto webmaster@ en el footer de todas las paginas."""
+
+    PAGINAS = ['/legal/aviso/', '/legal/privacidad/', '/legal/cookies/',
+               '/legal/condiciones/']
+
+    def test_los_legales_estan_redactados_y_con_contacto(self):
+        for url in self.PAGINAS:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            html = r.content.decode()
+            self.assertNotIn('PLANTILLA', html, f'{url} sigue siendo borrador')
+            self.assertIn('webmaster@esestocierto.com', html, url)
+
+    def test_el_footer_lleva_el_contacto(self):
+        html = self.client.get('/legal/cookies/').content.decode()
+        self.assertIn('mailto:webmaster@esestocierto.com', html)
