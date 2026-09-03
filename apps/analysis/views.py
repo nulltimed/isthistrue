@@ -308,11 +308,14 @@ def _post_context(request, post):
     }
 
 
-def post_detail(request, pk, slug=None):
-    post = get_object_or_404(Post, pk=pk)
-    # 5.0-C: URL canonica /post/<slug>/<pk>/. Si llegan por la numerica o con un
-    # slug desactualizado, 301 a la buena conservando ?pagina= y demas parametros.
-    if post.slug and slug != post.slug:
+def post_detail(request, pk=None, slug=None):
+    # 5.0-D: canonica /post/<slug>/ (sin numero). La numerica /post/<pk>/ y la
+    # forma historica /post/<slug>/<pk>/ hacen 301 conservando ?pagina= y demas.
+    if pk is not None:
+        post = get_object_or_404(Post, pk=pk)
+    else:
+        post = get_object_or_404(Post, slug=slug)
+    if post.slug and (pk is not None or slug != post.slug):
         destino = post.get_absolute_url()
         if request.META.get('QUERY_STRING'):
             destino += '?' + request.META['QUERY_STRING']

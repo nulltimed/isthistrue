@@ -4395,39 +4395,53 @@ class CandadoDelPanel(TestCase):
         self.assertNotEqual(getattr(fila, 'value', None), '9999')
 
 
-class Parche50C_UrlLegible(TestCase):
-    """5.0-C (decision de David): /post/nombre-del-video-legible/<pk>/ como URL
-    canonica; la numerica vieja hace 301 y no se rompe ningun enlace."""
+class Parche50D_UrlSinNumero(TestCase):
+    """5.0-D (correccion de David sobre el 5.0-C): la URL canonica es
+    /post/nombre-del-video-legible/ SIN numero; el duplicado recibe -2.
+    La numerica y la forma historica slug/pk hacen 301."""
 
     def _post(self, **kw):
-        defaults = dict(author=make_user(username=f"u50c{Post.objects.count()}",
-                                         email=f"u50c{Post.objects.count()}@example.org"),
-                        url='https://youtu.be/slug50c')
+        defaults = dict(author=make_user(username=f"u50d{Post.objects.count()}",
+                                         email=f"u50d{Post.objects.count()}@example.org"),
+                        url='https://youtu.be/slug50d')
         defaults.update(kw)
         return Post.objects.create(**defaults)
 
     def test_el_slug_nace_del_primer_titulo_y_no_cambia(self):
-        p = self._post(title='¿Es cierto que la Luna es de queso?')
+        p = self._post(title='\u00bfEs cierto que la Luna es de queso?')
         self.assertEqual(p.slug, 'es-cierto-que-la-luna-es-de-queso')
         p.title = 'Otro titulo distinto'
         p.save()
         self.assertEqual(p.slug, 'es-cierto-que-la-luna-es-de-queso',
                          'el slug cambio: las URLs compartidas se romperian')
 
+    def test_el_duplicado_recibe_menos_dos(self):
+        a = self._post(title='Mismo titulo')
+        b = self._post(title='Mismo titulo')
+        c = self._post(title='Mismo titulo')
+        self.assertEqual(a.slug, 'mismo-titulo')
+        self.assertEqual(b.slug, 'mismo-titulo-2')
+        self.assertEqual(c.slug, 'mismo-titulo-3')
+
+    def test_un_titulo_solo_numeros_no_choca_con_la_ruta_numerica(self):
+        p = self._post(title='2024')
+        self.assertEqual(p.slug, '2024-video')
+
     def test_la_numerica_hace_301_a_la_legible_conservando_pagina(self):
         p = self._post(title='Video con titulo')
         r = self.client.get(f'/post/{p.pk}/?pagina=2')
         self.assertEqual(r.status_code, 301)
-        self.assertEqual(r['Location'], f'/post/video-con-titulo/{p.pk}/?pagina=2')
+        self.assertEqual(r['Location'], '/post/video-con-titulo/?pagina=2')
 
-    def test_un_slug_desactualizado_hace_301_al_bueno(self):
+    def test_la_forma_historica_slug_pk_hace_301(self):
         p = self._post(title='Titulo bueno')
         r = self.client.get(f'/post/titulo-viejo/{p.pk}/')
         self.assertEqual(r.status_code, 301)
-        self.assertEqual(r['Location'], f'/post/titulo-bueno/{p.pk}/')
+        self.assertEqual(r['Location'], '/post/titulo-bueno/')
 
     def test_la_canonica_responde_200(self):
         p = self._post(title='Titulo bueno')
+        self.assertEqual(p.get_absolute_url(), '/post/titulo-bueno/')
         r = self.client.get(p.get_absolute_url())
         self.assertEqual(r.status_code, 200)
 

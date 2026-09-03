@@ -10,9 +10,10 @@ urlpatterns = [
     path('submit/', views.submit, name='submit'),
     path('analizar/', views.submit),  # alias en español (guia 3.9 lo nombra asi)
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
-    # 5.0-C: URL canonica legible. La numerica de arriba redirige aqui con 301
-    # (los enlaces viejos y los internos no se rompen jamas).
-    path('post/<slug:slug>/<int:pk>/', views.post_detail, name='post_detail_slug'),
+    # 5.0-D: URL canonica legible SIN numero (slug unico; el duplicado lleva -2).
+    # La numerica de arriba y la forma historica slug/pk del 5.0-C hacen 301.
+    path('post/<slug:slug>/', views.post_detail, name='post_detail_slug'),
+    path('post/<slug:slug>/<int:pk>/', views.post_detail, name='post_detail_slug_pk'),
     path('post/<int:pk>/status/', views.post_status, name='post_status'),
     path('post/<int:pk>/fragmento/hilo/', views.post_thread_fragment, name='post_thread_fragment'),
     path('post/<int:pk>/fragmento/cuerpo/', views.post_body_fragment, name='post_body_fragment'),

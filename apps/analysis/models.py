@@ -65,11 +65,14 @@ class Post(models.Model):
     platform = models.CharField(max_length=20, default='unknown')
     external_id = models.CharField(max_length=200, blank=True)
     title = models.CharField(max_length=300, blank=True)
-    # 5.0-C (decision de David): URL legible /post/nombre-del-video-legible/<pk>/.
-    # Se genera UNA vez del primer titulo real y ya no cambia (las URLs compartidas
-    # no se rompen); el pk final desambigua titulos repetidos. Sin titulo aun, la
-    # URL numerica sigue siendo la canonica.
-    slug = models.SlugField(max_length=80, blank=True, default='')
+    # 5.0-D (correccion de David sobre el 5.0-C): URL legible SIN numero,
+    # /post/nombre-del-video-legible/. El slug es UNICO: el segundo video con el
+    # mismo titulo recibe -2, el tercero -3... Se genera UNA vez del primer titulo
+    # real y ya no cambia (las URLs compartidas no se rompen). Sin titulo aun, la
+    # URL numerica sigue siendo la canonica. NULL (no '') cuando no hay slug:
+    # unique permite muchos NULL pero no muchos ''.
+    slug = models.SlugField(max_length=80, null=True, blank=True, unique=True,
+                            default=None)
     duration_seconds = models.IntegerField(default=0)
     category = models.CharField(max_length=10, choices=CATEGORIES, default='MAIN')
     status = models.CharField(max_length=24, choices=STATUSES, default='NEW')
@@ -125,15 +128,26 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         if self.title and not self.slug:
             from django.utils.text import slugify
-            s = slugify(self.title)[:80].rstrip('-')
-            if s:
-                self.slug = s
+            base = slugify(self.title)[:75].rstrip('-')
+            if base:
+                if base.isdigit():
+                    # un titulo solo-numeros ('2024') chocaria con la ruta
+                    # numerica historica /post/<pk>/
+                    base += '-video'
+                candidato, n = base, 1
+                otros = type(self).objects.exclude(pk=self.pk)
+                while otros.filter(slug=candidato).exists():
+                    n += 1
+                    candidato = f'{base}-{n}'
+                self.slug = candidato
+        if not self.slug:
+            self.slug = None
         super().save(*args, **kwargs)
 
     def get_absolute_url(self):
         from django.urls import reverse
         if self.slug:
-            return reverse('post_detail_slug', kwargs={'slug': self.slug, 'pk': self.pk})
+            return reverse('post_detail_slug', kwargs={'slug': self.slug})
         return reverse('post_detail', kwargs={'pk': self.pk})
 
     def analysis_times(self):
