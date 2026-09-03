@@ -4393,3 +4393,46 @@ class CandadoDelPanel(TestCase):
         self.client.post('/panel/settings/', {'budget_base_eur': '9999'})
         fila = SystemSetting.objects.filter(key='budget_base_eur').first()
         self.assertNotEqual(getattr(fila, 'value', None), '9999')
+
+
+class Parche50C_UrlLegible(TestCase):
+    """5.0-C (decision de David): /post/nombre-del-video-legible/<pk>/ como URL
+    canonica; la numerica vieja hace 301 y no se rompe ningun enlace."""
+
+    def _post(self, **kw):
+        defaults = dict(author=make_user(username=f"u50c{Post.objects.count()}",
+                                         email=f"u50c{Post.objects.count()}@example.org"),
+                        url='https://youtu.be/slug50c')
+        defaults.update(kw)
+        return Post.objects.create(**defaults)
+
+    def test_el_slug_nace_del_primer_titulo_y_no_cambia(self):
+        p = self._post(title='¿Es cierto que la Luna es de queso?')
+        self.assertEqual(p.slug, 'es-cierto-que-la-luna-es-de-queso')
+        p.title = 'Otro titulo distinto'
+        p.save()
+        self.assertEqual(p.slug, 'es-cierto-que-la-luna-es-de-queso',
+                         'el slug cambio: las URLs compartidas se romperian')
+
+    def test_la_numerica_hace_301_a_la_legible_conservando_pagina(self):
+        p = self._post(title='Video con titulo')
+        r = self.client.get(f'/post/{p.pk}/?pagina=2')
+        self.assertEqual(r.status_code, 301)
+        self.assertEqual(r['Location'], f'/post/video-con-titulo/{p.pk}/?pagina=2')
+
+    def test_un_slug_desactualizado_hace_301_al_bueno(self):
+        p = self._post(title='Titulo bueno')
+        r = self.client.get(f'/post/titulo-viejo/{p.pk}/')
+        self.assertEqual(r.status_code, 301)
+        self.assertEqual(r['Location'], f'/post/titulo-bueno/{p.pk}/')
+
+    def test_la_canonica_responde_200(self):
+        p = self._post(title='Titulo bueno')
+        r = self.client.get(p.get_absolute_url())
+        self.assertEqual(r.status_code, 200)
+
+    def test_sin_titulo_la_numerica_sigue_siendo_canonica(self):
+        p = self._post()
+        self.assertEqual(p.get_absolute_url(), f'/post/{p.pk}/')
+        r = self.client.get(f'/post/{p.pk}/')
+        self.assertEqual(r.status_code, 200)

@@ -65,6 +65,11 @@ class Post(models.Model):
     platform = models.CharField(max_length=20, default='unknown')
     external_id = models.CharField(max_length=200, blank=True)
     title = models.CharField(max_length=300, blank=True)
+    # 5.0-C (decision de David): URL legible /post/nombre-del-video-legible/<pk>/.
+    # Se genera UNA vez del primer titulo real y ya no cambia (las URLs compartidas
+    # no se rompen); el pk final desambigua titulos repetidos. Sin titulo aun, la
+    # URL numerica sigue siendo la canonica.
+    slug = models.SlugField(max_length=80, blank=True, default='')
     duration_seconds = models.IntegerField(default=0)
     category = models.CharField(max_length=10, choices=CATEGORIES, default='MAIN')
     status = models.CharField(max_length=24, choices=STATUSES, default='NEW')
@@ -116,6 +121,20 @@ class Post(models.Model):
     transcribe_seconds = models.FloatField(default=0.0)   # faster-whisper
     diarize_seconds = models.FloatField(default=0.0)      # pyannote
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.title and not self.slug:
+            from django.utils.text import slugify
+            s = slugify(self.title)[:80].rstrip('-')
+            if s:
+                self.slug = s
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        if self.slug:
+            return reverse('post_detail_slug', kwargs={'slug': self.slug, 'pk': self.pk})
+        return reverse('post_detail', kwargs={'pk': self.pk})
 
     def analysis_times(self):
         """Resumen legible para el informe del operador."""

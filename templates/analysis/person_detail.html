@@ -28,7 +28,7 @@
         {% for a in g.filas %}
           <li>
             <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:160 }}</a>
-            <span class="hint">— {% trans "en" %} <a href="{% url 'post_detail' a.segment.post.pk %}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}</a>,
+            <span class="hint">— {% trans "en" %} <a href="{{ a.segment.post.get_absolute_url }}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}</a>,
               {% trans "minuto" %} {{ a.segment.start_seconds|floatformat:0 }}s</span>
           </li>
         {% endfor %}

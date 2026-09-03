@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models, transaction
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.accounts.models import AnalysisCredit
 from apps.embeds.adapters import detect_platform, build_embed
@@ -307,8 +308,15 @@ def _post_context(request, post):
     }
 
 
-def post_detail(request, pk):
+def post_detail(request, pk, slug=None):
     post = get_object_or_404(Post, pk=pk)
+    # 5.0-C: URL canonica /post/<slug>/<pk>/. Si llegan por la numerica o con un
+    # slug desactualizado, 301 a la buena conservando ?pagina= y demas parametros.
+    if post.slug and slug != post.slug:
+        destino = post.get_absolute_url()
+        if request.META.get('QUERY_STRING'):
+            destino += '?' + request.META['QUERY_STRING']
+        return HttpResponsePermanentRedirect(destino)
     if _adult_blocked(request, post):
         return render(request, 'analysis/adult_blocked.html', status=403)
     return render(request, 'analysis/post_detail.html', _post_context(request, post))

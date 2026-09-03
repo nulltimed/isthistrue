@@ -4,7 +4,7 @@
 <p class="hint">{% trans "Análisis marcados para mayores de edad. No aparecen en portada, en el buscador ni en las listas públicas: solo aquí, y solo para cuentas con 18 años cumplidos." %}</p>
 <ul class="post-list">
   {% for p in posts %}
-    <li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
+    <li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a>
       <span class="hint">{{ p.created_at|date:'d/m/Y' }}{% if p.adult_flag_source == 'platform' %} · {% trans "marcado por la plataforma" %}{% elif p.adult_flag_source == 'author' %} · {% trans "marcado por quien lo envió" %}{% elif p.adult_flag_source == 'mod' %} · {% trans "marcado por moderación" %}{% endif %}</span></li>
   {% empty %}
     <li>{% trans "Todavía no hay ningún análisis en esta sala." %}</li>

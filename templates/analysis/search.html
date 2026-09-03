@@ -14,7 +14,7 @@
 </form>
 {% if q %}
   {% if results.posts %}<h2>{% trans "Análisis" %}</h2><ul>
-    {% for p in results.posts %}<li><a href="{% url 'post_detail' p.pk %}">{{ p.title|default:p.url }}</a>
+    {% for p in results.posts %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a>
     {% if p.is_trending %}<span class="badge trending-badge">🔥</span>{% endif %}
     <span class="badge">{% trans p.get_topic_display %}</span></li>{% endfor %}</ul>{% endif %}
   {% if results.messages %}<h2>{% trans "Conversaciones" %}</h2><ul>
@@ -25,7 +25,7 @@
     {% for c in results.claims %}<li><a href="/wiki/claim/{{ c.slug|default:c.pk }}/">{{ c.get_color_display }} {{ c.text_original|truncatechars:100 }}</a>
     {% if not c.sources_ok %}<span class="badge">{% trans "sin fuentes — pendiente" %}</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
   {% if results.segments %}<h2>{% trans "Transcripciones" %}</h2><ul>
-    {% for s in results.segments %}<li><a href="{% url 'post_detail' s.post.pk %}">{{ s.post.title|default:s.post.url|truncatechars:60 }}</a>
+    {% for s in results.segments %}<li><a href="{{ s.post.get_absolute_url }}">{{ s.post.title|default:s.post.url|truncatechars:60 }}</a>
     <span class="hint">[{{ s.start_seconds|floatformat:0 }}s]{% if s.speaker_label %} · {% trans "Hablante" %}{% endif %}</span>
     {{ s.text|truncatechars:130 }}</li>{% endfor %}</ul>{% endif %}
   {% if not results.posts and not results.messages and not results.claims and not results.segments %}
