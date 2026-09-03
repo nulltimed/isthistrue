@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-03 · Commit en producción: `56de647` — 5.0-C: URL LEGIBLE del post (`/post/<slug>/<pk>/`, 301 desde la numérica, informe en docs/65). Remitente de email cambiado a `no-reply@esestocierto.com` en el .env de producción (Brevo ya autenticado: brevo-code + DKIM + SPF en DNS). ⏰ RECORDATORIO ACTIVO: avisar a David sobre abrir las fichas a Google DENTRO DE 5 ITERACIONES (contador: 5.0-B=1, 5.0-C=2) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-03 · Commit en producción: `8189629` — 5.0-C: URL LEGIBLE del post (`/post/<slug>/<pk>/`, 301 desde la numérica, informe en docs/65). Remitente de email cambiado a `no-reply@esestocierto.com` en el .env de producción (Brevo ya autenticado: brevo-code + DKIM + SPF en DNS). ⏰ RECORDATORIO ACTIVO: avisar a David sobre abrir las fichas a Google DENTRO DE 5 ITERACIONES (contador: 5.0-B=1, 5.0-C=2) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
