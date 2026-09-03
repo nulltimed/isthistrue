@@ -1264,3 +1264,17 @@ sigue valido en todo el codigo; la canonica es `post_detail_slug` y solo la usa
 `get_absolute_url`. Informe completo: docs/65. Ademas, el remitente de email de
 produccion es ya `no-reply@esestocierto.com` (Brevo autenticado por David: brevo-code +
 DKIM + SPF verificados en DNS).
+
+## 60. Parches 5.0-D/E/F: URL sin numero, cuenta completa y legales (2026-09-03)
+
+D: `/post/nombre-legible/` canonica (slug unico, duplicado `-2`, titulo solo-numeros
+`-video`); 301 desde numerica y slug/pk; www → dominio sin www. E: los seis huecos de
+Mi cuenta (reset de contraseña, cambio de contraseña y de email con enlace al buzon
+nuevo, exportacion RGPD, desbloqueos, 2FA TOTP con QR y segundo paso en el login).
+F: legales completos ES/EN sin plantillas + Contacto en el footer. Correo del dominio:
+buzon webmaster@ + alias en el Postfix/Dovecot del host (orden expresa de David;
+backups en /root/mail-baks-*). Trampas nuevas: `effective_level` es METODO; el candado
+anti-reutilizacion TOTP exige `last_t=-1` en tests; el candado i18n exige cada
+`{% trans %}` nuevo en el .po; un `.bak` en sites-enabled se CARGA (server_name
+duplicado se ignora en silencio). Informe: docs/66. ⏰ El recordatorio de Google se
+ENTREGO a David en este informe (contador 5/5).
