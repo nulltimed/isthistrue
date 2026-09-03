@@ -1016,7 +1016,7 @@ class Pase43A8(TestCase):
         self.client.force_login(mayor)
         r = self.client.get('/mas18/')
         self.assertEqual(r.status_code, 200)
-        self.assertIn(f'/post/{p.pk}/', r.content.decode())
+        self.assertIn(p.get_absolute_url(), r.content.decode())
 
     def test_el_superusuario_no_tiene_restricciones_aunque_no_tenga_fecha(self):
         """Orden de David (2026-08-17): la cuenta superusuario entra en la sala
@@ -1032,7 +1032,7 @@ class Pase43A8(TestCase):
         self.client.force_login(jefe)
         r = self.client.get('/mas18/')
         self.assertEqual(r.status_code, 200)
-        self.assertIn(f'/post/{p.pk}/', r.content.decode())
+        self.assertIn(p.get_absolute_url(), r.content.decode())
         self.assertIn('/mas18/', self.client.get('/').content.decode())  # y ve el menú
         solo_staff = make_user(username='staffA8', email='staffa8@example.org')
         solo_staff.is_staff = True
