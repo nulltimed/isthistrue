@@ -1259,3 +1259,121 @@ msgstr "Total cost of this video"
 
 msgid "Incluye reanálisis: es todo lo que este vídeo ha costado de verdad."
 msgstr "Reanalyses included: everything this video has actually cost."
+
+# ---- 5.0-E/5.0-F: la cuenta completa + legales (2026-09-03) ----
+msgid "1. Abre tu app de códigos (Aegis, Google Authenticator, Bitwarden…) y escanea este QR."
+msgstr "1. Open your authenticator app (Aegis, Google Authenticator, Bitwarden…) and scan this QR code."
+
+msgid "2. Escribe el código de 6 dígitos que muestra la app:"
+msgstr "2. Type the 6-digit code shown by the app:"
+
+msgid "ACTIVA: al entrar se pide el código de tu app."
+msgstr "ON: signing in asks for your app's code."
+
+msgid "Activar"
+msgstr "Enable"
+
+msgid "Añade la cuenta a mano con este enlace:"
+msgstr "Add the account manually with this link:"
+
+msgid "Bloqueados"
+msgstr "Blocked"
+
+msgid "Bloquear a este usuario"
+msgstr "Block this user"
+
+msgid "Cambiar"
+msgstr "Change"
+
+msgid "Cambiar contraseña"
+msgstr "Change password"
+
+msgid "Cambiar email"
+msgstr "Change email"
+
+msgid "Contacto"
+msgstr "Contact"
+
+msgid "Contraseña guardada"
+msgstr "Password saved"
+
+msgid "Contraseña nueva"
+msgstr "New password"
+
+msgid "Desactivar"
+msgstr "Disable"
+
+msgid "Desbloquear"
+msgstr "Unblock"
+
+msgid "El actual:"
+msgstr "Current:"
+
+msgid "Entrar con la contraseña nueva"
+msgstr "Sign in with your new password"
+
+msgid "Enviar enlace"
+msgstr "Send link"
+
+msgid "Enviarme el enlace"
+msgstr "Send me the link"
+
+msgid "Escribe el email de tu cuenta y te enviaremos un enlace para poner una contraseña nueva."
+msgstr "Enter your account email and we will send you a link to set a new password."
+
+msgid "Este enlace ya no es válido (caducó o ya se usó)."
+msgstr "This link is no longer valid (it expired or was already used)."
+
+msgid "Exportar mis datos"
+msgstr "Export my data"
+
+msgid "Guardar contraseña"
+msgstr "Save password"
+
+msgid "Nadie bloqueado."
+msgstr "Nobody blocked."
+
+msgid "Pide la actual y dos veces la nueva."
+msgstr "Asks for your current password and the new one twice."
+
+msgid "Pide uno nuevo"
+msgstr "Request a new one"
+
+msgid "Portabilidad (RGPD): descarga en JSON lo que nos has dado — perfil, ajustes, posts y mensajes tuyos."
+msgstr "Portability (GDPR): download what you have given us as JSON — profile, settings, your posts and messages."
+
+msgid "Recuperar contraseña"
+msgstr "Recover password"
+
+msgid "Revisa tu correo"
+msgstr "Check your email"
+
+msgid "Si ese email corresponde a una cuenta, acabamos de enviarle el enlace para restablecer la contraseña. Mira también la carpeta de spam."
+msgstr "If that email matches an account, we have just sent it the password reset link. Check the spam folder too."
+
+msgid "Te escribimos al nuevo con un enlace; nada cambia hasta que lo pulses."
+msgstr "We email the new address a link; nothing changes until you click it."
+
+msgid "Un código de tu móvil además de la contraseña. Opcional y recomendable."
+msgstr "A code from your phone on top of your password. Optional and recommended."
+
+msgid "Un paso más"
+msgstr "One more step"
+
+msgid "Un usuario bloqueado no puede enviarte mensajes ni solicitudes. Los bloqueos mandan siempre."
+msgstr "A blocked user cannot send you messages or requests. Blocks always win."
+
+msgid "Verificación en dos pasos"
+msgstr "Two-step verification"
+
+msgid "Verificación en dos pasos (2FA)"
+msgstr "Two-step verification (2FA)"
+
+msgid "Volver a Mi cuenta"
+msgstr "Back to My account"
+
+msgid "¿No puedes escanear?"
+msgstr "Can't scan it?"
+
+msgid "¿Olvidaste tu contraseña?"
+msgstr "Forgot your password?"

@@ -420,7 +420,7 @@ def export_data(request):
             'fecha_alta': u.date_joined.isoformat(),
             'fecha_nacimiento': u.birth_date.isoformat() if u.birth_date else None,
             'idioma': u.language, 'firma': u.signature,
-            'karma': u.karma, 'nivel': u.effective_level,
+            'karma': u.karma, 'nivel': u.effective_level(),
         },
         'ajustes': {
             'ocultar_adulto': u.hide_adult, 'difuminar_opiniones': u.hide_opinions,

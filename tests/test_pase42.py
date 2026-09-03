@@ -4556,6 +4556,11 @@ class Parche50E_CuentaCompleta(TestCase):
         self.client.post('/accounts/otp/activar/', {'code': self._codigo(device)})
         device.refresh_from_db()
         self.assertTrue(device.confirmed)
+        # El candado anti-reutilizacion (last_t) rechaza el MISMO codigo dos
+        # veces — correcto en produccion; el test lo resetea para no esperar
+        # 30 segundos a la ventana siguiente.
+        device.last_t = -1
+        device.save(update_fields=['last_t'])
         self.client.logout()
         r = self.client.post('/accounts/login/', {'username': u.username,
                                                   'password': 'ContraseñaLarga9'})
