@@ -305,9 +305,9 @@ class Pase43A(TestCase):
                                    title='Hilo de prueba')
         create_topic_for_post(post)
         self.client.force_login(lector)
-        self.client.get(f'/post/{post.pk}/')          # primera visita: marca leido
+        self.client.get(f'/post/{post.pk}/', follow=True)          # primera visita: marca leido
         add_reply(post, autor, 'mensaje nuevo tras tu visita')
-        r = self.client.get(f'/post/{post.pk}/')
+        r = self.client.get(f'/post/{post.pk}/', follow=True)
         self.assertContains(r, 'Nuevos desde tu última visita')
         topic = get_topic_for_post(post)
         tr = TopicRead.objects.get(user=lector, topic_id=topic.pk)
@@ -376,7 +376,7 @@ class Pase43A1(TestCase):
                                            source='ocr')
         SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
                                            candidate_name='Pedro Sánchez', source='user')
-        r = self.client.get(f'/post/{post.pk}/')
+        r = self.client.get(f'/post/{post.pk}/', follow=True)
         self.assertNotContains(r, 'Castresana')
         self.assertContains(r, 'Pedro Sánchez')
 
@@ -419,7 +419,7 @@ class Pase43A3(TestCase):
         # hay atributos que comprobar (el test original creaba el post vacio).
         post.transcript_segments.create(start_seconds=0, end_seconds=4.5,
                                         text='Frase de prueba para el seguimiento en vivo.')
-        r = self.client.get(f'/post/{post.pk}/')
+        r = self.client.get(f'/post/{post.pk}/', follow=True)
         self.assertContains(r, '<main class="wide">')
         self.assertContains(r, 'data-end=')
         css = open('static/css/main.css').read()
@@ -434,7 +434,7 @@ class Pase43A4(TestCase):
         user = make_user()
         post = Post.objects.create(author=user, url='https://youtu.be/abc137x',
                                    title='Tres columnas')
-        r = self.client.get(f'/post/{post.pk}/')
+        r = self.client.get(f'/post/{post.pk}/', follow=True)
         html = r.content.decode()
         # la caja de transcripción debe estar DENTRO de la aside derecha, no suelta debajo
         i_col = html.find('transcript-col')
@@ -471,7 +471,7 @@ class Pase43A5(TestCase):
         for start in (194.21, 17.25, 22.25, 5.01, 91.29):
             TranscriptSegment.objects.create(post=post, start_seconds=start,
                                              end_seconds=start + 2, text=f'f{start}')
-        r = self.client.get(f'/post/{post.pk}/')
+        r = self.client.get(f'/post/{post.pk}/', follow=True)
         segs = r.context['segments']
         tiempos = [s.start_seconds for s in segs]
         self.assertEqual(tiempos, sorted(tiempos))          # cronológico, no de inserción
@@ -775,7 +775,7 @@ class Pase43A7(TestCase):
     def test_solo_queda_el_boton_de_discutir(self):
         post = self._post_con_frases(2)
         self.client.force_login(make_user(username='lectorA7', email='lectora7@example.org'))
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('/votar/down/', html)
         self.assertNotIn('/votar/up/', html)          # el plebiscito, fuera
         self.assertIn('Discuto', html)
@@ -1562,14 +1562,14 @@ class Pase43E(TestCase):
     def test_el_nombre_confirmado_sustituye_a_hablante_n(self):
         post = self._post(7, status='DONE')
         self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('Ana Pública', html)
         # El hablante 2 sigue sin nombre: ese sí conserva el número.
         self.assertIn('Hablante 2', html)
 
     def test_sin_confirmar_se_mantiene_el_numero(self):
         post = self._post(8, status='DONE')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('Hablante 1', html)
         self.assertIn('Hablante 2', html)
 
@@ -1773,7 +1773,7 @@ class Pase43F(TestCase):
         from apps.panel.models import SystemSetting
         SystemSetting.objects.update_or_create(key='budget_base_eur',
                                                defaults={'value': '150'})
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('En cola por presupuesto', html)
         self.assertIn('Apadrinar este análisis', html)
         self.assertIn('/donaciones/', html)
@@ -1889,7 +1889,7 @@ class Pase43G(TestCase):
     def test_cada_mensaje_lleva_ficha_de_autor_y_numero_citable(self):
         post, autor = self._hilo(1)
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('msg-author', html)          # columna del autor
         self.assertIn('Mensajes', html)            # cuántos lleva escritos
         self.assertIn('Karma', html)
@@ -1900,13 +1900,13 @@ class Pase43G(TestCase):
         """Trampa conocida: el ordering del Meta se cuela en el GROUP BY."""
         post, autor = self._hilo(2)                # + el mensaje de apertura = 3
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('Mensajes: 3', html)
 
     def test_las_acciones_del_mensaje_se_leen_con_palabras(self):
         post, autor = self._hilo(1)
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         for palabra in ('Citar', 'Responder', 'Reportar'):
             self.assertIn(palabra, html)
         self.assertIn('data-num=', html)           # citar arrastra el número...
@@ -1915,7 +1915,7 @@ class Pase43G(TestCase):
     def test_la_paginacion_es_de_foro_con_primera_y_ultima(self):
         post, autor = self._hilo(25)               # 26 con el de apertura: 2 páginas
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/?pagina=2').content.decode()
+        html = self.client.get(f'/post/{post.pk}/?pagina=2', follow=True).content.decode()
         self.assertIn('Anterior', html)
         self.assertIn('Página 2 de 2', html)
         self.assertIn('?pagina=1#hilo', html)
@@ -1924,7 +1924,7 @@ class Pase43G(TestCase):
     def test_la_cabecera_del_hilo_cuenta_los_mensajes(self):
         post, autor = self._hilo(2)
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('3 mensajes', html)
 
     # ---------- vista previa ----------
@@ -1953,7 +1953,7 @@ class Pase43G(TestCase):
         formulario de siempre publica igual sin él."""
         post, autor = self._hilo(0)
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn(f'action="/post/{post.pk}/reply/"', html)
         self.assertIn('data-preview-url=', html)   # el JS lo lee de aquí, no cableado
 
@@ -2094,7 +2094,7 @@ class Pase44A(TestCase):
         MPost.objects.create(topic=get_topic_for_post(post), poster=autor,
                              subject='Re', content='Esto se queda en castellano',
                              approved=True)
-        html = self.client.get(f'/post/{post.pk}/',
+        html = self.client.get(f'/post/{post.pk}/', follow=True,
                                HTTP_ACCEPT_LANGUAGE='en').content.decode()
         self.assertIn('Esto se queda en castellano', html)   # el mensaje, intacto
         self.assertIn('Título en castellano', html)          # el título, intacto
@@ -2182,7 +2182,7 @@ class Pase44B(TestCase):
     def test_la_transcripcion_muestra_el_semaforo_y_no_la_senal_barata(self):
         post, seg, _ = self._post_con_frase()
         self._con_veredicto(seg, 'GREEN')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('verdict-GREEN', html)
         self.assertIn('Verificado', html)
         # La señal barata DESAPARECE en cuanto hay veredicto (decisión de David).
@@ -2191,27 +2191,27 @@ class Pase44B(TestCase):
     def test_el_semaforo_enlaza_a_la_ficha_con_sus_fuentes(self):
         post, seg, _ = self._post_con_frase()
         c = self._con_veredicto(seg)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn(f'/wiki/claim/{c.slug}/', html)
         self.assertIn('fuente', html)
 
     def test_la_frase_sin_veredicto_sigue_mostrando_su_senal(self):
         post, seg, _ = self._post_con_frase()
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('signal-FACTUAL_UNVERIFIED', html)
 
     def test_el_pie_deja_de_mentir_cuando_hay_veredictos(self):
         """Decía siempre «no son veredictos verificados», también después de verificar."""
         post, seg, _ = self._post_con_frase()
         self._con_veredicto(seg)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('contrastado con fuentes enlazadas', html)
 
     def test_se_ve_contra_que_se_comparo(self):
         """«Nunca es nunca»: el lector puede discrepar del criterio, no solo del dato."""
         post, seg, _ = self._post_con_frase()
         self._con_veredicto(seg, 'GREEN', 'EPA del INE, serie 1976-2023')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('serie 1976-2023', html)
 
     # ---------- 2. los estados ----------
@@ -2226,7 +2226,7 @@ class Pase44B(TestCase):
         post, seg, autor = self._post_con_frase()
         self._con_veredicto(seg, 'UNDECIDED')
         self.client.force_login(autor)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('verdict-UNDECIDED', html)
         self.assertIn('reanálisis profundo', html)
 
@@ -2350,7 +2350,7 @@ class Pase44B(TestCase):
         post.event_date = datetime.date(2023, 7, 10)
         post.event_date_source = 'agent'
         post.save(update_fields=['event_date', 'event_date_source'])
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('10/07/2023', html)
         self.assertIn('estimada', html)
 
@@ -3120,7 +3120,7 @@ class Pase44G(TestCase):
 
     def test_el_aviso_de_espera_se_ve_en_el_post(self):
         post = self._post(14)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('La verificación con fuentes espera', html)
         self.assertIn('0 de 2, hace falta el 65%', html)
 
@@ -3139,10 +3139,10 @@ class Pase44G(TestCase):
         self.assertIn('wrench', _P)
         self.assertIn(_P['wrench'], icon('wrench'))
         post = self._post(15, status='DONE')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertNotIn('/relanzar/', html)
         self.client.force_login(self._mod(15))
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         for etapa in ('cheap', 'dating', 'verdicts', 'deep'):
             self.assertIn(f'/post/{post.pk}/relanzar/{etapa}/', html)
         self.assertIn('≈', html)                          # el coste delante
@@ -3425,12 +3425,12 @@ class Pase44I(TestCase):
         seg = post.transcript_segments.get(text='Right.')
         seg.attribution_uncertain = True
         seg.save(update_fields=['attribution_uncertain'])
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('atribución incierta', html)
         self.assertNotIn('/atribuir/', html)                 # sin sesión no se resuelve
         u = make_user(username='i8b', email='i8b@example.org')
         self.client.force_login(u)
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn(f'/frase/{seg.pk}/atribuir/', html)
         with mock.patch('apps.analysis.services.try_autopilot') as piloto:
             r = self.client.post(f'/frase/{seg.pk}/atribuir/', {'speaker': 'SPEAKER_00'})

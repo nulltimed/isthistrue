@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-01 · Commit en producción: `1c8c1bb` — 5.0-B: MARCA NUEVA (logo máquina de escribir «esesto»/«cierto?», pestaña esestocierto?, favicon lupa negra) + decisiones de la wiki-red registradas en §58. ⏰ RECORDATORIO ACTIVO: avisar a David sobre abrir las fichas a Google DENTRO DE 5 ITERACIONES (contador: 5.0-B=1) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-03 · Commit en producción: `56de647` — 5.0-C: URL LEGIBLE del post (`/post/<slug>/<pk>/`, 301 desde la numérica, informe en docs/65). Remitente de email cambiado a `no-reply@esestocierto.com` en el .env de producción (Brevo ya autenticado: brevo-code + DKIM + SPF en DNS). ⏰ RECORDATORIO ACTIVO: avisar a David sobre abrir las fichas a Google DENTRO DE 5 ITERACIONES (contador: 5.0-B=1, 5.0-C=2) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
@@ -202,6 +202,17 @@ siempre** (ni nombrarlo) · logo v4 y favicon v2 CONGELADOS (no tocar SVGs sin o
 - **Verificar sin ver secretos**: `sudo grep '^CLAVE=' .env | cut -d= -f2- | md5sum` para comparar, awk para presencia.
 
 ## 10. Estado EXACTO al traspasar (2026-08-17, tras pase 4.3-A.8)
+
+- 🔗 **URL LEGIBLE (5.0-C, 2026-09-03)**: canónica `/post/<slug>/<pk>/` (slug del primer
+  título, inmutable); numérica y slugs viejos hacen 301 conservando la query. Los enlaces
+  internos siguen numéricos a propósito (aterrizan por el 301); las plantillas de listados
+  usan `get_absolute_url`. Nombre de ruta nuevo `post_detail_slug`; `post_detail` (numérica)
+  se conserva para todos los `redirect()` existentes.
+- 📧 **REMITENTE NUEVO (2026-09-03)**: `DEFAULT_FROM_EMAIL=no-reply@esestocierto.com` en el
+  .env de producción. El DNS de Brevo para esestocierto.com está completo (brevo-code, DKIM
+  `brevo._domainkey` → brand.brevosend.com, SPF en mail.esestocierto.com). Prueba entregada
+  con firma `d=esestocierto.com` al INBOX de david@xyztserver.com (13:26 del 03-09) y copia
+  al Gmail de David. Pendiente: su confirmación bandeja/spam para decidir el DMARC.
 
 - 🏁 **LAS VOCES, RESUELTAS (2026-08-26, final)**: `DIARIZE_GPU_MODEL=community-1` en el .env
   de producción (comparativa sobre el vídeo completo: 3.1 = 91,4/8,6 su techo eterno;
