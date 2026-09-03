@@ -122,6 +122,29 @@
         <div class="setting-row"><span class="setting-control">{% icon 'ticket' 18 %}</span>
           <div class="setting-text"><a href="{% url 'claim_code' %}"><strong>{% trans "Canjear un código" %}</strong></a>
           <p class="hint">{% trans "Los códigos ISTT otorgan nivel de confianza." %}</p></div></div>
+        <div class="setting-row"><span class="setting-control">{% icon 'key' 18 %}</span>
+          <div class="setting-text"><a href="{% url 'password_change' %}"><strong>{% trans "Cambiar contraseña" %}</strong></a>
+          <p class="hint">{% trans "Pide la actual y dos veces la nueva." %}</p></div></div>
+        <div class="setting-row"><span class="setting-control">{% icon 'bell' 18 %}</span>
+          <div class="setting-text"><strong>{% trans "Cambiar email" %}</strong>
+          <p class="hint">{% trans "El actual:" %} {{ u.email }}. {% trans "Te escribimos al nuevo con un enlace; nada cambia hasta que lo pulses." %}</p>
+          <form method="post" action="{% url 'email_change' %}" class="inline-mini">{% csrf_token %}
+            <input type="email" name="new_email" placeholder="nuevo@email.com" required>
+            <button class="mini">{% trans "Enviar enlace" %}</button></form></div></div>
+        <div class="setting-row"><span class="setting-control">{% icon 'shield' 18 %}</span>
+          <div class="setting-text"><strong>{% trans "Verificación en dos pasos (2FA)" %}</strong>
+          {% if otp_activo %}
+            <p class="hint">{% trans "ACTIVA: al entrar se pide el código de tu app." %}</p>
+            <form method="post" action="{% url 'otp_disable' %}" class="inline-mini">{% csrf_token %}
+              <input name="code" inputmode="numeric" maxlength="8" placeholder="123456" required>
+              <button class="mini danger">{% trans "Desactivar" %}</button></form>
+          {% else %}
+            <p class="hint">{% trans "Un código de tu móvil además de la contraseña. Opcional y recomendable." %}</p>
+            <a class="mini" href="{% url 'otp_setup' %}">{% trans "Activar" %}</a>
+          {% endif %}</div></div>
+        <div class="setting-row"><span class="setting-control">{% icon 'image' 18 %}</span>
+          <div class="setting-text"><a href="{% url 'export_data' %}"><strong>{% trans "Exportar mis datos" %}</strong></a>
+          <p class="hint">{% trans "Portabilidad (RGPD): descarga en JSON lo que nos has dado — perfil, ajustes, posts y mensajes tuyos." %}</p></div></div>
         <div class="setting-row"><span class="setting-control">{% icon 'trash' 18 %}</span>
           <div class="setting-text"><a href="{% url 'delete_account' %}"><strong>{% trans "Eliminar mi cuenta" %}</strong></a>
           <p class="hint">{% trans "Derecho de supresión (RGPD): la cuenta desaparece; tus mensajes quedan anónimos." %}</p></div></div>

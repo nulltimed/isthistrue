@@ -9,6 +9,7 @@
       <span class="msg-tools">
         <a class="ibtn" href="{% url 'pm_send' pm.sender.pk %}" title="{% trans 'Responder' %}">{% icon 'mail' 15 %}</a>
         {% if not pm.reported %}<form method="post" action="{% url 'pm_report' pm.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar a moderación' %}">{% icon 'flag' 15 %}</button></form>{% endif %}
+        <form method="post" action="{% url 'friends' %}">{% csrf_token %}<input type="hidden" name="id" value="{{ pm.sender.pk }}"><button class="ibtn" name="action" value="block" title="{% trans 'Bloquear a este usuario' %}">{% icon 'shield' 15 %}</button></form>
       </span></div>
     <div class="thread-body">{{ pm.body|md }}</div>
   </div>

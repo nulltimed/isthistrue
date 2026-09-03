@@ -8,7 +8,8 @@
   </div>
   {% endif %}
   <form method="post">{% csrf_token %}{{ form.as_p }}<button class="wide">{% trans "Entrar" %}</button></form>
-  <p class="hint">{% trans "Puedes entrar con tu email o con tu nombre de usuario." %}</p>
+  <p class="hint">{% trans "Puedes entrar con tu email o con tu nombre de usuario." %}
+     · <a href="{% url 'password_reset' %}">{% trans "¿Olvidaste tu contraseña?" %}</a></p>
   <details><summary>{% trans "¿No te llegó el email de verificación?" %}</summary>
   <form method="post" action="{% url 'resend_verification' %}">{% csrf_token %}
   <label>{% trans "Tu email" %}<input type="email" name="email" required></label><button>{% trans "Reenviar" %}</button></form>

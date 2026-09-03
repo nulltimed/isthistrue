@@ -1,0 +1,16 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block content %}
+<div class="auth-card">
+  <h1>{% trans "Verificación en dos pasos" %}</h1>
+  <p class="hint">{% trans "1. Abre tu app de códigos (Aegis, Google Authenticator, Bitwarden…) y escanea este QR." %}</p>
+  <div class="otp-qr">{{ qr_svg|safe }}</div>
+  <details><summary>{% trans "¿No puedes escanear?" %}</summary>
+    <p class="hint">{% trans "Añade la cuenta a mano con este enlace:" %}<br><code style="word-break:break-all">{{ secret_url }}</code></p>
+  </details>
+  <p class="hint">{% trans "2. Escribe el código de 6 dígitos que muestra la app:" %}</p>
+  <form method="post">{% csrf_token %}
+    <input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="8" required autofocus>
+    <button class="wide">{% trans "Activar" %}</button></form>
+  <p class="hint"><a href="{% url 'account_settings' %}">{% trans "Cancelar" %}</a></p>
+</div>
+{% endblock %}

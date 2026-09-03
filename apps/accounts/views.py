@@ -103,8 +103,12 @@ def settings_view(request):
          'Un análisis que sigues supera los minutos gratuitos y te decimos lo que cuesta.'),
     ]
     pref_rows = [(k, lbl, hint, u.wants(k)) for k, lbl, hint in PREF_ROWS]
+    # 5.0-E: estado de la verificacion en dos pasos para la seccion Cuenta.
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+    otp_activo = TOTPDevice.objects.filter(user=u, confirmed=True).exists()
     return render(request, 'accounts/settings.html',
-                  {'u': u, 'pref_rows': pref_rows, 'hours': range(24)})
+                  {'u': u, 'pref_rows': pref_rows, 'hours': range(24),
+                   'otp_activo': otp_activo})
 
 
 @login_required
@@ -268,11 +272,17 @@ def friends(request):
                 UserBlock.objects.get_or_create(blocker=me, blocked=target)
                 Friendship.objects.filter(requester=target, addressee=me).delete()
                 messages.success(request, 'Usuario bloqueado.')
+        elif action == 'unblock':   # 5.0-E: el candado ya existia; faltaba la llave
+            UserBlock.objects.filter(blocker=me,
+                                     blocked_id=request.POST.get('id')).delete()
+            messages.success(request, 'Usuario desbloqueado.')
         return redirect('friends')
     pending = Friendship.objects.filter(addressee=me, status='PENDING')
     accepted = Friendship.objects.filter(status='ACCEPTED').filter(
         models.Q(requester=me) | models.Q(addressee=me))
-    return render(request, 'accounts/friends.html', {'pending': pending, 'accepted': accepted})
+    blocks = UserBlock.objects.filter(blocker=me).select_related('blocked')
+    return render(request, 'accounts/friends.html',
+                  {'pending': pending, 'accepted': accepted, 'blocks': blocks})
 
 
 def verify_email(request, token):
@@ -300,3 +310,223 @@ def resend_verification(request):
         messages.success(request, 'Si la cuenta existe y está sin verificar, '
                                   'hemos reenviado el enlace.')
     return redirect('login')
+
+
+# ------------------------- 5.0-E: la cuenta completa -------------------------
+# Los seis huecos que faltaban (orden de David, 2026-09-03): recuperar la
+# contrasena olvidada, cambiarla desde dentro, cambiar el email con
+# verificacion, exportar los datos (portabilidad RGPD), interfaz de bloqueos
+# y 2FA opcional por TOTP.
+
+from django.contrib.auth import views as auth_views
+from django.urls import reverse_lazy
+
+
+class PasswordResetViewES(auth_views.PasswordResetView):
+    template_name = 'accounts/password_reset_form.html'
+    email_template_name = 'emails/password_reset.txt'
+    subject_template_name = 'emails/password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+
+
+class PasswordResetConfirmViewES(auth_views.PasswordResetConfirmView):
+    template_name = 'accounts/password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+
+
+class PasswordChangeViewES(auth_views.PasswordChangeView):
+    template_name = 'accounts/password_change.html'
+    success_url = reverse_lazy('account_settings')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Contraseña cambiada.')
+        return super().form_valid(form)
+
+
+EMAIL_CHANGE_SALT = 'email-change'
+EMAIL_CHANGE_MAX_AGE = 72 * 3600
+
+
+@login_required
+def email_change(request):
+    """El enlace de confirmacion viaja al email NUEVO: quien no controla ese
+    buzon no puede quedarselo. El token firmado lleva el email dentro, asi que
+    no hace falta campo pendiente en el modelo."""
+    from django.core import signing
+    from django.core.mail import send_mail
+    from django.core.validators import validate_email
+    from django.core.exceptions import ValidationError
+    from django.conf import settings as dj_settings
+    from .models import User
+    from .verification import _site_host
+    if request.method != 'POST':
+        return redirect('account_settings')
+    nuevo = request.POST.get('new_email', '').strip().lower()
+    try:
+        validate_email(nuevo)
+    except ValidationError:
+        messages.error(request, 'Ese email no parece válido.')
+        return redirect('account_settings')
+    if User.objects.filter(email__iexact=nuevo).exists():
+        messages.error(request, 'Ese email ya está en uso.')
+        return redirect('account_settings')
+    token = signing.dumps({'uid': request.user.pk, 'email': nuevo},
+                          salt=EMAIL_CHANGE_SALT)
+    url = f'https://{_site_host()}/accounts/email/confirmar/{token}/'
+    send_mail('Confirma tu email nuevo — esestocierto.com',
+              f'Hola {request.user.username}:\n\nPulsa para confirmar que este '
+              f'es tu email nuevo:\n{url}\n\nEl enlace caduca en 72 horas. Si '
+              'no pediste este cambio, ignora este mensaje: tu email actual '
+              'sigue siendo el de siempre.',
+              dj_settings.DEFAULT_FROM_EMAIL, [nuevo],
+              fail_silently=False)
+    messages.success(request, f'Te hemos escrito a {nuevo} con el enlace de '
+                              'confirmación. Tu email no cambia hasta que lo pulses.')
+    return redirect('account_settings')
+
+
+def email_change_confirm(request, token):
+    from django.core import signing
+    from .models import User
+    try:
+        data = signing.loads(token, salt=EMAIL_CHANGE_SALT,
+                             max_age=EMAIL_CHANGE_MAX_AGE)
+    except signing.BadSignature:
+        messages.error(request, 'El enlace no es válido o ha caducado.')
+        return redirect('login')
+    user = User.objects.filter(pk=data.get('uid')).first()
+    nuevo = data.get('email', '')
+    if not user or User.objects.filter(email__iexact=nuevo).exclude(pk=user.pk).exists():
+        messages.error(request, 'El enlace no es válido o el email ya está en uso.')
+        return redirect('login')
+    user.email = nuevo
+    user.email_verified = True
+    user.save(update_fields=['email', 'email_verified'])
+    messages.success(request, 'Email actualizado.')
+    return redirect('account_settings' if request.user.is_authenticated else 'login')
+
+
+@login_required
+def export_data(request):
+    """Portabilidad (RGPD art. 20): lo que el usuario nos dio, en JSON legible.
+    Solo SUS datos: los mensajes recibidos son de otros y no se exportan."""
+    import json
+    from django.http import HttpResponse
+    from apps.analysis.models import Post
+    u = request.user
+    datos = {
+        'perfil': {
+            'usuario': u.username, 'email': u.email,
+            'fecha_alta': u.date_joined.isoformat(),
+            'fecha_nacimiento': u.birth_date.isoformat() if u.birth_date else None,
+            'idioma': u.language, 'firma': u.signature,
+            'karma': u.karma, 'nivel': u.effective_level,
+        },
+        'ajustes': {
+            'ocultar_adulto': u.hide_adult, 'difuminar_opiniones': u.hide_opinions,
+            'modo_avisos': u.notify_mode, 'preferencias_avisos': u.notify_prefs,
+            'silencio_nocturno': u.quiet_night, 'hora_resumen': u.digest_hour,
+            'acepta_mensajes_privados': u.accept_private_messages,
+            'permite_solicitudes_amistad': u.allow_friend_requests,
+        },
+        'posts_enviados': [
+            {'url': p.url, 'titulo': p.title, 'fecha': p.created_at.isoformat(),
+             'opinion_inicial': p.author_opinion}
+            for p in Post.objects.filter(author=u).order_by('created_at')],
+        'mensajes_privados_enviados': [
+            {'para': pm.recipient.username, 'texto': pm.body,
+             'fecha': pm.created_at.isoformat()}
+            for pm in u.pm_sent.order_by('created_at')],
+        'amistades': [
+            {'con': (f.addressee if f.requester_id == u.pk else f.requester).username,
+             'estado': f.status}
+            for f in (u.friend_requests_sent.all() | u.friend_requests_received.all())],
+        'bloqueos': [b.blocked.username for b in u.blocks.all()],
+    }
+    try:
+        from machina.core.db.models import get_model
+        MPost = get_model('forum_conversation', 'Post')
+        datos['mensajes_del_foro'] = [
+            {'asunto': mp.subject, 'texto': str(mp.content),
+             'fecha': mp.created.isoformat()}
+            for mp in MPost.objects.filter(poster=u).order_by('created')]
+    except Exception:
+        datos['mensajes_del_foro'] = []
+    cuerpo = json.dumps(datos, ensure_ascii=False, indent=2)
+    resp = HttpResponse(cuerpo, content_type='application/json; charset=utf-8')
+    resp['Content-Disposition'] = f'attachment; filename="esestocierto-{u.username}.json"'
+    return resp
+
+
+def _dispositivo_confirmado(user):
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+    return TOTPDevice.objects.filter(user=user, confirmed=True).first()
+
+
+@login_required
+def otp_setup(request):
+    """Activar 2FA: se crea un dispositivo SIN confirmar, se muestra el QR y
+    solo queda activo cuando el usuario demuestra un codigo valido."""
+    import qrcode
+    import qrcode.image.svg
+    from io import BytesIO
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+    if _dispositivo_confirmado(request.user):
+        messages.info(request, 'La verificación en dos pasos ya está activa.')
+        return redirect('account_settings')
+    device = TOTPDevice.objects.filter(user=request.user, confirmed=False).first()
+    if not device:
+        device = TOTPDevice.objects.create(user=request.user, name='app',
+                                           confirmed=False)
+    if request.method == 'POST':
+        if device.verify_token(request.POST.get('code', '').strip()):
+            device.confirmed = True
+            device.save(update_fields=['confirmed'])
+            messages.success(request, 'Verificación en dos pasos ACTIVADA. '
+                                      'A partir de ahora, al entrar se te pedirá el código.')
+            return redirect('account_settings')
+        messages.error(request, 'Código incorrecto. Prueba con el siguiente que muestre la app.')
+    buf = BytesIO()
+    qrcode.make(device.config_url,
+                image_factory=qrcode.image.svg.SvgPathImage).save(buf)
+    svg = buf.getvalue().decode()
+    if svg.startswith('<?xml'):       # la declaracion XML no va incrustada en HTML
+        svg = svg.split('?>', 1)[1].lstrip()
+    return render(request, 'accounts/otp_setup.html',
+                  {'qr_svg': svg, 'secret_url': device.config_url})
+
+
+@login_required
+def otp_disable(request):
+    from django_otp.plugins.otp_totp.models import TOTPDevice
+    device = _dispositivo_confirmado(request.user)
+    if request.method == 'POST' and device:
+        if device.verify_token(request.POST.get('code', '').strip()):
+            TOTPDevice.objects.filter(user=request.user).delete()
+            messages.success(request, 'Verificación en dos pasos desactivada.')
+        else:
+            messages.error(request, 'Código incorrecto: la 2FA sigue activa.')
+    return redirect('account_settings')
+
+
+def otp_verify(request):
+    """Segundo paso del login: la contraseña ya se comprobo, falta el codigo."""
+    from django.conf import settings as dj_settings
+    from .models import User
+    uid = request.session.get('otp_user_pk')
+    user = User.objects.filter(pk=uid).first() if uid else None
+    if not user:
+        return redirect('login')
+    if request.method == 'POST':
+        device = _dispositivo_confirmado(user)
+        if device and device.verify_token(request.POST.get('code', '').strip()):
+            from django_otp import login as otp_login
+            backend = request.session.pop('otp_backend',
+                                          dj_settings.AUTHENTICATION_BACKENDS[0])
+            del request.session['otp_user_pk']
+            destino = request.session.pop('otp_next', '') or '/'
+            login(request, user, backend=backend)
+            otp_login(request, device)
+            return redirect(destino)
+        messages.error(request, 'Código incorrecto.')
+    return render(request, 'accounts/otp_verify.html', {'username': user.username})

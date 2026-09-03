@@ -606,3 +606,9 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .uncertain-list{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
 .uncertain-form{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.2rem}
 .uncertain-form button.mini{color:#fff}
+
+/* 5.0-E: cuenta completa */
+.inline-mini{display:flex;gap:.4rem;margin-top:.35rem;align-items:center}
+.inline-mini input{flex:1;min-width:0}
+.otp-qr{display:flex;justify-content:center;margin:.8rem 0}
+.otp-qr svg{width:200px;height:200px;background:#fff;padding:8px;border-radius:6px}

@@ -15,4 +15,10 @@
 <h2>{% trans "Amigos" %}</h2>
 <ul>{% for fr in accepted %}<li>{% if fr.requester == user %}{{ fr.addressee.username }}{% else %}{{ fr.requester.username }}{% endif %}</li>
 {% empty %}<li>{% trans "Todavía nadie." %}</li>{% endfor %}</ul>
+<h2>{% trans "Bloqueados" %}</h2>
+<p class="hint">{% trans "Un usuario bloqueado no puede enviarte mensajes ni solicitudes. Los bloqueos mandan siempre." %}</p>
+<ul>{% for b in blocks %}<li>{{ b.blocked.username }}
+  <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ b.blocked.pk }}">
+  <button name="action" value="unblock">{% trans "Desbloquear" %}</button></form></li>
+{% empty %}<li>{% trans "Nadie bloqueado." %}</li>{% endfor %}</ul>
 {% endblock %}

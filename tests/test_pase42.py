@@ -4450,3 +4450,129 @@ class Parche50D_UrlSinNumero(TestCase):
         self.assertEqual(p.get_absolute_url(), f'/post/{p.pk}/')
         r = self.client.get(f'/post/{p.pk}/')
         self.assertEqual(r.status_code, 200)
+
+
+class Parche50E_CuentaCompleta(TestCase):
+    """5.0-E: los seis huecos de Mi cuenta — recuperar contraseña, cambiarla,
+    cambiar email con verificación, exportar datos, bloqueos con llave y 2FA."""
+
+    def _user(self, **kw):
+        n = User.objects.count()
+        defaults = dict(username=f'u50e{n}', email=f'u50e{n}@example.org',
+                        password='ContraseñaLarga9')
+        defaults.update(kw)
+        u = User.objects.create_user(**defaults)
+        u.email_verified = True
+        u.save(update_fields=['email_verified'])
+        return u
+
+    def test_recuperar_contrasena_de_punta_a_punta(self):
+        import re
+        from django.core import mail
+        u = self._user()
+        r = self.client.post('/accounts/password/olvidada/', {'email': u.email})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(mail.outbox), 1)
+        enlace = re.search(r'/accounts/password/restablecer/\S+/', mail.outbox[0].body)
+        self.assertIsNotNone(enlace, 'el email no lleva el enlace')
+        r = self.client.get(enlace.group(0))          # canjea el token
+        self.assertEqual(r.status_code, 302)
+        r = self.client.post(r['Location'], {'new_password1': 'OtraMuyLarga77',
+                                             'new_password2': 'OtraMuyLarga77'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(self.client.login(username=u.username, password='OtraMuyLarga77'))
+
+    def test_cambiar_contrasena_desde_dentro(self):
+        u = self._user()
+        self.client.force_login(u)
+        r = self.client.post('/accounts/password/cambiar/',
+                             {'old_password': 'ContraseñaLarga9',
+                              'new_password1': 'NuevaMuyLarga88',
+                              'new_password2': 'NuevaMuyLarga88'})
+        self.assertEqual(r.status_code, 302)
+        u.refresh_from_db()
+        self.assertTrue(u.check_password('NuevaMuyLarga88'))
+
+    def test_cambiar_email_exige_pulsar_el_enlace(self):
+        import re
+        from django.core import mail
+        u = self._user()
+        self.client.force_login(u)
+        self.client.post('/accounts/email/cambiar/', {'new_email': 'nuevo@example.org'})
+        u.refresh_from_db()
+        self.assertNotEqual(u.email, 'nuevo@example.org', 'cambió sin confirmar')
+        self.assertEqual(mail.outbox[-1].to, ['nuevo@example.org'])
+        enlace = re.search(r'/accounts/email/confirmar/\S+/', mail.outbox[-1].body)
+        self.client.get(enlace.group(0))
+        u.refresh_from_db()
+        self.assertEqual(u.email, 'nuevo@example.org')
+
+    def test_cambiar_email_rechaza_uno_ocupado(self):
+        from django.core import mail
+        otro = self._user()
+        u = self._user()
+        self.client.force_login(u)
+        antes = len(mail.outbox)
+        self.client.post('/accounts/email/cambiar/', {'new_email': otro.email})
+        self.assertEqual(len(mail.outbox), antes, 'envió enlace para un email ocupado')
+
+    def test_exportar_mis_datos(self):
+        import json
+        u = self._user()
+        self.client.force_login(u)
+        r = self.client.get('/accounts/exportar/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('attachment', r['Content-Disposition'])
+        datos = json.loads(r.content.decode())
+        self.assertEqual(datos['perfil']['usuario'], u.username)
+
+    def test_desbloquear_devuelve_los_mensajes(self):
+        from apps.accounts.models import UserBlock, PrivateMessage
+        a = self._user()
+        b = self._user()
+        a.accept_private_messages = True
+        a.save(update_fields=['accept_private_messages'])
+        UserBlock.objects.create(blocker=a, blocked=b)
+        self.client.force_login(b)
+        self.client.post(f'/accounts/mensajes/enviar/{a.pk}/', {'body': 'hola'})
+        self.assertEqual(PrivateMessage.objects.count(), 0, 'el bloqueo no corta')
+        self.client.force_login(a)
+        self.client.post('/accounts/amigos/', {'action': 'unblock', 'id': b.pk})
+        self.assertFalse(UserBlock.objects.filter(blocker=a, blocked=b).exists())
+        self.client.force_login(b)
+        self.client.post(f'/accounts/mensajes/enviar/{a.pk}/', {'body': 'hola'})
+        self.assertEqual(PrivateMessage.objects.count(), 1)
+
+    def _codigo(self, device):
+        from django_otp.oath import totp
+        return f'{totp(device.bin_key, step=device.step, t0=device.t0, digits=device.digits):06d}'
+
+    def test_2fa_se_activa_y_el_login_pide_el_codigo(self):
+        from django_otp.plugins.otp_totp.models import TOTPDevice
+        u = self._user()
+        self.client.force_login(u)
+        self.client.get('/accounts/otp/activar/')          # crea el dispositivo
+        device = TOTPDevice.objects.get(user=u, confirmed=False)
+        self.client.post('/accounts/otp/activar/', {'code': self._codigo(device)})
+        device.refresh_from_db()
+        self.assertTrue(device.confirmed)
+        self.client.logout()
+        r = self.client.post('/accounts/login/', {'username': u.username,
+                                                  'password': 'ContraseñaLarga9'})
+        self.assertEqual(r['Location'], '/accounts/otp/',
+                         'con 2FA la contraseña sola no debe abrir sesión')
+        self.assertNotIn('_auth_user_id', self.client.session)
+        r = self.client.post('/accounts/otp/', {'code': '000000'})
+        self.assertNotIn('_auth_user_id', self.client.session, 'entró con código malo')
+        device.refresh_from_db()
+        device.throttling_failure_count = 0                # sin castigo por el intento
+        device.throttling_failure_timestamp = None
+        device.save()
+        self.client.post('/accounts/otp/', {'code': self._codigo(device)})
+        self.assertEqual(self.client.session.get('_auth_user_id'), str(u.pk))
+
+    def test_sin_2fa_el_login_entra_directo(self):
+        u = self._user()
+        r = self.client.post('/accounts/login/', {'username': u.username,
+                                                  'password': 'ContraseñaLarga9'})
+        self.assertEqual(self.client.session.get('_auth_user_id'), str(u.pk))
