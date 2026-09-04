@@ -644,3 +644,6 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .foro-buscador select{flex:1;min-width:150px}
 .foro-bloque{margin:1.4rem 0}
 .person-junto .chip{margin-right:.35rem;text-decoration:none}
+
+/* 5.1-C: subtemas de la portada wiki */
+.subtemas-chips .chip{margin:0 .35rem .35rem 0;display:inline-block;text-decoration:none}

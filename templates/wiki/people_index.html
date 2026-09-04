@@ -1,0 +1,24 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Personas" %} — esestocierto?{% endblock %}
+{% block og %}{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}{% endblock %}
+{% block content %}
+<h1>{% trans "Personas" %}</h1>
+<p class="hint">{% trans "Todas las figuras públicas con afirmaciones analizadas y atribuidas mediante identificación participativa." %}</p>
+<ul class="person-grid">
+  {% for f in personas %}
+  <li class="person-card">
+    <a href="/persona/{{ f.person.slug }}/">
+      {% if f.person.photo_url %}<img src="{{ f.person.photo_url }}" alt="" loading="lazy">{% else %}<span class="person-card-hueco" aria-hidden="true">?</span>{% endif %}
+      <strong>{{ f.person.name }}</strong>
+    </a>
+    {% if f.person.description %}<span class="hint">{{ f.person.description }}</span>{% endif %}
+    <span class="person-card-nums">
+      <span class="badge">{{ f.total }} {% trans "afirmaciones" %}</span>
+      {% if f.verdes %}<span class="chip chip-verde">🟢 {{ f.verdes }}</span>{% endif %}
+      {% if f.ambar %}<span class="chip chip-ambar">🟡 {{ f.ambar }}</span>{% endif %}
+      {% if f.rojas %}<span class="chip chip-roja">🔴 {{ f.rojas }}</span>{% endif %}
+    </span>
+  </li>
+  {% empty %}<li class="hint">{% trans "Todavía no hay figuras públicas con afirmaciones atribuidas. Las fichas nacen cuando la comunidad identifica a los hablantes de los vídeos." %}</li>{% endfor %}
+</ul>
+{% endblock %}

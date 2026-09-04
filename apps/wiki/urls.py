@@ -7,6 +7,8 @@ urlpatterns = [
     # 5.1-A: la wiki tiene PORTADA propia (antes redirigia a cambios).
     path('', views.wiki_home, name='wiki_home'),
     path('cambios/', views.recent_changes, name='recent_changes'),
+    # 5.1-C: la rejilla completa de personas sale de la portada a su pagina.
+    path('personas/', views.people_index, name='people_index'),
     # 4.3-C: la ficha vive en la RAIZ (/persona/...), igual en escierto, isthistrue
     # y wikitrue. Esta ruta antigua bajo /wiki/ se conserva y redirige, para no
     # romper enlaces ya publicados.

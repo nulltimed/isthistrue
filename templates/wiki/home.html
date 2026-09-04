@@ -10,8 +10,25 @@
   <div><strong>{{ totales.personas }}</strong> {% trans "figuras públicas con ficha" %}</div>
 </div>
 
-<h2>{% trans "Personas" %}</h2>
+{% if subtemas %}
+<h2>{% trans "Subtemas" %}</h2>
+<p class="subtemas-chips">
+  {% for f in subtemas %}<a class="chip" href="{% url 'tema_page' f.cat.slug %}">{{ f.cat.name }} ({{ f.n_posts }})</a>{% endfor %}
+</p>
+{% endif %}
+
+{% if comentados %}<h2>{% trans "Los más comentados" %}</h2>
+<ul class="post-list">{% for f in comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}</ul>{% endif %}
+
+<h2>{% trans "Los más nuevos" %}</h2>
+<ul class="post-list">{% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">{% trans p.get_topic_display %}</span></li>
+{% empty %}<li class="hint">{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}</ul>
+
+{% if top %}<h2>{% trans "Los más votados (7 días)" %}</h2>
+<ul class="post-list">{% for p in top %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
+
 {% if personas %}
+<h2>{% trans "Personas" %} <a class="hint" href="{% url 'people_index' %}">({% trans "ver todas" %})</a></h2>
 <ul class="person-grid">
   {% for f in personas %}
   <li class="person-card">
@@ -19,7 +36,6 @@
       {% if f.person.photo_url %}<img src="{{ f.person.photo_url }}" alt="" loading="lazy">{% else %}<span class="person-card-hueco" aria-hidden="true">?</span>{% endif %}
       <strong>{{ f.person.name }}</strong>
     </a>
-    {% if f.person.description %}<span class="hint">{{ f.person.description }}</span>{% endif %}
     <span class="person-card-nums">
       <span class="badge">{{ f.total }} {% trans "afirmaciones" %}</span>
       {% if f.verdes %}<span class="chip chip-verde">🟢 {{ f.verdes }}</span>{% endif %}
@@ -29,17 +45,8 @@
   </li>
   {% endfor %}
 </ul>
-{% else %}
-<p class="hint">{% trans "Todavía no hay figuras públicas con afirmaciones atribuidas. Las fichas nacen cuando la comunidad identifica a los hablantes de los vídeos." %}</p>
 {% endif %}
 
-<h2>{% trans "Últimos cambios" %} <a class="hint" href="{% url 'recent_changes' %}">({% trans "ver todos" %})</a></h2>
-<ul class="post-list">
-  {% for v in versions %}
-  <li><a href="/wiki/claim/{{ v.claim.slug|default:v.claim.pk }}/">{{ v.claim.text_original|truncatechars:120 }}</a>
-    <span class="hint">{{ v.get_color_display }} · {{ v.created_at|date:'d/m/Y H:i' }}</span></li>
-  {% empty %}<li class="hint">{% trans "Aún no hay cambios registrados." %}</li>{% endfor %}
-</ul>
-
-<p class="hint">{% trans "¿Buscas algo concreto?" %} <a href="/buscar/">{% trans "El buscador rastrea afirmaciones, transcripciones y mensajes." %}</a></p>
+<p class="hint"><a href="{% url 'recent_changes' %}">{% trans "Últimos cambios" %}</a> ·
+  <a href="/buscar/">{% trans "Buscar" %}</a></p>
 {% endblock %}

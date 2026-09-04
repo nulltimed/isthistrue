@@ -38,6 +38,8 @@ urlpatterns = [
     path('mas18/', views.adult_room, name='adult_room'),  # 4.3-A.8: sala cerrada
     # 4.3-C: la ficha de persona ES la wiki. Misma direccion en los tres dominios.
     path('persona/<slug:slug>/', wiki_views.person_page, name='person_page'),
+    # 5.1-C: la pagina del tema (categoria con al menos un post analizado).
+    path('tema/<slug:slug>/', wiki_views.tema_page, name='tema_page'),
     path('person/<slug:slug>/', wiki_views.person_page),   # alias EN
     path('hablante/votar/<int:proposal_id>/', views.vote_speaker_name, name='vote_speaker_name'),
     path('post/<int:pk>/upvote/', views.upvote, name='post_upvote'),

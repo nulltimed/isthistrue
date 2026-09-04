@@ -245,6 +245,33 @@ def wiki_home(request):
     numeros del proyecto. En castellano por defecto (decision de David)."""
     from collections import Counter
     from .naming import claims_for_person
+    personas = _personas_con_ficha()
+    # 5.1-C (correccion de David): la portada NO es un muro de personas y
+    # cambios — es el panel de numeros (que le gusta), los LISTADOS (mas
+    # comentados, mas nuevos, mas votados) y la muestra de los 10 subtemas.
+    # Las personas quedan en una tira corta con enlace a la pagina completa.
+    from django.db.models import Count, Q
+    from django.utils import timezone as tz
+    from apps.analysis.models import Post
+    from apps.analysis.views import _mas_comentados
+    base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
+    window = tz.now() - tz.timedelta(days=7)
+    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
+    totales = {'claims': Claim.objects.count(),
+               'decididos': Claim.objects.filter(
+                   color__in=['GREEN', 'AMBER', 'RED', 'GREY']).count(),
+               'personas': len(personas)}
+    return render(request, 'wiki/home.html',
+                  {'personas': personas[:6], 'totales': totales,
+                   'subtemas': temas_activos()[:10],
+                   'nuevos': base.order_by('-created_at')[:10],
+                   'comentados': _mas_comentados(base), 'top': top,
+                   'indexable': people_indexable()})
+
+
+def _personas_con_ficha():
+    from collections import Counter
+    from .naming import claims_for_person
     personas = []
     for p in Interlocutor.objects.filter(is_public_figure=True).order_by('name'):
         apps_ = list(claims_for_person(p))
@@ -256,14 +283,63 @@ def wiki_home(request):
                          'ambar': conteo.get('AMBER', 0),
                          'rojas': conteo.get('RED', 0)})
     personas.sort(key=lambda f: -f['total'])
-    versions = ClaimVersion.objects.select_related('claim').order_by('-created_at')[:15]
-    totales = {'claims': Claim.objects.count(),
-               'decididos': Claim.objects.filter(
-                   color__in=['GREEN', 'AMBER', 'RED', 'GREY']).count(),
-               'personas': len(personas)}
-    return render(request, 'wiki/home.html',
-                  {'personas': personas, 'versions': versions, 'totales': totales,
+    return personas
+
+
+def people_index(request):
+    """5.1-C: la rejilla COMPLETA de personas, en su propia pagina."""
+    return render(request, 'wiki/people_index.html',
+                  {'personas': _personas_con_ficha(),
                    'indexable': people_indexable()})
+
+
+# ------------------------- 5.1-C: los temas -------------------------
+# Decision de David (§58): «los temas se crean al llegarse a los votos
+# suficientes en un post como para analizar los claims». Operativamente: un
+# tema (categoria de la tabla viva) tiene pagina cuando al menos un post suyo
+# llego a tener claims analizados — que es exactamente lo que exige votos o
+# creditos. Hasta entonces, 404: el tema aun no ha nacido.
+
+def temas_activos():
+    """Categorias con al menos un post analizado (con claims), con recuento."""
+    from apps.analysis.models import Category, Post
+    filas = []
+    for cat in Category.objects.all():
+        n = Post.objects.filter(topic=cat.slug,
+                                transcript_segments__claims__isnull=False) \
+                        .distinct().count()
+        if n:
+            filas.append({'cat': cat, 'n_posts': n})
+    filas.sort(key=lambda f: -f['n_posts'])
+    return filas
+
+
+def tema_page(request, slug):
+    """La pagina del tema: sus posts analizados y sus afirmaciones."""
+    from collections import Counter
+    from django.http import Http404
+    from apps.analysis.models import Category, Post
+    cat = Category.objects.filter(slug=slug).first()
+    if not cat:
+        raise Http404
+    posts = list(Post.objects.filter(topic=slug,
+                                     transcript_segments__claims__isnull=False)
+                 .exclude(is_adult=True).distinct().order_by('-created_at'))
+    if not posts:
+        raise Http404   # el tema aun no ha nacido (sin post analizado)
+    claims = list(Claim.objects.filter(
+        appearances__segment__post__topic=slug).distinct()
+        .order_by('-updated_at')[:60])
+    conteo = Counter(c.color for c in claims)
+    resumen = [(color, dict(COLORES_TEMA).get(color, color), conteo[color])
+               for color in ('GREEN', 'AMBER', 'RED', 'GREY') if conteo.get(color)]
+    return render(request, 'wiki/tema.html',
+                  {'cat': cat, 'posts': posts, 'claims': claims,
+                   'resumen': resumen, 'indexable': people_indexable()})
+
+
+COLORES_TEMA = [('GREEN', 'Verificadas'), ('AMBER', 'Con matices'),
+                ('RED', 'Desmentidas'), ('GREY', 'Opiniones y predicciones')]
 
 
 # ------------------------- 5.1-B: la malla -------------------------

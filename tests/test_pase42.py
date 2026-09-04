@@ -4931,3 +4931,45 @@ class Parche51D_CategoriasVivas(TestCase):
         self.assertEqual(superv.versions.count(), 1, 'el historial no se hereda')
         r = self.client.get('/wiki/claim/tierra-plana-1/')
         self.assertEqual(r.status_code, 301, 'el slug absorbido debe redirigir')
+
+
+class Parche51C_Temas(TestCase):
+    """5.1-C: los temas — pagina por categoria que NACE cuando un post suyo
+    tiene claims analizados; portada wiki con listados + 10 subtemas (correccion
+    de David: nada de muros de personas y cambios)."""
+
+    def _post_analizado(self, topic='politica', n=0):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username=f't51c{n}', email=f't51c{n}@example.org')
+        post = Post.objects.create(author=u, url=f'https://youtu.be/t51c{n}',
+                                   title=f'Video tema {n}', topic=topic)
+        seg = post.transcript_segments.create(start_seconds=0, end_seconds=3,
+                                              text='afirmacion')
+        claim = Claim.objects.create(text_original=f'Afirmación del tema {n}',
+                                     color='GREEN', slug=f'afirmacion-tema-{n}')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='...')
+        return post, claim
+
+    def test_el_tema_nace_con_el_primer_post_analizado(self):
+        self.assertEqual(self.client.get('/tema/politica/').status_code, 404,
+                         'sin post analizado el tema no existe')
+        post, claim = self._post_analizado()
+        html = self.client.get('/tema/politica/').content.decode()
+        self.assertIn('Video tema 0', html)
+        self.assertIn('Afirmación del tema 0', html)
+
+    def test_un_tema_inexistente_es_404(self):
+        self.assertEqual(self.client.get('/tema/no-existe/').status_code, 404)
+
+    def test_la_portada_wiki_lleva_listados_y_subtemas(self):
+        self._post_analizado(n=1)
+        html = self.client.get('/wiki/').content.decode()
+        self.assertIn('Subtemas', html)
+        self.assertIn('/tema/politica/', html)
+        self.assertIn('Los más nuevos', html)
+        self.assertNotIn('Últimos cambios</h2>', html,
+                         'los cambios ya no son sección, solo enlace')
+
+    def test_la_pagina_de_personas_existe(self):
+        r = self.client.get('/wiki/personas/')
+        self.assertEqual(r.status_code, 200)

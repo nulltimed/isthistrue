@@ -1494,3 +1494,19 @@ msgstr "e.g. Energy"
 
 msgid "¿No encaja en ninguna? Propón una categoría (opcional)"
 msgstr "None of them fits? Propose a category (optional)"
+
+# ---- 5.1-C: portada wiki y temas (2026-09-05) ----
+msgid "Afirmaciones"
+msgstr "Claims"
+
+msgid "Subtemas"
+msgstr "Subtopics"
+
+msgid "Todas las figuras públicas con afirmaciones analizadas y atribuidas mediante identificación participativa."
+msgstr "All public figures with claims analysed and attributed through participatory identification."
+
+msgid "Vídeos"
+msgstr "Videos"
+
+msgid "ver todas"
+msgstr "see all"
