@@ -1312,3 +1312,13 @@ duplicados literales en la wiki con colores distintos. upsert_claim ya guarda
 PENDIENTE: fusion de los claims duplicados historicos (parche propio; decidir que
 color manda). Trampa: migracion sobre User + ensure_superuser al arranque = huevo y
 gallina (build → run --rm migrate → up). Informe: docs/68.
+
+## 64. Parches 5.1-C0 + 5.1-D: fusion y categorias vivas (2026-09-04)
+
+Fusion aplicada con criterio «gana el consolidado mas reciente»: 27 grupos, 45
+absorbidos, 186→141 claims, 45 redirecciones 301; volcados pre/post en /root.
+Categorias vivas: tabla Category (12 sembradas con uso real), propuesta en /submit/
+contrastada por el bibliotecario (Sonnet, rueda «Orden de categorías» del panel),
+buscadores poblados de la tabla. Trampas: sudo+glob (expandir DENTRO del sudo) y
+grep -c cuenta lineas. Pendiente serie: 5.1-C temas (pagina por categoria al alcanzar
+el umbral de votos — la tabla Category ya es la base). Informe: docs/69.
