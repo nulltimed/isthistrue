@@ -21,29 +21,71 @@ def index(request):
     if host.startswith('wiki.') or host.startswith('wikitrue.'):
         from apps.wiki.views import wiki_home
         return wiki_home(request)
+    # 5.1-B.1 (orden de David): la portada, SOLO con lo que pidio — novedades en
+    # sus posts seguidos desde su ultima visita, los mas nuevos, los mas
+    # comentados y los mas votados. Reincidentes, temas y Off-Topic salen de
+    # aqui (el Off-Topic vive ahora en la pagina del foro).
     from django.db.models import Count, Q
     from django.utils import timezone as tz
-    from .models import TOPICS, Channel
-    topic = request.GET.get('tema', '')
     # 4.3-A.8 (decision de David): el contenido +18 NO vive en los listados
-    # publicos. Tiene su propia sala cerrada (/mas18/) y solo entra quien es mayor
-    # de edad segun la fecha de nacimiento del registro. Antes de esto, un post
-    # marcado +18 salia en portada a cualquiera (el candado solo estaba en la
-    # pagina del post): el aviso llegaba tarde, con el titular ya leido.
+    # publicos; tiene su sala cerrada (/mas18/).
     base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
-    if topic:
-        base = base.filter(topic=topic)
-    recent = base.order_by('-created_at')[:20]
+    nuevos = base.order_by('-created_at')[:15]
     window = tz.now() - tz.timedelta(days=7)
     top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
-    repeat_channels = [c for c in Channel.objects.order_by('-created_at')[:50]
-                       if c.meets_threshold()][:10]
-    offtopic = (Post.objects.filter(category='OFFTOPIC').exclude(is_adult=True)
-                .order_by('-created_at')[:20])
+    comentados = _mas_comentados(base)
+    seguidos = _novedades_en_seguidos(request.user) \
+        if request.user.is_authenticated else []
     return render(request, 'analysis/index.html', {
-        'recent': recent, 'top': top, 'repeat_channels': repeat_channels,
-        'offtopic': offtopic, 'topics': TOPICS, 'active_topic': topic,
-        'adult_room': _can_see_adult(request)})
+        'nuevos': nuevos, 'top': top, 'comentados': comentados,
+        'seguidos': seguidos, 'adult_room': _can_see_adult(request)})
+
+
+def _mas_comentados(base):
+    """Los posts con mas mensajes en su hilo. El hilo vive en machina como el
+    topic 'post-<pk>'; posts_count ya lo mantiene machina al dia."""
+    from machina.core.db.models import get_model
+    Topic = get_model('forum_conversation', 'Topic')
+    filas = []
+    for t in Topic.objects.filter(slug__startswith='post-') \
+                          .order_by('-posts_count')[:30]:
+        try:
+            pk = int(t.slug.split('-', 1)[1])
+        except (ValueError, IndexError):
+            continue
+        post = base.filter(pk=pk).first()
+        if post and t.posts_count > 1:   # el primer mensaje es el «Opina» del autor
+            filas.append({'post': post, 'n': t.posts_count - 1})
+        if len(filas) >= 10:
+            break
+    return filas
+
+
+def _novedades_en_seguidos(user):
+    """Que paso en los posts que sigue este usuario desde su ultima visita:
+    mensajes nuevos en el hilo y analisis que terminaron. La 'ultima visita' es
+    su ultimo login — la mejor marca disponible sin espiar la navegacion."""
+    from machina.core.db.models import get_model
+    from .models import PostSubscription
+    MPost = get_model('forum_conversation', 'Post')
+    desde = user.last_login or user.date_joined
+    filas = []
+    subs = PostSubscription.objects.filter(user=user).select_related('post')[:100]
+    for sub in subs:
+        post = sub.post
+        if post.is_adult:
+            continue
+        mensajes = MPost.objects.filter(topic__slug=f'post-{post.pk}',
+                                        approved=True, created__gt=desde) \
+                                .exclude(poster=user).count()
+        analizado = bool(
+            (post.cheap_finished_at and post.cheap_finished_at > desde) or
+            (post.full_finished_at and post.full_finished_at > desde))
+        if mensajes or analizado:
+            filas.append({'post': post, 'mensajes': mensajes,
+                          'analizado': analizado})
+    filas.sort(key=lambda f: -f['mensajes'])
+    return filas[:10]
 
 
 VIDEO_RX = re.compile(r'(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv|spotify\.com)', re.I)
@@ -813,36 +855,65 @@ def search(request):
     from machina.core.db.models import get_model
     from apps.wiki.models import Claim
     from .models import TranscriptSegment
+    from apps.wiki.models import COLORS
+    from .models import TOPICS
     MPost = get_model('forum_conversation', 'Post')
     q = request.GET.get('q', '').strip()
     scope = request.GET.get('scope', 'all')
+    # 5.1-B.1 (orden de David): filtros por tipo de claim (semaforo) y por
+    # categoria del post. Funcionan CON texto o SOLOS (filtrar sin escribir).
+    color = request.GET.get('color', '').strip()
+    if color not in dict(COLORS):
+        color = ''
+    tema = request.GET.get('tema', '').strip()
+    if tema not in dict(TOPICS):
+        tema = ''
     results = {'posts': [], 'claims': [], 'segments': [], 'messages': []}
-    if q:
-        query = SearchQuery(q, config='spanish')
+    if q or color or tema:
+        query = SearchQuery(q, config='spanish') if q else None
         if scope in ('all', 'posts'):
             # 4.3-A.8: el buscador era la puerta de atras de la sala +18.
             visibles = Post.objects.all()
             if not _can_see_adult(request):
                 visibles = visibles.exclude(is_adult=True)
-            results['posts'] = visibles.annotate(
-                sv=SearchVector('title', 'tags', 'topic', config='spanish')
-            ).filter(sv=query)[:20]
-        if scope in ('all', 'forum'):
+            if tema:
+                visibles = visibles.filter(topic=tema)
+            if query:
+                visibles = visibles.annotate(
+                    sv=SearchVector('title', 'tags', 'topic', config='spanish')
+                ).filter(sv=query)
+            elif tema:
+                visibles = visibles.order_by('-created_at')
+            else:
+                visibles = visibles.none()
+            results['posts'] = visibles[:20]
+        if scope in ('all', 'forum') and query:
             # El contenido machina es MarkupText: se busca su texto crudo.
             results['messages'] = (MPost.objects.filter(approved=True).annotate(
                 sv=SearchVector('content', config='spanish')).filter(sv=query)
                 .select_related('topic', 'poster')[:20])
         if scope in ('all', 'wiki'):
-            results['claims'] = Claim.objects.annotate(
-                sv=SearchVector('text_original', 'what_is_claimed',
-                                'what_evidence_says', config='spanish')
-            ).filter(sv=query)[:20]
-        if scope in ('all', 'transcripts'):
+            claims = Claim.objects.all()
+            if color:
+                claims = claims.filter(color=color)
+            if query:
+                claims = claims.annotate(
+                    sv=SearchVector('text_original', 'what_is_claimed',
+                                    'what_evidence_says', config='spanish')
+                ).filter(sv=query)
+            elif color:
+                claims = claims.order_by('-updated_at')
+            else:
+                claims = claims.none()
+            results['claims'] = claims[:20]
+        if scope in ('all', 'transcripts') and query:
             results['segments'] = TranscriptSegment.objects.annotate(
                 sv=SearchVector('text', config='spanish')).filter(sv=query
             ).select_related('post')[:20]
     return render(request, 'analysis/search.html',
-                  {'q': q, 'scope': scope, 'results': results})
+                  {'q': q, 'scope': scope, 'results': results,
+                   'color': color, 'tema': tema,
+                   'colores': COLORS, 'temas': TOPICS})
 
 
 

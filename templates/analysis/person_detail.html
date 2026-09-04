@@ -47,6 +47,10 @@
       </figure>
     </div>
     <p class="hint">{% blocktrans with f=stats.frases v=stats.videos|length %}{{ f }} frases atribuidas en {{ v }} vídeos.{% endblocktrans %}</p>
+    {% if junto_a %}
+    <p class="person-junto">{% trans "Aparece junto a" %}:
+      {% for j in junto_a %}<a class="chip" href="/persona/{{ j.person.slug }}/">{{ j.person.name }} ({{ j.n }})</a>{% endfor %}</p>
+    {% endif %}
   </section>
 
   <div class="claims-filtro" hidden>

@@ -4678,3 +4678,116 @@ class Parche51A1_RaizDelSubdominio(TestCase):
     def test_el_menu_enlaza_a_la_portada_de_la_wiki(self):
         html = self.client.get('/').content.decode()
         self.assertIn('href="/wiki/">Wiki</a>', html)
+
+
+class Parche51B_Malla(TestCase):
+    """5.1-B: la malla — relacionados por pgvector, «dicho por», «aparece junto
+    a», autoenlace de nombres — y los añadidos de David: portada con solo sus
+    cuatro secciones, página del Foro rehecha y buscador con filtros."""
+
+    def _escena(self, n=0):
+        from apps.wiki.models import (Claim, ClaimAppearance, Interlocutor,
+                                      SpeakerNameProposal)
+        autor = make_user(username=f'b51{n}', email=f'b51{n}@example.org')
+        post = Post.objects.create(author=autor, url=f'https://youtu.be/b51{n}',
+                                   title=f'Video malla {n}')
+        seg = post.transcript_segments.create(start_seconds=0, end_seconds=4,
+                                              text='frase', speaker_label='SPEAKER_00')
+        ana = Interlocutor.objects.create(name='Ana Pública', slug='ana-publica',
+                                          base_slug='ana-publica',
+                                          is_public_figure=True, wikidata_id='Q1')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Ana Pública',
+                                           confirmed=True, interlocutor=ana)
+        claim = Claim.objects.create(text_original='El paro bajó en enero',
+                                     color='GREEN', slug='el-paro-bajo-en-enero')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='el paro...')
+        return post, seg, ana, claim
+
+    def test_relacionados_por_significado(self):
+        from apps.wiki.models import Claim
+        from apps.wiki.views import related_claims
+        a = Claim.objects.create(text_original='A', embedding=[1.0] + [0.0] * 383)
+        b = Claim.objects.create(text_original='B', embedding=[0.9, 0.1] + [0.0] * 382)
+        c = Claim.objects.create(text_original='C', embedding=[0.0, 1.0] + [0.0] * 382)
+        cercanos = related_claims(a, n=2)
+        self.assertEqual(cercanos[0].pk, b.pk, 'el más parecido debe ir primero')
+        self.assertTrue(related_claims(Claim.objects.create(text_original='D')) == [],
+                        'sin embedding no hay sección')
+
+    def test_el_claim_dice_quien_lo_dijo_y_enlaza_al_post(self):
+        _, seg, _, claim = self._escena(1)
+        html = self.client.get(f'/wiki/claim/{claim.slug}/').content.decode()
+        self.assertIn('Dicho por', html)
+        self.assertIn('/persona/ana-publica/', html)
+        self.assertIn(f'#seg-{seg.pk}', html, 'la aparición no enlaza al post')
+
+    def test_aparece_junto_a(self):
+        from apps.wiki.models import Interlocutor, SpeakerNameProposal
+        post, _, ana, _ = self._escena(2)
+        otro = Interlocutor.objects.create(name='Beto Público', slug='beto-publico',
+                                           base_slug='beto-publico',
+                                           is_public_figure=True, wikidata_id='Q2')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_01',
+                                           candidate_name='Beto Público',
+                                           confirmed=True, interlocutor=otro)
+        html = self.client.get('/persona/ana-publica/').content.decode()
+        self.assertIn('Aparece junto a', html)
+        self.assertIn('/persona/beto-publico/', html)
+
+    def test_los_nombres_se_autoenlazan_en_la_evidencia(self):
+        from apps.wiki.models import Claim
+        self._escena(3)
+        claim = Claim.objects.create(text_original='x', slug='x-auto',
+                                     what_evidence_says='Según dijo Ana Pública en el debate.')
+        html = self.client.get('/wiki/claim/x-auto/').content.decode()
+        self.assertIn('<a href="/persona/ana-publica/">Ana Pública</a>', html)
+
+    def test_la_portada_tiene_solo_las_cuatro_secciones(self):
+        html = self.client.get('/').content.decode()
+        self.assertIn('Los más nuevos', html)
+        self.assertNotIn('Reincidentes', html)
+        self.assertNotIn('id="offtopic"', html)
+        self.assertNotIn('Novedades en tus seguidos', html, 'anónimo no tiene seguidos')
+
+    def test_novedades_en_seguidos_desde_la_ultima_visita(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.analysis.models import PostSubscription
+        from apps.forum.machina_glue import create_topic_for_post, add_reply
+        post, _, _, _ = self._escena(4)
+        lector = make_user(username='lector51', email='lector51@example.org')
+        lector.last_login = timezone.now() - timedelta(days=3)
+        lector.save(update_fields=['last_login'])
+        PostSubscription.objects.create(post=post, user=lector)
+        create_topic_for_post(post)
+        add_reply(post, post.author, 'mensaje nuevo para el lector')
+        self.client.force_login(lector)
+        html = self.client.get('/').content.decode()
+        self.assertIn('Novedades en tus seguidos', html)
+        self.assertIn('Video malla 4', html)
+        self.assertIn('mensaje nuevo', html)
+
+    def test_el_foro_muestra_los_dos_bloques_y_el_buscador(self):
+        from apps.forum.machina_glue import create_topic_for_post, add_reply
+        post, _, _, _ = self._escena(5)
+        create_topic_for_post(post)
+        add_reply(post, post.author, 'hola desde el hilo')
+        html = self.client.get('/foro/').content.decode()
+        self.assertIn('Off-Topic', html)
+        self.assertIn('hola desde el hilo', html)
+        self.assertIn('name="color"', html)
+        self.assertIn('name="tema"', html)
+        self.assertIn(f'/post/{post.pk}/#hilo', html, 'el mensaje no enlaza al hilo')
+
+    def test_buscar_solo_con_filtros(self):
+        from apps.wiki.models import Claim
+        post, _, _, claim = self._escena(6)
+        Claim.objects.create(text_original='Mentira roja', color='RED', slug='mentira-roja')
+        html = self.client.get('/buscar/?color=RED').content.decode()
+        self.assertIn('Mentira roja', html)
+        self.assertNotIn('El paro bajó en enero', html)
+        post.topic = 'economia'
+        post.save()
+        html = self.client.get('/buscar/?tema=economia').content.decode()
+        self.assertIn('Video malla 6', html)

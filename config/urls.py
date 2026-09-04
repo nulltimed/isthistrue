@@ -8,6 +8,7 @@ from machina import urls as machina_urls
 from apps.wiki.feeds import RecentVerdictsFeed, RecentChangesFeed
 from apps.wiki.api import claims_list, claim_detail
 from apps.wiki import views as wiki_views
+from apps.forum import views as foro_views
 from django.views.generic import RedirectView
 
 urlpatterns = [
@@ -26,6 +27,9 @@ urlpatterns = [
     # 'post-<pk>' redirige alli (analisis y conversacion son UNA pagina).
     re_path(r'^foro/forum/[^/]+/topic/post-(?P<pk>\d+)-\d+/',
             RedirectView.as_view(url='/post/%(pk)s/', permanent=True)),
+    # 5.1-B.1 (orden de David): /foro/ exacto es NUESTRA pagina (cada foro con
+    # sus ultimos 10 mensajes + buscador); el resto de rutas siguen en machina.
+    path('foro/', foro_views.foro_home, name='foro_home'),
     path('foro/', include(machina_urls)),                   # django-machina
     path('rss/veredictos/', RecentVerdictsFeed(), name='rss_verdicts'),
     path('rss/cambios/', RecentChangesFeed(), name='rss_changes'),

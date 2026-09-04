@@ -1435,3 +1435,52 @@ msgstr "Looking for something specific?"
 
 msgid "Últimos cambios"
 msgstr "Latest changes"
+
+# ---- 5.1-B: la malla + portada y foro nuevos (2026-09-04) ----
+msgid "Afirmaciones relacionadas"
+msgstr "Related claims"
+
+msgid "Análisis actualizado"
+msgstr "Analysis updated"
+
+msgid "Aparece junto a"
+msgstr "Appears alongside"
+
+msgid "Buscar una afirmación, un mensaje, un vídeo…"
+msgstr "Search a claim, a message, a video…"
+
+msgid "Categoría del post"
+msgstr "Post category"
+
+msgid "Categoría del post (todas)"
+msgstr "Post category (all)"
+
+msgid "Dicho por"
+msgstr "Said by"
+
+msgid "La conversación de cada vídeo analizado. Cada mensaje enlaza a su hilo."
+msgstr "The conversation of every analysed video. Each message links to its thread."
+
+msgid "Lo que ha pasado en los posts que sigues desde tu última visita."
+msgstr "What happened in the posts you follow since your last visit."
+
+msgid "Los más comentados"
+msgstr "Most commented"
+
+msgid "Los más nuevos"
+msgstr "Newest"
+
+msgid "Los más votados (7 días)"
+msgstr "Most voted (7 days)"
+
+msgid "Novedades en tus seguidos"
+msgstr "News in your followed posts"
+
+msgid "Tipo de claim"
+msgstr "Claim type"
+
+msgid "Tipo de claim (todos)"
+msgstr "Claim type (all)"
+
+msgid "Todas"
+msgstr "All"

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Foro" %} — esestocierto?{% endblock %}
+{% block content %}
+<h1>{% trans "Foro" %}</h1>
+
+<form class="foro-buscador" method="get" action="/buscar/">
+  <input type="search" name="q" placeholder="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}" aria-label="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}">
+  <select name="color" aria-label="{% trans 'Tipo de claim' %}">
+    <option value="">{% trans "Tipo de claim (todos)" %}</option>
+    {% for k, v in colores %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+  </select>
+  <select name="tema" aria-label="{% trans 'Categoría del post' %}">
+    <option value="">{% trans "Categoría del post (todas)" %}</option>
+    {% for k, v in temas %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+  </select>
+  <button>{% trans "Buscar" %}</button>
+</form>
+
+<section class="foro-bloque">
+  <h2>{{ principal.name|default:"Principal" }}</h2>
+  <p class="hint">{% trans "La conversación de cada vídeo analizado. Cada mensaje enlaza a su hilo." %}</p>
+  {% for f in principal_msgs %}
+  <div class="thread-msg">
+    <div class="thread-meta"><strong>{{ f.m.poster.username|default:"—" }}</strong> · {{ f.m.created|date:'d/m/Y H:i' }} ·
+      <a href="{{ f.enlace }}">{{ f.m.topic.subject|truncatechars:70 }}</a></div>
+    <div class="thread-body">{{ f.m.content|truncatechars:220 }}</div>
+  </div>
+  {% empty %}<p class="hint">{% trans "Nada por aquí todavía." %}</p>{% endfor %}
+</section>
+
+<section class="foro-bloque">
+  <h2>Off-Topic</h2>
+  <p class="hint">{% trans "Opiniones y contenidos sin suficientes afirmaciones verificables. 10 votos de la comunidad los rescatan al foro principal." %}</p>
+  {% for f in offtopic_msgs %}
+  <div class="thread-msg">
+    <div class="thread-meta"><strong>{{ f.m.poster.username|default:"—" }}</strong> · {{ f.m.created|date:'d/m/Y H:i' }} ·
+      <a href="{{ f.enlace }}">{{ f.m.topic.subject|truncatechars:70 }}</a></div>
+    <div class="thread-body">{{ f.m.content|truncatechars:220 }}</div>
+  </div>
+  {% empty %}<p class="hint">{% trans "Vacío por ahora." %}</p>{% endfor %}
+</section>
+{% endblock %}

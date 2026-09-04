@@ -10,9 +10,19 @@
       <option value="wiki" {% if scope == 'wiki' %}selected{% endif %}>Wiki</option>
       <option value="transcripts" {% if scope == 'transcripts' %}selected{% endif %}>{% trans "Transcripciones" %}</option>
     </select></label>
+  <label>{% trans "Tipo de claim" %}
+    <select name="color">
+      <option value="">{% trans "Todos" %}</option>
+      {% for k, v in colores %}<option value="{{ k }}" {% if color == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select></label>
+  <label>{% trans "Categoría del post" %}
+    <select name="tema">
+      <option value="">{% trans "Todas" %}</option>
+      {% for k, v in temas %}<option value="{{ k }}" {% if tema == k %}selected{% endif %}>{{ v }}</option>{% endfor %}
+    </select></label>
   <button>{% trans "Buscar" %}</button>
 </form>
-{% if q %}
+{% if q or color or tema %}
   {% if results.posts %}<h2>{% trans "Análisis" %}</h2><ul>
     {% for p in results.posts %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a>
     {% if p.is_trending %}<span class="badge trending-badge">🔥</span>{% endif %}

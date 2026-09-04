@@ -8,6 +8,8 @@
 {% block content %}
 <article class="claim color-{{ claim.color }}">
   <h1>{% trans claim.get_color_display %} — {{ claim.text_original|truncatechars:120 }}</h1>
+  {% if hablantes %}<p class="hint">{% trans "Dicho por" %}:
+    {% for h in hablantes %}<a href="/persona/{{ h.slug }}/">{{ h.name }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
   <section><h2>{% trans "Qué se afirma" %}</h2><p>{{ claim.what_is_claimed }}</p></section>
   <section><h2>{% trans "Qué dice la evidencia" %}</h2><p>{% if linked_evidence %}{{ linked_evidence|safe }}{% else %}{{ claim.what_evidence_says }}{% endif %}</p></section>
   <section><h2>{% trans "La diferencia" %}</h2><p>{{ claim.the_difference }}</p></section>
@@ -15,7 +17,13 @@
   <h2>{% trans "Fuentes" %}</h2>
   <ul>{% for s in claim.sources.all %}<li><a href="{{ s.url }}" rel="noopener">{{ s.title|default:s.url }}</a></li>{% endfor %}</ul>
   <h2>{% trans "Apariciones" %}</h2>
-  <ul>{% for a in claim.appearances.all %}<li>{{ a.segment.post.title|default:a.segment.post.url }} — min {{ a.segment.start_seconds|floatformat:0 }}s: «{{ a.quote|truncatechars:160 }}»</li>{% endfor %}</ul>
+  <ul>{% for a in claim.appearances.all %}<li><a href="{{ a.segment.post.get_absolute_url }}#seg-{{ a.segment.pk }}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:80 }}</a> — min {{ a.segment.start_seconds|floatformat:0 }}s: «{{ a.quote|truncatechars:160 }}»</li>{% endfor %}</ul>
+  {% if relacionados %}
+  <h2>{% trans "Afirmaciones relacionadas" %}</h2>
+  <ul class="claim-list">{% for r in relacionados %}
+    <li><a href="/wiki/claim/{{ r.slug|default:r.pk }}/">{{ r.text_original|truncatechars:140 }}</a>
+      <span class="hint">{% trans r.get_color_display %}</span></li>{% endfor %}</ul>
+  {% endif %}
   <p class="hint">{% blocktrans with n=claim.versions.count %}Historial: {{ n }} versión(es).{% endblocktrans %} <a href="#">{% trans "Reportar error" %}</a></p>
   {% if user.is_authenticated %}<p><a href="/wiki/claim/{{ claim.slug }}/seguir/">🔔 {% trans "Seguir esta afirmación" %}</a> ({% trans "aviso si cambia de color o reaparece" %})</p>{% endif %}
   <div class="share">{% trans "Compartir" %}:

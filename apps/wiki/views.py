@@ -18,7 +18,10 @@ def claim_page(request, slug):
     hide_opinions = bool(request.user.is_authenticated and request.user.hide_opinions)
     body = _autolink(claim)
     return render(request, 'analysis/claim_detail.html',
-                  {'claim': claim, 'hide_opinions': hide_opinions, 'linked_evidence': body})
+                  {'claim': claim, 'hide_opinions': hide_opinions, 'linked_evidence': body,
+                   # 5.1-B: la malla — quien lo dijo y afirmaciones cercanas
+                   'hablantes': speakers_of_claim(claim),
+                   'relacionados': related_claims(claim)})
 
 
 def _autolink(claim):
@@ -33,6 +36,17 @@ def _autolink(claim):
             idx = text.lower().find(frag.lower())
             orig = text[idx:idx + len(frag)]
             text = text.replace(orig, f'<a href="/wiki/claim/{o["slug"]}/">{orig}</a>', 1)
+    # 5.1-B: los nombres con ficha publica se enlazan solos (efecto Wikipedia).
+    for per in Interlocutor.objects.filter(is_public_figure=True).values('slug', 'name'):
+        low = text.lower()
+        idx = low.find(per['name'].lower())
+        if idx == -1:
+            continue
+        # nunca dentro de un enlace ya puesto
+        if text.rfind('<a ', 0, idx) > text.rfind('</a>', 0, idx):
+            continue
+        orig = text[idx:idx + len(per['name'])]
+        text = text.replace(orig, f'<a href="/persona/{per["slug"]}/">{orig}</a>', 1)
     return text
 
 
@@ -112,7 +126,9 @@ def person_page(request, slug):
                    'sin_color': sin_color, 'total': len(appearances),
                    'indexable': people_indexable(),
                    # 5.1-A: analisis de sus intervenciones + graficos en tiempo real
-                   'stats': person_stats(person, appearances)})
+                   'stats': person_stats(person, appearances),
+                   # 5.1-B: «aparece junto a»
+                   'junto_a': co_speakers(person)})
 
 
 def follow_claim(request, slug):
@@ -248,3 +264,59 @@ def wiki_home(request):
     return render(request, 'wiki/home.html',
                   {'personas': personas, 'versions': versions, 'totales': totales,
                    'indexable': people_indexable()})
+
+
+# ------------------------- 5.1-B: la malla -------------------------
+# Los hilos entre paginas: afirmaciones relacionadas por SIGNIFICADO (los
+# embeddings pgvector llevan guardandose desde el 9B), «aparece junto a» entre
+# personas que comparten videos, y quien dijo cada afirmacion con enlace a su
+# ficha. Todo consultas locales: cero llamadas de pago.
+
+def related_claims(claim, n=5):
+    """Afirmaciones cercanas por significado. Sin embedding (o sin pgvector,
+    como en desarrollo), la seccion simplemente no aparece."""
+    if getattr(claim, 'embedding', None) is None:
+        return []
+    try:
+        from pgvector.django import CosineDistance
+        return list(Claim.objects.exclude(pk=claim.pk).exclude(embedding=None)
+                    .order_by(CosineDistance('embedding', claim.embedding))[:n])
+    except Exception:
+        return []
+
+
+def speakers_of_claim(claim):
+    """Quien dijo esta afirmacion — solo fichas publicas confirmadas."""
+    from .models import SpeakerNameProposal
+    out, vistos = [], set()
+    for a in claim.appearances.select_related('segment'):
+        prop = (SpeakerNameProposal.objects.filter(
+                    post_id=a.segment.post_id,
+                    speaker_label=a.segment.speaker_label,
+                    confirmed=True, interlocutor__is_public_figure=True)
+                .select_related('interlocutor').first())
+        if prop and prop.interlocutor_id not in vistos:
+            vistos.add(prop.interlocutor_id)
+            out.append(prop.interlocutor)
+    return out
+
+
+def co_speakers(person):
+    """«Aparece junto a»: fichas publicas que comparten videos con esta,
+    ordenadas por cuantos comparten."""
+    from .models import SpeakerNameProposal
+    mis_posts = set(SpeakerNameProposal.objects.filter(
+        confirmed=True, interlocutor=person).values_list('post_id', flat=True))
+    if not mis_posts:
+        return []
+    filas = {}
+    for prop in (SpeakerNameProposal.objects.filter(
+                     post_id__in=mis_posts, confirmed=True,
+                     interlocutor__is_public_figure=True)
+                 .exclude(interlocutor=person).select_related('interlocutor')):
+        fila = filas.setdefault(prop.interlocutor_id,
+                                {'person': prop.interlocutor, 'posts': set()})
+        fila['posts'].add(prop.post_id)
+    out = [{'person': f['person'], 'n': len(f['posts'])} for f in filas.values()]
+    out.sort(key=lambda f: -f['n'])
+    return out
