@@ -1298,3 +1298,17 @@ hosts `wiki.*`/`wikitrue.*` y renderiza la portada de la wiki; el menu enlaza a
 /wiki/. 3 tests (host `wiki.testserver` añadido a settings_test). OJO espejo: sus
 settings FUERZAN ALLOWED_HOSTS a stagings/localhost — un host wiki.* alli da 400
 por diseño; la rama de host se valida en el CI, no en el espejo.
+
+## 63. Parche 5.1-B: la malla + portada y Foro nuevos (2026-09-04)
+
+Relacionadas por pgvector, «Dicho por», «Aparece junto a», autoenlaces; portada SOLO
+con las 4 secciones de David; /foro/ rehecho (2 bloques + buscador con filtros de
+claim/categoria que funcionan sin texto). DOS defectos de fondo cazados: (1) Django
+pisa last_login EN el login → campo previous_login (accounts/0006) como marca real de
+«desde tu ultima visita»; (2) EL DEDUPE TIRABA LOS EMBEDDINGS — 186 claims sin huella,
+dedupe degradado a nada (comparaba contra conjunto vacio: JAMAS encontraba) →
+duplicados literales en la wiki con colores distintos. upsert_claim ya guarda
+(pivote+huella, una sola llamada); embed_claims relleno 186/186 gratis (modelo local).
+PENDIENTE: fusion de los claims duplicados historicos (parche propio; decidir que
+color manda). Trampa: migracion sobre User + ensure_superuser al arranque = huevo y
+gallina (build → run --rm migrate → up). Informe: docs/68.

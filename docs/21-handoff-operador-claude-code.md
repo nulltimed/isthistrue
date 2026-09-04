@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-03 (noche) · Commit en producción: `0e0f097` (hotfix 5.1-A.1: la raíz de wiki.* renderiza la portada de la wiki y el menú enlaza a /wiki/ — §62) — 5.1-A: LA WIKI-RED (portada /wiki/, ficha de persona con gráficos en tiempo real CSS y filtro interactivo, URL raíz estilo Wikipedia con cazatodo al final del urlconf). Antes, mismo día: 5.0-D/E/F + correo del dominio (ver §10). PENDIENTE de David: MX en IONOS (`@ MX 10 mail.xyztserver.com`). Serie 5.1 restante: B (malla pgvector) y C (temas por umbral de votos). ⏰ Google: RESETEADO por David el 03-09 — recordar en 5 iteraciones (5.1-A=1) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-04 · Commit en producción: `2100bce` — 5.1-B: LA MALLA (relacionadas por pgvector, Dicho por, Aparece junto a, autoenlaces) + portada con SOLO las 4 secciones de David + /foro/ rehecho con buscador filtrable. Dos defectos de fondo arreglados: previous_login (accounts/0006) y LOS EMBEDDINGS QUE EL DEDUPE TIRABA (186/186 rellenados con embed_claims, gratis). PENDIENTE: fusionar claims duplicados históricos (docs/68) y 5.1-C temas. De David: MX en IONOS. ⏰ Google: contador 2/5 (5.1-B=2) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
