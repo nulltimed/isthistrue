@@ -4766,7 +4766,7 @@ class Parche51B_Malla(TestCase):
         html = self.client.get('/').content.decode()
         self.assertIn('Novedades en tus seguidos', html)
         self.assertIn('Video malla 4', html)
-        self.assertIn('mensaje nuevo', html)
+        self.assertIn('mensajes nuevos', html)   # el alta del topic + la respuesta = 2
 
     def test_el_foro_muestra_los_dos_bloques_y_el_buscador(self):
         from apps.forum.machina_glue import create_topic_for_post, add_reply
