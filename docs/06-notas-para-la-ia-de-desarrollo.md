@@ -1322,3 +1322,12 @@ contrastada por el bibliotecario (Sonnet, rueda «Orden de categorías» del pan
 buscadores poblados de la tabla. Trampas: sudo+glob (expandir DENTRO del sudo) y
 grep -c cuenta lineas. Pendiente serie: 5.1-C temas (pagina por categoria al alcanzar
 el umbral de votos — la tabla Category ya es la base). Informe: docs/69.
+
+## 65. Parche 5.1-C: los temas — LA SERIE 5.1 COMPLETA (2026-09-05)
+
+Portada wiki corregida por David (numeros + 10 subtemas + listados + tira de 6
+personas con «ver todas» en /wiki/personas/; cambios = enlace). /tema/<slug>/ nace con
+el primer post analizado de la categoria (antes 404, sin paginas vacias); en vivo:
+politica (3 videos, 56 claims) y ciencia. Ojo espejo: el 302 del PRIMER request tras
+el arranque es cronico (gate de invitados); verificar siempre con una segunda
+peticion. Informe: docs/70. La wiki-red entera: docs/67-70.

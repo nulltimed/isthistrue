@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-04 (noche) · Commit en producción: `8c164c4` — 5.1-C0 (FUSIÓN aplicada: 27 grupos, 45 claims absorbidos, 186→141, 45 redirecciones 301; volcados pre/post en /root/pgdump-*.sql) + 5.1-D (CATEGORÍAS VIVAS: tabla Category, propuesta en /submit/ contrastada por el bibliotecario Sonnet — rueda «Orden de categorías» en el panel de David —, buscadores poblados de la tabla viva). Trampas: sudo+glob y grep -c (docs/69). PENDIENTE: 5.1-C temas (página por categoría al umbral de votos). De David: MX en IONOS. ⏰ Google: contador 3/5 (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-05 · Commit en producción: `5e3eddc` — 5.1-C: LOS TEMAS (/tema/<slug>/ nace con el primer post analizado de la categoría; portada wiki corregida: números + 10 subtemas + listados + tira de 6 personas, rejilla en /wiki/personas/). **LA SERIE 5.1 (WIKI-RED) QUEDA COMPLETA** (docs/67-70). De David: MX en IONOS. ⏰ Google: contador 4/5 — EL PRÓXIMO PARCHE dispara el recordatorio (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
