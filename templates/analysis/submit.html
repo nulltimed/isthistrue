@@ -8,13 +8,11 @@
       <input type="url" name="url" required placeholder="https://www.youtube.com/watch?v=...">
     </label>
     <label>{% trans "Tema" %}<select name="topic">
-      <option value="politica">Política</option><option value="salud">Salud</option>
-      <option value="ciencia">Ciencia</option><option value="economia">Economía</option>
-      <option value="sucesos">Sucesos</option><option value="internacional">Internacional</option>
-      <option value="tecnologia">Tecnología</option><option value="medioambiente">Medioambiente</option>
-      <option value="deporte">Deporte</option><option value="cultura">Cultura</option>
-      <option value="sociedad">Sociedad</option><option value="otros" selected>Otros</option>
+      {% for c in categorias %}<option value="{{ c.slug }}" {% if c.slug == 'otros' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
     </select></label>
+    <label>{% trans "¿No encaja en ninguna? Propón una categoría (opcional)" %}
+      <input name="topic_new" maxlength="40" placeholder="{% trans 'p. ej. Energía' %}">
+      <span class="hint">{% trans "Un bibliotecario automático la contrastará con las existentes: la encajará en una o la creará si de verdad falta." %}</span></label>
     <label>{% trans "Etiquetas libres (opcional, separadas por comas)" %}<input name="tags" placeholder="vacunas, 5G"></label>
     <label class="inline"><input type="checkbox" name="offtopic"> {% trans "Es opinión/entretenimiento: mandarlo directamente a Off-Topic" %}</label>
     <label>{% trans "Opina (opcional): tu comentario abrirá el hilo del foro, debajo de la transcripción" %}

@@ -1484,3 +1484,13 @@ msgstr "Claim type (all)"
 
 msgid "Todas"
 msgstr "All"
+
+# ---- 5.1-D: categorias vivas (2026-09-04) ----
+msgid "Un bibliotecario automático la contrastará con las existentes: la encajará en una o la creará si de verdad falta."
+msgstr "An automatic librarian will check it against the existing ones: it will file it under one of them, or create it if it is truly missing."
+
+msgid "p. ej. Energía"
+msgstr "e.g. Energy"
+
+msgid "¿No encaja en ninguna? Propón una categoría (opcional)"
+msgstr "None of them fits? Propose a category (optional)"

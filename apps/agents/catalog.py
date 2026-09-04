@@ -107,6 +107,10 @@ TASKS = [
     # (¿contiene información verificable?) tiene su propia rueda en el panel.
     ('innocuous', 'Criba factual de frases dudosas', 'claude-sonnet-4-6',
                   'solo si el separador inventa voces'),
+    # 5.1-D (orden de David): al proponer una categoria nueva, Sonnet la
+    # contrasta con las existentes para mantener la taxonomia ordenada.
+    ('categories', 'Orden de categorías', 'claude-sonnet-4-6',
+                   'solo al proponer una categoría nueva'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
 

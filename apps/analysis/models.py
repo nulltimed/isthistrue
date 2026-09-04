@@ -30,6 +30,25 @@ STATUSES = [
 ]
 
 
+class Category(models.Model):
+    """5.1-D (orden de David): la taxonomia VIVA. Al analizar un video se puede
+    PROPONER una categoria; Sonnet la contrasta con las existentes (y su uso)
+    para mantener el orden — encaja la propuesta en una existente o crea una
+    nueva normalizada. El buscador se puebla de esta tabla, no de una lista
+    fija. Sembrada con los 12 temas historicos (migracion 0018)."""
+    name = models.CharField(max_length=40)
+    slug = models.SlugField(max_length=40, unique=True)
+    times_used = models.IntegerField(default=0)
+    created_by_agent = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-times_used', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Channel(models.Model):
     platform = models.CharField(max_length=20)
     external_id = models.CharField(max_length=200)
@@ -86,7 +105,17 @@ class Post(models.Model):
     offtopic_suggested = models.BooleanField(default=False)
     # 4.2 A5: texto "Opina" del autor -> primer mensaje del hilo del foro.
     author_opinion = models.TextField(blank=True, default='')
-    topic = models.CharField(max_length=16, choices=TOPICS, default='otros')
+    # 5.1-D: el tema es ya un slug de la tabla Category (taxonomia viva); los
+    # choices historicos se quedan como nombres legados en get_topic_display.
+    topic = models.CharField(max_length=40, default='otros')
+
+    def get_topic_display(self):
+        """Nombre legible de la categoria: primero la tabla viva, despues los
+        12 nombres historicos, y el propio slug como ultimo recurso."""
+        cat = Category.objects.filter(slug=self.topic).only('name').first()
+        if cat:
+            return cat.name
+        return dict(TOPICS).get(self.topic, self.topic)
     tags = models.CharField(max_length=200, blank=True, default='')  # libres, separadas por comas
     # 4.4-B (decision de David): la fecha en que OCURRIO lo que se ve, que no es
     # la de subida. Sin ella, "mas trabajadores que nunca" no se puede contrastar:

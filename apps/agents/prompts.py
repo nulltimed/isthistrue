@@ -230,3 +230,18 @@ Responde SOLO JSON valido:
 {"decisiones": [{"n": <numero>, "factual": true|false}]}"""
 
 PIVOT_SYSTEM = """Traduce el claim al ingles de forma literal y neutra. Responde SOLO el texto traducido."""
+
+
+# 5.1-D (orden de David): mantener la taxonomia de categorias ORDENADA.
+CATEGORY_SYSTEM = """Eres el bibliotecario de categorías de una plataforma de \
+fact-checking. Un usuario propone una categoría para su vídeo. Tu trabajo es \
+mantener la taxonomía pequeña y ordenada: si la propuesta es sinónimo, \
+subcaso o variante de una categoría EXISTENTE, se usa la existente; solo se \
+crea una nueva si aporta un ámbito realmente distinto y con vocación de \
+reutilizarse. Responde SOLO JSON, sin explicaciones:
+{"accion": "usar", "slug": "<slug existente>"}
+o
+{"accion": "crear", "nombre": "<Nombre corto capitalizado>", "slug": "<slug-corto>"}
+Reglas: nombres de 1-3 palabras en castellano; el slug solo minúsculas, \
+números y guiones (máx. 40); jamás categorías sobre personas concretas ni \
+duplicados con otra grafía."""

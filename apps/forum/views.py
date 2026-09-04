@@ -25,7 +25,7 @@ def _mensajes_de(forum, n=10):
 
 def foro_home(request):
     from machina.core.db.models import get_model
-    from apps.analysis.models import TOPICS
+    from apps.analysis.models import Category
     from apps.wiki.models import COLORS
     Forum = get_model('forum', 'Forum')
     principal = Forum.objects.filter(slug='principal').first()
@@ -35,5 +35,7 @@ def foro_home(request):
         'principal_msgs': _mensajes_de(principal) if principal else [],
         'offtopic': offtopic,
         'offtopic_msgs': _mensajes_de(offtopic) if offtopic else [],
-        'temas': TOPICS, 'colores': COLORS,
+        # 5.1-D: taxonomia viva — el buscador se puebla solo
+        'temas': list(Category.objects.values_list('slug', 'name')),
+        'colores': COLORS,
     })

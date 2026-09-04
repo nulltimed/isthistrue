@@ -4848,3 +4848,86 @@ class Parche51B2_EmbeddingsGuardados(TestCase):
         c = Claim.objects.get(text_original='La deuda subió')
         self.assertIsNotNone(c.embedding, 'el embedding se sigue tirando')
         self.assertEqual(c.text_pivot_en, 'pivot en')
+
+
+class Parche51D_CategoriasVivas(TestCase):
+    """5.1-D (orden de David): taxonomia viva — proponer categoria al analizar,
+    Sonnet la contrasta contra las existentes, y el buscador se puebla solo.
+    Mas la fusion de los claims duplicados que dejo el dedupe roto (5.1-C0)."""
+
+    def _user(self):
+        n = User.objects.count()
+        u = User.objects.create_user(username=f'cat{n}', email=f'cat{n}@example.org',
+                                     password='x')
+        u.email_verified = True
+        u.save()
+        return u
+
+    def test_la_migracion_sembro_las_doce_historicas(self):
+        from apps.analysis.models import Category
+        self.assertGreaterEqual(Category.objects.count(), 12)
+        self.assertTrue(Category.objects.filter(slug='otros').exists())
+
+    def test_el_buscador_se_puebla_con_las_categorias_nuevas(self):
+        from apps.analysis.models import Category
+        Category.objects.create(slug='energia', name='Energía')
+        html = self.client.get('/buscar/').content.decode()
+        self.assertIn('value="energia"', html)
+        self.assertIn('Energía', html)
+
+    def test_proponer_categoria_nueva_la_crea_via_bibliotecario(self):
+        from unittest import mock
+        from apps.analysis.models import Category, Post
+        u = self._user()
+        self.client.force_login(u)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'accion': 'crear', 'nombre': 'Energía',
+                                      'slug': 'energia'}), \
+             mock.patch('apps.embeds.adapters.probe',
+                        return_value={'title': 'V', 'duration_seconds': 60,
+                                      'age_limit': 0}), \
+             mock.patch('apps.analysis.views.run_cheap_phase'):
+            self.client.post('/submit/', {'url': 'https://youtu.be/cat1x',
+                                          'topic': 'otros', 'topic_new': 'energia'})
+        self.assertTrue(Category.objects.filter(slug='energia').exists())
+        p = Post.objects.get(url='https://youtu.be/cat1x')
+        self.assertEqual(p.topic, 'energia')
+        self.assertEqual(p.get_topic_display(), 'Energía')
+
+    def test_la_propuesta_sinonima_se_encaja_en_la_existente(self):
+        from unittest import mock
+        from apps.analysis.models import Post
+        u = self._user()
+        self.client.force_login(u)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'accion': 'usar', 'slug': 'economia'}), \
+             mock.patch('apps.embeds.adapters.probe',
+                        return_value={'title': 'V', 'duration_seconds': 60,
+                                      'age_limit': 0}), \
+             mock.patch('apps.analysis.views.run_cheap_phase'):
+            self.client.post('/submit/', {'url': 'https://youtu.be/cat2x',
+                                          'topic': 'otros',
+                                          'topic_new': 'dinero y finanzas'})
+        self.assertEqual(Post.objects.get(url='https://youtu.be/cat2x').topic,
+                         'economia')
+
+    def test_fusionar_claims_absorbe_los_duplicados(self):
+        from io import StringIO
+        from django.core.management import call_command
+        from apps.wiki.models import Claim, ClaimVersion
+        v1 = Claim.objects.create(text_original='La Tierra es plana',
+                                  slug='tierra-plana-1', color='GREY')
+        v2 = Claim.objects.create(text_original='La Tierra es plana',
+                                  slug='tierra-plana-2', color='RED',
+                                  consolidated=True)
+        ClaimVersion.objects.create(claim=v1, color='GREY', body_snapshot={})
+        out = StringIO()
+        call_command('fusionar_claims', stdout=out)          # ensayo
+        self.assertEqual(Claim.objects.count(), 2, 'el ensayo no debe tocar nada')
+        call_command('fusionar_claims', '--aplicar', stdout=out)
+        self.assertEqual(Claim.objects.count(), 1)
+        superv = Claim.objects.get()
+        self.assertEqual(superv.color, 'RED', 'debe ganar el consolidado')
+        self.assertEqual(superv.versions.count(), 1, 'el historial no se hereda')
+        r = self.client.get('/wiki/claim/tierra-plana-1/')
+        self.assertEqual(r.status_code, 301, 'el slug absorbido debe redirigir')

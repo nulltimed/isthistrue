@@ -92,24 +92,75 @@ def _novedades_en_seguidos(user):
 VIDEO_RX = re.compile(r'(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv|spotify\.com)', re.I)
 
 
+def _categoria_contrastada(propuesta, url):
+    """5.1-D: el bibliotecario (Sonnet, rueda «Orden de categorías» del panel)
+    contrasta la propuesta con la taxonomia viva y su uso real: la encaja en
+    una existente o crea una nueva normalizada. Devuelve (slug, aviso) o None."""
+    import json
+    from django.utils.text import slugify
+    from apps.agents import client, prompts
+    from apps.agents.catalog import model_for
+    from .models import Category
+    existentes = [{'slug': s, 'nombre': n, 'usos': u}
+                  for s, n, u in Category.objects.values_list(
+                      'slug', 'name', 'times_used')]
+    payload = json.dumps({'propuesta': propuesta, 'video_url': url,
+                          'categorias_existentes': existentes},
+                         ensure_ascii=False)
+    datos = client.call_json(
+        model_for('categories'), prompts.CATEGORY_SYSTEM, payload,
+        max_tokens=150,
+        mock_payload={'accion': 'crear', 'nombre': propuesta[:40].title(),
+                      'slug': slugify(propuesta)[:40]})
+    if datos.get('accion') == 'usar':
+        cat = Category.objects.filter(slug=datos.get('slug', '')).first()
+        if cat:
+            return cat.slug, (f'Tu propuesta «{propuesta}» encaja en la '
+                              f'categoría existente «{cat.name}».')
+    if datos.get('accion') == 'crear':
+        slug = slugify(datos.get('slug') or datos.get('nombre') or propuesta)[:40]
+        nombre = (datos.get('nombre') or propuesta).strip()[:40]
+        if slug and nombre:
+            cat, creada = Category.objects.get_or_create(
+                slug=slug, defaults={'name': nombre, 'created_by_agent': True})
+            return cat.slug, (f'Categoría nueva creada: «{cat.name}».' if creada
+                              else f'Tu propuesta encaja en «{cat.name}».')
+    return None
+
+
 @login_required
 def submit(request):
     # Puerta abierta (Fase 3.9 §4): SOLO login + email verificado. Los niveles
     # limitan la CUOTA diaria y los votos, nunca la capacidad de analizar.
+    from .models import Category
     if not request.user.email_verified:
         messages.error(request, 'Verifica tu email para poder analizar (revisa tu buzón o pide un reenvío).')
         return redirect('index')
     if request.method != 'POST':
-        return render(request, 'analysis/submit.html')
+        return render(request, 'analysis/submit.html',
+                      {'categorias': Category.objects.all()})
     url = request.POST.get('url', '').strip()
     topic = request.POST.get('topic', 'otros')
+    # 5.1-D (orden de David): el posteador puede PROPONER una categoria; Sonnet
+    # la contrasta con la taxonomia existente para ayudarle a elegir mejor.
+    propuesta = request.POST.get('topic_new', '').strip()[:40]
+    if propuesta:
+        contraste = _categoria_contrastada(propuesta, url)
+        if contraste:
+            topic, aviso = contraste
+            messages.info(request, aviso)
+        else:
+            messages.info(request, 'No se pudo contrastar tu propuesta de '
+                                   'categoría; se usa la seleccionada.')
+    if not Category.objects.filter(slug=topic).exists():
+        topic = 'otros'
     tags = request.POST.get('tags', '').strip()[:200]
     voluntary_offtopic = request.POST.get('offtopic') == 'on'
     author_opinion = request.POST.get('opinion', '').strip()[:8000]  # 4.2 A5
     author_adult_flag = request.POST.get('is_adult') == 'on'
     if not VIDEO_RX.search(url):
         messages.error(request, 'El enlace debe ser de una plataforma soportada: YouTube, TikTok, Twitch o Spotify.')
-        return render(request, 'analysis/submit.html')
+        return render(request, 'analysis/submit.html', {'categorias': Category.objects.all()})
     platform, external_id = detect_platform(url)
     if not platform:
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
@@ -135,6 +186,10 @@ def submit(request):
                                'is_adult': author_adult_flag or edad_plataforma,
                                'adult_flag_source': ('author' if author_adult_flag
                                                      else 'platform' if edad_plataforma else '')})
+        if created:
+            # 5.1-D: el contador de uso alimenta el orden del buscador
+            Category.objects.filter(slug=topic).update(
+                times_used=models.F('times_used') + 1)
         if created and not post.title:
             from apps.embeds.adapters import fetch_title
             title = fetch_title(url, platform)  # I2: titulo inmediato (oEmbed, 4 s max)
@@ -857,17 +912,20 @@ def search(request):
     from apps.wiki.models import Claim
     from .models import TranscriptSegment
     from apps.wiki.models import COLORS
-    from .models import TOPICS
+    from .models import Category
     MPost = get_model('forum_conversation', 'Post')
     q = request.GET.get('q', '').strip()
     scope = request.GET.get('scope', 'all')
     # 5.1-B.1 (orden de David): filtros por tipo de claim (semaforo) y por
     # categoria del post. Funcionan CON texto o SOLOS (filtrar sin escribir).
+    # 5.1-D: las categorias salen de la taxonomia VIVA — el buscador se puebla
+    # solo con cada categoria nueva que se añada.
+    temas_vivos = list(Category.objects.values_list('slug', 'name'))
     color = request.GET.get('color', '').strip()
     if color not in dict(COLORS):
         color = ''
     tema = request.GET.get('tema', '').strip()
-    if tema not in dict(TOPICS):
+    if tema not in dict(temas_vivos):
         tema = ''
     results = {'posts': [], 'claims': [], 'segments': [], 'messages': []}
     if q or color or tema:
@@ -914,7 +972,7 @@ def search(request):
     return render(request, 'analysis/search.html',
                   {'q': q, 'scope': scope, 'results': results,
                    'color': color, 'tema': tema,
-                   'colores': COLORS, 'temas': TOPICS})
+                   'colores': COLORS, 'temas': temas_vivos})
 
 
 
