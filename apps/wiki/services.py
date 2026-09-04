@@ -8,7 +8,14 @@ SIMILARITY_THRESHOLD = 0.88  # coseno sobre pivote EN
 def upsert_claim(post, claim_data, verdict, sources_ok=True):
     """Crea o actualiza la pagina wiki del claim y ancla la aparicion.
     sources_ok=False (4.2 C1): el veredicto se emitio sin busquedas de fuentes."""
-    existing = find_similar_claim(claim_data['text'])
+    # 5.1-B.2: el embedding se calculaba para deduplicar y SE TIRABA — 186
+    # claims sin huella y la malla de «relacionadas» muda. Ahora se calcula UNA
+    # vez, se usa para deduplicar y se GUARDA (junto al pivote EN).
+    pivote, emb = '', None
+    if not settings.MOCK_AGENTS and HAS_PGVECTOR:
+        pivote = _pivot_en(claim_data['text'])
+        emb = _embed(pivote)
+    existing = find_similar_claim(claim_data['text'], emb=emb)
     if existing:
         claim = existing
     else:
@@ -19,6 +26,9 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
             slug, n = f'{base}-{n}', n + 1
         claim = Claim.objects.create(text_original=claim_data['text'],
                                      language='es', slug=slug)
+    if emb is not None and getattr(claim, 'embedding', None) is None:
+        claim.embedding = emb
+        claim.text_pivot_en = claim.text_pivot_en or pivote
     old_color = claim.color if claim.pk else None
     from .models import COLORS
     color = verdict.get('color', 'UNDECIDED')
@@ -64,11 +74,13 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     return claim
 
 
-def find_similar_claim(text):
-    """Dedupe por embedding pgvector; sin embeddings (mock) cae a igualdad exacta."""
+def find_similar_claim(text, emb=None):
+    """Dedupe por embedding pgvector; sin embeddings (mock) cae a igualdad exacta.
+    5.1-B.2: acepta el embedding ya calculado para no pagar el pivote dos veces."""
     if settings.MOCK_AGENTS or not HAS_PGVECTOR:
         return Claim.objects.filter(text_original=text).first()
-    emb = _embed(_pivot_en(text))
+    if emb is None:
+        emb = _embed(_pivot_en(text))
     if emb is None:
         return Claim.objects.filter(text_original=text).first()
     from pgvector.django import CosineDistance

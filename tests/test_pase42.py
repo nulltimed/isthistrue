@@ -4811,3 +4811,40 @@ class Parche51B1_LoginAnterior(TestCase):
         self.assertIsNotNone(u.previous_login)
         self.assertLess((u.previous_login - (timezone.now() - timedelta(days=5)))
                         .total_seconds(), 60, 'previous_login no es el login viejo')
+
+
+class Parche51B2_EmbeddingsGuardados(TestCase):
+    """5.1-B.2: el deduplicador calculaba el embedding y LO TIRABA — 186 claims
+    sin huella y la malla muda. Ahora se guarda al crear, y embed_claims
+    rellena los historicos gratis (modelo local)."""
+
+    def test_embed_claims_rellena_los_que_faltan(self):
+        from unittest import mock
+        from io import StringIO
+        from django.core.management import call_command
+        from apps.wiki.models import Claim
+        Claim.objects.create(text_original='sin huella uno')
+        Claim.objects.create(text_original='sin huella dos')
+        with mock.patch('apps.wiki.services._embed',
+                        return_value=[0.5] + [0.0] * 383):
+            out = StringIO()
+            call_command('embed_claims', stdout=out)
+        self.assertEqual(Claim.objects.filter(embedding__isnull=True).count(), 0)
+        self.assertIn('2/2', out.getvalue())
+
+    def test_upsert_guarda_el_embedding_al_crear(self):
+        from unittest import mock
+        from django.test import override_settings
+        from apps.wiki.models import Claim
+        from apps.wiki import services
+        post = Post.objects.create(author=make_user(username='e51', email='e51@example.org'),
+                                   url='https://youtu.be/e51', title='V')
+        post.transcript_segments.create(start_seconds=0, end_seconds=1, text='t')
+        with override_settings(MOCK_AGENTS=False), \
+             mock.patch.object(services, '_pivot_en', return_value='pivot en'), \
+             mock.patch.object(services, '_embed', return_value=[0.7] + [0.0] * 383):
+            services.upsert_claim(post, {'text': 'La deuda subió', 'segment_index': 0},
+                                  {'color': 'GREEN', 'sources': []})
+        c = Claim.objects.get(text_original='La deuda subió')
+        self.assertIsNotNone(c.embedding, 'el embedding se sigue tirando')
+        self.assertEqual(c.text_pivot_en, 'pivot en')
