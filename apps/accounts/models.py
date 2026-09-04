@@ -51,6 +51,11 @@ class User(AbstractUser):
     digest_hour = models.PositiveSmallIntegerField(default=8)  # hora del resumen
     quiet_night = models.BooleanField(default=True)            # sin emails 23-8
     notifications_paused_until = models.DateTimeField(null=True, blank=True)
+    # 5.1-B.1: Django pisa last_login EN el login, asi que «desde tu ultima
+    # visita» seria siempre «desde hace tres segundos». Este campo guarda el
+    # login ANTERIOR (lo escribe VerifiedLoginView antes de abrir sesion) y es
+    # la marca real de las «Novedades en tus seguidos» de la portada.
+    previous_login = models.DateTimeField(null=True, blank=True)
 
     def wants(self, key):
         """Preferencia de aviso por tipo; sin registro = si (opt-out)."""

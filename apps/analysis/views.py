@@ -64,11 +64,12 @@ def _mas_comentados(base):
 def _novedades_en_seguidos(user):
     """Que paso en los posts que sigue este usuario desde su ultima visita:
     mensajes nuevos en el hilo y analisis que terminaron. La 'ultima visita' es
-    su ultimo login — la mejor marca disponible sin espiar la navegacion."""
+    su login ANTERIOR (previous_login, que VerifiedLoginView guarda antes de
+    que Django pise last_login) — la mejor marca sin espiar la navegacion."""
     from machina.core.db.models import get_model
     from .models import PostSubscription
     MPost = get_model('forum_conversation', 'Post')
-    desde = user.last_login or user.date_joined
+    desde = user.previous_login or user.last_login or user.date_joined
     filas = []
     subs = PostSubscription.objects.filter(user=user).select_related('post')[:100]
     for sub in subs:

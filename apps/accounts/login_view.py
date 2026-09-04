@@ -15,6 +15,10 @@ class VerifiedLoginView(LoginView):
             messages.error(self.request, 'Debes verificar tu email antes de entrar. '
                                          '¿No te llegó? Reenvíalo abajo.')
             return self.form_invalid(form)
+        # 5.1-B.1: guardar el login ANTERIOR antes de que Django lo pise — es
+        # la marca de «Novedades en tus seguidos» de la portada.
+        user.previous_login = user.last_login
+        user.save(update_fields=['previous_login'])
         from django_otp.plugins.otp_totp.models import TOTPDevice
         if TOTPDevice.objects.filter(user=user, confirmed=True).exists():
             # La contraseña es buena pero la sesion NO se abre todavia: el

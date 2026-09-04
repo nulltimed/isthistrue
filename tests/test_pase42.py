@@ -4757,8 +4757,8 @@ class Parche51B_Malla(TestCase):
         from apps.forum.machina_glue import create_topic_for_post, add_reply
         post, _, _, _ = self._escena(4)
         lector = make_user(username='lector51', email='lector51@example.org')
-        lector.last_login = timezone.now() - timedelta(days=3)
-        lector.save(update_fields=['last_login'])
+        lector.previous_login = timezone.now() - timedelta(days=3)
+        lector.save(update_fields=['previous_login'])
         PostSubscription.objects.create(post=post, user=lector)
         create_topic_for_post(post)
         add_reply(post, post.author, 'mensaje nuevo para el lector')
@@ -4791,3 +4791,23 @@ class Parche51B_Malla(TestCase):
         post.save()
         html = self.client.get('/buscar/?tema=economia').content.decode()
         self.assertIn('Video malla 6', html)
+
+
+class Parche51B1_LoginAnterior(TestCase):
+    """5.1-B.1: el login guarda el ANTERIOR en previous_login — sin el, las
+    «Novedades» serian siempre «desde hace tres segundos» (vacio eterno)."""
+
+    def test_el_login_conserva_la_visita_anterior(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        u = User.objects.create_user(username='pl51', email='pl51@example.org',
+                                     password='ContraseñaLarga9')
+        u.email_verified = True
+        u.last_login = timezone.now() - timedelta(days=5)
+        u.save()
+        self.client.post('/accounts/login/', {'username': 'pl51',
+                                              'password': 'ContraseñaLarga9'})
+        u.refresh_from_db()
+        self.assertIsNotNone(u.previous_login)
+        self.assertLess((u.previous_login - (timezone.now() - timedelta(days=5)))
+                        .total_seconds(), 60, 'previous_login no es el login viejo')
