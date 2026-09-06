@@ -146,6 +146,10 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # --- Agentes / economia (100 EUR/mes, ~3 EUR/dia: decidido por David en Fase 3.3) ---
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+# 5.15 (orden de David): credenciales REST de PayPal — con ellas, cada pedido
+# del boton se VERIFICA contra la API antes de anotarse o lanzar nada.
+PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '')
+PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '')
 MODEL_CHEAP = os.getenv('MODEL_CHEAP', 'claude-haiku-4-5-20251001')
 MODEL_VERDICT = os.getenv('MODEL_VERDICT', 'claude-sonnet-4-6')
 MODEL_OFFTOPIC = os.getenv('MODEL_OFFTOPIC', MODEL_CHEAP)

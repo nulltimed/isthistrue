@@ -51,6 +51,11 @@ def quota_banner(request):
             'donated': donated,
             'goal_missing': max(0, goal - donated),
             # Enlace de donacion clasico: fallback SIN JavaScript del banner (4.1 B3)
+            # 5.15: el SDK usa el client-id REST de David cuando existe —
+            # asi la verificacion de pedidos y el boton hablan de la MISMA app.
+            'paypal_client_id': (settings.PAYPAL_CLIENT_ID or
+                                 'BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_'
+                                 'Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M'),
             'paypal_url': (SystemSetting.objects.filter(key='paypal_url')
                            .values_list('value', flat=True).first() or ''),
         }}

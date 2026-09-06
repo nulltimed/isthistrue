@@ -6085,3 +6085,62 @@ class Parche514_Serie(TestCase):
         html = build_embed(post)
         self.assertIn('height="352"', html)
         self.assertNotIn('height="152"', html)
+
+
+class Parche515_VerificacionPayPal(TestCase):
+    """5.15 (orden de David): el servidor contrasta cada pedido contra la API
+    de PayPal — el curl con pedido inventado muere; sin credenciales, circuito
+    anterior."""
+
+    def _post_cola(self, n):
+        u = make_user(username=f'pp515{n}', email=f'pp515{n}@example.org')
+        return Post.objects.create(author=u, url=f'https://youtu.be/pp515{n}',
+                                   status='AWAITING_BUDGET', duration_seconds=5400)
+
+    def test_pedido_inventado_muere_con_credenciales(self):
+        import json
+        from unittest import mock
+        from django.test import override_settings
+        from apps.panel.models import Donation
+        post = self._post_cola(1)
+        with override_settings(PAYPAL_CLIENT_ID='cid', PAYPAL_CLIENT_SECRET='sec'), \
+             mock.patch('apps.analysis.paypal_check.verify_order',
+                        return_value=False):
+            r = self.client.post('/donaciones/registrar/',
+                                 json.dumps({'amount': '99.00', 'order': 'FAKE515',
+                                             'post': post.pk}),
+                                 content_type='application/json')
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(Donation.objects.filter(note__contains='FAKE515').exists())
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'AWAITING_BUDGET', 'ni un euro gastado')
+
+    def test_pedido_real_anota_y_lanza(self):
+        import json
+        from unittest import mock
+        from django.test import override_settings
+        from apps.panel.models import Donation
+        post = self._post_cola(2)
+        with override_settings(PAYPAL_CLIENT_ID='cid', PAYPAL_CLIENT_SECRET='sec'), \
+             mock.patch('apps.analysis.paypal_check.verify_order',
+                        return_value=True), \
+             mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanza:
+            r = self.client.post('/donaciones/registrar/',
+                                 json.dumps({'amount': '99.00', 'order': 'REAL515',
+                                             'post': post.pk}),
+                                 content_type='application/json')
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(Donation.objects.filter(note__contains='REAL515').exists())
+        lanza.assert_called_once_with(post.pk)
+
+    def test_sin_credenciales_circuito_anterior(self):
+        from apps.analysis.paypal_check import verify_order
+        from django.test import override_settings
+        with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
+            self.assertIsNone(verify_order('X', 5))
+
+    def test_el_sdk_usa_el_client_id_del_env(self):
+        from django.test import override_settings
+        with override_settings(PAYPAL_CLIENT_ID='MI-CLIENT-ID-515'):
+            html = self.client.get('/').content.decode()
+        self.assertIn('client-id=MI-CLIENT-ID-515', html)

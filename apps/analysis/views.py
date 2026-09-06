@@ -1158,6 +1158,18 @@ def donation_capture(request):
     from django.http import JsonResponse
     if Donation.objects.filter(note=nota).exists():   # idempotente
         return JsonResponse({'ok': True, 'dup': True})
+    # 5.15 (orden de David): con credenciales en el .env, el pedido se
+    # contrasta contra la API de PayPal — un curl con un pedido inventado
+    # muere aqui. Sin credenciales, el circuito de siempre (riesgo en docs/85).
+    from .paypal_check import verify_order
+    veredicto_pp = verify_order(orden, cantidad)
+    if veredicto_pp is False:
+        from apps.panel.models import AuditLog
+        AuditLog.objects.create(user=None, action='donation_reject',
+                                detail=f'pedido no verificado: {orden[:40]} '
+                                       f'({cantidad} EUR)')
+        return JsonResponse({'ok': False, 'motivo': 'pedido no verificable'},
+                            status=400)
     # 5.13-C (orden de David): el apadrinamiento queda ATADO a su post — al
     # verificarla David, si lo donado cubre el coste, el analisis se lanza solo.
     post_ap = None

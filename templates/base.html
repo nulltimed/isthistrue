@@ -74,7 +74,7 @@
   </noscript>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture&locale=es_ES"></script>
+<script src="https://www.paypal.com/sdk/js?client-id={{ quota_banner.paypal_client_id }}&currency=EUR&intent=capture&locale=es_ES"></script>
 <script>
 (function () {
   if (!window.paypal || !document.getElementById('paypal-banner-btn')) return;
