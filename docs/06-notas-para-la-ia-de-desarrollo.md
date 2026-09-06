@@ -1496,3 +1496,13 @@ pintan — en MOCK el banner marca 0,00 y es correcto; actualiza la vieja
 leccion «el gasto simulado prueba el banner»); E=PayPal con locale FIJADO
 es_ES/en_US + .catch con enlace clasico (el marcado EN era identico al ES:
 el fallo era del autodetect del SDK).
+
+## 77. Serie 5.11: PayPal cabezota, el momento del claim y las inciertas clicables (2026-09-07)
+
+Commits `9029829`+`c45dc25`. Informe en docs/82. A=PayPal: el SDK carga 200 en
+TODOS los locales y el HTML EN=ES — la inelegibilidad con en_US NO lanza error,
+simplemente no pinta → locale es_ES FIJO + vigilante del hueco a los 5 s.
+B=ficha del claim con «El momento en el vídeo» (embed a t-1 de la primera
+aparición). C=frase incierta ENTERA clicable (seek-frase). Lección reincidente:
+un script de edición murió en el assert y el commit salió sin el test —
+verificar SIEMPRE el resultado, no el intento.

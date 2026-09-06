@@ -5915,7 +5915,8 @@ class Parche510_Serie(TestCase):
 
     def test_paypal_con_locale_y_salvavidas(self):
         base = open('templates/base.html').read()
-        self.assertIn("locale={% if request.LANGUAGE_CODE == 'en' %}en_US{% else %}es_ES{% endif %}", base)
+        # 5.11-A supersede el condicional: locale FIJO es_ES (en_US no pintaba).
+        self.assertIn('&locale=es_ES', base)
         self.assertIn(".catch(function", base)
 
 
