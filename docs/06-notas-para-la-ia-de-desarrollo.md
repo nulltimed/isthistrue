@@ -1514,3 +1514,13 @@ Commit `e89bd4a`. Informe en docs/83. La wiki YA se actualizaba sola
 /wiki/claim/<slug>/historial/ + enlace «📜 Historial» ARRIBA de cada ficha.
 Y las «Apariciones» pasan de #seg- a ?t= (coherencia no-scroll 5.10-C).
 ⏰ GOOGLE 10/10: RECORDATORIO DISPARADO a David (wiki_index_people, panel).
+
+## 79. Serie 5.13: karaoke que deja ver venir, Spotify honesto y apadrinamiento atado (2026-09-07)
+
+Informe en docs/84. A=la intervencion viva queda PENULTIMA visible (alinear el
+final de la SIGUIENTE con el fondo de la caja; box.scrollTo — scrollIntoView
+habria movido la pagina). C=yt-dlp no lee Spotify: duration_ms de su pagina
+publica (2 rutas de probe); mensajes honestos con duracion desconocida.
+C2=Donation.post (panel/0004) + boton de cantidad exacta en el post en cola +
+lanzamiento automatico al verificar + insignia «Apadrinable» en foro/portada.
+PENDIENTE deploy: migracion panel/0004.
