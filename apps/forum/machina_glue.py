@@ -68,7 +68,7 @@ def add_reply(analysis_post, user, content):
                 .exclude(user=user).select_related('user')):
         notify(sub.user, f'Nuevo mensaje de {user.username} en: '
                          f'{(analysis_post.title or analysis_post.url)[:80]}',
-               f'/post/{analysis_post.pk}/#hilo', kind='thread_replies')
+               f'/post/{analysis_post.pk}/', kind='thread_replies')
     # 4.3-A J3: menciones @usuario dentro del mensaje
     import re as _re
     from apps.accounts.models import User as _User
@@ -77,7 +77,7 @@ def add_reply(analysis_post, user, content):
         if mentioned and mentioned != user:
             notify(mentioned, f'{user.username} te ha mencionado en: '
                               f'{(analysis_post.title or analysis_post.url)[:80]}',
-                   f'/post/{analysis_post.pk}/#hilo', kind='mentions')
+                   f'/post/{analysis_post.pk}/', kind='mentions')
     return mpost
 
 

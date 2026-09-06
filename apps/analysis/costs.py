@@ -74,3 +74,23 @@ def post_breakdown(post):
         'provider', 'concept').annotate(eur=Sum('eur')).order_by('provider'))
     total = float(sum(f['eur'] for f in filas))
     return filas, round(total, 4)
+
+
+def day_total():
+    """5.10-D (orden de David): «El conteo de gasto diario y mensual debe ser
+    real, actualizado tras cada análisis» — la suma del LIBRO de hoy, todos
+    los proveedores. El banner lee esto; DailyBudget sigue siendo el fusible
+    que CORTA (reservas estimadas), pero ya no es lo que se ENSEÑA."""
+    from django.db.models import Sum
+    from .models import CostEntry
+    return float(CostEntry.objects.filter(created_at__date=timezone.localdate())
+                 .aggregate(s=Sum('eur'))['s'] or 0)
+
+
+def month_total_all():
+    """La suma real del mes, todos los proveedores (5.10-D)."""
+    from django.db.models import Sum
+    from .models import CostEntry
+    ini = timezone.localdate().replace(day=1)
+    return float(CostEntry.objects.filter(created_at__date__gte=ini)
+                 .aggregate(s=Sum('eur'))['s'] or 0)

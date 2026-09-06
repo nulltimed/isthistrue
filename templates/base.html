@@ -14,6 +14,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
 <link rel="apple-touch-icon" href="{% static 'img/favicon-180.png' %}">
 <link rel="alternate" type="application/rss+xml" title="Veredictos" href="{% url 'rss_verdicts' %}">
+{# 5.10-A: preconexiones — el video arranca antes (reporte de David: 6-7 s). #}
+<link rel="preconnect" href="https://www.youtube-nocookie.com">
+<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.ytimg.com">
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body{% if user.is_authenticated and user.notify_prefs.toast_sound %} data-toast-sound="1"{% endif %}>
@@ -70,7 +74,7 @@
   </noscript>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture&locale={% if request.LANGUAGE_CODE == 'en' %}en_US{% else %}es_ES{% endif %}"></script>
 <script>
 (function () {
   if (!window.paypal || !document.getElementById('paypal-banner-btn')) return;
@@ -115,7 +119,12 @@
         } catch (e) {}
       });
     }
-  }).render('#paypal-banner-btn');
+  }).render('#paypal-banner-btn').catch(function () {
+    /* 5.10-E (reporte de David: en ingles desaparecia el boton): si el SDK
+     * no pinta, el hueco no se queda mudo — enlace clasico a /donaciones/. */
+    var z = document.getElementById('paypal-banner-btn');
+    if (z) z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
+  });
 })();
 </script>
 {% endif %}

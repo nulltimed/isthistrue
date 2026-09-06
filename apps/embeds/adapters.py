@@ -95,9 +95,13 @@ def build_embed(post, start_seconds=0):
         # enablejsapi: lo consume static/js/transcript.js (clic en frase -> seekTo).
         # referrerpolicy en el PROPIO iframe: cinturon ademas del SECURE_REFERRER_POLICY
         # global (YouTube sin Referer = error 153). Pase 4.2 A1/A4.
+        # 5.10-A (reporte de David: 6-7 s hasta reproducir): el video ES el
+        # contenido principal y esta arriba — loading="lazy" retrasaba el
+        # iframe y el apreton de manos de la IFrame API. Carga ansiosa +
+        # preconnects en base.html.
         return (f'<iframe id="istt-player" '
                 f'src="https://www.youtube-nocookie.com/embed/{vid}?start={s}&enablejsapi=1" '
-                f'frameborder="0" allowfullscreen loading="lazy" '
+                f'frameborder="0" allowfullscreen '
                 f'referrerpolicy="strict-origin-when-cross-origin" '
                 f'allow="autoplay; encrypted-media; picture-in-picture"></iframe>')
     if p == 'tiktok' and vid:

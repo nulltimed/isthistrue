@@ -5874,3 +5874,46 @@ class Parche59_ForoEnCategorias(TestCase):
                         bloque.find('Analizado sin votos'))
         self.assertIn(off.get_absolute_url(), html)     # off-topic enlazado
         self.assertNotIn('thread-body', html, 'sin cuerpos de mensajes')
+
+
+class Parche510_Serie(TestCase):
+    """5.10 (cinco reportes de David): A=video sin lazy + preconnects,
+    B=la wiki desde el post en pestana nueva, C=entrar en un post no hace
+    scroll (avisos sin ancla), D=el banner ensena gasto REAL del libro,
+    E=PayPal con locale fijado y salvavidas si el SDK no pinta."""
+
+    def test_el_video_carga_ansioso_y_con_preconexiones(self):
+        from apps.embeds.adapters import build_embed
+        u = make_user(username='yt510', email='yt510@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/x510',
+                                   platform='youtube', external_id='x510')
+        self.assertNotIn('loading="lazy"', build_embed(post))
+        base = open('templates/base.html').read()
+        self.assertIn('preconnect" href="https://www.youtube-nocookie.com', base)
+
+    def test_la_wiki_desde_el_post_abre_en_pestana_nueva(self):
+        t = open('templates/partials/post_body.html').read()
+        for ancla in ('wiki_video', '/wiki/claim/'):
+            trozo = t[t.index(ancla) - 300:t.index(ancla) + 300]
+            self.assertIn('target="_blank"', trozo, ancla)
+
+    def test_los_avisos_no_anclan_al_hilo(self):
+        g = open('apps/forum/machina_glue.py').read()
+        self.assertNotIn('#hilo', g,
+                         'entrar en un post no debe hacer scroll automatico')
+
+    def test_el_banner_ensena_el_gasto_real_del_libro(self):
+        from apps.analysis.models import CostEntry, DailyBudget
+        from apps.analysis import costs
+        CostEntry.objects.create(provider='qwen', concept='prueba', eur='0.5000')
+        # una reserva del fusible NO es gasto que se ensene (5.10-D)
+        DailyBudget.try_spend(1.00)
+        self.assertAlmostEqual(costs.day_total(), 0.5, places=4)
+        self.assertAlmostEqual(costs.month_total_all(), 0.5, places=4)
+        html = self.client.get('/').content.decode()
+        self.assertIn('0,50', html)
+
+    def test_paypal_con_locale_y_salvavidas(self):
+        base = open('templates/base.html').read()
+        self.assertIn("locale={% if request.LANGUAGE_CODE == 'en' %}en_US{% else %}es_ES{% endif %}", base)
+        self.assertIn(".catch(function", base)

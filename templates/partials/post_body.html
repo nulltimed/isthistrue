@@ -64,7 +64,7 @@
     <aside class="transcript-col">
       <h2>{% trans "Transcripción sincronizada" %}</h2>
       <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}
-        · <a href="{% url 'wiki_video' post.slug|default:post.pk %}">{% trans "Ver este análisis en la wiki" %}</a></p>
+        · <a href="{% url 'wiki_video' post.slug|default:post.pk %}" target="_blank" rel="noopener">{% trans "Ver este análisis en la wiki" %}</a></p>
       <div class="transcript transcript-box" data-platform="{{ post.platform }}">
       {% for s in segments %}
         <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
@@ -75,7 +75,7 @@
           {# DESAPARECE y en su sitio va el semáforo real, enlazado a la ficha.  #}
           {% if s.claim %}
             {# 5.3-B (orden de David): al posar el raton, el RESUMEN del veredicto; el clic lleva a la wiki. #}
-            <a class="verdict verdict-{{ s.claim.color }}" href="/wiki/claim/{{ s.claim.slug|default:s.claim.pk }}/"
+            <a class="verdict verdict-{{ s.claim.color }}" href="/wiki/claim/{{ s.claim.slug|default:s.claim.pk }}/" target="_blank" rel="noopener"
                title="{{ s.claim.what_evidence_says|default:_('Ver la verificación completa con sus fuentes')|truncatechars:260 }}">{% if s.claim.kind == 'OPINION' %}💭 {% endif %}{% trans s.claim.get_color_display %}</a>
             {% if s.claim.temporal_basis %}<span class="verdict-basis" title="{% trans 'Contra qué se comparó' %}">{{ s.claim.temporal_basis }}</span>{% endif %}
             {% if s.claim.sources.exists %}<span class="verdict-sources">{% blocktrans count n=s.claim.sources.count %}{{ n }} fuente{% plural %}{{ n }} fuentes{% endblocktrans %}</span>{% endif %}

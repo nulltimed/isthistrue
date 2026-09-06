@@ -38,10 +38,15 @@ def quota_banner(request):
         # base de su panel — el «Faltan X €» lo sigue a el, no a una meta
         # aparte que se desincronizaba.
         goal = base
+        # 5.10-D (orden de David): lo que se ENSEÑA es el gasto REAL del libro
+        # (CostEntry, actualizado con cada apunte de cada análisis). DailyBudget
+        # y MonthlyCap siguen siendo los fusibles que cortan — pero sus reservas
+        # estimadas ya no se muestran como si fueran gasto.
+        from apps.analysis.costs import day_total, month_total_all
         return {'quota_banner': {
-            'daily_spent': float(today.spent_eur) if today else 0.0,
+            'daily_spent': day_total(),
             'daily_budget': live_daily_budget(),
-            'monthly_spent': float(month.spent_eur) if month else 0.0,
+            'monthly_spent': month_total_all(),
             'monthly_cap': cap,
             'donated': donated,
             'goal_missing': max(0, goal - donated),
