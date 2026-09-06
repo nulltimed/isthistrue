@@ -697,3 +697,10 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 
 /* 5.8: el fotograma que el claim involucra, en su ficha wiki. */
 .claim-frame img{max-width:100%;border-radius:6px;border:1px solid #ddd}
+
+/* 5.11-B: el reproductor del claim en su ficha wiki. */
+.claim-video .embed iframe{width:100%;aspect-ratio:16/9;border-radius:6px}
+
+/* 5.11-C: la frase incierta entera es clicable (salta al segundo anterior). */
+.uncertain-list .seek-frase{cursor:pointer}
+.uncertain-list .seek-frase:hover{text-decoration:underline}

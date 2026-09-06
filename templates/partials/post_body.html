@@ -11,7 +11,9 @@
       <p class="hint">{% trans "El sistema no está seguro de quién dijo estas frases. Si lo sabes, dilo: no cuentan para nada hasta que alguien las resuelva." %}</p>
       <ul class="uncertain-list">
       {% for row in uncertain_rows %}
-        <li><a class="ts" href="#" onclick="seekTo({{ row.seg.start_seconds }});return false;">[{{ row.seg.start_seconds|floatformat:0 }}s]</a> <span class="text">{{ row.seg.text|truncatechars:90 }}</span>
+        {# 5.11-C (orden de David): la FRASE entera clicable — salta al segundo #}
+        {# anterior a cuando se dijo, para oír quién habla y poder atribuirla. #}
+        <li><a class="ts" href="#" onclick="seekTo({{ row.seg.start_seconds }});return false;">[{{ row.seg.start_seconds|floatformat:0 }}s]</a> <span class="text seek-frase" onclick="seekTo({{ row.seg.start_seconds }})" title="{% trans 'Salta al segundo anterior para oír quién lo dice' %}">{{ row.seg.text|truncatechars:90 }}</span>
           {% if user.is_authenticated %}
           <form method="post" action="{% url 'resolve_attribution' row.seg.pk %}" class="uncertain-form">{% csrf_token %}
             {% for o in row.options %}<button class="mini spk-{{ o.color }}" name="speaker" value="{{ o.label }}">{% if o.name %}{{ o.name }}{% else %}{% trans "Hablante" %} {{ o.num }}{% endif %}</button>{% endfor %}

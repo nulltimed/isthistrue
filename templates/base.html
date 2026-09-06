@@ -74,7 +74,7 @@
   </noscript>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture&locale={% if request.LANGUAGE_CODE == 'en' %}en_US{% else %}es_ES{% endif %}"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=BAADhc-JgAzqfnYzcr9AzUGFz8yS0Of2HIilTwEDeLK_Jeo6KIMBt4RPRHP1S74tonAsGWc60dbRe79t1M&currency=EUR&intent=capture&locale=es_ES"></script>
 <script>
 (function () {
   if (!window.paypal || !document.getElementById('paypal-banner-btn')) return;
@@ -125,6 +125,14 @@
     var z = document.getElementById('paypal-banner-btn');
     if (z) z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
   });
+  /* 5.11-A (2o reporte de David): la inelegibilidad no lanza error — si a
+   * los 5 s el hueco sigue vacio, el enlace clasico ocupa su sitio. */
+  setTimeout(function () {
+    var z = document.getElementById('paypal-banner-btn');
+    if (z && !z.children.length) {
+      z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
+    }
+  }, 5000);
 })();
 </script>
 {% endif %}

@@ -12,6 +12,16 @@
   {% if claim.kind == 'OPINION' %}<p class="badge badge-opinion">{% trans "Opinión analizada por su lógica — verde significa «fundada», nunca «verificada»" %}</p>{% endif %}
   {% if hablantes %}<p class="hint">{% trans "Dicho por" %}:
     {% for h in hablantes %}<a href="/persona/{{ h.slug }}/">{{ h.name }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+  {# 5.11-B (orden de David): el multimedia del claim, cargado UN SEGUNDO antes #}
+  {# de que se diga. La primera aparición manda; las demás, en «Apariciones». #}
+  {% if embed_claim %}
+  <section class="claim-video">
+    <h2>{% trans "El momento en el vídeo" %}</h2>
+    <div class="embed">{{ embed_claim|safe }}</div>
+    <p class="hint">{% blocktrans with s=momento %}El vídeo arranca en el segundo {{ s }}, justo antes de la afirmación.{% endblocktrans %}</p>
+  </section>
+  {% endif %}
+
   <section><h2>{% trans "Qué se afirma" %}</h2><p>{{ claim.what_is_claimed }}</p></section>
   <section><h2>{% trans "Qué dice la evidencia" %}</h2><p>{% if linked_evidence %}{{ linked_evidence|safe }}{% else %}{{ claim.what_evidence_says }}{% endif %}</p></section>
   <section><h2>{% trans "La diferencia" %}</h2><p>{{ claim.the_difference }}</p></section>

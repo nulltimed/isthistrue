@@ -5917,3 +5917,31 @@ class Parche510_Serie(TestCase):
         base = open('templates/base.html').read()
         self.assertIn("locale={% if request.LANGUAGE_CODE == 'en' %}en_US{% else %}es_ES{% endif %}", base)
         self.assertIn(".catch(function", base)
+
+
+class Parche511_Serie(TestCase):
+    """5.11 (dos reportes de David): A=PayPal con locale es_ES FIJO (en_US
+    dejaba el boton sin pintar — la inelegibilidad del SDK no lanza error) +
+    vigilante del hueco vacio; B=la ficha del claim carga el video en t-1."""
+
+    def test_paypal_locale_fijo_y_vigilante(self):
+        base = open('templates/base.html').read()
+        self.assertIn('&locale=es_ES', base)
+        self.assertNotIn('en_US', base, 'en_US dejaba el boton sin pintar')
+        self.assertIn('!z.children.length', base)
+
+    def test_la_ficha_del_claim_carga_el_video_un_segundo_antes(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='c511', email='c511@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/c511',
+                                   platform='youtube', external_id='c511v',
+                                   title='Video del claim')
+        seg = post.transcript_segments.create(start_seconds=30, end_seconds=34,
+                                              text='algo que se dice')
+        claim = Claim.objects.create(text_original='algo que se dice',
+                                     color='GREEN', slug='algo-511')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='...')
+        html = self.client.get('/wiki/claim/algo-511/').content.decode()
+        self.assertIn('El momento en el vídeo', html)
+        self.assertIn('start=29', html, 'un segundo ANTES del claim')
+        self.assertIn('istt-player', html)

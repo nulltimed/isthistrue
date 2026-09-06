@@ -17,8 +17,20 @@ def claim_page(request, slug):
         raise Http404
     hide_opinions = bool(request.user.is_authenticated and request.user.hide_opinions)
     body = _autolink(claim)
+    # 5.11-B (orden de David): «debe cargarse el archivo multimedia en
+    # cuestión con la marca de tiempo de un segundo antes de que ese claim se
+    # reproduzca» — el reproductor del video, posicionado en t-1 de la PRIMERA
+    # aparicion (las demas van enlazadas con ?t= en «Apariciones»).
+    embed_claim, momento = '', None
+    ap = (claim.appearances.select_related('segment__post')
+          .order_by('segment__start_seconds').first())
+    if ap and ap.segment.post:
+        from apps.embeds.adapters import build_embed
+        momento = max(0, int(ap.segment.start_seconds or 0) - 1)
+        embed_claim = build_embed(ap.segment.post, start_seconds=momento)
     return render(request, 'analysis/claim_detail.html',
                   {'claim': claim, 'hide_opinions': hide_opinions, 'linked_evidence': body,
+                   'embed_claim': embed_claim, 'momento': momento,
                    # 5.1-B: la malla — quien lo dijo y afirmaciones cercanas
                    'hablantes': speakers_of_claim(claim),
                    'relacionados': related_claims(claim)})

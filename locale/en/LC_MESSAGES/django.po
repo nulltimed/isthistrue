@@ -1661,3 +1661,13 @@ msgstr "Analysed in depth, by votes"
 
 msgid "La conversación de cada vídeo analizado, ordenada por lo que importa."
 msgstr "The conversation of every analysed video, sorted by what matters."
+
+# 5.11: el momento del claim en el video
+msgid "El momento en el vídeo"
+msgstr "The moment in the video"
+
+msgid "El vídeo arranca en el segundo %(s)s, justo antes de la afirmación."
+msgstr "The video starts at second %(s)s, right before the claim."
+
+msgid "Salta al segundo anterior para oír quién lo dice"
+msgstr "Jump to one second earlier to hear who says it"
