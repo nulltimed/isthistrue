@@ -1582,3 +1582,10 @@ clicables → dialog con claims y marca temporal → clic reproduce desde t-1).
 Leccion reincidente cazada por el CI: un sub de regex dejo la coma DENTRO del
 comentario y el compileall del paso no incluia config — compilar SIEMPRE
 config+apps+tests.
+- **Addendum §84**: GUERRA AL GRIS COMPLETA — de 49 grises a 6. Primera pasada:
+  40 fantasmas retirados (transcripciones antiguas regeneradas: 0 huecos con
+  señal quedaron). Segunda (con aire 2500): 4 colores plenos más (Suiza 🟢,
+  deuda 🟢, AVE 🟢, Zapatero 🟡); #103 GREY honesto justificado («peor régimen»
+  = juicio de valor); 3 tozudos json_parse (#54-56) anotados. Semáforo final:
+  57🟢 33🟡 8🔴 6💭 3🔍 2👁. Fleco nuevo: la vista dio 400 en qwen3-vl-plus
+  (post 4, chat/completions) — investigar límite de imágenes/tamaño.
