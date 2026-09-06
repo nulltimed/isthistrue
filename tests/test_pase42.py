@@ -5945,3 +5945,11 @@ class Parche511_Serie(TestCase):
         self.assertIn('El momento en el vídeo', html)
         self.assertIn('start=29', html, 'un segundo ANTES del claim')
         self.assertIn('istt-player', html)
+
+    def test_la_frase_incierta_entera_salta_al_segundo_anterior(self):
+        # 5.11-C: clic en la frase (no solo en el [Xs]) para ayudar a atribuir.
+        t = open('templates/partials/post_body.html').read()
+        i = t.index('uncertain-list')
+        trozo = t[i:i + 700]
+        self.assertIn('seek-frase', trozo)
+        self.assertIn('onclick="seekTo({{ row.seg.start_seconds }})"', trozo)
