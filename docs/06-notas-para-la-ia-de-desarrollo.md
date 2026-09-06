@@ -1533,3 +1533,13 @@ David). B=embed Spotify a 352px (152 era solo-audio). C=los ojos CIEGOS en
 silencio: YouTube solo adaptativos, selector bv*[height<=480]/bv*/best/worst
 (probado en vivo). Fleco: el fail-soft necesita contador a la vista.
 Trampa: <meta music:duration> de Spotify va en SEGUNDOS.
+
+## 81. Series 5.15-5.16: el curl muere y el DRM confiesa (2026-09-07)
+
+Informe en docs/86. 5.15=paypal_check.py (OAuth + v2/checkout/orders; 400 +
+AuditLog al pedido inventado; SDK con el MISMO client-id del .env — PayPal
+solo deja consultar a la app creadora). 5.16=DRM → FAILED honesto (el post 6
+quedo zombi en CHEAP_RUNNING: try/finally sin except). SPOTIFY NO SE PUEDE
+ANALIZAR (DRM): opciones YouTube o ingesta RSS (decision de David). Flecos:
+devolver la reserva de presupuesto al fallar; contador visible de fallos de
+la vista.
