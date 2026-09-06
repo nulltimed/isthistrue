@@ -1510,3 +1510,10 @@ msgstr "Videos"
 
 msgid "ver todas"
 msgstr "see all"
+
+# ---- 5.2-A: Qwen principal, Claude de respaldo (2026-09-06) ----
+msgid "Respaldo (Claude) si el principal falla"
+msgstr "Backup (Claude) if the primary fails"
+
+msgid "Sin respaldo (la tarea espera)"
+msgstr "No backup (the task waits)"

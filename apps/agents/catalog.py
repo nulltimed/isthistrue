@@ -28,8 +28,19 @@ daño que un vídeo que espera; un suplente bueno no hace daño ninguno.
 # veredictos ciegos, y el panel lo advierte en rojo (peticion literal de David:
 # «Este modelo no permite búsqueda web»).
 #
+# 5.2-A (orden de David, 2026-09-06): la familia Qwen3 de Alibaba es el motor
+# PRINCIPAL y Claude queda de RESPALDO por tarea (rueda «respaldo» del panel).
+# Precios Qwen: portal internacional, consultados el 2026-09-06 en fuentes
+# publicas (Alibaba no publica la tabla en la pagina fetchable); AJUSTAR aqui
+# cuando la consola de David muestre la tarifa exacta. La columna `web` en los
+# Qwen = enable_search de DashScope (fuentes en search_info; estrategia agent
+# a 10 $/1.000 busquedas, como Anthropic).
+#
 # id                       nombre visible        tier  in$/M  out$/M  web
 CATALOG = [
+    ('qwen3.8-flash',             'Qwen3.8 Flash',  1,  0.11,   0.80, True),
+    ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.39,   2.34, True),
+    ('qwen3.8-max',               'Qwen3.8 Max',    4,  0.78,   3.90, True),
     ('claude-haiku-4-5-20251001', 'Haiku 4.5',      1,   1.0,   5.0,  True),
     ('claude-sonnet-4-6',         'Sonnet 4.6',     2,   3.0,  15.0,  True),
     ('claude-opus-4-6',           'Opus 4.6',       3,   5.0,  25.0,  True),
@@ -37,6 +48,10 @@ CATALOG = [
     ('claude-opus-4-8',           'Opus 4.8',       4,   5.0,  25.0,  True),
     ('claude-fable-5',            'Fable 5',        5,  10.0,  50.0,  True),
 ]
+
+
+def provider(model_id):
+    return 'qwen' if model_id.startswith('qwen') else 'anthropic'
 
 BY_ID = {m[0]: m for m in CATALOG}
 
@@ -82,7 +97,11 @@ def substitute(model_id, need_web=False):
     queda sin suplente: en ese caso la tarea espera, que es lo honesto.
     4.4-E: si la tarea necesita buscar, el suplente también tiene que saber.
     """
+    # 5.2-A: el suplente es DEL MISMO proveedor (subir un escalon dentro de la
+    # familia). El salto ENTRE proveedores es el respaldo por tarea
+    # (fallback_for), que decide David en su panel.
     arriba = [m for m in CATALOG if m[2] > tier(model_id)
+              and provider(m[0]) == provider(model_id)
               and (not need_web or m[5])]
     if not arriba:
         return ''
@@ -94,22 +113,22 @@ def substitute(model_id, need_web=False):
 # =========================================================================
 # clave        etiqueta                         por defecto            veces por vídeo
 TASKS = [
-    ('sweep',     'Barrido de afirmaciones', 'claude-haiku-4-5-20251001', 'decenas'),
-    ('classify',  'Clasificador factual/opinión (segunda opinión)', 'claude-sonnet-4-6',
+    ('sweep',     'Barrido de afirmaciones', 'qwen3.8-flash', 'decenas'),
+    ('classify',  'Clasificador factual/opinión (segunda opinión)', 'qwen3.7-plus',
                   'solo si la regla dice opinión'),
-    ('dating',    'Fecha del suceso',        'claude-haiku-4-5-20251001', 'una'),
-    ('attribution', 'Pasada de sentido (quién dijo cada frase)', 'claude-haiku-4-5-20251001',
+    ('dating',    'Fecha del suceso',        'qwen3.8-flash', 'una'),
+    ('attribution', 'Pasada de sentido (quién dijo cada frase)', 'qwen3.8-flash',
                   'una por cada 120 frases'),
-    ('verdict',   'Veredictos con fuentes',  'claude-sonnet-4-6',         'una por afirmación'),
-    ('moderation', 'Moderación del foro',    'claude-haiku-4-5-20251001', 'una por mensaje'),
-    ('deep',      'Reanálisis profundo',     'claude-opus-4-8',           'solo si se vota'),
+    ('verdict',   'Veredictos con fuentes',  'qwen3.7-plus',         'una por afirmación'),
+    ('moderation', 'Moderación del foro',    'qwen3.8-flash', 'una por mensaje'),
+    ('deep',      'Reanálisis profundo',     'qwen3.8-max',           'solo si se vota'),
     # 4.8-B (orden de David): la CRIBA FACTUAL de las frases de voces fantasma
     # (¿contiene información verificable?) tiene su propia rueda en el panel.
-    ('innocuous', 'Criba factual de frases dudosas', 'claude-sonnet-4-6',
+    ('innocuous', 'Criba factual de frases dudosas', 'qwen3.7-plus',
                   'solo si el separador inventa voces'),
     # 5.1-D (orden de David): al proponer una categoria nueva, Sonnet la
     # contrasta con las existentes para mantener la taxonomia ordenada.
-    ('categories', 'Orden de categorías', 'claude-sonnet-4-6',
+    ('categories', 'Orden de categorías', 'qwen3.7-plus',
                    'solo al proponer una categoría nueva'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
@@ -151,6 +170,33 @@ def audio_engine_for(key):
     raise KeyError(key)
 TASK_DEFAULTS = {t[0]: t[2] for t in TASKS}
 
+# 5.2-A: el RESPALDO por tarea — el Claude que entra cuando Qwen falla (error
+# de API, clave vacia, JSON roto o negativa). Por defecto, el modelo que cada
+# tarea tenia ANTES del cambio; David lo ajusta en su panel (model_fb_<tarea>).
+FALLBACK_DEFAULTS = {
+    'sweep': 'claude-haiku-4-5-20251001',
+    'classify': 'claude-sonnet-4-6',
+    'dating': 'claude-haiku-4-5-20251001',
+    'attribution': 'claude-haiku-4-5-20251001',
+    'verdict': 'claude-sonnet-4-6',
+    'moderation': 'claude-haiku-4-5-20251001',
+    'deep': 'claude-opus-4-8',
+    'innocuous': 'claude-sonnet-4-6',
+    'categories': 'claude-sonnet-4-6',
+}
+
+
+def fallback_for(task):
+    """Respaldo Claude de la tarea. Panel > default. '' = sin respaldo."""
+    from apps.panel.models import SystemSetting
+    valor = SystemSetting.get_str(f'model_fb_{task}', '')
+    if valor == 'none':
+        return ''
+    if valor in BY_ID and provider(valor) == 'anthropic':
+        return valor
+    return FALLBACK_DEFAULTS.get(task, 'claude-sonnet-4-6')
+
+
 # Métodos de envío (la analogía del correo y el mostrador, §guía)
 DELIVERY = [
     ('batch', 'Por correo (lotes): mitad de precio, hasta 24 h de espera'),
@@ -174,6 +220,10 @@ def delivery_for(task):
     sistema usaba «Por correo». Hay candado (test) que prohibe leer
     USE_BATCH_API desde apps/."""
     if task not in BATCH_TASKS:
+        return 'direct'
+    # 5.2-A: la via de lotes es de la API de Anthropic; con un Qwen como
+    # principal, el envio es SIEMPRE directo (el panel lo dice).
+    if provider(model_for(task)) == 'qwen':
         return 'direct'
     from apps.panel.models import SystemSetting
     valor = SystemSetting.get_str(f'delivery_{task}', '')

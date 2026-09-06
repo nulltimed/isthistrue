@@ -4973,3 +4973,84 @@ class Parche51C_Temas(TestCase):
     def test_la_pagina_de_personas_existe(self):
         r = self.client.get('/wiki/personas/')
         self.assertEqual(r.status_code, 200)
+
+
+class Parche52A_QwenPrincipal(TestCase):
+    """5.2-A (orden de David): la familia Qwen3 como motor principal y Claude
+    de RESPALDO por tarea. Sin clave Qwen configurada, el respaldo entra solo:
+    la web jamas se queda muda por el cambio de proveedor."""
+
+    def test_el_catalogo_tiene_la_familia_qwen_y_los_defaults_cambiaron(self):
+        from apps.agents import catalog
+        for mid in ('qwen3.8-flash', 'qwen3.7-plus', 'qwen3.8-max'):
+            self.assertIn(mid, catalog.BY_ID)
+            self.assertTrue(catalog.supports_web(mid))
+        for tarea in catalog.TASK_KEYS:
+            self.assertTrue(catalog.TASK_DEFAULTS[tarea].startswith('qwen'),
+                            f'{tarea} no arranca en Qwen')
+            self.assertTrue(catalog.fallback_for(tarea).startswith('claude'),
+                            f'{tarea} sin respaldo Claude')
+
+    def test_el_suplente_no_cruza_de_proveedor(self):
+        from apps.agents.catalog import substitute
+        self.assertTrue((substitute('qwen3.8-flash') or 'qwen').startswith('qwen'))
+        self.assertTrue((substitute('claude-haiku-4-5-20251001') or 'claude')
+                        .startswith('claude'))
+
+    def test_sin_clave_qwen_entra_el_respaldo_claude(self):
+        from unittest import mock
+        from django.test import override_settings
+        from apps.agents import client
+        with override_settings(MOCK_AGENTS=False, QWEN_API_KEY=''), \
+             mock.patch('anthropic.Anthropic') as A, \
+             mock.patch.object(client, '_avisar_suplente'):
+            msg = mock.Mock()
+            msg.content = [mock.Mock(type='text', text='hola')]
+            A.return_value.messages.create.return_value = msg
+            texto, usado = client.call_full('qwen3.7-plus', 'sys', 'user',
+                                            fallback='claude-sonnet-4-6')
+            self.assertEqual(texto, 'hola')
+            self.assertEqual(usado, 'claude-sonnet-4-6')
+
+    def test_sin_clave_ni_respaldo_la_tarea_falla_honestamente(self):
+        from django.test import override_settings
+        from apps.agents import client
+        with override_settings(MOCK_AGENTS=False, QWEN_API_KEY=''):
+            with self.assertRaises(RuntimeError):
+                client.call_full('qwen3.7-plus', 'sys', 'user', fallback='')
+
+    def test_la_busqueda_qwen_rellena_las_fuentes_del_candado(self):
+        from unittest import mock
+        from django.test import override_settings
+        from apps.agents import client
+        respuesta = {'output': {
+            'choices': [{'message': {'content': '{"color": "GREEN"}'}}],
+            'search_info': {'search_results': [
+                {'index': 1, 'title': 'INE', 'url': 'https://ine.es/dato'}]}}}
+        fake = mock.Mock(); fake.json.return_value = respuesta
+        fake.raise_for_status = mock.Mock()
+        with override_settings(MOCK_AGENTS=False, QWEN_API_KEY='k',
+                               QWEN_BASE_URL='https://ejemplo.test'), \
+             mock.patch('requests.post', return_value=fake):
+            datos, usado = client.call_search_json('qwen3.7-plus', 'sys', 'user')
+        self.assertEqual(usado, 'qwen3.7-plus')
+        self.assertEqual(datos['color'], 'GREEN')
+        self.assertEqual(datos['sources'][0]['url'], 'https://ine.es/dato',
+                         'el candado «sin fuentes no hay color» perdió las fuentes')
+
+    def test_con_qwen_de_principal_los_lotes_se_apagan(self):
+        from apps.agents.catalog import delivery_for
+        self.assertEqual(delivery_for('verdict'), 'direct')
+
+    def test_el_panel_muestra_la_rueda_de_respaldo(self):
+        u = User.objects.create_user(username='panel52', email='p52@example.org',
+                                     password='x', is_staff=True)
+        self.client.force_login(u)
+        html = self.client.get('/panel/modelos/').content.decode()
+        self.assertIn('model_fb_verdict', html)
+        self.assertIn('Qwen3.7 Plus', html)
+
+    def test_la_privacidad_nombra_a_alibaba_y_a_claude_como_respaldo(self):
+        html = self.client.get('/legal/privacidad/').content.decode()
+        self.assertIn('Alibaba Cloud', html)
+        self.assertIn('RESPALDO', html)

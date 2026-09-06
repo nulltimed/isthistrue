@@ -35,8 +35,8 @@ def moderate_machina_post(machina_post_id):
     text = str(post.content)[:4000]
     # Mock sensible al contenido: la moderacion es reproducible por UI en el espejo
     mock = {'flag': 'insulto' in text.lower(), 'reason': 'mock: contiene marcador'}
-    from apps.agents.catalog import model_for
-    haiku = client.call_json(model_for('moderation'), HAIKU_SYSTEM, text,
+    from apps.agents.catalog import fallback_for, model_for
+    haiku = client.call_json(model_for('moderation'), HAIKU_SYSTEM, text, fallback=fallback_for('moderation'),
                              max_tokens=100, mock_payload=mock)
     prior = MPost.objects.filter(poster=post.poster, approved=True).exclude(pk=post.pk).count()
     novato = prior < 3

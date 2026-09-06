@@ -34,15 +34,33 @@ MIN_CACHE_CHARS = 4000
 
 
 def call_full(model, system, user_content, max_tokens=2000, mock_payload=None,
-              cacheable=None, allow_substitute=True):
+              cacheable=None, allow_substitute=True, fallback=''):
     """Devuelve (texto, modelo_usado).
 
     `cacheable`: bloque largo y REPETIDO entre llamadas (la transcripcion). Va
     delante y marcado, porque la cache cubre el prefijo del mensaje.
+
+    5.2-A (orden de David): si `model` es de la familia Qwen se llama a
+    DashScope; si Qwen falla (clave vacia, error de API...) y hay `fallback`
+    (el Claude de la rueda «respaldo» del panel), entra el respaldo y se deja
+    constancia. La web nunca se queda muda por el cambio de proveedor.
     """
     if settings.MOCK_AGENTS:
         return (json.dumps(mock_payload if mock_payload is not None
                            else {'simulated': True}), model)
+
+    if model.startswith('qwen'):
+        from apps.agents import qwen
+        try:
+            return qwen.call_full(model, system, user_content, max_tokens,
+                                  cacheable)
+        except Exception as exc:
+            logger.warning('Qwen %s falló (%r); respaldo: %s',
+                           model, exc, fallback or 'NINGUNO')
+            if not fallback:
+                raise
+            _avisar_suplente(model, fallback)
+            model = fallback   # sigue por la via Anthropic de abajo
 
     import anthropic
     from apps.agents.catalog import substitute
@@ -83,7 +101,7 @@ def call_full(model, system, user_content, max_tokens=2000, mock_payload=None,
 
 def call_with_search(model, system, user_content, max_tokens=2000,
                      mock_payload=None, cacheable=None, max_searches=3,
-                     allow_substitute=True):
+                     allow_substitute=True, fallback=''):
     """4.4-E (decision de David): "todo por Claude". El MODELO busca sus fuentes.
 
     Devuelve (texto, modelo_usado, n_busquedas). La herramienta de busqueda web
@@ -96,6 +114,22 @@ def call_with_search(model, system, user_content, max_tokens=2000,
     if settings.MOCK_AGENTS:
         return (json.dumps(mock_payload if mock_payload is not None
                            else {'simulated': True}), model, 0)
+
+    # 5.2-A: la via Qwen — busqueda nativa de DashScope, fuentes incluidas.
+    if model.startswith('qwen'):
+        from apps.agents import qwen
+        try:
+            texto, usado, n, fuentes = qwen.call_with_search(
+                model, system, user_content, max_tokens, cacheable, max_searches)
+            _FUENTES_QWEN.valor = fuentes   # para call_search_json (candado)
+            return texto, usado, n
+        except Exception as exc:
+            logger.warning('Qwen %s falló en búsqueda (%r); respaldo: %s',
+                           model, exc, fallback or 'NINGUNO')
+            if not fallback:
+                raise
+            _avisar_suplente(model, fallback)
+            model = fallback
 
     import anthropic
     from apps.agents.catalog import substitute, supports_web
@@ -143,12 +177,24 @@ def call_with_search(model, system, user_content, max_tokens=2000,
     raise ultimo
 
 
+import threading
+
+_FUENTES_QWEN = threading.local()   # fuentes de search_info del ultimo Qwen
+
+
 def call_search_json(model, system, user_content, max_tokens=2000,
-                     mock_payload=None, cacheable=None, max_searches=3):
-    """call_with_search + parseo JSON. Devuelve (datos, modelo_usado)."""
+                     mock_payload=None, cacheable=None, max_searches=3,
+                     fallback=''):
+    """call_with_search + parseo JSON. Devuelve (datos, modelo_usado).
+
+    5.2-A: si el JSON de Qwen no lista 'sources' pero la busqueda de DashScope
+    SI devolvio fuentes (search_info), se rellenan con ellas — el candado «sin
+    fuentes no hay color» no depende de que el modelo se acuerde de copiarlas."""
+    _FUENTES_QWEN.valor = []
     try:
         raw, usado, _n = call_with_search(model, system, user_content, max_tokens,
-                                          mock_payload, cacheable, max_searches)
+                                          mock_payload, cacheable, max_searches,
+                                          fallback=fallback)
     except Exception as exc:
         return ({'error': 'api', 'detail': repr(exc)[:200]}, model)
     raw = raw.strip().removeprefix('```json').removesuffix('```').strip()
@@ -165,23 +211,26 @@ def call_search_json(model, system, user_content, max_tokens=2000,
         datos = json.loads(raw)
     except json.JSONDecodeError:
         datos = {'error': 'json_parse', 'raw': raw[:500]}
+    fuentes = getattr(_FUENTES_QWEN, 'valor', [])
+    if isinstance(datos, dict) and not datos.get('sources') and fuentes:
+        datos['sources'] = fuentes
     return (datos, usado)
 
 
 def call(model, system, user_content, max_tokens=2000, mock_payload=None,
-         cacheable=None):
+         cacheable=None, fallback=''):
     """Compatibilidad: quien no necesite saber quién contestó sigue usando call()."""
     texto, _modelo = call_full(model, system, user_content, max_tokens,
-                               mock_payload, cacheable)
+                               mock_payload, cacheable, fallback=fallback)
     return texto
 
 
 def call_json(model, system, user_content, max_tokens=2000, mock_payload=None,
-              cacheable=None, with_model=False):
+              cacheable=None, with_model=False, fallback=''):
     """Como call() pero parsea JSON (el system prompt DEBE exigir solo-JSON)."""
     try:
         raw, usado = call_full(model, system, user_content, max_tokens,
-                               mock_payload, cacheable)
+                               mock_payload, cacheable, fallback=fallback)
     except Exception as exc:
         salida = {'error': 'api', 'detail': repr(exc)[:200]}
         return (salida, model) if with_model else salida

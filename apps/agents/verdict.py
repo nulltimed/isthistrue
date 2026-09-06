@@ -88,7 +88,7 @@ def run(post, model=None):
     # Va como bloque CACHEABLE: se paga una vez y las 80 afirmaciones lo releen a
     # una décima parte. Sin eso, esta decisión multiplicaría la factura por 2,6.
     expediente = transcript_dossier(post) if full_transcript_enabled() else None
-    from apps.agents.catalog import model_for, web_searches_per_claim
+    from apps.agents.catalog import fallback_for, model_for, web_searches_per_claim
     tope = web_searches_per_claim()
     for c in sw['claims']:
         if c.get('kind') != 'FACTUAL':
@@ -103,7 +103,8 @@ def run(post, model=None):
         v, usado = client.call_search_json(model or model_for('verdict'),
                                            prompts.VERDICT_SYSTEM, payload,
                                            max_tokens=1500, mock_payload=MOCK_VERDICT,
-                                           cacheable=expediente, max_searches=tope)
+                                           cacheable=expediente, max_searches=tope,
+                                           fallback=fallback_for('verdict'))
         if 'error' not in v:
             v['model_used'] = usado
             tiene_fuentes = bool(v.get('sources'))

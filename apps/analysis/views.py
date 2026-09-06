@@ -99,7 +99,7 @@ def _categoria_contrastada(propuesta, url):
     import json
     from django.utils.text import slugify
     from apps.agents import client, prompts
-    from apps.agents.catalog import model_for
+    from apps.agents.catalog import fallback_for, model_for
     from .models import Category
     existentes = [{'slug': s, 'nombre': n, 'usos': u}
                   for s, n, u in Category.objects.values_list(
@@ -109,7 +109,7 @@ def _categoria_contrastada(propuesta, url):
                          ensure_ascii=False)
     datos = client.call_json(
         model_for('categories'), prompts.CATEGORY_SYSTEM, payload,
-        max_tokens=150,
+        max_tokens=150, fallback=fallback_for('categories'),
         mock_payload={'accion': 'crear', 'nombre': propuesta[:40].title(),
                       'slug': slugify(propuesta)[:40]})
     if datos.get('accion') == 'usar':

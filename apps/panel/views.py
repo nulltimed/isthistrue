@@ -143,6 +143,12 @@ def models_panel(request):
             if modelo in catalog.BY_ID:
                 SystemSetting.objects.update_or_create(
                     key=f'model_{clave}', defaults={'value': modelo})
+            # 5.2-A: la rueda de RESPALDO (Claude) por tarea
+            respaldo = request.POST.get(f'model_fb_{clave}', '')
+            if respaldo == 'none' or (respaldo in catalog.BY_ID
+                                      and catalog.provider(respaldo) == 'anthropic'):
+                SystemSetting.objects.update_or_create(
+                    key=f'model_fb_{clave}', defaults={'value': respaldo})
             envio = request.POST.get(f'delivery_{clave}', '')
             if envio in catalog.DELIVERY_KEYS:
                 SystemSetting.objects.update_or_create(
@@ -172,6 +178,7 @@ def models_panel(request):
             'model': actual, 'delivery': catalog.delivery_for(clave),
             'batchable': catalog.batchable(clave),   # 4.4-G: si no, el selector mentiria
             'substitute': catalog.label(catalog.substitute(actual)),
+            'fallback': catalog.fallback_for(clave),
             'warning': catalog.warning_for(clave),
             'health': salud.get(actual),
         })
@@ -181,6 +188,8 @@ def models_panel(request):
     return render(request, 'panel/models.html', {
         'rows': filas, 'audio_rows': audio_rows,
         'catalog': catalog.CATALOG, 'deliveries': catalog.DELIVERY,
+        # 5.2-A: opciones de la rueda de respaldo (solo Claude)
+        'claudes': [m for m in catalog.CATALOG if m[0].startswith('claude')],
         'full_transcript': catalog.full_transcript_enabled_setting(),
         'cost_now': catalog.cost_per_hour_eur(),
         'cost_light': catalog.cost_per_hour_eur(full_transcript=False),

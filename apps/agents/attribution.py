@@ -14,7 +14,7 @@ ninguna persona en la wiki.
 import logging
 
 from apps.agents import client, prompts
-from apps.agents.catalog import model_for
+from apps.agents.catalog import fallback_for, model_for
 
 logger = logging.getLogger('agents.attribution')
 
@@ -52,7 +52,8 @@ def run(post):
                    + _lista(segments, desde, fin))
         try:
             datos = client.call_json(model_for('attribution'), prompts.ATTRIBUTION_SYSTEM,
-                                     payload, max_tokens=1500, mock_payload=MOCK_ATTRIBUTION)
+                                     payload, max_tokens=1500, mock_payload=MOCK_ATTRIBUTION,
+                                     fallback=fallback_for('attribution'))
         except Exception as exc:
             logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
             return vacio
@@ -62,7 +63,8 @@ def run(post):
             datos = client.call_json(model_for('attribution'),
                                      prompts.ATTRIBUTION_SYSTEM, payload,
                                      max_tokens=1500,
-                                     mock_payload=MOCK_ATTRIBUTION)
+                                     mock_payload=MOCK_ATTRIBUTION,
+                                     fallback=fallback_for('attribution'))
         if 'error' in datos:
             logger.warning('Pasada de sentido fallida en el post %s: %s', post.pk, datos.get('error'))
             return vacio
@@ -141,6 +143,7 @@ def intro_rewrite(post):
             datos = client.call_json(model_for('attribution'),
                                      prompts.INTRO_REWRITE_SYSTEM, payload,
                                      max_tokens=4000,
+                                     fallback=fallback_for('attribution'),
                                      mock_payload={'utterances': []})
         except Exception as exc:
             logger.warning('Reescritura de arranque: muestra fallida en el '
@@ -280,6 +283,7 @@ def adjudicate_minor_voices(post):
             datos = client.call_json(model_for('innocuous'),
                                      prompts.ADJUDICATE_SYSTEM,
                                      '\n'.join(bloques), max_tokens=1500,
+                                     fallback=fallback_for('innocuous'),
                                      mock_payload={'decisiones': []})
         except Exception as exc:
             logger.warning('Criba de fantasmas fallida en el post %s: %r',

@@ -269,6 +269,10 @@ RUNPOD_WHISPER_ENDPOINT = os.getenv('RUNPOD_WHISPER_ENDPOINT', '')
 # 4.7-B (decision de David): motor conjunto AssemblyAI — transcripcion y voces
 # cosidas de fabrica. Cadena: AssemblyAI -> GPU Runpod -> CPU. Sin clave, duerme.
 ASSEMBLYAI_API_KEY = os.getenv('ASSEMBLYAI_API_KEY', '')
+# 5.2-A (orden de David): la familia Qwen3 de Alibaba como motor principal.
+# Portal INTERNACIONAL (Singapur). Acepta tambien el nombre DASHSCOPE_API_KEY.
+QWEN_API_KEY = os.getenv('QWEN_API_KEY', os.getenv('DASHSCOPE_API_KEY', ''))
+QWEN_BASE_URL = os.getenv('QWEN_BASE_URL', 'https://dashscope-intl.aliyuncs.com')
 ASSEMBLYAI_TIMEOUT = int(os.getenv('ASSEMBLYAI_TIMEOUT', '900'))
 # 4.10-A: el TIMBRE — AssemblyAI nos avisa al terminar (webhook) y el worker
 # queda libre mientras cocinan. El secreto viaja en cabecera y se valida.

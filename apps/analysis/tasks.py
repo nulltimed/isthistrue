@@ -986,7 +986,7 @@ def opus_rescan_segment(segment_id, forced=False):
     from apps.agents import client, prompts
     from apps.agents.verdict import MOCK_VERDICT, transcript_dossier
     from apps.wiki.services import upsert_claim
-    from apps.agents.catalog import model_for, web_searches_per_claim
+    from apps.agents.catalog import fallback_for, model_for, web_searches_per_claim
     # 4.4-D/E (ordenes de David): expediente COMPLETO y el modelo busca sus
     # propias fuentes con la herramienta web de Anthropic. El reanalisis profundo
     # es justo donde mas falta hace: si alguien pide una segunda mirada es porque
@@ -1002,7 +1002,8 @@ def opus_rescan_segment(segment_id, forced=False):
     v, usado = client.call_search_json(model_for('deep'), prompts.VERDICT_SYSTEM,
                                        payload, max_tokens=1500,
                                        mock_payload=MOCK_VERDICT,
-                                       cacheable=expediente, max_searches=tope)
+                                       cacheable=expediente, max_searches=tope,
+                                       fallback=fallback_for('deep'))
     if 'error' not in v:
         v['model_used'] = usado
         # Mismo bug de anclaje que cerró el 4.4-B, y seguía vivo AQUI: el Meta

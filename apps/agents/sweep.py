@@ -55,9 +55,10 @@ def run(post):
         lotes += 1
         payload = '\n'.join(f'[{start + j}] ({s.start_seconds:.0f}s) {s.text}'
                              for j, s in enumerate(lote))
-        from apps.agents.catalog import model_for
+        from apps.agents.catalog import fallback_for, model_for
         result = client.call_json(model_for('sweep'), prompts.SWEEP_SYSTEM,
-                                  payload, max_tokens=max_tokens,
+                                  payload, fallback=fallback_for('sweep'),
+                                  max_tokens=max_tokens,
                                   mock_payload=MOCK_SWEEP)
         if not isinstance(result, dict) or 'error' in result:
             fallidos += 1
