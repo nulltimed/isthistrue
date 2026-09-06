@@ -55,14 +55,41 @@
       if (isFinite(ini) && t >= ini && (!isFinite(fin) || t < fin)) { actual = segs[i]; break; }
     }
     if (actual && actual !== liveSeg) {
-      if (liveSeg) liveSeg.classList.remove('live');
+      if (liveSeg) { liveSeg.classList.remove('live'); quitarKaraoke(liveSeg); }
       actual.classList.add('live');
       actual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       liveSeg = actual;
     }
+    /* 5.3-B (orden de David): el marcado AVANZA con el habla — la parte ya
+     * dicha se cubre en blanco con letra negra (barrido karaoke), en vez de
+     * iluminarse la intervencion entera de golpe. */
+    if (actual) pintarKaraoke(actual, t);
     // la ficha del hablante sigue a la frase activa (o se apaga si no hay ninguna)
     iluminarHablante(actual ? actual.getAttribute('data-spk') : null);
-  }, 500);
+  }, 250);
+
+  function pintarKaraoke(seg, t) {
+    var texto = seg.querySelector('.text');
+    if (!texto) return;
+    var ini = parseFloat(seg.getAttribute('data-start'));
+    var fin = parseFloat(seg.getAttribute('data-end'));
+    if (!isFinite(ini) || !isFinite(fin) || fin <= ini) return;
+    var pct = Math.max(0, Math.min(100, (t - ini) / (fin - ini) * 100));
+    var capa = seg.querySelector('.karaoke-cap');
+    if (!capa) {
+      if (getComputedStyle(texto).position === 'static') texto.style.position = 'relative';
+      capa = document.createElement('span');
+      capa.className = 'karaoke-cap';
+      capa.setAttribute('aria-hidden', 'true');
+      capa.textContent = texto.textContent;
+      texto.appendChild(capa);
+    }
+    capa.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+  }
+  function quitarKaraoke(seg) {
+    var capa = seg.querySelector('.karaoke-cap');
+    if (capa) capa.remove();
+  }
 
   // seekTo global: los timestamps [12s] ya la invocan desde la plantilla.
   window.seekTo = function (s) {
