@@ -57,7 +57,19 @@
     if (actual && actual !== liveSeg) {
       if (liveSeg) { liveSeg.classList.remove('live'); quitarKaraoke(liveSeg); }
       actual.classList.add('live');
-      actual.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      /* 5.13-A (orden de David): la intervencion viva queda como PENULTIMA
+       * visible — el lector ve siempre, como minimo, la SIGUIENTE intervencion
+       * a la que se esta haciendo karaoke. Se alinea el final de la siguiente
+       * con el fondo de la caja (scroll interno de .transcript-box). */
+      var siguiente = actual.nextElementSibling;
+      while (siguiente && !siguiente.classList.contains('segment')) {
+        siguiente = siguiente.nextElementSibling;
+      }
+      var objetivo = siguiente || actual;
+      var r = objetivo.getBoundingClientRect(), rb = box.getBoundingClientRect();
+      /* scroll SOLO de la caja (jamas de la pagina — orden 5.10-C) */
+      box.scrollTo({ top: box.scrollTop + (r.bottom - rb.bottom) + 4,
+                     behavior: 'smooth' });
       liveSeg = actual;
     }
     /* 5.3-B (orden de David): el marcado AVANZA con el habla — la parte ya

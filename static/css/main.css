@@ -704,3 +704,6 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 /* 5.11-C: la frase incierta entera es clicable (salta al segundo anterior). */
 .uncertain-list .seek-frase{cursor:pointer}
 .uncertain-list .seek-frase:hover{text-decoration:underline}
+
+/* 5.13-C: la insignia de apadrinamiento, a la vista en los listados. */
+.badge-apadrina{background:#f5c518;color:#141414;text-decoration:none}

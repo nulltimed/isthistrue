@@ -23,7 +23,7 @@
 
   <h3>{% trans "Los más nuevos" %}</h3>
   <ul class="post-list">
-    {% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a></li>
+    {% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a>{% if p.status == 'AWAITING_BUDGET' %} <a class="badge badge-apadrina" href="{{ p.get_absolute_url }}">💛 {% trans "Apadrinable" %}</a>{% endif %}</li>
     {% empty %}<li class="hint">{% trans "Nada por aquí todavía." %}</li>{% endfor %}
   </ul>
 
@@ -44,7 +44,7 @@
 
   <h3>{% trans "Los más nuevos" %}</h3>
   <ul class="post-list">
-    {% for p in off_nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a></li>
+    {% for p in off_nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a>{% if p.status == 'AWAITING_BUDGET' %} <a class="badge badge-apadrina" href="{{ p.get_absolute_url }}">💛 {% trans "Apadrinable" %}</a>{% endif %}</li>
     {% empty %}<li class="hint">{% trans "Vacío por ahora." %}</li>{% endfor %}
   </ul>
 

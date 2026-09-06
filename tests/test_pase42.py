@@ -5989,3 +5989,65 @@ class Parche512_HistorialDelClaim(TestCase):
         t = open('templates/analysis/claim_detail.html').read()
         self.assertNotIn('#seg-', t, '5.10-C: sin scroll automatico al entrar')
         self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', t)
+
+
+class Parche513_Serie(TestCase):
+    """5.13 (tres ordenes de David): A=el karaoke deja SIEMPRE visible la
+    siguiente intervencion (scroll solo de la caja); C=duracion real de
+    Spotify + mensajes honestos + apadrinamiento ATADO al post y A LA VISTA."""
+
+    def test_el_scroll_del_karaoke_es_de_la_caja_y_deja_ver_la_siguiente(self):
+        js = open('static/js/transcript.js').read()
+        self.assertIn('nextElementSibling', js)
+        self.assertIn('box.scrollTo', js)
+        self.assertNotIn("scrollIntoView({ block: 'nearest'", js)
+
+    def test_la_donacion_atada_lanza_el_analisis_al_verificarse(self):
+        from decimal import Decimal
+        from apps.panel.models import Donation
+        from apps.accounts.models import User
+        u = make_user(username='ap513', email='ap513@example.org')
+        User.objects.filter(pk=u.pk).update(is_staff=True, is_superuser=True)
+        post = Post.objects.create(author=u, url='https://youtu.be/ap513',
+                                   title='En cola', status='AWAITING_BUDGET',
+                                   duration_seconds=5400)
+        d = Donation.objects.create(amount_eur=Decimal('99.00'), method='PAYPAL',
+                                    note='paypal-web:t513', verified=False,
+                                    post=post)
+        self.client.force_login(User.objects.get(pk=u.pk))
+        from unittest import mock
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanza:
+            self.client.post('/panel/donaciones/',
+                             {'accion': 'confirmar', 'id': d.pk})
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'PENDING')
+        lanza.assert_called_once_with(post.pk)
+
+    def test_la_captura_web_ata_el_post(self):
+        import json
+        from apps.panel.models import Donation
+        u = make_user(username='cw513', email='cw513@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/cw513',
+                                   status='AWAITING_BUDGET')
+        self.client.post('/donaciones/registrar/',
+                         json.dumps({'amount': '11.00', 'order': 'ORD513',
+                                     'post': post.pk}),
+                         content_type='application/json')
+        d = Donation.objects.get(note='paypal-web:ORD513')
+        self.assertEqual(d.post_id, post.pk)
+        self.assertFalse(d.verified)
+
+    def test_el_apadrinamiento_esta_a_la_vista_en_el_foro(self):
+        u = make_user(username='vis513', email='vis513@example.org')
+        Post.objects.create(author=u, url='https://youtu.be/vis513',
+                            title='Esperando padrino', status='AWAITING_BUDGET')
+        html = self.client.get('/foro/').content.decode()
+        self.assertIn('Apadrinable', html)
+
+    def test_probe_lee_la_duracion_de_spotify(self):
+        t = open('apps/embeds/adapters.py').read()
+        self.assertIn('duration_ms', t)
+        self.assertIn("'spotify.com' in url", t)
+        # y el mensaje del submit ya no MIENTE con duracion desconocida
+        v = open('apps/analysis/views.py').read()
+        self.assertIn('No he podido leer la duración', v)

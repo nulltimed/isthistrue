@@ -71,12 +71,33 @@ def probe(url, platform):
             info = ydl.extract_info(url, download=False) or {}
     except Exception as exc:
         logger.warning('Pre-chequeo del vídeo %s omitido: %r', url, exc)
+        if 'spotify.com' in url:
+            d = _duracion_spotify(url)
+            if d:
+                return dict(vacio, ok=True, duration_seconds=d)
         return dict(vacio, reason=str(exc)[:200])
+    dur = int(info.get('duration') or 0)
+    # 5.13-C (reporte de David: un podcast de 13 min anunciado como «90 minutos»):
+    # yt-dlp no lee la duracion de Spotify; su pagina publica lleva duration_ms.
+    if not dur and 'spotify.com' in url:
+        dur = _duracion_spotify(url)
     return {'ok': True,
             'title': str(info.get('title') or '')[:300],
-            'duration_seconds': int(info.get('duration') or 0),
+            'duration_seconds': dur,
             'age_limit': int(info.get('age_limit') or 0),
             'reason': ''}
+
+
+def _duracion_spotify(url):
+    import re
+    import requests
+    try:
+        h = requests.get(url, timeout=8,
+                         headers={'User-Agent': 'Mozilla/5.0'}).text
+        m = re.search(r'"duration_ms"\s*:\s*(\d+)', h)
+        return int(m.group(1)) // 1000 if m else 0
+    except Exception:
+        return 0
 
 
 def detect_platform(url):

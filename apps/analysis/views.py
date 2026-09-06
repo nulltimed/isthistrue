@@ -231,11 +231,20 @@ def submit(request):
                          'irá a la sala para mayores de edad y no aparecerá en portada.')
     from .services import free_minutes, suggested_donation_eur, video_minutes
     donacion = suggested_donation_eur(post)
-    if donacion:
+    # 5.13-C (reporte de David): con la duracion DESCONOCIDA se reservaba el
+    # maximo y el mensaje MENTIA («dura 90 minutos»). La reserva prudente se
+    # queda; el mensaje dice la verdad.
+    dur_conocida = bool(post.duration_seconds)
+    if donacion and dur_conocida:
         messages.info(request, f'Este vídeo dura {video_minutes(post)} minutos y se '
                       f'analizará entero. Por encima de {free_minutes()} minutos el coste '
                       f'lo sostienen las donaciones: si puedes, una de {donacion:.2f} € '
                       f'cubre este análisis. No es obligatoria y tu vídeo ya está en cola.')
+    elif donacion:
+        messages.info(request, f'No he podido leer la duración de este contenido: se '
+                      f'reserva el máximo ({video_minutes(post)} minutos) y lo no usado '
+                      f'se libera al transcribir. Si puedes, una donación de hasta '
+                      f'{donacion:.2f} € ayuda a costearlo. No es obligatoria.')
 
     # 4.3-F (decisión de David): si el vídeo se lleva más de media asignación
     # diaria, NO se analiza al momento. Entra en cola y se lanza cuando haya
@@ -246,11 +255,12 @@ def submit(request):
     if a_la_cola:
         post.status = 'AWAITING_BUDGET'
         post.save(update_fields=['status'])
+        aprox = 'unos' if dur_conocida else 'como máximo'
         messages.info(request, f'Este vídeo se lleva más de media asignación diaria '
-                      f'(cuesta unos {coste:.2f} €), así que entra en cola: se '
+                      f'(cuesta {aprox} {coste:.2f} €), así que entra en cola: se '
                       f'analizará solo en cuanto haya depósito, normalmente mañana. '
-                      f'Si quieres que salga antes, puedes apadrinarlo con una '
-                      f'donación de {sugerida:.2f} €.')
+                      f'Si quieres que salga antes, puedes apadrinarlo aquí abajo: '
+                      f'esa donación queda atada a ESTE análisis.')
         return redirect('post_detail', pk=post.pk)
 
     run_cheap_phase.delay(post.pk)
@@ -1148,8 +1158,17 @@ def donation_capture(request):
     from django.http import JsonResponse
     if Donation.objects.filter(note=nota).exists():   # idempotente
         return JsonResponse({'ok': True, 'dup': True})
+    # 5.13-C (orden de David): el apadrinamiento queda ATADO a su post — al
+    # verificarla David, si lo donado cubre el coste, el analisis se lanza solo.
+    post_ap = None
+    try:
+        pk_ap = int(datos.get('post') or 0)
+        if pk_ap:
+            post_ap = Post.objects.filter(pk=pk_ap).first()
+    except (TypeError, ValueError):
+        post_ap = None
     Donation.objects.create(amount_eur=cantidad, method='PAYPAL',
-                            note=nota, verified=False)
+                            note=nota, verified=False, post=post_ap)
     return JsonResponse({'ok': True})
 
 

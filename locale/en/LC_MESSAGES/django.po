@@ -1684,3 +1684,13 @@ msgstr "Back to the current verification"
 
 msgid "Todavía no hay re-verificaciones: esta es la primera y única versión."
 msgstr "No re-verifications yet: this is the first and only version."
+
+# 5.13: apadrinamiento a la vista
+msgid "Apadrinable"
+msgstr "Sponsorable"
+
+msgid "¿Tienes prisa? Apadrínalo con una donación de %(d)s €: quedará atada a ESTE análisis y, en cuanto se verifique, saldrá de la cola."
+msgstr "In a hurry? Sponsor it with a %(d)s € donation: it will be tied to THIS analysis and, once verified, it will leave the queue."
+
+msgid "¡Apadrinado! En cuanto se verifique la donación, el análisis saldrá de la cola."
+msgstr "Sponsored! As soon as the donation is verified, the analysis will leave the queue."

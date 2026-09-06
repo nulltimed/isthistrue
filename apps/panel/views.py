@@ -312,6 +312,22 @@ def donations_panel(request):
             AuditLog.objects.create(user=request.user, action='donation_verify',
                                     detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
             messages.success(request, f'Donación de {d.amount_eur} € confirmada.')
+            # 5.13-C (orden de David): si la donacion venia ATADA a un post en
+            # cola y lo apadrinado verificado cubre su coste, el analisis sale.
+            if d.post and d.post.status == 'AWAITING_BUDGET':
+                from django.db.models import Sum
+                from apps.analysis.services import needs_sponsorship
+                _, coste, _ = needs_sponsorship(d.post)
+                atado = float(Donation.objects.filter(
+                    post=d.post, verified=True).aggregate(
+                        s=Sum('amount_eur'))['s'] or 0)
+                if atado >= float(coste):
+                    from apps.analysis.tasks import run_cheap_phase
+                    d.post.status = 'PENDING'
+                    d.post.save(update_fields=['status'])
+                    run_cheap_phase.delay(d.post.pk)
+                    messages.success(request, f'Post {d.post.pk} apadrinado al '
+                                              f'completo: análisis LANZADO.')
         elif d and request.POST.get('accion') == 'descartar':
             AuditLog.objects.create(user=request.user, action='donation_discard',
                                     detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')

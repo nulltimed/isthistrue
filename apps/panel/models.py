@@ -74,6 +74,11 @@ class Donation(models.Model):
     # cuentan en el «Faltan X EUR» publico. Las que añade David a mano nacen
     # verificadas.
     verified = models.BooleanField(default=True)
+    # 5.13-C (orden de David): el APADRINAMIENTO va atado al post concreto —
+    # una donacion con post cubre ESE analisis; al verificarla David, si el
+    # post espera en cola y lo donado alcanza su coste, se lanza solo.
+    post = models.ForeignKey('analysis.Post', null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name='sponsorships')
     created_at = models.DateTimeField(auto_now_add=True)
 
 

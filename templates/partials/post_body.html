@@ -107,8 +107,36 @@
     <div class="validation queued">
       <p><strong>{% trans "En cola por presupuesto." %}</strong>
         {% blocktrans with c=queue_cost %}Este vídeo se lleva más de media asignación diaria (cuesta unos {{ c }} €), así que espera turno: se analizará solo en cuanto haya depósito, normalmente mañana.{% endblocktrans %}</p>
-      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} € y sale ahora.{% endblocktrans %}
-        <a class="btn" href="{% url 'donations' %}">{% trans "Apadrinar este análisis" %}</a></p>
+      {# 5.13-C (orden de David): el apadrinamiento va ATADO a este post — el #}
+      {# boton dona la cantidad EXACTA y la donacion queda ligada al analisis. #}
+      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} €: quedará atada a ESTE análisis y, en cuanto se verifique, saldrá de la cola.{% endblocktrans %}</p>
+      <div id="paypal-apadrinar" data-post="{{ post.pk }}" data-eur="{{ queue_sponsor }}"></div>
+      <script>
+      (function () {
+        var caja = document.getElementById('paypal-apadrinar');
+        if (!caja || !window.paypal) return;
+        var eur = parseFloat((caja.dataset.eur || '0').replace(',', '.')).toFixed(2);
+        paypal.Buttons({
+          style: { shape: 'pill', color: 'gold', layout: 'horizontal', height: 35, tagline: false },
+          createOrder: function (d, a) {
+            return a.order.create({ purchase_units: [{ amount: { value: eur, currency_code: 'EUR' } }] });
+          },
+          onApprove: function (d, a) {
+            return a.order.capture().then(function () {
+              try {
+                fetch('{% url "donation_capture" %}', { method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ amount: eur, order: d.orderID || '',
+                                         post: caja.dataset.post }) });
+              } catch (e) {}
+              caja.innerHTML = '<strong>🎉 {% trans "¡Apadrinado! En cuanto se verifique la donación, el análisis saldrá de la cola." %}</strong>';
+            });
+          }
+        }).render('#paypal-apadrinar').catch(function () {
+          caja.innerHTML = '<a class="btn" href="/donaciones/">{% trans "Apadrinar este análisis" %}</a>';
+        });
+      })();
+      </script>
       <p class="hint">{% trans "El proyecto no cobra por publicar: la donación es voluntaria y el vídeo se analizará igualmente cuando llegue su turno." %}</p>
       {% if is_mod %}
       <form method="post" action="{% url 'post_greenlight' post.pk %}">{% csrf_token %}
