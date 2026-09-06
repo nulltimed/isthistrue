@@ -284,6 +284,22 @@ def complaints(request):
 @staff_member_required
 def donations_panel(request):
     from .models import Donation, SystemSetting
+    if request.method == 'POST' and request.POST.get('accion'):
+        # 5.3-A: confirmar/descartar las donaciones capturadas por el boton web
+        d = Donation.objects.filter(pk=request.POST.get('id'),
+                                    verified=False).first()
+        if d and request.POST.get('accion') == 'confirmar':
+            d.verified = True
+            d.save(update_fields=['verified'])
+            AuditLog.objects.create(user=request.user, action='donation_verify',
+                                    detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
+            messages.success(request, f'Donación de {d.amount_eur} € confirmada.')
+        elif d and request.POST.get('accion') == 'descartar':
+            AuditLog.objects.create(user=request.user, action='donation_discard',
+                                    detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
+            d.delete()
+            messages.success(request, 'Registro descartado.')
+        return redirect('panel_donations')
     if request.method == 'POST':
         amt = request.POST.get('amount', '').replace(',', '.')
         try:
@@ -297,8 +313,10 @@ def donations_panel(request):
         except ValueError:
             messages.error(request, 'Importe no válido.')
         return redirect('panel_donations')
-    items = Donation.objects.order_by('-created_at')[:100]
-    return render(request, 'panel/donations.html', {'items': items})
+    items = Donation.objects.filter(verified=True).order_by('-created_at')[:100]
+    pendientes = Donation.objects.filter(verified=False).order_by('-created_at')
+    return render(request, 'panel/donations.html',
+                  {'items': items, 'pendientes': pendientes})
 
 
 @staff_member_required
@@ -349,29 +367,3 @@ def moderator_settings_panel(request):
         return redirect('panel_moderator_settings')
     values = [(key, label, SystemSetting.get_int(key, 5)) for key, label in KEYS]
     return render(request, 'panel/moderator_settings.html', {'values': values})
-
-
-@staff_member_required
-def donations_panel(request):
-    """5.3-A: cola de donaciones del boton web (sin verificar) para que David
-    las confirme contra su cuenta PayPal — solo lo confirmado sube el tope."""
-    from .models import Donation
-    if request.method == 'POST':
-        d = Donation.objects.filter(pk=request.POST.get('id'),
-                                    verified=False).first()
-        if d and request.POST.get('accion') == 'confirmar':
-            d.verified = True
-            d.save(update_fields=['verified'])
-            AuditLog.objects.create(user=request.user, action='donation_verify',
-                                    detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
-            messages.success(request, f'Donación de {d.amount_eur} € confirmada.')
-        elif d and request.POST.get('accion') == 'descartar':
-            AuditLog.objects.create(user=request.user, action='donation_discard',
-                                    detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
-            d.delete()
-            messages.success(request, 'Registro descartado.')
-        return redirect('panel_donations')
-    pendientes = Donation.objects.filter(verified=False).order_by('-created_at')
-    recientes = Donation.objects.filter(verified=True).order_by('-created_at')[:20]
-    return render(request, 'panel/donations.html',
-                  {'pendientes': pendientes, 'recientes': recientes})

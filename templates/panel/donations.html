@@ -1,8 +1,17 @@
 {% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Panel · Donaciones" %}{% endblock %}
 {% block content %}
-<h1>{% trans "Donaciones" %}</h1>
-<p class="hint">{% trans "Las del botón PayPal de la web entran aquí SIN verificar. Compara con tu cuenta de PayPal y confirma: solo lo confirmado sube el tope de gasto y cuenta en el «Faltan X €»." %}</p>
+{% include 'partials/panel_nav.html' %}
+<p class="hint">Registra aquí cada donación recibida: el depósito del mes crece al instante (hasta el techo duro).</p>
+<form method="post">{% csrf_token %}
+  <label>Importe (€)<input name="amount" required placeholder="5.00"></label>
+  <label>Método<select name="method"><option value="PAYPAL">PayPal</option><option value="BIZUM">Bizum</option><option value="OTHER">Otro</option></select></label>
+  <label>Nota<input name="note" placeholder="opcional"></label>
+  <button>Registrar</button>
+</form>
+{# 5.3-A: las donaciones del boton PayPal de la web entran SIN verificar #}
 <h2>{% trans "Pendientes de confirmar" %} <span class="badge">{{ pendientes|length }}</span></h2>
+<p class="hint">{% trans "Las del botón PayPal de la web entran aquí SIN verificar. Compara con tu cuenta de PayPal y confirma: solo lo confirmado sube el tope de gasto y cuenta en el «Faltan X €»." %}</p>
 <ul class="post-list">
 {% for d in pendientes %}
   <li><strong>{{ d.amount_eur }} €</strong> · {{ d.created_at|date:'d/m/Y H:i' }} · <code>{{ d.note }}</code>
@@ -11,9 +20,7 @@
       <button name="accion" value="descartar" class="mini danger">{% trans "Descartar" %}</button></form></li>
 {% empty %}<li class="hint">{% trans "Nada pendiente." %}</li>{% endfor %}
 </ul>
-<h2>{% trans "Confirmadas recientes" %}</h2>
-<ul class="post-list">
-{% for d in recientes %}<li>{{ d.amount_eur }} € · {{ d.get_method_display }} · {{ d.created_at|date:'d/m/Y' }} {% if d.note %}· <span class="hint">{{ d.note|truncatechars:40 }}</span>{% endif %}</li>
-{% empty %}<li class="hint">—</li>{% endfor %}
-</ul>
+<h2>Historial</h2>
+<table><tr><th>Fecha</th><th>Importe</th><th>Método</th><th>Nota</th></tr>
+{% for d in items %}<tr><td>{{ d.created_at|date:'d/m/Y' }}</td><td>{{ d.amount_eur }} €</td><td>{{ d.get_method_display }}</td><td>{{ d.note }}</td></tr>{% endfor %}</table>
 {% endblock %}

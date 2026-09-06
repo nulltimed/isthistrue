@@ -4,7 +4,6 @@ urlpatterns = [
     path('codes/', views.codes, name='panel_codes'),
     path('settings/', views.settings_panel, name='panel_settings'),
     path('modelos/', views.models_panel, name='panel_models'),  # 4.4-C
-    path('donaciones/', views.donations_panel, name='panel_donations'),  # 5.3-A
     path('staging/', views.staging_invites, name='panel_staging'),
     path('reclamaciones/', views.complaints, name='panel_complaints'),
     path('donaciones/', views.donations_panel, name='panel_donations'),
