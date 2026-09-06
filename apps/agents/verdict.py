@@ -94,9 +94,11 @@ def _verificar_uno(c, post, fecha, tope, expediente, model, en_hilo=True):
         except Exception:
             pass
         _m, _fb = models_for_post('verdict', post)
+        # 5.22-c: 1500 tokens truncaban el JSON con el contexto 2+2 y el
+        # modelo exprimido (la MISMA leccion del clarificador) — mas aire.
         v, usado = client.call_search_json(model or _m,
                                            sistema, payload,
-                                           max_tokens=1500, mock_payload=MOCK_VERDICT,
+                                           max_tokens=2500, mock_payload=MOCK_VERDICT,
                                            cacheable=expediente, max_searches=tope,
                                            fallback=_fb)
         return (c, v, usado, hallazgo, es_opinion)
