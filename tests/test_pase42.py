@@ -719,7 +719,7 @@ class Pase43A7(TestCase):
         post = self._post_con_frases(95)          # 95 frases -> 3 lotes de 40/40/15
         vistos = []
 
-        def fake_call_json(model, system, payload, max_tokens=2000, mock_payload=None):
+        def fake_call_json(model, system, payload, max_tokens=2000, mock_payload=None, **kw):
             vistos.append((payload, max_tokens))
             primera = int(payload.splitlines()[0].split(']')[0].lstrip('['))
             return {'claims': [{'segment_index': primera, 'text': 'x',
