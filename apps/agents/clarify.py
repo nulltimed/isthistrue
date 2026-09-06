@@ -132,17 +132,31 @@ def run_pending(post, limit=25):
     from apps.wiki.models import Claim
     if SystemSetting.get_int('clarify_pass', 1) <= 0:
         return 0
+    from concurrent.futures import ThreadPoolExecutor
+    from django.db import close_old_connections
+    from apps.analysis.models import DailyBudget
+    from apps.agents.verdict import parallel_workers
     qs = Claim.objects.filter(color='UNDECIDED',
                               appearances__segment__post=post).distinct()
-    resueltos = 0
+    # 5.21 (orden de David: «paraleliza siempre»): el fusible se pasa EN SERIE
+    # (una reserva por claim, sin carreras) y las clarificaciones caras corren
+    # en el pool. clarify_claim escribe cada una su PROPIO claim: sin choques.
+    admitidos = []
     for c in qs[:limit]:
-        from apps.analysis.models import DailyBudget
         if not DailyBudget.try_spend(COST_PER_CLAIM_EUR):
             logger.warning('Clarificador: presupuesto agotado (post %s)', post.pk)
             break
+        admitidos.append(c)
+
+    def _uno(c):
         try:
-            if clarify_claim(c) not in (None, 'UNDECIDED'):
-                resueltos += 1
+            return clarify_claim(c)
         except Exception as exc:
             logger.warning('Clarificador fallo con el claim %s (%r)', c.pk, exc)
-    return resueltos
+            return None
+        finally:
+            close_old_connections()
+
+    with ThreadPoolExecutor(max_workers=parallel_workers()) as pool:
+        colores = list(pool.map(_uno, admitidos))
+    return sum(1 for col in colores if col not in (None, 'UNDECIDED'))

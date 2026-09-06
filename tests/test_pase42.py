@@ -6331,3 +6331,50 @@ class Parche520_GestionDelPost(TestCase):
         post.refresh_from_db()
         self.assertFalse(post.censored)
         self.assertTrue(Post.objects.filter(pk=post.pk).exists())
+
+
+class Parche521_ParalelizaSiempre(TestCase):
+    """5.21 (orden de David: «paraleliza siempre»): las llamadas caras de los
+    veredictos y del clarificador corren en pool; la escritura en la wiki, en
+    serie (el dedupe por embedding no tolera carreras — leccion 5.1-B)."""
+
+    def test_el_pool_existe_y_la_escritura_va_en_serie(self):
+        import inspect
+        from apps.agents import verdict as va, clarify
+        fuente = inspect.getsource(va.run)
+        self.assertIn('ThreadPoolExecutor', fuente)
+        self.assertIn('upsert_claim', fuente)
+        # el upsert va DESPUES del pool (bloque en serie), jamas dentro del hilo
+        self.assertNotIn('upsert_claim', inspect.getsource(va._verificar_uno))
+        self.assertIn('ThreadPoolExecutor', inspect.getsource(clarify.run_pending))
+
+    def test_dos_claims_en_paralelo_producen_sus_dos_veredictos(self):
+        from unittest import mock
+        from apps.agents import verdict as va
+        u = make_user(username='pl521', email='pl521@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/pl521',
+                                   platform='youtube', title='P')
+        for i, txt in enumerate(['El paro bajó un 3%', 'El PIB creció un 2%']):
+            post.transcript_segments.create(start_seconds=i * 10,
+                                            end_seconds=i * 10 + 5, text=txt,
+                                            signal='FACTUAL_UNVERIFIED')
+        def falso(model, system, payload, **kw):
+            return ({'color': 'GREEN', 'what_is_claimed': payload[:40],
+                     'sources': [{'url': 'https://x'}]}, model)
+        with mock.patch.object(va.client, 'call_search_json', side_effect=falso), \
+             mock.patch('apps.agents.vision.mirar', return_value=None), \
+             mock.patch('apps.wiki.services._titulo_ia', return_value='t'):
+            va.run(post)
+        from apps.wiki.models import Claim
+        self.assertEqual(Claim.objects.filter(
+            appearances__segment__post=post).distinct().count(), 2)
+
+    def test_la_rueda_del_panel_manda(self):
+        from apps.panel.models import SystemSetting
+        from apps.agents.verdict import parallel_workers
+        SystemSetting.objects.update_or_create(key='verdict_parallel',
+                                               defaults={'value': '9'})
+        self.assertEqual(parallel_workers(), 9)
+        SystemSetting.objects.update_or_create(key='verdict_parallel',
+                                               defaults={'value': '99'})
+        self.assertEqual(parallel_workers(), 12, 'tope de cordura')

@@ -81,6 +81,10 @@ SETTINGS_DEF = [
      'Los ojos (rueda «La vista» de modelos) miran fotogramas de CADA frase '
      'analizada y su hallazgo entra en el veredicto (5.5-G: análisis completo, '
      'sin esperar palabras clave). 1 = encendida, 0 = apagada.', 'num'),
+    ('verdict_parallel', 'Afirmaciones en paralelo',
+     'Cuántas afirmaciones se verifican A LA VEZ (búsquedas y ojos en '
+     'paralelo; la escritura en la wiki sigue en serie). 4 de fábrica; '
+     'máximo 12. Orden de David: «paraleliza siempre».', 'num'),
     ('clarify_pass', 'Clarificador de sin-resolver',
      'Tras los veredictos, los claims 🔍 reciben una segunda pasada de última '
      'instancia con el modelo de reanálisis profundo y el doble de búsquedas '

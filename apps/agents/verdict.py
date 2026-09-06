@@ -60,60 +60,25 @@ def build_payload(c, fecha, tope):
               f"reales que uses. Si no encuentras nada útil: UNDECIDED.")
 
 
-def run(post, model=None):
-    """4.4-B: dos fallos de raiz arreglados aqui.
-
-    1) LAS OPINIONES SE ESTABAN PAGANDO. La linea `if kind != FACTUAL: pass` no
-       hacia nada — literalmente un `pass` vacio — asi que el bucle seguia y
-       gastaba una verificacion completa (busquedas + Sonnet) en frases como
-       «Cataluña es una nacion», que por definicion no se verifican. En los datos
-       de produccion del 2026-08-23 sobraban veredictos en los tres videos: 17
-       frases factuales y 32 veredictos en el post 4. Cerca de un tercio del gasto
-       de la fase cara se iba en esto, y encima llenaba la wiki de grises.
-
-    2) SIN FUENTES SE PINTABA IGUAL. Si la busqueda volvia vacia se llamaba al
-       modelo caro de todas formas, y el modelo — honradamente — decia que no
-       tenia datos y salia gris. Pagar Sonnet para que diga que no sabe nada.
-       Ahora, sin fuentes no se llama: la afirmacion queda UNDECIDED y el lector
-       puede pedir el reanalisis profundo.
-    """
-    from apps.wiki.services import upsert_claim
-    sw = sweep.run(post) if not post.transcript_segments.filter(
-        signal__isnull=False).exclude(signal='').exists() else {
-        'claims': _claims_from_segments(post)}
-    fecha = post.event_date.isoformat() if post.event_date else None
-    # 4.4-C (decisión de David): al verificador se le pasa la TRANSCRIPCIÓN ENTERA
-    # con sus marcas de tiempo, los metadatos del vídeo, y la frase con su
-    # contexto. Sin el debate completo, «estos dos hombres» no se entiende.
-    # Va como bloque CACHEABLE: se paga una vez y las 80 afirmaciones lo releen a
-    # una décima parte. Sin eso, esta decisión multiplicaría la factura por 2,6.
-    expediente = transcript_dossier(post) if full_transcript_enabled() else None
-    from apps.agents.catalog import fallback_for, model_for, models_for_post, web_searches_per_claim
-    tope = web_searches_per_claim()
-    for c in sw['claims']:
-        # 5.3-C (orden de David, revierte el descarte del 4.4-B): las OPINIONES
-        # tambien se analizan A FONDO — por su LOGICA (premisas comprobadas con
-        # busqueda + razonamiento examinado), nunca por su «verdad». Prima la
-        # calidad del analisis sobre el tiempo de espera (palabras de David).
-        es_opinion = c.get('kind') == 'OPINION'
-        if not es_opinion and c.get('kind') != 'FACTUAL':
-            continue          # senales vacias o basura: fuera
+def _verificar_uno(c, post, fecha, tope, expediente, model):
+    """5.21 (orden de David: «paraleliza siempre»): el trabajo CARO de una
+    afirmacion — ojos + busquedas del verificador — aislado para correr en un
+    hilo del pool. Devuelve (c, v, usado, hallazgo) o None si no toca.
+    Higiene de hilo: apuntes con su post y conexion de BD cerrada al salir."""
+    from django.db import close_old_connections
+    from apps.analysis import costs as _costs
+    from apps.agents import vision
+    from apps.agents.catalog import models_for_post
+    es_opinion = c.get('kind') == 'OPINION'
+    if not es_opinion and c.get('kind') != 'FACTUAL':
+        return None          # senales vacias o basura: fuera
+    _costs.set_post(post)
+    try:
         sistema = prompts.OPINION_VERDICT_SYSTEM if es_opinion \
             else prompts.VERDICT_SYSTEM
-        # 4.4-E (decision de David): "todo por Claude". Ya no hay documentalista
-        # aparte: EL MODELO busca sus fuentes con la herramienta web de Anthropic
-        # (10 $/1.000 + tokens), con las fuentes oficiales por delante y el tope
-        # del panel. SearXNG queda fuera del circuito de veredictos: los
-        # buscadores le cerraban la puerta al servidor y el semaforo se quedaba
-        # en 🔍 por falta de papeles.
         payload = build_payload(c, fecha, tope)
-        # 5.5-D/G (ordenes de David): los ojos miran TODAS las frases analizadas
-        # («el análisis del vídeo debe ser completo, no sólo esperando a
-        # palabras clave»), con fotogramas antes/durante/despues del instante
-        # (retardo humano pantalla↔voz). El hallazgo entra en el expediente
-        # del verificador. Contexto, no veredicto. Fail-soft. Se apaga con
-        # vision_pass=0 en el panel.
-        from apps.agents import vision
+        # 5.5-D/G: los ojos miran TODAS las frases; su hallazgo entra en el
+        # expediente. Fail-soft.
         hallazgo = None
         try:
             seg_idx = c.get('segment_index')
@@ -134,33 +99,61 @@ def run(post, model=None):
                                            max_tokens=1500, mock_payload=MOCK_VERDICT,
                                            cacheable=expediente, max_searches=tope,
                                            fallback=_fb)
-        if 'error' not in v:
-            v['model_used'] = usado
-            v['kind'] = 'OPINION' if es_opinion else 'FACTUAL'
-            tiene_fuentes = bool(v.get('sources'))
-            # 4.4-B (decision de David): SIN FUENTES NO HAY COLOR. Hasta el 4.4-E la
-            # garantia era estructural — si la busqueda volvia vacia no se llamaba al
-            # modelo. Ahora que el modelo busca solo, la unica salvaguarda que quedaba
-            # era pedirselo en el prompt ("si no encuentras nada util: UNDECIDED"), y
-            # un ruego no es un candado: si contesta GREEN sin una sola URL, ese verde
-            # se publicaba. Se vuelve a imponer aqui. Lo cazo el test del 4.4-B.
-            if not tiene_fuentes:
-                # 5.3-C: en una OPINION, «no calificable» (GREY) es legitimo
-                # sin fuentes — un juicio de valor puro no tiene premisas que
-                # comprobar. FUNDADA o DESMENTIDA siguen exigiendo papeles.
-                if es_opinion and v.get('color') == 'GREY':
-                    pass
-                else:
-                    v['color'] = 'UNDECIDED'
-            claim_obj = upsert_claim(post, c, v, sources_ok=tiene_fuentes or
-                                     (es_opinion and v.get('color') == 'GREY'))
-            # 5.8 (orden expresa de David): si el claim involucra una imagen
-            # del video (la vista aporto), el fotograma queda en la wiki.
-            if hallazgo:
-                try:
-                    vision.registrar(claim_obj, hallazgo)
-                except Exception:
-                    pass
+        return (c, v, usado, hallazgo, es_opinion)
+    finally:
+        _costs.set_post(None)
+        close_old_connections()
+
+
+def parallel_workers():
+    """5.21: cuantas afirmaciones a la vez (ajuste del panel, 4 de fabrica)."""
+    from apps.panel.models import SystemSetting
+    return max(1, min(12, SystemSetting.get_int('verdict_parallel', 4)))
+
+
+def run(post, model=None):
+    """5.21 (orden de David: «paraleliza siempre»): las llamadas CARAS de cada
+    afirmacion (busquedas + ojos) corren EN PARALELO con un pool de hilos; las
+    escrituras en la wiki (upsert con dedupe por embedding) van EN SERIE — dos
+    hilos upsertando afirmaciones parecidas a la vez resucitarian los
+    duplicados del 5.1-B. Historia previa de esta funcion: docs/06 §69-81."""
+    from concurrent.futures import ThreadPoolExecutor
+    from apps.wiki.services import upsert_claim
+    from apps.agents import vision
+    sw = sweep.run(post) if not post.transcript_segments.filter(
+        signal__isnull=False).exclude(signal='').exists() else {
+        'claims': _claims_from_segments(post)}
+    fecha = post.event_date.isoformat() if post.event_date else None
+    expediente = transcript_dossier(post) if full_transcript_enabled() else None
+    from apps.agents.catalog import web_searches_per_claim
+    tope = web_searches_per_claim()
+    with ThreadPoolExecutor(max_workers=parallel_workers()) as pool:
+        resultados = list(pool.map(
+            lambda c: _verificar_uno(c, post, fecha, tope, expediente, model),
+            sw['claims']))
+    for r in resultados:
+        if r is None:
+            continue
+        c, v, usado, hallazgo, es_opinion = r
+        if 'error' in v:
+            continue
+        v['model_used'] = usado
+        v['kind'] = 'OPINION' if es_opinion else 'FACTUAL'
+        tiene_fuentes = bool(v.get('sources'))
+        # 4.4-B: SIN FUENTES NO HAY COLOR (GREY de opinion pura, legitimo 5.3-C).
+        if not tiene_fuentes:
+            if es_opinion and v.get('color') == 'GREY':
+                pass
+            else:
+                v['color'] = 'UNDECIDED'
+        claim_obj = upsert_claim(post, c, v, sources_ok=tiene_fuentes or
+                                 (es_opinion and v.get('color') == 'GREY'))
+        # 5.8: el fotograma que el claim involucra queda en la wiki.
+        if hallazgo:
+            try:
+                vision.registrar(claim_obj, hallazgo)
+            except Exception:
+                pass
 
 
 def context_for(segments, i, before, after):
