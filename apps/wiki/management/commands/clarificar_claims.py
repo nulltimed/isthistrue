@@ -35,7 +35,15 @@ class Command(BaseCommand):
             if not DailyBudget.try_spend(clarify.COST_PER_CLAIM_EUR):
                 self.stdout.write(self.style.WARNING('Presupuesto agotado: paro.'))
                 break
-            color = clarify.clarify_claim(c)
+            # 5.7 (leccion de la primera tanda real): una excepcion en UN claim
+            # mataba la tanda ENTERA en silencio (17 sin tocar). Blindaje por
+            # claim, como en run_pending.
+            try:
+                color = clarify.clarify_claim(c)
+            except Exception as exc:
+                self.stdout.write(self.style.ERROR(f'  #{c.pk} ERROR {exc!r}'))
+                self.stdout.flush()
+                continue
             marca = {'GREEN': '🟢', 'AMBER': '🟡', 'RED': '🔴',
                      'GREY': '💭', 'UNDECIDED': '🔍'}.get(color, '·')
             self.stdout.write(f'  #{c.pk} → {color or "sin cambio"} {marca} '
