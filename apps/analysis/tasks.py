@@ -1004,7 +1004,7 @@ def opus_rescan_segment(segment_id, forced=False):
                + f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
                  f"organismos oficiales, prensa solo como apoyo. Lista en "
                  f"\"sources\" las URLs reales que uses. Sin nada útil: UNDECIDED.")
-    _m, _fb = models_for_post('deep', post)
+    _m, _fb = models_for_post('deep', seg.post)
     v, usado = client.call_search_json(_m, prompts.VERDICT_SYSTEM,
                                        payload, max_tokens=1500,
                                        mock_payload=MOCK_VERDICT,

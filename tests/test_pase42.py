@@ -3336,7 +3336,8 @@ class Pase44I(TestCase):
     def test_la_tarea_esta_en_el_panel_y_gobierna_una_llamada_real(self):
         from apps.agents import catalog
         self.assertIn('attribution', catalog.TASK_KEYS)
-        self.assertIn("model_for('attribution')",
+        # 5.4-D: la tuberia usa models_for_post (vigilante de China)
+        self.assertIn("models_for_post('attribution'",
                       open('apps/agents/attribution.py', encoding='utf-8').read())
         from config import settings as s
         self.assertEqual(s.SETTING_DEFAULTS['attribution_sense_pass'], '1')
@@ -5365,9 +5366,14 @@ class Parche54D_VigilanteChina(TestCase):
         from apps.agents.catalog import models_for_post
         china = self._post(china=True, n=3)
         normal = self._post(china=False, n=4)
+        from apps.agents.catalog import model_for, fallback_for, provider
         m, fb = models_for_post('sweep', china)
-        self.assertTrue(m.startswith('claude'), 'la censura no analiza')
-        self.assertEqual(fb, '')
+        pista = (f'm={m} fb={fb} model_for={model_for("sweep")} '
+                 f'fallback_for={fallback_for("sweep")} '
+                 f'china_related={china.china_related} '
+                 f'provider={provider(model_for("sweep"))}')
+        self.assertTrue(m.startswith('claude'), 'la censura no analiza: ' + pista)
+        self.assertEqual(fb, '', pista)
         m2, fb2 = models_for_post('sweep', normal)
         self.assertTrue(m2.startswith('qwen'))
         self.assertTrue(fb2.startswith('claude'))
