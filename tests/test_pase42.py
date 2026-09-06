@@ -2437,6 +2437,9 @@ class Pase44C(TestCase):
         dos. Con caché, sube un 17%. Es la diferencia entre asumible y no."""
         from apps.agents import catalog
         from apps.panel.models import SystemSetting
+        # 5.2-A: la comparacion memoria/correo es de la via Anthropic.
+        SystemSetting.objects.update_or_create(key='model_verdict',
+                                               defaults={'value': 'claude-sonnet-4-6'})
         SystemSetting.objects.update_or_create(key='delivery_verdict',
                                                defaults={'value': 'direct'})
         con_memoria = catalog.cost_per_hour_eur(task='verdict')
@@ -2448,6 +2451,9 @@ class Pase44C(TestCase):
     def test_avisa_cuando_la_combinacion_es_lo_peor_de_los_dos(self):
         from apps.agents import catalog
         from apps.panel.models import SystemSetting
+        # 5.2-A: los lotes son via Anthropic — con Qwen de principal se apagan.
+        SystemSetting.objects.update_or_create(key='model_verdict',
+                                               defaults={'value': 'claude-sonnet-4-6'})
         SystemSetting.objects.update_or_create(key='delivery_verdict',
                                                defaults={'value': 'batch'})
         self.assertIn('24 h', catalog.warning_for('verdict'))
@@ -2828,6 +2834,9 @@ class Pase44G(TestCase):
         from apps.analysis.tasks import run_full_analysis
         from apps.panel.models import SystemSetting
         post = self._post(1, status='FULL_QUEUED')
+        # 5.2-A: la via de lotes es Anthropic — el test la ejerce con Claude.
+        SystemSetting.objects.update_or_create(key='model_verdict',
+                                               defaults={'value': 'claude-sonnet-4-6'})
         with override_settings(USE_BATCH_API=True):
             SystemSetting.objects.update_or_create(key='delivery_verdict',
                                                    defaults={'value': 'direct'})
@@ -2983,6 +2992,8 @@ class Pase44G(TestCase):
         from apps.analysis.tasks import opus_rescan
         from apps.panel.models import SystemSetting
         post = self._post(7, status='DONE')
+        SystemSetting.objects.update_or_create(key='model_deep',
+                                               defaults={'value': 'claude-opus-4-8'})
         SystemSetting.objects.update_or_create(key='delivery_deep', defaults={'value': 'batch'})
         with mock.patch('apps.analysis.tasks._submit_batch', return_value=True) as lote, \
                 mock.patch('apps.agents.verdict.run') as directo:
