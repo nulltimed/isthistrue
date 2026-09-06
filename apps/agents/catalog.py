@@ -45,7 +45,10 @@ CATALOG = [
     ('qwen3.7-flash',             'Qwen3.7 Flash',  1,  0.10,   0.68, True),
     ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.39,   2.34, True),
     ('qwen3.7-max',               'Qwen3.7 Max',    3,  0.62,   3.10, True),
-    ('qwen3.8-max',               'Qwen3.8 Max',    4,  0.78,   3.90, True),
+    # 5.10-F: precios REALES del extracto de Alibaba de septiembre (linea a
+    # linea, 2026-09-07): input 2 $/M, output 6 $/M (cache-in 0,25 $/M). La
+    # busqueda a 10 $/1K = el centimo que asumiamos (confirmado en factura).
+    ('qwen3.8-max',               'Qwen3.8 Max',    4,  2.00,   6.00, True),
     # 5.5-D (pregunta de David hecha orden): los ojos de la familia — para
     # contrastar lo que se VE en pantalla con lo que se DICE. Precios estimados
     # de fuentes publicas; ajustar con la consola. Sin busqueda web.
