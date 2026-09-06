@@ -1,10 +1,10 @@
-{% extends 'base.html' %}{% load i18n %}
+{% extends 'base.html' %}{% load i18n static %}
 {% block title %}{% trans "Foro" %} — esestocierto?{% endblock %}
 {% block content %}
 <h1>{% trans "Foro" %}</h1>
 
 <form class="foro-buscador" method="get" action="/buscar/">
-  <input type="search" name="q" placeholder="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}" aria-label="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}">
+  <input type="search" data-sugiere autocomplete="off" name="q" placeholder="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}" aria-label="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}">
   <select name="color" aria-label="{% trans 'Tipo de claim' %}">
     <option value="">{% trans "Tipo de claim (todos)" %}</option>
     {% for k, v in colores %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
@@ -39,4 +39,5 @@
   </div>
   {% empty %}<p class="hint">{% trans "Vacío por ahora." %}</p>{% endfor %}
 </section>
+<script src="{% static 'js/sugerencias.js' %}" defer></script>
 {% endblock %}

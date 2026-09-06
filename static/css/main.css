@@ -682,3 +682,12 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .tema-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.55rem;
   justify-content:center}
 .tema-list li{border:1px solid #ddd;border-radius:6px;padding:.4rem .7rem}
+
+/* 5.6-B: el desplegable del autocompletado, bajo la caja de busqueda. */
+.con-sugerencias{position:relative}
+.sugerencias{position:absolute;top:100%;left:0;right:0;z-index:30;margin:0;
+  padding:0;list-style:none;background:#fff;border:1px solid #bbb;
+  border-radius:0 0 6px 6px;text-align:left;max-height:320px;overflow-y:auto;
+  box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.sugerencias a{display:block;padding:.45rem .7rem;text-decoration:none;color:inherit}
+.sugerencias li.activa a,.sugerencias a:hover{background:#141414;color:#fff}

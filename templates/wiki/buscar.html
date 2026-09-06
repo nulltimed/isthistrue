@@ -1,10 +1,10 @@
-{% extends 'base.html' %}{% load i18n %}
+{% extends 'base.html' %}{% load i18n static %}
 {% block title %}{% trans "Buscar en la wiki" %} — esestocierto?{% endblock %}
 {% block content %}
 {# 5.5-H: resultados del buscador unico — TODAS las concurrencias del texto. #}
 <h1>{% trans "Buscar en la wiki" %}</h1>
 <form class="wiki-search" action="{% url 'wiki_search' %}" method="get" role="search">
-  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Buscar en toda la wiki…' %}"
+  <input type="search" data-sugiere autocomplete="off" name="q" value="{{ q }}" placeholder="{% trans 'Buscar en toda la wiki…' %}"
          aria-label="{% trans 'Buscar en toda la wiki…' %}" autofocus>
   <button type="submit">{% trans "Buscar" %}</button>
 </form>
@@ -50,4 +50,5 @@
 {% endif %}
 
 <p class="hint"><a href="{% url 'wiki_home' %}">{% trans "Volver a la portada de la wiki" %}</a></p>
+<script src="{% static 'js/sugerencias.js' %}" defer></script>
 {% endblock %}

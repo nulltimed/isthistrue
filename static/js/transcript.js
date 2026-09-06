@@ -105,8 +105,11 @@
         n = Math.round(seg._kw.length * frac);
       }
     }
+    /* 5.6-C (corrección de David): solo se ilumina LA PALABRA QUE SE DICE en
+     * ese momento — lo ya dicho vuelve al blanco-sobre-negro de la
+     * intervención, sin acumularse. */
     for (var k = 0; k < seg._kw.length; k++) {
-      seg._kw[k].classList.toggle('dicho', k < n);
+      seg._kw[k].classList.toggle('dicho', k === n - 1);
     }
   }
   function quitarKaraoke(seg) {

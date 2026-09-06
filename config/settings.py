@@ -203,6 +203,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'opus_rescan_min_users': '50',
     'donation_goal_eur': '100',
     'vision_pass': '1',           # 5.5-D: la vista encendida
+    'clarify_pass': '1',          # 5.6-A: clarificador de 🔍 encendido
     'vision_lag_seconds': '4',    # 5.5-G: retardo humano pantalla↔voz
     'trending_votes_threshold': '5',
     'trending_window_days': '7',

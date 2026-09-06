@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% load i18n %}
+{% extends 'base.html' %}{% load i18n static %}
 {% block title %}{% trans "Wiki de verificaciones" %} — esestocierto?{% endblock %}
 {% block content %}
 {# 5.5-H (orden de David): landing estilo Wikipedia — un buscador unico sin #}
@@ -8,7 +8,7 @@
   <p class="hint">{% trans "Todo lo analizado, enlazado con todo: personas, afirmaciones, vídeos y temas." %}</p>
 
   <form class="wiki-search" action="{% url 'wiki_search' %}" method="get" role="search">
-    <input type="search" name="q" placeholder="{% trans 'Buscar en toda la wiki…' %}"
+    <input type="search" data-sugiere autocomplete="off" name="q" placeholder="{% trans 'Buscar en toda la wiki…' %}"
            aria-label="{% trans 'Buscar en toda la wiki…' %}" autofocus>
     <button type="submit">{% trans "Buscar" %}</button>
   </form>
@@ -34,4 +34,5 @@
   <p class="hint"><a href="{% url 'people_index' %}">{% trans "Todas las personas" %}</a> ·
     <a href="{% url 'recent_changes' %}">{% trans "Últimos cambios" %}</a></p>
 </div>
+<script src="{% static 'js/sugerencias.js' %}" defer></script>
 {% endblock %}

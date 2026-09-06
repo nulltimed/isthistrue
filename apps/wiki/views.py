@@ -283,6 +283,34 @@ def wiki_search(request):
     return render(request, 'wiki/buscar.html', res)
 
 
+def wiki_suggest(request):
+    """5.6-B (orden de David): autocompletado — el servidor sugiere A MEDIDA
+    que el usuario escribe, en la landing de la wiki y en el buscador del
+    foro. JSON minusculo, consultas locales, cero llamadas de pago."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    from apps.analysis.models import Category, Post
+    q = (request.GET.get('q') or '').strip()
+    out = []
+    if len(q) >= 2:
+        for p in Interlocutor.objects.filter(is_public_figure=True,
+                                             name__icontains=q)[:3]:
+            out.append({'tipo': 'persona', 'label': p.name,
+                        'url': f'/persona/{p.slug}/'})
+        for c in Claim.objects.filter(
+                Q(title__icontains=q) | Q(text_original__icontains=q))                .order_by('-updated_at')[:4]:
+            out.append({'tipo': 'claim',
+                        'label': (c.title or c.text_original)[:90],
+                        'url': f'/wiki/claim/{c.slug or c.pk}/'})
+        for post in Post.objects.filter(title__icontains=q)                               .exclude(is_adult=True).order_by('-created_at')[:3]:
+            out.append({'tipo': 'video', 'label': (post.title or post.url)[:90],
+                        'url': post.get_absolute_url()})
+        for cat in Category.objects.filter(name__icontains=q)[:2]:
+            out.append({'tipo': 'tema', 'label': cat.name,
+                        'url': f'/tema/{cat.slug}/'})
+    return JsonResponse({'q': q, 'sugerencias': out})
+
+
 def _personas_con_ficha():
     from collections import Counter
     from .naming import claims_for_person

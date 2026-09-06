@@ -521,6 +521,15 @@ def run_full_analysis(self, post_id):
     if delivery_for('verdict') == 'batch' and _submit_batch(post):
         return 'batch_submitted'  # poll_verdict_batch pondra DONE
     verdict_agent.run(post)  # crea/actualiza claims wiki, fuentes, colores
+    # 5.6-A (orden de David): «intentar por todos los medios clarificar las
+    # afirmaciones sin resolver» — segunda pasada de ultima instancia sobre
+    # los UNDECIDED con el modelo profundo y el doble de busquedas. Fail-soft
+    # y con fusible de presupuesto por claim; se apaga con clarify_pass=0.
+    try:
+        from apps.agents import clarify
+        clarify.run_pending(post)
+    except Exception:
+        logger.warning('El clarificador fallo en el post %s', post.pk)
     post.status = 'DONE'
     post.full_finished_at = timezone.now()
     post.save(update_fields=['status', 'full_finished_at'])

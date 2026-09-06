@@ -5621,3 +5621,107 @@ class Parche55H_LandingWiki(TestCase):
         html = self.client.get('/tema/politica/').content.decode()
         self.assertIn('Personas involucradas', html)
         self.assertIn('/persona/eva-portavoz/', html)
+
+
+class Parche56_Serie(TestCase):
+    """5.6 (cuatro ordenes de David): A=clarificador de sin-resolver («exprime
+    el modelo LLM»), B=autocompletado del buscador, C=karaoke solo-lo-actual,
+    D=catalogo Qwen completo + categoria propia de analisis de imagenes."""
+
+    # ---------- A: el clarificador ----------
+
+    def _claim_sin_resolver(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='cl56', email='cl56@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/cl56',
+                                   platform='youtube', title='Debate 56')
+        seg = post.transcript_segments.create(
+            start_seconds=10, end_seconds=15,
+            text='Feijóo le ofreció repartirse el poder',
+            speaker_label='SPEAKER_00', signal='FACTUAL_UNVERIFIED')
+        claim = Claim.objects.create(
+            text_original='Feijóo le ofreció repartirse el poder',
+            color='UNDECIDED', slug='feijoo-reparto-56', kind='FACTUAL')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='...')
+        return post, claim
+
+    def test_el_clarificador_resuelve_con_fuentes(self):
+        from unittest import mock
+        from apps.agents import clarify
+        post, claim = self._claim_sin_resolver()
+        v = {'color': 'RED', 'what_is_claimed': 'x', 'what_evidence_says': 'y',
+             'the_difference': 'z',
+             'sources': [{'url': 'https://www.congreso.es/ds', 'title': 'DS'}]}
+        with mock.patch.object(clarify.client, 'call_search_json',
+                               return_value=(v, 'qwen3.8-max')) as llamada:
+            color = clarify.clarify_claim(claim)
+        self.assertEqual(color, 'RED')
+        claim.refresh_from_db()
+        self.assertEqual(claim.color, 'RED')
+        self.assertTrue(claim.sources.filter(url__icontains='congreso').exists())
+        # el encargo exprime: doble de busquedas y ordenes de ultima instancia
+        payload = llamada.call_args[0][2]
+        self.assertIn('DESCOMPÓN', payload)
+        self.assertIn('cita textual', payload)
+        self.assertGreaterEqual(llamada.call_args[1]['max_searches'], 8)
+
+    def test_sin_fuentes_sigue_sin_color_y_el_panel_lo_apaga(self):
+        from unittest import mock
+        from apps.agents import clarify
+        from apps.panel.models import SystemSetting
+        post, claim = self._claim_sin_resolver()
+        v = {'color': 'GREEN', 'what_is_claimed': 'x', 'sources': []}
+        with mock.patch.object(clarify.client, 'call_search_json',
+                               return_value=(v, 'm')):
+            self.assertEqual(clarify.clarify_claim(claim), 'UNDECIDED')
+        SystemSetting.objects.update_or_create(key='clarify_pass',
+                                               defaults={'value': '0'})
+        self.assertEqual(clarify.run_pending(post), 0)
+
+    # ---------- B: autocompletado ----------
+
+    def test_las_sugerencias_llegan_del_servidor_mientras_se_escribe(self):
+        post, claim = self._claim_sin_resolver()
+        r = self.client.get('/wiki/sugerencias/?q=repartirse')
+        datos = r.json()
+        self.assertTrue(any('/wiki/claim/' in s['url']
+                            for s in datos['sugerencias']))
+        for tpl in ('templates/wiki/home.html', 'templates/forum/foro_home.html'):
+            t = open(tpl).read()
+            self.assertIn('data-sugiere', t, tpl)
+            self.assertIn('sugerencias.js', t, tpl)
+
+    # ---------- C: karaoke solo lo actual ----------
+
+    def test_el_karaoke_solo_ilumina_la_palabra_actual(self):
+        js = open('static/js/transcript.js').read()
+        self.assertIn('k === n - 1', js)
+        self.assertNotIn("toggle('dicho', k < n)", js)
+
+    # ---------- D: catalogo y categoria de imagenes ----------
+
+    def test_la_familia_qwen_esta_completa(self):
+        from apps.agents.catalog import BY_ID
+        for m in ('qwen3.7-flash', 'qwen3.7-max', 'qwen3-vl-235b-a22b-instruct'):
+            self.assertIn(m, BY_ID, m)
+
+    def test_cada_rueda_ofrece_solo_lo_que_sabe_hacer(self):
+        from apps.agents import catalog
+        vista = [m[0] for m in catalog.options_for('vision')]
+        texto = [m[0] for m in catalog.options_for('sweep')]
+        self.assertTrue(all(catalog.is_vision(m) or m.startswith('claude')
+                            for m in vista))
+        self.assertFalse(any(catalog.is_vision(m) for m in texto))
+        # los ojos solo se sustituyen por ojos
+        sup = catalog.substitute('qwen3-vl-flash')
+        self.assertTrue(sup == '' or catalog.is_vision(sup))
+
+    def test_el_panel_tiene_la_categoria_de_imagenes(self):
+        from apps.accounts.models import User
+        u = make_user(username='pan56', email='pan56@example.org')
+        User.objects.filter(pk=u.pk).update(is_staff=True, is_superuser=True)
+        self.client.force_login(User.objects.get(pk=u.pk))
+        r = self.client.get('/panel/modelos/')
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('Análisis de imágenes', r.content.decode())
+        self.assertEqual([f['key'] for f in r.context['vision_rows']], ['vision'])

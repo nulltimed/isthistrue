@@ -81,6 +81,10 @@ SETTINGS_DEF = [
      'Los ojos (rueda «La vista» de modelos) miran fotogramas de CADA frase '
      'analizada y su hallazgo entra en el veredicto (5.5-G: análisis completo, '
      'sin esperar palabras clave). 1 = encendida, 0 = apagada.', 'num'),
+    ('clarify_pass', 'Clarificador de sin-resolver',
+     'Tras los veredictos, los claims 🔍 reciben una segunda pasada de última '
+     'instancia con el modelo de reanálisis profundo y el doble de búsquedas '
+     '(5.6-A). 1 = encendido, 0 = apagado.', 'num'),
     ('vision_lag_seconds', 'La vista: retardo humano (s)',
      'Entre la pantalla y la voz hay retardo: la imagen puede aparecer antes '
      'o después de decirse. Se capturan fotogramas a −N, 0 y +N segundos del '
@@ -178,10 +182,10 @@ def models_panel(request):
 
     from .models import ModelHealth
     salud = {h.model_id: h for h in ModelHealth.objects.all()}
-    filas = []
+    filas, filas_vision = [], []
     for clave, etiqueta, _def, veces in catalog.TASKS:
         actual = catalog.model_for(clave)
-        filas.append({
+        fila = {
             'key': clave, 'label': etiqueta, 'times': veces,
             'model': actual, 'delivery': catalog.delivery_for(clave),
             'batchable': catalog.batchable(clave),   # 4.4-G: si no, el selector mentiria
@@ -189,12 +193,18 @@ def models_panel(request):
             'fallback': catalog.fallback_for(clave),
             'warning': catalog.warning_for(clave),
             'health': salud.get(actual),
-        })
+            # 5.6-D: cada rueda ofrece solo modelos capaces de su trabajo.
+            'options': catalog.options_for(clave),
+        }
+        # 5.6-D (orden de David): el analisis de imagenes es su PROPIA
+        # categoria del panel — los VL no tienen acceso web y no deben
+        # mezclarse con las ruedas de texto.
+        (filas_vision if clave == 'vision' else filas).append(fila)
     audio_rows = [{'key': k, 'label': titulo, 'options': opciones,
                    'model': catalog.audio_engine_for(k)}
                   for k, titulo, opciones, _env in catalog.AUDIO_ENGINES]
     return render(request, 'panel/models.html', {
-        'rows': filas, 'audio_rows': audio_rows,
+        'rows': filas, 'vision_rows': filas_vision, 'audio_rows': audio_rows,
         'catalog': catalog.CATALOG, 'deliveries': catalog.DELIVERY,
         # 5.2-A: opciones de la rueda de respaldo (solo Claude)
         'claudes': [m for m in catalog.CATALOG if m[0].startswith('claude')],

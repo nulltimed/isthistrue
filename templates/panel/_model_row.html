@@ -1,0 +1,37 @@
+{% load i18n icons %}
+    <div class="model-row">
+    <div class="model-head">
+      <strong>{{ r.label }}</strong>
+      <span class="hint">{% blocktrans with v=r.times %}Se ejecuta: {{ v }} por vídeo{% endblocktrans %}</span>
+    </div>
+    <div class="model-controls">
+      <label>{% trans "Modelo" %}
+        <select name="model_{{ r.key }}">
+          {% for id, nombre, tier, pin, pout, web in r.options %}
+          <option value="{{ id }}" {% if id == r.model %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M{% if not web %} · {% trans "sin búsqueda web" %}{% endif %}</option>
+          {% endfor %}
+        </select></label>
+      <label>{% trans "Respaldo (Claude) si el principal falla" %}
+        <select name="model_fb_{{ r.key }}">
+          {% for id, nombre, tier, pin, pout, web in claudes %}
+          <option value="{{ id }}" {% if id == r.fallback %}selected{% endif %}>{{ nombre }} — {{ pin }} $/M</option>
+          {% endfor %}
+          <option value="none" {% if not r.fallback %}selected{% endif %}>{% trans "Sin respaldo (la tarea espera)" %}</option>
+        </select></label>
+      {# 4.4-G: el selector de envio solo donde el codigo tiene via de lotes. #}
+      {% if r.batchable %}
+      <label>{% trans "Envío" %}
+        <select name="delivery_{{ r.key }}">
+          {% for id, nombre in deliveries %}
+          <option value="{{ id }}" {% if id == r.delivery %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select></label>
+      {% else %}
+      <span class="hint">{% trans "Envío: solo en el mostrador (esta tarea no puede esperar a un lote: frenaría la transcripción o el foro)." %}</span>
+      {% endif %}
+    </div>
+    <p class="hint">{% blocktrans with s=r.substitute %}Si no responde, lo sustituye: {{ s }}{% endblocktrans %}
+      {% if r.health %}· {% if r.health.ok %}{% trans "comprobado" %}{% else %}<strong class="ko">{% trans "NO RESPONDE" %}</strong>{% endif %} {{ r.health.checked_at|date:'d/m H:i' }}{% endif %}</p>
+    {% if r.warning %}<p class="warning">{% icon 'flag' 14 %} {{ r.warning }}</p>{% endif %}
+  </div>
+  

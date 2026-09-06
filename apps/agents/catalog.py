@@ -39,13 +39,20 @@ daño que un vídeo que espera; un suplente bueno no hace daño ninguno.
 # id                       nombre visible        tier  in$/M  out$/M  web
 CATALOG = [
     ('qwen3.8-flash',             'Qwen3.8 Flash',  1,  0.11,   0.80, True),
+    # 5.6-D (reporte de David: «faltan modelos de Qwen»): la familia de texto
+    # completa segun el listado REAL de /compatible-mode/v1/models de su cuenta
+    # (2026-09-07). Precios estimados por escalon; ajustar con la consola.
+    ('qwen3.7-flash',             'Qwen3.7 Flash',  1,  0.10,   0.68, True),
     ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.39,   2.34, True),
+    ('qwen3.7-max',               'Qwen3.7 Max',    3,  0.62,   3.10, True),
     ('qwen3.8-max',               'Qwen3.8 Max',    4,  0.78,   3.90, True),
     # 5.5-D (pregunta de David hecha orden): los ojos de la familia — para
     # contrastar lo que se VE en pantalla con lo que se DICE. Precios estimados
     # de fuentes publicas; ajustar con la consola. Sin busqueda web.
     ('qwen3-vl-flash',            'Qwen3 VL Flash (ojos)', 1, 0.10, 0.40, False),
     ('qwen3-vl-plus',             'Qwen3 VL Plus (ojos)',  2, 0.40, 1.20, False),
+    ('qwen3-vl-235b-a22b-instruct', 'Qwen3 VL 235B (ojos grandes)',
+                                                    3,  0.70,   2.80, False),
     ('claude-haiku-4-5-20251001', 'Haiku 4.5',      1,   1.0,   5.0,  True),
     ('claude-sonnet-4-6',         'Sonnet 4.6',     2,   3.0,  15.0,  True),
     ('claude-opus-4-6',           'Opus 4.6',       3,   5.0,  25.0,  True),
@@ -81,6 +88,23 @@ def supports_web(model_id):
     return bool(m[5]) if m else False
 
 
+def is_vision(model_id):
+    """5.6-D: ¿es un modelo de OJOS (analisis de imagenes)? Los VL de Qwen no
+    tienen acceso web, asi que viven en su propia categoria del panel."""
+    return '-vl-' in model_id
+
+
+def options_for(task):
+    """5.6-D (orden de David): cada rueda del panel ofrece SOLO lo que puede
+    hacer su trabajo — la categoria de imagenes («La vista») ofrece los VL y
+    los Claude (que ven de serie); el resto de tareas, solo modelos de texto.
+    Un selector que ofrece un modelo incapaz es un mando que miente."""
+    if task == 'vision':
+        return [m for m in CATALOG
+                if is_vision(m[0]) or provider(m[0]) == 'anthropic']
+    return [m for m in CATALOG if not is_vision(m[0])]
+
+
 def label(model_id):
     return BY_ID[model_id][1] if model_id in BY_ID else model_id
 
@@ -105,8 +129,11 @@ def substitute(model_id, need_web=False):
     # 5.2-A: el suplente es DEL MISMO proveedor (subir un escalon dentro de la
     # familia). El salto ENTRE proveedores es el respaldo por tarea
     # (fallback_for), que decide David en su panel.
+    # 5.6-D: los ojos solo se sustituyen por ojos (y el texto por texto) — un
+    # VL caido no puede suplirse con un modelo que no ve, ni al reves.
     arriba = [m for m in CATALOG if m[2] > tier(model_id)
               and provider(m[0]) == provider(model_id)
+              and is_vision(m[0]) == is_vision(model_id)
               and (not need_web or m[5])]
     if not arriba:
         return ''
