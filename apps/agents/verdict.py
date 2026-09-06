@@ -107,24 +107,26 @@ def run(post, model=None):
         # buscadores le cerraban la puerta al servidor y el semaforo se quedaba
         # en 🔍 por falta de papeles.
         payload = build_payload(c, fecha, tope)
-        # 5.5-D (orden de David): si la frase apela a lo que se VE en pantalla,
-        # los ojos miran el fotograma del segundo exacto y su hallazgo entra en
-        # el expediente del verificador. Contexto, no veredicto. Fail-soft.
+        # 5.5-D/G (ordenes de David): los ojos miran TODAS las frases analizadas
+        # («el análisis del vídeo debe ser completo, no sólo esperando a
+        # palabras clave»), con fotogramas antes/durante/despues del instante
+        # (retardo humano pantalla↔voz). El hallazgo entra en el expediente
+        # del verificador. Contexto, no veredicto. Fail-soft. Se apaga con
+        # vision_pass=0 en el panel.
         from apps.agents import vision
-        if vision.procede(c.get('text', '')):
-            try:
-                seg_idx = c.get('segment_index')
-                segs = list(post.transcript_segments.order_by('start_seconds', 'pk'))
-                if seg_idx is not None and 0 <= seg_idx < len(segs):
-                    hallazgo = vision.mirar(post, c['text'],
-                                            segs[seg_idx].start_seconds)
-                    if hallazgo:
-                        payload += (f"\n\nCONTRASTE VISUAL (fotograma del "
-                                    f"instante, {hallazgo['modelo']}): la imagen "
-                                    f"{hallazgo['veredicto_visual'].upper()} lo "
-                                    f"dicho — {hallazgo['detalle'][:400]}")
-            except Exception:
-                pass
+        try:
+            seg_idx = c.get('segment_index')
+            segs = list(post.transcript_segments.order_by('start_seconds', 'pk'))
+            if seg_idx is not None and 0 <= seg_idx < len(segs):
+                hallazgo = vision.mirar(post, c['text'],
+                                        segs[seg_idx].start_seconds)
+                if hallazgo:
+                    payload += (f"\n\nCONTRASTE VISUAL (fotogramas alrededor "
+                                f"del instante, {hallazgo['modelo']}): la "
+                                f"pantalla {hallazgo['veredicto_visual'].upper()} "
+                                f"lo dicho — {hallazgo['detalle'][:400]}")
+        except Exception:
+            pass
         _m, _fb = models_for_post('verdict', post)
         v, usado = client.call_search_json(model or _m,
                                            sistema, payload,

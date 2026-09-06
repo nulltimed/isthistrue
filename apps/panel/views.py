@@ -78,9 +78,13 @@ SETTINGS_DEF = [
     ('donation_goal_eur', 'Meta de donaciones (€)',
      'Histórica: el banner sigue ya al presupuesto base (5.5-B).', 'num'),
     ('vision_pass', 'La vista (imagen vs. audio)',
-     'Si una frase apela a lo que se ve en pantalla, los ojos (rueda «La '
-     'vista» de modelos) miran el fotograma y su hallazgo entra en el '
-     'veredicto. 1 = encendida, 0 = apagada.', 'num'),
+     'Los ojos (rueda «La vista» de modelos) miran fotogramas de CADA frase '
+     'analizada y su hallazgo entra en el veredicto (5.5-G: análisis completo, '
+     'sin esperar palabras clave). 1 = encendida, 0 = apagada.', 'num'),
+    ('vision_lag_seconds', 'La vista: retardo humano (s)',
+     'Entre la pantalla y la voz hay retardo: la imagen puede aparecer antes '
+     'o después de decirse. Se capturan fotogramas a −N, 0 y +N segundos del '
+     'instante. 4 de fábrica.', 'num'),
     # 4.3-A.7 (decisión de David): los umbrales de re-verificación y de contexto
     # también se tocan aquí. Su valor de fábrica se fija en el .env.
     ('segment_opus_downvotes', 'Usuarios para re-verificar una frase',

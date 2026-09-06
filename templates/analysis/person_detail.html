@@ -80,7 +80,11 @@
     <section class="claim-group">
       <h2>{% trans "Pendientes de veredicto" %} <span class="badge">{{ sin_color|length }}</span></h2>
       <ul class="claim-list">
-        {% for a in sin_color %}<li>{{ a.claim.text_original|truncatechars:160 }}</li>{% endfor %}
+        {# 5.5-F: tambien los pendientes llevan sus dos enlaces (orden de David). #}
+        {% for a in sin_color %}<li>
+          <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:160 }}</a>
+          <span class="hint">— {% trans "en" %} <a href="{{ a.segment.post.get_absolute_url }}?t={{ a.segment.start_seconds|floatformat:0 }}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }} · {% trans "minuto" %} {{ a.segment.start_seconds|floatformat:0 }}s ▶</a></span>
+        </li>{% endfor %}
       </ul>
     </section>
   {% endif %}

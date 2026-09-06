@@ -61,7 +61,12 @@ def recent_changes(request):
 GRUPOS = [('GREEN', 'Afirmaciones verificadas'),
           ('AMBER', 'Afirmaciones con matices'),
           ('RED', 'Afirmaciones desmentidas'),
-          ('GREY', 'Opiniones y predicciones')]
+          ('GREY', 'Opiniones y predicciones'),
+          # 5.5-F (reporte de David): «todos sus claims separados por semaforo».
+          # El 🔍 tambien ES un color del semaforo: sin este grupo, casi toda la
+          # ficha de Abascal (9 apariciones, 8 UNDECIDED) caia al saco de
+          # «pendientes» SIN los dos enlaces (explicacion + segundo del video).
+          ('UNDECIDED', 'Sin resolver (faltan fuentes)')]
 
 
 def people_indexable():

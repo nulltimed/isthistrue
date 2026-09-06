@@ -5460,11 +5460,21 @@ class Parche55_Serie(TestCase):
         html2 = self.client.get(post.get_absolute_url()).content.decode()
         self.assertIn(f'/wiki/video/{post.slug}/', html2)
 
-    def test_la_vista_detecta_referencias_visuales(self):
-        from apps.agents import vision
-        self.assertTrue(vision.procede('como ven en este gráfico, el paro bajó'))
-        self.assertTrue(vision.procede('look at this chart'))
-        self.assertFalse(vision.procede('el paro bajó un tres por ciento'))
+    def test_la_vista_es_completa_y_con_retardo_humano(self):
+        # 5.5-G (orden de David): «el análisis del vídeo debe ser completo, no
+        # sólo esperando a palabras clave» — la puerta VISUAL_RX ya no existe y
+        # verdict.py mira TODAS las frases; entre pantalla y voz hay retardo
+        # humano: fotogramas a −lag, 0 y +lag (ajuste vision_lag_seconds).
+        from apps.agents import vision, verdict as va
+        import inspect
+        self.assertFalse(hasattr(vision, 'procede'),
+                         'la puerta de palabras clave debe estar retirada')
+        fuente = inspect.getsource(va.run)
+        self.assertNotIn('procede', fuente)
+        self.assertIn('vision.mirar', fuente)
+        self.assertIn('vision_lag_seconds', inspect.getsource(vision.mirar))
+        from django.conf import settings as st
+        self.assertEqual(st.SETTING_DEFAULTS.get('vision_lag_seconds'), '4')
 
     def test_el_hallazgo_visual_entra_en_el_expediente(self):
         from unittest import mock
@@ -5533,3 +5543,21 @@ class Parche55E_WikiDeInterlocutores(TestCase):
         # y el manejador de ?t= existe en el JS
         js = open('static/js/transcript.js').read()
         self.assertIn("get('t')", js)
+
+
+class Parche55F_SemaforoCompleto(TestCase):
+    """5.5-F: el 🔍 (UNDECIDED) tambien es un color del semaforo en la ficha.
+
+    Sin el, 8 de las 9 apariciones de Abascal caian a «pendientes» como texto
+    plano, sin enlace a la explicacion ni al segundo del video.
+    """
+
+    def test_undecided_esta_en_los_grupos_de_la_ficha(self):
+        from apps.wiki.views import GRUPOS
+        self.assertIn('UNDECIDED', dict(GRUPOS))
+
+    def test_los_pendientes_tambien_llevan_sus_dos_enlaces(self):
+        t = open('templates/analysis/person_detail.html').read()
+        bloque = t.split('sin_color')[2] if t.count('sin_color') >= 2 else ''
+        self.assertIn('/wiki/claim/', bloque)
+        self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', bloque)
