@@ -1425,3 +1425,23 @@ Commits `dffedfa` → `a3bf832`. Informe completo en docs/76.
   5.1-C y el «personas al frente» del 5.5-E; 5 tests de portadas viejas
   reescritos. La portada wiki lleva TRES órdenes superpuestas en dos días
   (5.4→5.5-B/E→5.5-H): antes de tocarla otra vez, releer la última.
+
+## 72. Serie 5.6: clarificador, autocompletado, karaoke fino y el panel con ojos propios (2026-09-07)
+
+Commit `28a64b0`. Informe completo en docs/77.
+- **A**: `apps/agents/clarify.py` — los UNDECIDED reciben pasada de ULTIMA
+  INSTANCIA (rueda 'deep', doble de busquedas, hemerotecas/diarios de
+  sesiones/verificadores, cita textual para los dichos relatados). Mismo
+  contrato JSON del veredicto; fusible de presupuesto por claim; hook tras
+  verdicts (clarify_pass) + `manage.py clarificar_claims`.
+- **B**: /wiki/sugerencias/ JSON + sugerencias.js (input[data-sugiere],
+  rebote 250 ms) en landing wiki, /wiki/buscar/ y foro.
+- **C**: karaoke `k === n - 1` — solo la palabra actual iluminada.
+- **D**: catalogo completado con el listado REAL de la cuenta (qwen3.7-flash,
+  qwen3.7-max, qwen3-vl-235b); `options_for(tarea)` filtra cada rueda por
+  capacidad; seccion «Análisis de imágenes» aparte; fila en parcial
+  _model_row.html; el suplente respeta vision↔vision.
+- Trampa evitada: al extraer un bloque de plantilla por indice, el PRIMER
+  `{% endfor %}` que aparece puede ser de un bucle interior — anclar el corte
+  al cierre estructural (`</div>\n  {% endfor %}`), y comprobar llaves y
+  fors=endfors del resultado.
