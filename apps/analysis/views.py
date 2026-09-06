@@ -685,7 +685,12 @@ def relaunch(request, pk, stage):
             'gate_open': ident * 100 >= total * minimo if total else True,
             'speakers_now': post.speakers_count, 'speakers_source': post.speakers_count_source,
         })
-    detalle = f'post {post.pk} etapa {stage} ({opcion["cost"]:.2f} EUR estimados)'
+    # 5.18 (orden de David): el SUPERUSUARIO relanza cualquier fase
+    # independientemente del coste — sin fusible diario. El gasto real se
+    # apunta al libro igual, y el AuditLog deja constancia del salto.
+    sin_fusible = bool(request.user.is_superuser)
+    detalle = f'post {post.pk} etapa {stage} ({opcion["cost"]:.2f} EUR estimados)' \
+              + (' SIN FUSIBLE (superusuario)' if sin_fusible else '')
     if stage == 'cheap':
         from .tasks import run_cheap_phase, reset_for_cheap_phase
         # Red de seguridad de David: moderacion puede corregir el numero de voces.
@@ -696,19 +701,19 @@ def relaunch(request, pk, stage):
                                      'speakers_count_source'])
             detalle += f', voces fijadas por moderación: {voces}'
         reset_for_cheap_phase(post)
-        run_cheap_phase.delay(post.pk)
+        run_cheap_phase.delay(post.pk, skip_charge=sin_fusible)
         messages.success(request, 'Relanzado: transcripción y voces se regenerarán en unos minutos.')
     elif stage == 'dating':
         from .tasks import redate_post
-        redate_post.delay(post.pk)
+        redate_post.delay(post.pk, skip_charge=sin_fusible)
         messages.success(request, 'Relanzada la datación del suceso.')
     elif stage == 'verdicts':
         from .tasks import reverify_post
-        reverify_post.delay(post.pk)
+        reverify_post.delay(post.pk, skip_charge=sin_fusible)
         messages.success(request, 'Relanzados los veredictos: los hablantes se conservan.')
     else:
         from .tasks import opus_rescan
-        opus_rescan.delay(post.pk, forced=True)
+        opus_rescan.delay(post.pk, forced=True, skip_charge=sin_fusible)
         messages.success(request, 'Relanzado el análisis profundo con el modelo del panel.')
     AuditLog.objects.create(user=request.user, action=f'relaunch_{stage}', detail=detalle)
     return redirect('post_detail', pk=pk)

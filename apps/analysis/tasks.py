@@ -383,14 +383,14 @@ def second_pass_speakers(turns, hint, post):
 
 
 @shared_task
-def redate_post(post_id):
+def redate_post(post_id, skip_charge=False):
     """4.4-G (llave inglesa, etapa b): solo la datacion, sobre la transcripcion
     guardada. Centimos. Refresca tambien la pista de voces del agente (no la de
     moderacion) para el proximo relanzamiento de voces."""
     from .models import Post, DailyBudget
     from .services import cost_dating_eur
     post = Post.objects.get(pk=post_id)
-    if not DailyBudget.try_spend(cost_dating_eur(post)):
+    if not skip_charge and not DailyBudget.try_spend(cost_dating_eur(post)):
         return 'budget_exhausted'
     _date_and_hint(post, None)
     notify_post_event(post, 'analysis', 'Fecha del suceso recalculada')
@@ -454,7 +454,7 @@ def notify_post_event(post, kind, text):
 
 
 @shared_task
-def reverify_post(post_id, borrar_previos=True):
+def reverify_post(post_id, borrar_previos=True, skip_charge=False):
     """4.4-B (orden de David): «hay que volver a verificar todo, manteniendo las
     personas que hablan, que están correctas».
 
@@ -522,7 +522,7 @@ def run_full_analysis(self, post_id):
     from .services import cost_full_eur
     from apps.analysis import costs as _costs
     _costs.set_post(post)   # 4.9-A
-    if not DailyBudget.try_spend(max(COST_FULL_EUR, cost_full_eur(post))):
+    if not skip_charge and not DailyBudget.try_spend(max(COST_FULL_EUR, cost_full_eur(post))):
         return 'budget_exhausted'  # beat lo reintentara; cola congelada si corte mensual
 
     post.status = 'FULL_RUNNING'
@@ -1054,7 +1054,7 @@ def opus_rescan_segment(segment_id, forced=False):
 
 
 @shared_task
-def opus_rescan(post_id, forced=False):
+def opus_rescan(post_id, forced=False, skip_charge=False):
     """Reescaneo premium (decidido por David): si los votos ▲ superan el
     opus_rescan_percent (40%) de los usuarios del foro, el post se re-verifica con
     MODEL_PREMIUM (Opus). Candados: minimo opus_rescan_min_users (50), UNA vez por
@@ -1064,7 +1064,7 @@ def opus_rescan(post_id, forced=False):
     if post.status != 'DONE' or (post.opus_rescanned and not forced):
         return 'skip'
     from .services import cost_deep_eur
-    if not DailyBudget.try_spend(cost_deep_eur(post)):   # 4.4-G: escala con la duracion
+    if not skip_charge and not DailyBudget.try_spend(cost_deep_eur(post)):   # 4.4-G
         return 'budget_exhausted'
     post.opus_rescanned = True
     post.save(update_fields=['opus_rescanned'])

@@ -6175,3 +6175,39 @@ class Parche517_DonarUX(TestCase):
         self.assertIn("e.key === 'Escape'", base)
         css = open('static/css/main.css').read()
         self.assertIn('#istt-pp-cerrar', css)
+
+
+class Parche518_SinFusibleParaElSuper(TestCase):
+    """5.18 (orden de David): el superusuario relanza CUALQUIER fase
+    independientemente del coste; el coste va EN el propio boton."""
+
+    def test_las_cuatro_tareas_aceptan_el_salto(self):
+        import inspect
+        from apps.analysis import tasks
+        for fn in (tasks.run_cheap_phase, tasks.redate_post,
+                   tasks.reverify_post, tasks.opus_rescan):
+            src = inspect.getsource(fn)
+            self.assertIn('skip_charge', src, fn.__name__)
+            self.assertIn('not skip_charge and not DailyBudget.try_spend', src,
+                          fn.__name__)
+
+    def test_el_super_salta_el_fusible_y_queda_constancia(self):
+        from unittest import mock
+        from apps.accounts.models import User
+        from apps.panel.models import AuditLog
+        u = make_user(username='su518', email='su518@example.org')
+        User.objects.filter(pk=u.pk).update(is_staff=True, is_superuser=True)
+        post = Post.objects.create(author=u, url='https://youtu.be/su518',
+                                   status='DONE', duration_seconds=600)
+        post.transcript_segments.create(start_seconds=1, end_seconds=2, text='x')
+        self.client.force_login(User.objects.get(pk=u.pk))
+        with mock.patch('apps.analysis.tasks.reverify_post.delay') as lanza:
+            self.client.post(f'/post/{post.pk}/relanzar/verdicts/', {'confirm': '1'})
+        lanza.assert_called_once_with(post.pk, skip_charge=True)
+        self.assertTrue(AuditLog.objects.filter(
+            action='relaunch_verdicts', detail__contains='SIN FUSIBLE').exists())
+
+    def test_el_coste_va_en_el_boton(self):
+        t = open('templates/partials/post_body.html').read()
+        self.assertIn('· ≈ {{ r.cost|floatformat:2 }} €</button>', t)
+        self.assertNotIn('<span class="relaunch-cost">', t)

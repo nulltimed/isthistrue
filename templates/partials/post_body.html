@@ -207,8 +207,8 @@
           <li>
             {% if r.available %}
             <form method="post" action="{% url 'post_relaunch' post.pk r.stage %}">{% csrf_token %}
-              <button class="mini">{% if r.stage == 'cheap' %}{% trans "Transcripción y voces" %}{% elif r.stage == 'dating' %}{% trans "Fecha del suceso" %}{% elif r.stage == 'verdicts' %}{% trans "Veredictos" %}{% else %}{% trans "Análisis profundo" %}{% endif %}</button>
-              <span class="relaunch-cost">≈ {{ r.cost|floatformat:2 }} €</span>
+              {# 5.18 (orden de David): el coste va EN el propio boton. #}
+              <button class="mini">{% if r.stage == 'cheap' %}{% trans "Transcripción y voces" %}{% elif r.stage == 'dating' %}{% trans "Fecha del suceso" %}{% elif r.stage == 'verdicts' %}{% trans "Veredictos" %}{% else %}{% trans "Análisis profundo" %}{% endif %} · ≈ {{ r.cost|floatformat:2 }} €</button>
             </form>
             {% else %}
             <span class="relaunch-off">{% if r.stage == 'dating' %}{% trans "Fecha del suceso" %}{% elif r.stage == 'verdicts' %}{% trans "Veredictos" %}{% else %}{% trans "Análisis profundo" %}{% endif %} <span class="hint">({% trans "no disponible en este estado" %})</span></span>
