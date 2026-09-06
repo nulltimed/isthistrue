@@ -2668,6 +2668,8 @@ class Pase44E(TestCase):
     def test_los_seis_modelos_actuales_saben_buscar(self):
         from apps.agents import catalog
         for m in catalog.CATALOG:
+            if '-vl-' in m[0]:
+                continue    # 5.5-D: los ojos no buscan (tarea 'vision', sin web)
             self.assertTrue(catalog.supports_web(m[0]), m[0])
 
     def test_el_suplente_de_una_tarea_web_tambien_sabe_buscar(self):
@@ -5338,10 +5340,13 @@ class Parche54_WikiDelVideo(TestCase):
         self.assertIn('El INE dice lo contrario', html)
         self.assertIn('https://ine.es/x', html)
 
-    def test_la_portada_wiki_enlaza_al_analisis_no_al_post(self):
+    def test_la_portada_wiki_enlaza_al_post_y_el_post_a_su_wiki(self):
+        """5.5-B (reporte de David) supersede al 5.4: los listados de la
+        portada wiki vuelven al POST del foro; la wiki del video queda
+        enlazada DESDE el post."""
         post, _ = self._escena(3)
         html = self.client.get('/wiki/').content.decode()
-        self.assertIn(f'/wiki/video/{post.slug}/', html)
+        self.assertIn(post.get_absolute_url(), html)
 
     def test_el_salto_t_esta_cableado(self):
         js = open('static/js/transcript.js').read()

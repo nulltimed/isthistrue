@@ -63,7 +63,8 @@
     </div>
     <aside class="transcript-col">
       <h2>{% trans "Transcripción sincronizada" %}</h2>
-      <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}</p>
+      <p class="hint">{% trans "Clic en una frase: el vídeo salta a un segundo antes y se reproduce." %}
+        · <a href="{% url 'wiki_video' post.slug|default:post.pk %}">{% trans "Ver este análisis en la wiki" %}</a></p>
       <div class="transcript transcript-box" data-platform="{{ post.platform }}">
       {% for s in segments %}
         <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
@@ -144,8 +145,7 @@
   {# pase), asi que el aviso solo se veia en los analisis relegados y jamas en un #}
   {# post normal, que es donde el lector lo necesita. Lo cazo el test del pase. #}
   {% if post.status == 'DONE' %}
-  <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}
-    <a href="{% url 'wiki_video' post.slug|default:post.pk %}">{% trans "Ver este análisis en la wiki" %}</a></p>
+  <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}</p>
   {% else %}
   <p class="disclaimer">{% trans "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después." %}</p>
   {% endif %}
