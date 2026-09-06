@@ -1694,3 +1694,10 @@ msgstr "In a hurry? Sponsor it with a %(d)s € donation: it will be tied to THI
 
 msgid "¡Apadrinado! En cuanto se verifique la donación, el análisis saldrá de la cola."
 msgstr "Sponsored! As soon as the donation is verified, the analysis will leave the queue."
+
+# 5.14: apadrinar lanza al instante
+msgid "¿Tienes prisa? Apadrínalo con una donación de %(d)s €: quedará atada a ESTE análisis, que saldrá de la cola AL INSTANTE."
+msgstr "In a hurry? Sponsor it with a %(d)s € donation: it will be tied to THIS analysis, which will leave the queue INSTANTLY."
+
+msgid "¡Apadrinado! El análisis sale de la cola ahora mismo."
+msgstr "Sponsored! The analysis is leaving the queue right now."

@@ -109,7 +109,7 @@
         {% blocktrans with c=queue_cost %}Este vídeo se lleva más de media asignación diaria (cuesta unos {{ c }} €), así que espera turno: se analizará solo en cuanto haya depósito, normalmente mañana.{% endblocktrans %}</p>
       {# 5.13-C (orden de David): el apadrinamiento va ATADO a este post — el #}
       {# boton dona la cantidad EXACTA y la donacion queda ligada al analisis. #}
-      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} €: quedará atada a ESTE análisis y, en cuanto se verifique, saldrá de la cola.{% endblocktrans %}</p>
+      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} €: quedará atada a ESTE análisis, que saldrá de la cola AL INSTANTE.{% endblocktrans %}</p>
       <div id="paypal-apadrinar" data-post="{{ post.pk }}" data-eur="{{ queue_sponsor }}"></div>
       <script>
       (function () {
@@ -129,7 +129,7 @@
                   body: JSON.stringify({ amount: eur, order: d.orderID || '',
                                          post: caja.dataset.post }) });
               } catch (e) {}
-              caja.innerHTML = '<strong>🎉 {% trans "¡Apadrinado! En cuanto se verifique la donación, el análisis saldrá de la cola." %}</strong>';
+              caja.innerHTML = '<strong>🎉 {% trans "¡Apadrinado! El análisis sale de la cola ahora mismo." %}</strong>';
             });
           }
         }).render('#paypal-apadrinar').catch(function () {

@@ -1167,8 +1167,24 @@ def donation_capture(request):
             post_ap = Post.objects.filter(pk=pk_ap).first()
     except (TypeError, ValueError):
         post_ap = None
-    Donation.objects.create(amount_eur=cantidad, method='PAYPAL',
-                            note=nota, verified=False, post=post_ap)
+    d = Donation.objects.create(amount_eur=cantidad, method='PAYPAL',
+                                note=nota, verified=False, post=post_ap)
+    # 5.14-A (orden de David, revierte el paso previo del 5.13): «sin
+    # verificación. Una vez el usuario done para el análisis del vídeo, que se
+    # haga». El analisis SALE al donar; la donacion sigue entrando sin
+    # verificar para el TOPE (solo lo verificado sube presupuesto) y David la
+    # ve en su panel — si fuera falsa, la descarta y queda el rastro.
+    if post_ap and post_ap.status == 'AWAITING_BUDGET':
+        from django.db.models import Sum
+        from .services import needs_sponsorship
+        _, coste, _ = needs_sponsorship(post_ap)
+        atado = float(Donation.objects.filter(post=post_ap)
+                      .aggregate(s=Sum('amount_eur'))['s'] or 0)
+        if atado >= float(coste):
+            from .tasks import run_cheap_phase
+            post_ap.status = 'PENDING'
+            post_ap.save(update_fields=['status'])
+            run_cheap_phase.delay(post_ap.pk)
     return JsonResponse({'ok': True})
 
 

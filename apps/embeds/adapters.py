@@ -135,8 +135,12 @@ def build_embed(post, start_seconds=0):
                 f'<a href="{post.url}">Ver en TikTok</a></blockquote>'
                 f'<script async src="https://www.tiktok.com/embed.js"></script>')
     if p == 'spotify' and vid:
+        # 5.14-B (reporte de David): los podcasts CON VIDEO de Spotify usan el
+        # mismo embed pero necesitan ALTURA de video — 152 px era el reproductor
+        # de solo-audio y el video quedaba invisible.
         return (f'<iframe src="https://open.spotify.com/embed/episode/{vid}" '
-                f'frameborder="0" loading="lazy" height="152" '
+                f'frameborder="0" height="352" style="width:100%" '
+                f'allow="autoplay; encrypted-media; picture-in-picture" '
                 f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
     if p == 'twitch' and vid:
         return (f'<iframe src="https://player.twitch.tv/?video={vid}&parent=esestocierto.com'

@@ -6051,3 +6051,37 @@ class Parche513_Serie(TestCase):
         # y el mensaje del submit ya no MIENTE con duracion desconocida
         v = open('apps/analysis/views.py').read()
         self.assertIn('No he podido leer la duración', v)
+
+
+class Parche514_Serie(TestCase):
+    """5.14 (dos ordenes de David): A=apadrinar LANZA al instante, sin esperar
+    la verificacion (esta sigue existiendo solo para el TOPE de presupuesto);
+    B=el embed de Spotify con altura de VIDEO (152 era solo-audio)."""
+
+    def test_apadrinar_lanza_al_instante_sin_verificacion(self):
+        import json
+        from unittest import mock
+        from apps.panel.models import Donation
+        u = make_user(username='ap514', email='ap514@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/ap514',
+                                   title='Cola 514', status='AWAITING_BUDGET',
+                                   duration_seconds=5400)
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanza:
+            self.client.post('/donaciones/registrar/',
+                             json.dumps({'amount': '99.00', 'order': 'ORD514',
+                                         'post': post.pk}),
+                             content_type='application/json')
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'PENDING', 'sale de la cola AL DONAR')
+        lanza.assert_called_once_with(post.pk)
+        d = Donation.objects.get(note='paypal-web:ORD514')
+        self.assertFalse(d.verified, 'el TOPE sigue esperando a David')
+
+    def test_el_embed_de_spotify_tiene_altura_de_video(self):
+        from apps.embeds.adapters import build_embed
+        u = make_user(username='sp514', email='sp514@example.org')
+        post = Post.objects.create(author=u, url='https://open.spotify.com/episode/x514',
+                                   platform='spotify', external_id='x514')
+        html = build_embed(post)
+        self.assertIn('height="352"', html)
+        self.assertNotIn('height="152"', html)
