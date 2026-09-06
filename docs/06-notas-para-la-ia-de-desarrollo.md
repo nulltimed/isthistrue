@@ -1567,3 +1567,18 @@ linea cierra la conexion del llamante y tumbo 17 tests en cascada; (3) los
 apuntes de coste necesitan _costs.set_post POR HILO (thread-local).
 De ~2,5 min/afirmacion en serie a ~12 a la vez: un post de 26 claims pasa de
 ~1 h a ~6 min de pared.
+
+## 84. Serie 5.22: guerra al gris (2026-09-07)
+
+Brainstorming con David sobre los 49 GREY. DIAGNOSTICO: kind OPINION = 0 —
+NO eran opiniones del circuito 5.3, sino ESCOMBROS del barrido antiguo (26 de
+49 son fragmentos <40 chars tipo «que asesoró», 43 sin fuente alguna).
+Remedios: (a) contexto 2+2 de fabrica (orden literal de David con el ejemplo
+de Neil s49); (b) GREY = ULTIMO RECURSO en el prompt (extraer CADA premisa,
+hasta las implicitas, y justificar por escrito si no queda nada comprobable);
+(c) `sanear_grises`: fragmentos → RETIRADOS, frases con sustancia → circuito
+actual con la rueda deep; (d) SEMAFORO DEL POST bajo el titulo (4 chips
+clicables → dialog con claims y marca temporal → clic reproduce desde t-1).
+Leccion reincidente cazada por el CI: un sub de regex dejo la coma DENTRO del
+comentario y el compileall del paso no incluia config — compilar SIEMPRE
+config+apps+tests.
