@@ -1506,3 +1506,11 @@ B=ficha del claim con «El momento en el vídeo» (embed a t-1 de la primera
 aparición). C=frase incierta ENTERA clicable (seek-frase). Lección reincidente:
 un script de edición murió en el assert y el commit salió sin el test —
 verificar SIEMPRE el resultado, no el intento.
+
+## 78. Serie 5.12: el historial del claim (2026-09-07)
+
+Commit `e89bd4a`. Informe en docs/83. La wiki YA se actualizaba sola
+(upsert_claim + ClaimVersion en cada re-verificacion); lo nuevo es la ventana:
+/wiki/claim/<slug>/historial/ + enlace «📜 Historial» ARRIBA de cada ficha.
+Y las «Apariciones» pasan de #seg- a ?t= (coherencia no-scroll 5.10-C).
+⏰ GOOGLE 10/10: RECORDATORIO DISPARADO a David (wiki_index_people, panel).

@@ -4753,7 +4753,10 @@ class Parche51B_Malla(TestCase):
         html = self.client.get(f'/wiki/claim/{claim.slug}/').content.decode()
         self.assertIn('Dicho por', html)
         self.assertIn('/persona/ana-publica/', html)
-        self.assertIn(f'#seg-{seg.pk}', html, 'la aparición no enlaza al post')
+        # 5.12 supersede el ancla #seg- (hacia scroll al entrar): la aparicion
+        # enlaza al post con ?t= (salta el VIDEO, la pagina quieta).
+        self.assertIn(f'?t={int(seg.start_seconds)}', html,
+                      'la aparición no enlaza al post')
 
     def test_aparece_junto_a(self):
         from apps.wiki.models import Interlocutor, SpeakerNameProposal
