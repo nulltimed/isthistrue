@@ -6,6 +6,8 @@ from django.views.generic import RedirectView
 urlpatterns = [
     # 5.1-A: la wiki tiene PORTADA propia (antes redirigia a cambios).
     path('', views.wiki_home, name='wiki_home'),
+    # 5.5-H: el buscador unico de la landing (sin opciones).
+    path('buscar/', views.wiki_search, name='wiki_search'),
     path('cambios/', views.recent_changes, name='recent_changes'),
     # 5.1-C: la rejilla completa de personas sale de la portada a su pagina.
     path('personas/', views.people_index, name='people_index'),

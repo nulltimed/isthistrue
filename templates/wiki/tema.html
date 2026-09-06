@@ -6,6 +6,21 @@
 <p class="hint">{% blocktrans count n=posts|length %}{{ n }} vídeo analizado en este tema.{% plural %}{{ n }} vídeos analizados en este tema.{% endblocktrans %}
   {% for color, titulo, n in resumen %}· {{ titulo }}: <strong>{{ n }}</strong> {% endfor %}</p>
 
+{# 5.5-H (orden de David): al entrar en un tema se ven las personas involucradas. #}
+{% if personas %}
+<h2>{% trans "Personas involucradas" %}</h2>
+<ul class="person-grid">
+  {% for p in personas %}
+  <li class="person-card">
+    <a href="/persona/{{ p.slug }}/">
+      {% if p.photo_url %}<img src="{{ p.photo_url }}" alt="" loading="lazy">{% else %}<span class="person-card-hueco" aria-hidden="true">?</span>{% endif %}
+      <strong>{{ p.name }}</strong>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
 <h2>{% trans "Vídeos" %}</h2>
 <ul class="post-list">
   {% for p in posts %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a>

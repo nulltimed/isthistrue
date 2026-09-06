@@ -4660,11 +4660,13 @@ class Parche51A_WikiRed(TestCase):
         ClaimAppearance.objects.create(claim=claim, segment=seg, quote='la luna...')
         return persona, post, claim
 
-    def test_la_portada_de_la_wiki_existe_y_lista_a_la_persona(self):
+    def test_la_portada_de_la_wiki_existe_y_la_persona_se_encuentra(self):
+        # 5.5-H supersede el listado en portada: la persona vive en
+        # /wiki/personas/ y el buscador único la encuentra.
         persona, _, _ = self._escena()
         r = self.client.get('/wiki/')
         self.assertEqual(r.status_code, 200)
-        html = r.content.decode()
+        html = self.client.get('/wiki/personas/').content.decode()
         self.assertIn('Ana Pública', html)
         self.assertIn('/persona/ana-publica/', html)
 
@@ -4992,14 +4994,16 @@ class Parche51C_Temas(TestCase):
     def test_un_tema_inexistente_es_404(self):
         self.assertEqual(self.client.get('/tema/no-existe/').status_code, 404)
 
-    def test_la_portada_wiki_lleva_listados_y_subtemas(self):
+    def test_la_portada_wiki_lleva_buscador_y_temas(self):
+        # 5.5-H (orden de David) supersede los listados del 5.1-C: la portada
+        # es una landing estilo Wikipedia — buscador único + temas + footer.
         self._post_analizado(n=1)
         html = self.client.get('/wiki/').content.decode()
-        self.assertIn('Subtemas', html)
+        self.assertIn('/wiki/buscar/', html)
+        self.assertIn('name="q"', html)
         self.assertIn('/tema/politica/', html)
-        self.assertIn('Los más nuevos', html)
-        self.assertNotIn('Últimos cambios</h2>', html,
-                         'los cambios ya no son sección, solo enlace')
+        self.assertNotIn('Los más nuevos', html,
+                         'los listados de posts salieron de la portada wiki')
 
     def test_la_pagina_de_personas_existe(self):
         r = self.client.get('/wiki/personas/')
@@ -5340,12 +5344,12 @@ class Parche54_WikiDelVideo(TestCase):
         self.assertIn('El INE dice lo contrario', html)
         self.assertIn('https://ine.es/x', html)
 
-    def test_la_portada_wiki_enlaza_al_post_y_el_post_a_su_wiki(self):
-        """5.5-B (reporte de David) supersede al 5.4: los listados de la
-        portada wiki vuelven al POST del foro; la wiki del video queda
-        enlazada DESDE el post."""
+    def test_el_buscador_wiki_encuentra_el_video_y_el_post_enlaza_su_wiki(self):
+        """5.5-H supersede al 5.5-B: la portada ya no lista posts (es la
+        landing), pero el buscador único los encuentra por título; la wiki
+        del video sigue enlazada DESDE el post."""
         post, _ = self._escena(3)
-        html = self.client.get('/wiki/').content.decode()
+        html = self.client.get(f'/wiki/buscar/?q={post.title[:12]}').content.decode()
         self.assertIn(post.get_absolute_url(), html)
 
     def test_el_salto_t_esta_cableado(self):
@@ -5449,13 +5453,14 @@ class Parche55_Serie(TestCase):
         html = self.client.get('/').content.decode()
         self.assertIn('Faltan 77', html)
 
-    def test_la_portada_wiki_vuelve_a_enlazar_el_post(self):
+    def test_el_buscador_encuentra_el_post_y_el_post_enlaza_su_wiki(self):
+        # 5.5-H: la portada es la landing (sin listados); el buscador único
+        # encuentra el post, y el post sigue enlazando a su wiki del video.
         u = make_user(username='wl55', email='wl55@example.org')
         post = Post.objects.create(author=u, url='https://youtu.be/wl55',
                                    title='Video del reporte')
-        html = self.client.get('/wiki/').content.decode()
+        html = self.client.get('/wiki/buscar/?q=reporte').content.decode()
         self.assertIn(post.get_absolute_url(), html)
-        self.assertNotIn(f'/wiki/video/{post.slug}/"', html.split('Subtemas')[0])
         # y el post enlaza a su wiki
         html2 = self.client.get(post.get_absolute_url()).content.decode()
         self.assertIn(f'/wiki/video/{post.slug}/', html2)
@@ -5526,14 +5531,14 @@ class Parche55E_WikiDeInterlocutores(TestCase):
     donde lo dijo (la base de la fuente es el post del foro)».
     """
 
-    def test_la_portada_wiki_abre_con_las_personas(self):
-        # Las personas van ANTES que los listados de posts en la plantilla.
+    def test_la_portada_wiki_es_la_landing_del_buscador(self):
+        # 5.5-H supersede el orden del 5.5-E: la portada es la landing estilo
+        # Wikipedia (buscador único + temas); las personas viven en los temas,
+        # en /wiki/personas/ y en el buscador.
         t = open('templates/wiki/home.html').read()
-        pos_personas = t.find('person-grid')
-        pos_listados = t.find('Los más nuevos')
-        self.assertGreater(pos_personas, 0)
-        self.assertGreater(pos_listados, pos_personas,
-                           'las personas deben abrir la portada de la wiki')
+        self.assertIn('wiki-search', t)
+        self.assertNotIn('person-grid', t)
+        self.assertNotIn('<select', t, 'el buscador de la landing va SIN opciones')
 
     def test_cada_claim_de_la_ficha_salta_al_segundo_del_video(self):
         # El enlace al post lleva ?t=<segundo>: transcript.js salta al segundo
@@ -5561,3 +5566,58 @@ class Parche55F_SemaforoCompleto(TestCase):
         bloque = t.rsplit('sin_color', 1)[1]
         self.assertIn('/wiki/claim/', bloque)
         self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', bloque)
+
+
+class Parche55H_LandingWiki(TestCase):
+    """5.5-H (orden de David): la entrada a la wiki es una landing estilo
+    Wikipedia — un buscador SIN opciones que busca todas las concurrencias,
+    el listado de temas (cada tema ensena sus personas involucradas) y el
+    footer de siempre."""
+
+    def _escena(self):
+        from apps.analysis.models import Category
+        from apps.wiki.models import (Claim, ClaimAppearance, Interlocutor,
+                                      SpeakerNameProposal)
+        autor = make_user(username='w55h', email='w55h@example.org')
+        Category.objects.get_or_create(slug='politica', defaults={'name': 'Política'})
+        post = Post.objects.create(author=autor, url='https://youtu.be/w55h',
+                                   title='Pleno sobre pensiones', topic='politica')
+        seg = post.transcript_segments.create(start_seconds=7, end_seconds=12,
+                                              text='Las pensiones subieron un 8%',
+                                              speaker_label='SPEAKER_00')
+        persona = Interlocutor.objects.create(name='Eva Portavoz', slug='eva-portavoz',
+                                              base_slug='eva-portavoz',
+                                              is_public_figure=True,
+                                              wikidata_id='Q888888')
+        SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
+                                           candidate_name='Eva Portavoz',
+                                           confirmed=True, interlocutor=persona)
+        claim = Claim.objects.create(text_original='Las pensiones subieron un 8%',
+                                     color='GREEN', slug='pensiones-8')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='pensiones')
+        return persona, post, claim
+
+    def test_la_landing_tiene_buscador_sin_opciones_y_temas(self):
+        self._escena()
+        html = self.client.get('/wiki/').content.decode()
+        self.assertIn('action="/wiki/buscar/"', html)
+        self.assertIn('name="q"', html)
+        self.assertNotIn('<select', html)
+        self.assertIn('/tema/politica/', html)
+        self.assertIn('<footer', html, 'el footer de siempre')
+
+    def test_el_buscador_encuentra_todas_las_concurrencias(self):
+        persona, post, claim = self._escena()
+        html = self.client.get('/wiki/buscar/?q=pensiones').content.decode()
+        self.assertIn(f'/wiki/claim/{claim.slug}/', html)      # la afirmacion
+        self.assertIn(post.get_absolute_url(), html)           # el video
+        html2 = self.client.get('/wiki/buscar/?q=Portavoz').content.decode()
+        self.assertIn('/persona/eva-portavoz/', html2)         # la persona
+        html3 = self.client.get('/wiki/buscar/?q=Polít').content.decode()
+        self.assertIn('/tema/politica/', html3)                # el tema
+
+    def test_el_tema_ensena_a_sus_personas_involucradas(self):
+        persona, post, claim = self._escena()
+        html = self.client.get('/tema/politica/').content.decode()
+        self.assertIn('Personas involucradas', html)
+        self.assertIn('/persona/eva-portavoz/', html)

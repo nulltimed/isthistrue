@@ -1,0 +1,53 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Buscar en la wiki" %} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.5-H: resultados del buscador unico — TODAS las concurrencias del texto. #}
+<h1>{% trans "Buscar en la wiki" %}</h1>
+<form class="wiki-search" action="{% url 'wiki_search' %}" method="get" role="search">
+  <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Buscar en toda la wiki…' %}"
+         aria-label="{% trans 'Buscar en toda la wiki…' %}" autofocus>
+  <button type="submit">{% trans "Buscar" %}</button>
+</form>
+
+{% if q %}
+  {% if total %}
+  <p class="hint">{% blocktrans count n=total %}{{ n }} resultado para «{{ q }}»{% plural %}{{ n }} resultados para «{{ q }}»{% endblocktrans %}</p>
+
+  {% if personas %}
+  <h2>{% trans "Personas" %} <span class="badge">{{ personas|length }}</span></h2>
+  <ul class="post-list">
+    {% for p in personas %}<li><a href="/persona/{{ p.slug }}/">{{ p.name }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if claims %}
+  <h2>{% trans "Afirmaciones y opiniones" %} <span class="badge">{{ claims|length }}</span></h2>
+  <ul class="post-list">
+    {% for c in claims %}
+    <li><a class="verdict verdict-{{ c.color }}" href="/wiki/claim/{{ c.slug|default:c.pk }}/">{% trans c.get_color_display %}</a>
+      <a href="/wiki/claim/{{ c.slug|default:c.pk }}/">{{ c.title|default:c.text_original|truncatechars:140 }}</a></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if posts %}
+  <h2>{% trans "Vídeos analizados" %} <span class="badge">{{ posts|length }}</span></h2>
+  <ul class="post-list">
+    {% for p in posts %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:100 }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if temas %}
+  <h2>{% trans "Temas" %} <span class="badge">{{ temas|length }}</span></h2>
+  <ul class="post-list">
+    {% for t in temas %}<li><a href="{% url 'tema_page' t.slug %}">{{ t.name }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% else %}
+  <p>{% blocktrans %}Sin resultados para «{{ q }}».{% endblocktrans %}</p>
+  {% endif %}
+{% endif %}
+
+<p class="hint"><a href="{% url 'wiki_home' %}">{% trans "Volver a la portada de la wiki" %}</a></p>
+{% endblock %}

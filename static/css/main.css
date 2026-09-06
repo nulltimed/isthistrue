@@ -672,3 +672,13 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .claim-literal{margin:.4rem 0;padding:.3rem .8rem;border-left:3px solid var(--line);
   font-style:italic;color:var(--muted,#555)}
 .wiki-embed{max-width:640px;margin:.8rem 0}
+
+/* 5.5-H: landing de la wiki estilo Wikipedia — un buscador y los temas. */
+.wiki-landing{max-width:680px;margin:0 auto;text-align:center;padding:1.5rem 0}
+.wiki-search{display:flex;gap:.5rem;max-width:540px;margin:1.2rem auto}
+.wiki-search input{flex:1;padding:.65rem .9rem;font-size:1.05rem;
+  border:1px solid #bbb;border-radius:6px}
+.wiki-search button{padding:.65rem 1.1rem;cursor:pointer}
+.tema-list{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.55rem;
+  justify-content:center}
+.tema-list li{border:1px solid #ddd;border-radius:6px;padding:.4rem .7rem}

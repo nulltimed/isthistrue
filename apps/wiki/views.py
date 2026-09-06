@@ -246,32 +246,41 @@ def person_stats(person, appearances):
 
 
 def wiki_home(request):
-    """Portada de la wiki: las personas con ficha, los ultimos cambios y los
-    numeros del proyecto. En castellano por defecto (decision de David)."""
-    from collections import Counter
-    from .naming import claims_for_person
-    personas = _personas_con_ficha()
-    # 5.1-C (correccion de David): la portada NO es un muro de personas y
-    # cambios — es el panel de numeros (que le gusta), los LISTADOS (mas
-    # comentados, mas nuevos, mas votados) y la muestra de los 10 subtemas.
-    # Las personas quedan en una tira corta con enlace a la pagina completa.
-    from django.db.models import Count, Q
-    from django.utils import timezone as tz
-    from apps.analysis.models import Post
-    from apps.analysis.views import _mas_comentados
-    base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
-    window = tz.now() - tz.timedelta(days=7)
-    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
+    """5.5-H (orden de David, supersede la portada del 5.1-C/5.5-E): landing
+    estilo Wikipedia — UNA barra de busqueda sin opciones (busca todas las
+    concurrencias del texto), el listado de temas (cada tema abre con sus
+    personas involucradas) y el footer de siempre (base.html)."""
     totales = {'claims': Claim.objects.count(),
                'decididos': Claim.objects.filter(
                    color__in=['GREEN', 'AMBER', 'RED', 'GREY']).count(),
-               'personas': len(personas)}
+               'personas': Interlocutor.objects.filter(
+                   is_public_figure=True).count()}
     return render(request, 'wiki/home.html',
-                  {'personas': personas[:6], 'totales': totales,
-                   'subtemas': temas_activos()[:10],
-                   'nuevos': base.order_by('-created_at')[:10],
-                   'comentados': _mas_comentados(base), 'top': top,
+                  {'temas': temas_activos(), 'totales': totales,
                    'indexable': people_indexable()})
+
+
+def wiki_search(request):
+    """5.5-H: el buscador de la landing — SIN opciones. Busca el texto en TODO:
+    personas, afirmaciones (enunciado, titulo IA y evidencia), videos y temas."""
+    from django.db.models import Q
+    from apps.analysis.models import Category, Post
+    q = (request.GET.get('q') or '').strip()
+    res = {'q': q, 'personas': [], 'claims': [], 'posts': [], 'temas': []}
+    if len(q) >= 2:
+        res['personas'] = list(Interlocutor.objects.filter(
+            is_public_figure=True, name__icontains=q).order_by('name')[:20])
+        res['claims'] = list(Claim.objects.filter(
+            Q(text_original__icontains=q) | Q(title__icontains=q) |
+            Q(what_evidence_says__icontains=q)).distinct()
+            .order_by('-updated_at')[:40])
+        res['posts'] = list(Post.objects.filter(title__icontains=q)
+                            .exclude(is_adult=True).order_by('-created_at')[:20])
+        res['temas'] = list(Category.objects.filter(name__icontains=q)
+                            .order_by('name')[:10])
+    res['total'] = sum(len(res[k]) for k in ('personas', 'claims', 'posts', 'temas'))
+    res['indexable'] = people_indexable()
+    return render(request, 'wiki/buscar.html', res)
 
 
 def _personas_con_ficha():
@@ -338,9 +347,18 @@ def tema_page(request, slug):
     conteo = Counter(c.color for c in claims)
     resumen = [(color, dict(COLORES_TEMA).get(color, color), conteo[color])
                for color in ('GREEN', 'AMBER', 'RED', 'GREY') if conteo.get(color)]
+    # 5.5-H (orden de David): «entrar en un tema y ver las personas
+    # involucradas en ese tema» — las figuras publicas confirmadas como
+    # hablantes en los posts analizados del tema.
+    from .models import SpeakerNameProposal
+    ids = SpeakerNameProposal.objects.filter(
+        confirmed=True, post__in=[p.pk for p in posts],
+        interlocutor__is_public_figure=True).values_list('interlocutor', flat=True)
+    personas = list(Interlocutor.objects.filter(pk__in=set(ids)).order_by('name'))
     return render(request, 'wiki/tema.html',
                   {'cat': cat, 'posts': posts, 'claims': claims,
-                   'resumen': resumen, 'indexable': people_indexable()})
+                   'resumen': resumen, 'personas': personas,
+                   'indexable': people_indexable()})
 
 
 COLORES_TEMA = [('GREEN', 'Verificadas'), ('AMBER', 'Con matices'),

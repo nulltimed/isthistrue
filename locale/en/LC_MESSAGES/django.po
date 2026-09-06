@@ -1598,3 +1598,42 @@ msgstr "Watch in the video"
 # ---- 5.5 (2026-09-07) ----
 msgid "Ver este análisis en la wiki"
 msgstr "See this analysis in the wiki"
+
+# 5.5-H: landing de la wiki estilo Wikipedia
+msgid "Buscar en toda la wiki…"
+msgstr "Search the whole wiki…"
+
+msgid "Temas"
+msgstr "Topics"
+
+msgid "Todas las personas"
+msgstr "All people"
+
+msgid "Buscar en la wiki"
+msgstr "Search the wiki"
+
+msgid "Afirmaciones y opiniones"
+msgstr "Claims and opinions"
+
+msgid "Vídeos analizados"
+msgstr "Analysed videos"
+
+msgid "Personas involucradas"
+msgstr "People involved"
+
+msgid "Volver a la portada de la wiki"
+msgstr "Back to the wiki home"
+
+msgid "Todo lo analizado, enlazado con todo: personas, afirmaciones, vídeos y temas."
+msgstr "Everything analysed, all linked together: people, claims, videos and topics."
+
+msgid "vídeos"
+msgstr "videos"
+
+msgid "%(n)s resultado para «%(q)s»"
+msgid_plural "%(n)s resultados para «%(q)s»"
+msgstr[0] "%(n)s result for “%(q)s”"
+msgstr[1] "%(n)s results for “%(q)s”"
+
+msgid "Sin resultados para «%(q)s»."
+msgstr "No results for “%(q)s”."
