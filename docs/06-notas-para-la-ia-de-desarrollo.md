@@ -1476,3 +1476,11 @@ Commit `1ca71d9`. Informe completo en docs/79.
   EXISTE en el contenedor: comprobar procesos con /proc/<pid>, no con ps
   (un grep de ps inexistente dio 0 y parecio «muerto» un proceso vivo —
   se lanzaron tandas en paralelo y hubo que matar las viejas por /proc).
+
+## 75. Serie 5.9: el Foro en categorias de solo-enlaces (2026-09-07)
+
+Commit `8dac105`. Informe en docs/80. /foro/ = buscador + cinco categorias de
+SOLO enlaces (nuevos/comentados/profundos-por-votos + Off-Topic
+nuevos/comentados); sin cuerpos de mensajes (supersede 5.1-B).
+«Analizados en profundidad» = DONE ordenado por votos (interpretacion anotada
+en foro_home, ajustable en una linea si David quiso los re-escaneados).
