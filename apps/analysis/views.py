@@ -409,7 +409,42 @@ def _post_context(request, post):
         'topic_obj': topic_obj, 'thread_messages': thread_messages,
         'is_mod': is_mod, 'is_trending': post.is_trending(),
         'my_subscription': (post.subscriptions.filter(user=u).first() if u else None),
+        # 5.7-A: la huella del analisis que vigila el navegador (vigia_post.js)
+        'estado_analisis': _huella_analisis(post)[0],
     }
+
+
+def _huella_analisis(post):
+    """5.7-A (orden de David): «por cada cambio en un post la pagina se
+    recargara automaticamente mostrando un mensaje sobre el cambio».
+    La huella condensa el estado del analisis; si cambia, cambio hubo.
+    Devuelve (huella, descripcion del ultimo cambio)."""
+    from apps.wiki.models import ClaimVersion
+    ultima = (ClaimVersion.objects
+              .filter(claim__appearances__segment__post=post)
+              .order_by('-pk').select_related('claim').first())
+    huella = f'{post.status}:{ultima.pk if ultima else 0}:' \
+             f'{post.transcript_segments.count()}'
+    if ultima:
+        texto = (f'Verificación actualizada ({ultima.claim.get_color_display()}): '
+                 f'«{(ultima.claim.title or ultima.claim.text_original)[:70]}»')
+    else:
+        texto = f'El análisis avanzó: {post.get_status_display()}'
+    return huella, texto
+
+
+def post_estado(request, pk):
+    """5.7-A: el pulso que sondea el navegador — JSON minusculo, sin coste."""
+    from django.http import JsonResponse
+    post = get_object_or_404(Post, pk=pk)
+    huella, texto = _huella_analisis(post)
+    from apps.forum.machina_glue import get_topic_for_post
+    topic_obj = get_topic_for_post(post)
+    newest = 0
+    if topic_obj:
+        newest = (topic_obj.posts.filter(approved=True)
+                  .order_by('-pk').values_list('pk', flat=True).first() or 0)
+    return JsonResponse({'a': huella, 'txt': texto, 'm': newest})
 
 
 def post_detail(request, pk=None, slug=None):
@@ -538,7 +573,11 @@ def post_thread_fragment(request, pk):
         m.hidden_by_me = m.pk in hidden_ids
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
-    resp = render(request, 'partials/thread_messages.html',
+    # 5.7-B (orden de David): scroll infinito — las paginas siguientes se
+    # APILAN bajo las anteriores (solo mensajes + centinela, sin barras).
+    plantilla = ('partials/thread_messages_apilar.html'
+                 if request.GET.get('apilar') else 'partials/thread_messages.html')
+    resp = render(request, plantilla,
                   {'post': post, 'thread_messages': thread_messages, 'is_mod': is_mod,
                    'page_obj': page_obj, 'newest_pk': newest_pk})
     # 4.3-A.2 L3: si hay mensajes posteriores a los que el navegador conocia,

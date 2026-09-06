@@ -16,6 +16,8 @@ urlpatterns = [
     path('post/<slug:slug>/<int:pk>/', views.post_detail, name='post_detail_slug_pk'),
     path('post/<int:pk>/status/', views.post_status, name='post_status'),
     path('post/<int:pk>/fragmento/hilo/', views.post_thread_fragment, name='post_thread_fragment'),
+    # 5.7-A: el pulso del vigia — cambia la huella, recarga el navegador.
+    path('post/<int:pk>/estado/', views.post_estado, name='post_estado'),
     path('post/<int:pk>/fragmento/cuerpo/', views.post_body_fragment, name='post_body_fragment'),
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
     path('post/<int:pk>/relegate/', views.relegate, name='post_relegate'),

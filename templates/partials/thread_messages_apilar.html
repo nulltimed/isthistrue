@@ -1,0 +1,7 @@
+{% load i18n %}
+{# 5.7-B: pagina apilada por el scroll infinito — solo mensajes + centinela. #}
+{% include 'partials/_thread_msg_list.html' %}
+{% if page_obj.has_next %}
+<div class="hilo-centinela" hx-get="{% url 'post_thread_fragment' post.pk %}?pagina={{ page_obj.next_page_number }}&apilar=1"
+     hx-trigger="revealed" hx-swap="outerHTML"></div>
+{% endif %}

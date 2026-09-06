@@ -5725,3 +5725,64 @@ class Parche56_Serie(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn('Análisis de imágenes', r.content.decode())
         self.assertEqual([f['key'] for f in r.context['vision_rows']], ['vision'])
+
+
+class Parche57_Serie(TestCase):
+    """5.7 (dos ordenes de David): A=ante CUALQUIER cambio del post la pagina
+    se recarga sola y el bocadillo canta el cambio (vigia_post.js + /estado/);
+    B=scroll INFINITO en las respuestas (htmx revealed apila paginas).
+    Nota histórica: el «recargas extintas» del 4.x aplicaba al endpoint
+    /status/ (que sigue igual); la recarga nueva es del lado cliente y POR
+    ORDEN EXPRESA."""
+
+    def _post_con_hilo(self, replicas=0):
+        from apps.forum.machina_glue import create_topic_for_post, add_reply
+        u = make_user(username='v57', email='v57@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/v57',
+                                   title='Post vigiado', status='DONE')
+        create_topic_for_post(post)
+        for i in range(replicas):
+            add_reply(post, u, f'mensaje {i}')
+        return post, u
+
+    def test_el_pulso_del_vigia_cambia_con_una_verificacion(self):
+        from apps.wiki.models import Claim, ClaimAppearance, ClaimVersion
+        post, u = self._post_con_hilo()
+        seg = post.transcript_segments.create(start_seconds=1, end_seconds=2,
+                                              text='algo', signal='FACTUAL_UNVERIFIED')
+        r1 = self.client.get(f'/post/{post.pk}/estado/').json()
+        claim = Claim.objects.create(text_original='algo', color='RED', slug='algo-57')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='algo')
+        ClaimVersion.objects.create(claim=claim, color='RED', body_snapshot={})
+        r2 = self.client.get(f'/post/{post.pk}/estado/').json()
+        self.assertNotEqual(r1['a'], r2['a'], 'la huella debe cambiar')
+        self.assertIn('Verificación actualizada', r2['txt'])
+
+    def test_la_pagina_del_post_lleva_el_vigia_y_no_el_sondeo_viejo(self):
+        post, u = self._post_con_hilo()
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('id="vigia-post"', html)
+        self.assertIn('vigia_post.js', html)
+        self.assertIn(f'/post/{post.pk}/estado/', html)
+        self.assertNotIn('every 12s', html,
+                         'el re-pintado total del hilo chocaba con el apilado')
+
+    def test_el_hilo_se_apila_con_scroll_infinito(self):
+        post, u = self._post_con_hilo(replicas=25)   # 20 por pagina -> 2 paginas
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('hilo-centinela', html)
+        self.assertIn('hx-trigger="revealed"', html)
+        frag = self.client.get(
+            f'/post/{post.pk}/fragmento/hilo/?pagina=2&apilar=1').content.decode()
+        self.assertIn('mensaje 24', frag)
+        self.assertNotIn('pagination-bar', frag,
+                         'las paginas apiladas van sin barras')
+        self.assertNotIn('hilo-centinela', frag,
+                         'la ultima pagina no deja centinela')
+
+    def test_el_bocadillo_pendiente_se_canta_tras_recargar(self):
+        js = open('static/js/vigia_post.js').read()
+        self.assertIn("sessionStorage.getItem('istt-cambio')", js)
+        self.assertIn('location.reload()', js)
+        self.assertIn('borradorVivo', js,
+                      'jamas recargar con una respuesta a medio escribir')

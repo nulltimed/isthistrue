@@ -37,10 +37,15 @@
         {% if user.is_authenticated %} · <a href="#responder">{% trans "responder" %}</a>{% endif %}
       </span>
     </div>
-    <div id="thread-messages" hx-get="{% url 'post_thread_fragment' post.pk %}?pagina={{ page_obj.number|default:1 }}"
-         hx-include="#thread-last" hx-trigger="every 12s" hx-swap="innerHTML">
+    {# 5.7 (ordenes de David): el sondeo htmx de cada 12 s que re-pintaba el  #}
+    {# hilo entero SE VA — chocaba con el scroll infinito (borraba lo apilado).#}
+    {# Su relevo es el VIGIA (vigia_post.js + /post/pk/estado/): ante cualquier#}
+    {# cambio recarga la pagina y el bocadillo canta el cambio.               #}
+    <div id="thread-messages">
       {% include 'partials/thread_messages.html' %}
     </div>
+    <div id="vigia-post" hidden data-url="{% url 'post_estado' post.pk %}"
+         data-a="{{ estado_analisis }}" data-m="{{ newest_pk|default:0 }}"></div>
     {% if user.is_authenticated %}
       <form method="post" action="{% url 'post_reply' post.pk %}" class="thread-reply" id="responder">{% csrf_token %}
         <textarea name="content" rows="10" required data-mdtoolbar maxlength="8000"
@@ -66,5 +71,6 @@
   </div>
 </article>
 <script src="{% static 'js/transcript.js' %}" defer></script>
+<script src="{% static 'js/vigia_post.js' %}" defer></script>
 <script src="{% static 'js/speaker-suggest.js' %}" defer></script>
 {% endblock %}
