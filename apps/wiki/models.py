@@ -62,6 +62,14 @@ class Claim(models.Model):
     # (el 403 masivo de SearXNG del 2026-08-15). Reanalizable con
     # `manage.py reverdict_missing_sources`.
     sources_ok = models.BooleanField(default=True)
+    # 5.8 (orden expresa de David, 2026-09-07, literal: «me dan igual los
+    # derechos de autor, obedece»): si el claim INVOLUCRA una imagen del
+    # propio video (la vista la miro y aporto), el fotograma queda REGISTRADO
+    # en la wiki como cita visual del analisis. Enmienda ACOTADA a la linea
+    # roja de multimedia: UN JPEG por claim — jamas video, audio ni voz.
+    frame_image = models.FileField(upload_to='frames/', blank=True, default='')
+    frame_second = models.FloatField(null=True, blank=True)
+    frame_note = models.CharField(max_length=500, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

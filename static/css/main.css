@@ -694,3 +694,6 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 
 /* 5.7-B: el centinela del scroll infinito — con cuerpo para que htmx lo "vea". */
 .hilo-centinela{height:2rem}
+
+/* 5.8: el fotograma que el claim involucra, en su ficha wiki. */
+.claim-frame img{max-width:100%;border-radius:6px;border:1px solid #ddd}

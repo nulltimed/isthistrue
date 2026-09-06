@@ -65,22 +65,27 @@ def _un_fotograma(url, segundo):
 
 
 def fotogramas_b64(post, segundo, lag):
-    """Los fotogramas alrededor del instante (retardo humano), en JPEG base64."""
+    """Los fotogramas alrededor del instante (retardo humano), en JPEG base64.
+    Devuelve (fotos, indice del fotograma del segundo EXACTO)."""
     url = _stream_url(post)
-    ya, fotos = set(), []
+    ya, fotos, idx_exacto = set(), [], 0
     for s in (segundo - lag, segundo, segundo + lag):
         s = max(0, int(s))
         if s in ya:
             continue
         ya.add(s)
         try:
-            fotos.append(_un_fotograma(url, s))
+            b = _un_fotograma(url, s)
         except Exception as exc:
             logger.warning('La vista: sin fotograma s%s del post %s (%r)',
                            s, post.pk, exc)
+            continue
+        if s == max(0, int(segundo)):
+            idx_exacto = len(fotos)
+        fotos.append(b)
     if not fotos:
         raise RuntimeError('ningún fotograma')
-    return fotos
+    return fotos, idx_exacto
 
 
 def _mirar_qwen(model, b64s, frase):
@@ -128,7 +133,7 @@ def mirar(post, frase, segundo):
         return None
     lag = max(0, SystemSetting.get_int('vision_lag_seconds', 4))
     try:
-        b64s = fotogramas_b64(post, segundo, lag)
+        b64s, idx_exacto = fotogramas_b64(post, segundo, lag)
     except Exception as exc:
         logger.warning('La vista: sin fotogramas en el post %s s%s (%r)',
                        post.pk, segundo, exc)
@@ -144,8 +149,41 @@ def mirar(post, frase, segundo):
             datos = json.loads(crudo[crudo.find('{'):crudo.rfind('}') + 1])
             if datos.get('veredicto_visual'):
                 datos['modelo'] = m
+                # 5.8: el fotograma del segundo exacto viaja con el hallazgo,
+                # para quedar registrado en la wiki si el claim lo involucra.
+                datos['fotograma_b64'] = b64s[idx_exacto]
+                datos['segundo'] = max(0, int(segundo))
                 return datos
         except Exception as exc:
             logger.warning('La vista fallo con %s en el post %s (%r)',
                            m, post.pk, exc)
     return None
+
+
+def registrar(claim, hallazgo):
+    """5.8 (orden expresa de David, 2026-09-07): «cada claim, verdadero, gris
+    o falso, que involucre una imagen del propio vídeo analizado, debe quedar
+    registrado en la wiki con la imagen en cuestión». Un claim la INVOLUCRA
+    cuando la vista miro y APORTO (sostiene o contradice); con no_aporta la
+    imagen no guarda relacion y no se registra. Cita visual acotada: un JPEG."""
+    import base64
+    from django.core.files.base import ContentFile
+    if not claim or not hallazgo:
+        return False
+    if hallazgo.get('veredicto_visual') not in ('sostiene', 'contradice'):
+        return False
+    b64 = hallazgo.get('fotograma_b64')
+    if not b64:
+        return False
+    try:
+        claim.frame_image.save(f'claim-{claim.pk}.jpg',
+                               ContentFile(base64.b64decode(b64)), save=False)
+        claim.frame_second = hallazgo.get('segundo')
+        claim.frame_note = (f"La pantalla {hallazgo['veredicto_visual'].upper()} "
+                            f"lo dicho — {hallazgo.get('detalle') or ''}")[:500]
+        claim.save(update_fields=['frame_image', 'frame_second', 'frame_note'])
+        return True
+    except Exception as exc:
+        logger.warning('5.8: no pude registrar el fotograma del claim %s (%r)',
+                       claim.pk, exc)
+        return False

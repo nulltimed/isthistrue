@@ -46,6 +46,12 @@ ejecutar sus pasos directamente.
 - NUNCA proponer ni reintroducir Telegram (descartado PARA SIEMPRE por David).
 - NUNCA almacenar multimedia de terceros ni huellas de voz (biometría prohibida salvo
   visto bueno escrito del abogado de David — no construido).
+  **ENMIENDA ACOTADA (orden expresa de David, 2026-09-07, literal: «cada claim,
+  verdadero, gris o falso, que involucre una imagen del propio vídeo analizado, debe
+  quedar registrado en la wiki (me dan igual los derechos de autor, obedece) con la
+  imagen en cuestión»)**: se permite UN fotograma JPEG por claim (`Claim.frame_image`,
+  serie 5.8) como cita visual del análisis. El resto de la línea sigue íntegro:
+  jamás vídeo, audio ni huellas de voz.
 - NUNCA exponer el domicilio real de David (aviso legal: apartado de correos pendiente).
 - NUNCA subir los límites de gasto (DAILY_BUDGET_EUR / MONTHLY_CAP_EUR) sin orden explícita de David.
   **Reforzado el 2026-08-17**: desde el pase 4.3-F son editables en `/panel/settings/`

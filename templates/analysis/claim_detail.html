@@ -15,6 +15,17 @@
   <section><h2>{% trans "Qué se afirma" %}</h2><p>{{ claim.what_is_claimed }}</p></section>
   <section><h2>{% trans "Qué dice la evidencia" %}</h2><p>{% if linked_evidence %}{{ linked_evidence|safe }}{% else %}{{ claim.what_evidence_says }}{% endif %}</p></section>
   <section><h2>{% trans "La diferencia" %}</h2><p>{{ claim.the_difference }}</p></section>
+
+  {# 5.8 (orden expresa de David): el fotograma del vídeo que este claim involucra. #}
+  {% if claim.frame_image %}
+  <section class="claim-frame">
+    <h2>{% trans "Lo que mostraba la pantalla" %}</h2>
+    <figure>
+      <img src="{{ claim.frame_image.url }}" alt="{% trans 'Fotograma del vídeo en el instante de la afirmación' %}" loading="lazy">
+      <figcaption class="hint">{{ claim.frame_note }}{% if claim.frame_second is not None %} · {% trans "segundo" %} {{ claim.frame_second|floatformat:0 }}{% endif %}</figcaption>
+    </figure>
+  </section>
+  {% endif %}
   {% if claim.sensitive %}<p class="warning">{% trans "Tema sensible: consulta siempre fuentes y recursos oficiales." %}</p>{% endif %}
   <h2>{% trans "Fuentes" %}</h2>
   <ul>{% for s in claim.sources.all %}<li><a href="{{ s.url }}" rel="noopener">{{ s.title|default:s.url }}</a></li>{% endfor %}</ul>

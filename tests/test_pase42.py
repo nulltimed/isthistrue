@@ -5788,3 +5788,60 @@ class Parche57_Serie(TestCase):
         self.assertIn('location.reload()', js)
         self.assertIn('borradorVivo', js,
                       'jamas recargar con una respuesta a medio escribir')
+
+
+class Parche58_FotogramaEnLaWiki(TestCase):
+    """5.8 (orden expresa de David): cada claim que involucre una imagen del
+    propio video queda registrado en la wiki CON la imagen. Enmienda acotada
+    de la linea roja de multimedia (documentada en CLAUDE.md): un JPEG por
+    claim, jamas video ni audio."""
+
+    B64_PIXEL = ('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsL'
+                 'DBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/'
+                 'wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAA'
+                 'AAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==')
+
+    def _claim(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='f58', email='f58@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/f58',
+                                   platform='youtube', title='Con pantalla')
+        seg = post.transcript_segments.create(start_seconds=30, end_seconds=34,
+                                              text='como ven el paro bajo',
+                                              signal='FACTUAL_UNVERIFIED')
+        claim = Claim.objects.create(text_original='como ven el paro bajo',
+                                     color='RED', slug='paro-pantalla-58')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='...')
+        return claim
+
+    def test_el_fotograma_queda_registrado_y_se_ve_en_la_wiki(self):
+        from apps.agents import vision
+        claim = self._claim()
+        ok = vision.registrar(claim, {
+            'veredicto_visual': 'contradice', 'detalle': 'el grafico sube',
+            'modelo': 'qwen3-vl-plus', 'fotograma_b64': self.B64_PIXEL,
+            'segundo': 30})
+        self.assertTrue(ok)
+        claim.refresh_from_db()
+        self.assertTrue(claim.frame_image)
+        self.assertEqual(claim.frame_second, 30)
+        html = self.client.get(f'/wiki/claim/{claim.slug}/').content.decode()
+        self.assertIn('Lo que mostraba la pantalla', html)
+        self.assertIn(claim.frame_image.url, html)
+        self.assertIn('CONTRADICE', html)
+
+    def test_no_aporta_no_registra_nada(self):
+        from apps.agents import vision
+        claim = self._claim()
+        ok = vision.registrar(claim, {
+            'veredicto_visual': 'no_aporta', 'detalle': 'sin relacion',
+            'fotograma_b64': self.B64_PIXEL, 'segundo': 30})
+        self.assertFalse(ok)
+        claim.refresh_from_db()
+        self.assertFalse(claim.frame_image)
+
+    def test_el_veredicto_cablea_el_registro(self):
+        import inspect
+        from apps.agents import verdict as va
+        fuente = inspect.getsource(va.run)
+        self.assertIn('vision.registrar', fuente)

@@ -1644,3 +1644,13 @@ msgstr "Image analysis"
 
 msgid "Los ojos comparan lo que se ve en pantalla con lo que se dice. No tienen acceso web, así que van en su propia categoría; la verificación con fuentes sigue en manos del modelo de texto de cada tarea."
 msgstr "The eyes compare what is shown on screen with what is said. They have no web access, so they live in their own category; source-based verification stays with the text model of each task."
+
+# 5.8: el fotograma del claim
+msgid "Lo que mostraba la pantalla"
+msgstr "What the screen was showing"
+
+msgid "Fotograma del vídeo en el instante de la afirmación"
+msgstr "Video frame at the moment of the claim"
+
+msgid "segundo"
+msgstr "second"

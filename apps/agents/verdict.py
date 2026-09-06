@@ -114,6 +114,7 @@ def run(post, model=None):
         # del verificador. Contexto, no veredicto. Fail-soft. Se apaga con
         # vision_pass=0 en el panel.
         from apps.agents import vision
+        hallazgo = None
         try:
             seg_idx = c.get('segment_index')
             segs = list(post.transcript_segments.order_by('start_seconds', 'pk'))
@@ -151,8 +152,15 @@ def run(post, model=None):
                     pass
                 else:
                     v['color'] = 'UNDECIDED'
-            upsert_claim(post, c, v, sources_ok=tiene_fuentes or
-                         (es_opinion and v.get('color') == 'GREY'))
+            claim_obj = upsert_claim(post, c, v, sources_ok=tiene_fuentes or
+                                     (es_opinion and v.get('color') == 'GREY'))
+            # 5.8 (orden expresa de David): si el claim involucra una imagen
+            # del video (la vista aporto), el fotograma queda en la wiki.
+            if hallazgo:
+                try:
+                    vision.registrar(claim_obj, hallazgo)
+                except Exception:
+                    pass
 
 
 def context_for(segments, i, before, after):
