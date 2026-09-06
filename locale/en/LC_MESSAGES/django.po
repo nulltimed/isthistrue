@@ -1517,3 +1517,58 @@ msgstr "Backup (Claude) if the primary fails"
 
 msgid "Sin respaldo (la tarea espera)"
 msgstr "No backup (the task waits)"
+
+# ---- 5.3: transparencia, karaoke y opiniones (2026-09-06) ----
+msgid "Apuntes"
+msgstr "Entries"
+
+msgid "Confirmadas recientes"
+msgstr "Recently confirmed"
+
+msgid "Confirmar"
+msgstr "Confirm"
+
+msgid "Coste"
+msgstr "Cost"
+
+msgid "Descartar"
+msgstr "Discard"
+
+msgid "En qué se gasta"
+msgstr "Where the money goes"
+
+msgid "Histórico por meses"
+msgstr "Monthly history"
+
+msgid "Las del botón PayPal de la web entran aquí SIN verificar. Compara con tu cuenta de PayPal y confirma: solo lo confirmado sube el tope de gasto y cuenta en el «Faltan X €»."
+msgstr "Donations from the site's PayPal button arrive here UNVERIFIED. Check them against your PayPal account and confirm: only confirmed ones raise the spending cap and count towards the public goal."
+
+msgid "Nada pendiente."
+msgstr "Nothing pending."
+
+msgid "Opinión analizada por su lógica — verde significa «fundada», nunca «verificada»"
+msgstr "Opinion analysed by its logic — green means \"well-founded\", never \"verified\""
+
+msgid "Pendientes de confirmar"
+msgstr "Pending confirmation"
+
+msgid "Sin gastos registrados este mes."
+msgstr "No expenses recorded this month."
+
+msgid "Todas las formas de donar"
+msgstr "All the ways to donate"
+
+msgid "Total gastado"
+msgstr "Total spent"
+
+msgid "Transparencia total: estos son los apuntes REALES del libro de cuentas del proyecto — cada llamada a cada tecnología se anota con su coste. El contador se reinicia cada día 1."
+msgstr "Full transparency: these are the REAL entries of the project's cost ledger — every call to every technology is recorded with its cost. The counter resets on the 1st of each month."
+
+msgid "donados este mes (confirmados)"
+msgstr "donated this month (confirmed)"
+
+msgid "objetivo mensual"
+msgstr "monthly goal"
+
+msgid "¿Quieres empujar?"
+msgstr "Want to help push?"

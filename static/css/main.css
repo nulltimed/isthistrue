@@ -658,3 +658,4 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .segment.live .text{position:relative}
 .karaoke-cap{position:absolute;inset:-2px -4px;padding:2px 4px;background:#fff;color:#141414;
   border-radius:3px;white-space:pre-wrap;pointer-events:none;clip-path:inset(0 100% 0 0)}
+.badge-opinion{background:#eef;border:1px solid #99c}

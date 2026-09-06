@@ -75,7 +75,7 @@
           {% if s.claim %}
             {# 5.3-B (orden de David): al posar el raton, el RESUMEN del veredicto; el clic lleva a la wiki. #}
             <a class="verdict verdict-{{ s.claim.color }}" href="/wiki/claim/{{ s.claim.slug|default:s.claim.pk }}/"
-               title="{{ s.claim.what_evidence_says|default:_('Ver la verificación completa con sus fuentes')|truncatechars:260 }}">{% trans s.claim.get_color_display %}</a>
+               title="{{ s.claim.what_evidence_says|default:_('Ver la verificación completa con sus fuentes')|truncatechars:260 }}">{% if s.claim.kind == 'OPINION' %}💭 {% endif %}{% trans s.claim.get_color_display %}</a>
             {% if s.claim.temporal_basis %}<span class="verdict-basis" title="{% trans 'Contra qué se comparó' %}">{{ s.claim.temporal_basis }}</span>{% endif %}
             {% if s.claim.sources.exists %}<span class="verdict-sources">{% blocktrans count n=s.claim.sources.count %}{{ n }} fuente{% plural %}{{ n }} fuentes{% endblocktrans %}</span>{% endif %}
           {% elif s.signal %}<span class="signal signal-{{ s.signal }}">{% trans s.get_signal_display %}</span>{% endif %}

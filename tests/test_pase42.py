@@ -5104,3 +5104,112 @@ class Parche52A_QwenPrincipal(TestCase):
         html = self.client.get('/legal/privacidad/').content.decode()
         self.assertIn('Alibaba Cloud', html)
         self.assertIn('RESPALDO', html)
+
+
+class Parche53_Serie(TestCase):
+    """5.3 (ordenes de David, 2026-09-06): donaciones vivas + /gastos/,
+    barrido karaoke, resumen en el semaforo, y las OPINIONES al analisis
+    profundo (por su logica)."""
+
+    # ---------- 5.3-A: donaciones y gastos ----------
+    def test_la_captura_paypal_entra_sin_verificar_y_es_idempotente(self):
+        import json
+        from apps.panel.models import Donation
+        from apps.panel.services import live_monthly_cap
+        cap_antes, _, _ = live_monthly_cap()
+        for _ in range(2):
+            self.client.post('/donaciones/registrar/',
+                             json.dumps({'amount': '25.00', 'order': 'ORD-1'}),
+                             content_type='application/json')
+        self.assertEqual(Donation.objects.filter(note='paypal-web:ORD-1').count(), 1)
+        d = Donation.objects.get(note='paypal-web:ORD-1')
+        self.assertFalse(d.verified, 'una donacion web NO puede nacer verificada')
+        cap_despues, _, _ = live_monthly_cap()
+        self.assertEqual(cap_antes, cap_despues,
+                         'el tope subio sin confirmar: un POST podria inflarlo')
+
+    def test_confirmar_en_el_panel_sube_el_tope(self):
+        import json
+        from apps.panel.models import Donation
+        from apps.panel.services import live_monthly_cap
+        self.client.post('/donaciones/registrar/',
+                         json.dumps({'amount': '10.00', 'order': 'ORD-2'}),
+                         content_type='application/json')
+        d = Donation.objects.get(note='paypal-web:ORD-2')
+        staff = User.objects.create_user(username='p53', email='p53@example.org',
+                                         password='x', is_staff=True)
+        self.client.force_login(staff)
+        cap_antes, _, _ = live_monthly_cap()
+        self.client.post('/panel/donaciones/', {'id': d.pk, 'accion': 'confirmar'})
+        cap_despues, _, _ = live_monthly_cap()
+        self.assertEqual(cap_despues - cap_antes, 10.0)
+
+    def test_la_pagina_de_gastos_existe_con_datos_reales(self):
+        from apps.analysis.costs import record
+        record('qwen', 'analisis', 0.05)
+        r = self.client.get('/gastos/')
+        self.assertEqual(r.status_code, 200)
+        html = r.content.decode()
+        self.assertIn('Qwen', html)
+        self.assertIn('0,05', html.replace('0.05', '0,05'))
+        self.assertEqual(self.client.get('/gastos/2026-08/').status_code, 200)
+        self.assertEqual(self.client.get('/gastos/no-mes/').status_code, 404)
+
+    def test_el_banner_enlaza_a_gastos(self):
+        html = self.client.get('/').content.decode()
+        self.assertIn('href="/gastos/"', html)
+
+    # ---------- 5.3-B: karaoke + resumen ----------
+    def test_el_karaoke_progresivo_esta_cableado(self):
+        js = open('static/js/transcript.js').read()
+        self.assertIn('karaoke-cap', js)
+        self.assertIn('clipPath', js)
+        css = open('static/css/main.css').read()
+        self.assertIn('.karaoke-cap', css)
+
+    # ---------- 5.3-C: opiniones al analisis profundo ----------
+    def test_las_opiniones_van_al_analista_de_logica(self):
+        from unittest import mock
+        from apps.agents import verdict as va
+        from apps.agents import prompts
+        from apps.wiki.models import Claim
+        autor = make_user(username='op53', email='op53@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/op53',
+                                   title='V op')
+        post.transcript_segments.create(start_seconds=0, end_seconds=3,
+                                        text='Sanchez es el peor presidente de la historia',
+                                        signal='OPINION')
+        capturas = []
+        def falso(model, system, payload, **kw):
+            capturas.append(system)
+            return ({'color': 'RED', 'what_is_claimed': 'x',
+                     'what_evidence_says': 'premisa falsa', 'the_difference': '',
+                     'sources': [{'url': 'https://ine.es', 'title': 'INE'}]},
+                    'qwen3.7-plus')
+        with mock.patch.object(va.client, 'call_search_json', side_effect=falso):
+            va.run(post)
+        self.assertEqual(capturas[0], prompts.OPINION_VERDICT_SYSTEM,
+                         'la opinion no fue al analista de logica')
+        c = Claim.objects.get()
+        self.assertEqual(c.kind, 'OPINION')
+        self.assertEqual(c.color, 'RED')
+
+    def test_opinion_gris_sin_fuentes_es_legitima_pero_verde_no(self):
+        from unittest import mock
+        from apps.agents import verdict as va
+        from apps.wiki.models import Claim
+        autor = make_user(username='op54', email='op54@example.org')
+        for i, color in enumerate(['GREY', 'GREEN']):
+            post = Post.objects.create(author=autor, url=f'https://youtu.be/op54{i}',
+                                       title=f'V{i}')
+            post.transcript_segments.create(start_seconds=0, end_seconds=3,
+                                            text=f'opinion {i} distinta',
+                                            signal='OPINION')
+            with mock.patch.object(va.client, 'call_search_json',
+                                   return_value=({'color': color,
+                                                  'what_is_claimed': f'x{i}',
+                                                  'sources': []}, 'm')):
+                va.run(post)
+        claims = {c.what_is_claimed: c.color for c in Claim.objects.all()}
+        self.assertEqual(claims['x0'], 'GREY', 'el gris sin fuentes es legitimo en opinion')
+        self.assertEqual(claims['x1'], 'UNDECIDED', 'un verde sin fuentes no puede publicarse')

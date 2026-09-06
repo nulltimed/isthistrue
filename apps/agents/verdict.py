@@ -91,8 +91,15 @@ def run(post, model=None):
     from apps.agents.catalog import fallback_for, model_for, web_searches_per_claim
     tope = web_searches_per_claim()
     for c in sw['claims']:
-        if c.get('kind') != 'FACTUAL':
-            continue          # una opinion no se verifica: ni se busca, ni se paga
+        # 5.3-C (orden de David, revierte el descarte del 4.4-B): las OPINIONES
+        # tambien se analizan A FONDO — por su LOGICA (premisas comprobadas con
+        # busqueda + razonamiento examinado), nunca por su «verdad». Prima la
+        # calidad del analisis sobre el tiempo de espera (palabras de David).
+        es_opinion = c.get('kind') == 'OPINION'
+        if not es_opinion and c.get('kind') != 'FACTUAL':
+            continue          # senales vacias o basura: fuera
+        sistema = prompts.OPINION_VERDICT_SYSTEM if es_opinion \
+            else prompts.VERDICT_SYSTEM
         # 4.4-E (decision de David): "todo por Claude". Ya no hay documentalista
         # aparte: EL MODELO busca sus fuentes con la herramienta web de Anthropic
         # (10 $/1.000 + tokens), con las fuentes oficiales por delante y el tope
@@ -101,12 +108,13 @@ def run(post, model=None):
         # en 🔍 por falta de papeles.
         payload = build_payload(c, fecha, tope)
         v, usado = client.call_search_json(model or model_for('verdict'),
-                                           prompts.VERDICT_SYSTEM, payload,
+                                           sistema, payload,
                                            max_tokens=1500, mock_payload=MOCK_VERDICT,
                                            cacheable=expediente, max_searches=tope,
                                            fallback=fallback_for('verdict'))
         if 'error' not in v:
             v['model_used'] = usado
+            v['kind'] = 'OPINION' if es_opinion else 'FACTUAL'
             tiene_fuentes = bool(v.get('sources'))
             # 4.4-B (decision de David): SIN FUENTES NO HAY COLOR. Hasta el 4.4-E la
             # garantia era estructural — si la busqueda volvia vacia no se llamaba al
@@ -115,8 +123,15 @@ def run(post, model=None):
             # un ruego no es un candado: si contesta GREEN sin una sola URL, ese verde
             # se publicaba. Se vuelve a imponer aqui. Lo cazo el test del 4.4-B.
             if not tiene_fuentes:
-                v['color'] = 'UNDECIDED'
-            upsert_claim(post, c, v, sources_ok=tiene_fuentes)
+                # 5.3-C: en una OPINION, «no calificable» (GREY) es legitimo
+                # sin fuentes — un juicio de valor puro no tiene premisas que
+                # comprobar. FUNDADA o DESMENTIDA siguen exigiendo papeles.
+                if es_opinion and v.get('color') == 'GREY':
+                    pass
+                else:
+                    v['color'] = 'UNDECIDED'
+            upsert_claim(post, c, v, sources_ok=tiene_fuentes or
+                         (es_opinion and v.get('color') == 'GREY'))
 
 
 def context_for(segments, i, before, after):

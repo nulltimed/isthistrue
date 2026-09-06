@@ -33,6 +33,11 @@ class Claim(models.Model):
     if HAS_PGVECTOR:
         embedding = VectorField(dimensions=384, null=True)  # MiniLM multilingue local
     color = models.CharField(max_length=12, choices=COLORS, default='PENDING')
+    # 5.3-C (orden de David): las OPINIONES tambien se analizan a fondo — por
+    # su LOGICA, no por su verdad. El lector debe ver siempre cual es cual:
+    # un verde de opinion significa «fundada», jamas «verificada».
+    KINDS = [('FACTUAL', 'Afirmación'), ('OPINION', 'Opinión')]
+    kind = models.CharField(max_length=8, choices=KINDS, default='FACTUAL')
     # 4.4-B (decision de David: "nunca es nunca"): contra que serie y que rango
     # se comparo. Sin esto, "mas trabajadores que nunca" sale VERDE mirando diez
     # años y ROJO mirando la serie completa de la EPA desde 1976. El lector tiene
