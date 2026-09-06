@@ -245,8 +245,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'official_sources': ('ine.es,europa.eu,boe.es,bde.es,aemet.es,seg-social.es,'
                          'sepe.es,who.int,un.org,oecd.org'),
     # 4.3-A.7: ventana de contexto del semaforo (frases del mismo hablante).
-    'verdict_context_before': '2'  # 5.22: 2+2 (orden de David),
-    'verdict_context_after': '2'  # 5.22: 2+2 (orden de David),
+    'verdict_context_before': '2',  # 5.22: 2+2 (orden de David)
+    'verdict_context_after': '2',   # 5.22: 2+2 (orden de David)
     # 4.3-A.8 (decision de David): cualquier usuario puede postear hasta N minutos
     # sin mas; por encima se le AVISA de la donacion que sostiene ese analisis
     # (nunca se le bloquea: la puerta de submit es login + email verificado y esa
