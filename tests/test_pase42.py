@@ -5023,10 +5023,12 @@ class Parche52A_QwenPrincipal(TestCase):
         from unittest import mock
         from django.test import override_settings
         from apps.agents import client
-        respuesta = {'output': {
-            'choices': [{'message': {'content': '{"color": "GREEN"}'}}],
-            'search_info': {'search_results': [
-                {'index': 1, 'title': 'INE', 'url': 'https://ine.es/dato'}]}}}
+        respuesta = {'output': [
+            {'type': 'web_search_call', 'action': {'sources': [
+                {'type': 'url', 'url': 'https://ine.es/dato', 'title': 'INE'}]}},
+            {'type': 'message', 'content': [
+                {'type': 'output_text', 'text': '{"color": "GREEN"}'}]}],
+            'usage': {'input_tokens': 100, 'output_tokens': 50}}
         fake = mock.Mock(); fake.json.return_value = respuesta
         fake.raise_for_status = mock.Mock()
         with override_settings(MOCK_AGENTS=False, QWEN_SEARCH_API_KEY='k',
@@ -5041,6 +5043,26 @@ class Parche52A_QwenPrincipal(TestCase):
     def test_con_qwen_de_principal_los_lotes_se_apagan(self):
         from apps.agents.catalog import delivery_for
         self.assertEqual(delivery_for('verdict'), 'direct')
+
+
+
+    def test_cada_llamada_qwen_apunta_su_gasto_real(self):
+        """5.2-C (peticion de David: «los gastos reales»): usage -> CostEntry."""
+        from unittest import mock
+        from django.test import override_settings
+        from apps.agents import qwen
+        fake = mock.Mock()
+        fake.json.return_value = {'choices': [{'message': {'content': 'OK'}}],
+                                  'usage': {'input_tokens': 1000, 'output_tokens': 500}}
+        fake.raise_for_status = mock.Mock()
+        with override_settings(QWEN_API_KEY='k', QWEN_BASE_URL='https://x.test'), \
+             mock.patch('requests.post', return_value=fake), \
+             mock.patch('apps.analysis.costs.record') as rec:
+            qwen.call_full('qwen3.7-plus', 'sys', 'user')
+        rec.assert_called_once()
+        proveedor, concepto, eur = rec.call_args[0][:3]
+        self.assertEqual(proveedor, 'qwen')
+        self.assertGreater(eur, 0)
 
     def test_el_panel_muestra_la_rueda_de_respaldo(self):
         u = User.objects.create_user(username='panel52', email='p52@example.org',
@@ -5070,12 +5092,11 @@ class Parche52A_QwenPrincipal(TestCase):
         self.assertIn('/compatible-mode/v1/chat/completions', url)
         self.assertIs(body['enable_thinking'], False)
 
-    def test_sin_clave_de_busqueda_los_veredictos_caen_a_claude(self):
-        """El Token Plan no busca: sin QWEN_SEARCH_API_KEY, call_with_search
-        falla honestamente y el respaldo Claude entra desde client.py."""
+    def test_sin_ninguna_clave_qwen_la_busqueda_falla_honestamente(self):
+        """Sin clave alguna, call_with_search falla y el respaldo Claude entra."""
         from django.test import override_settings
         from apps.agents import qwen
-        with override_settings(QWEN_API_KEY='k', QWEN_SEARCH_API_KEY=''):
+        with override_settings(QWEN_API_KEY='', QWEN_SEARCH_API_KEY=''):
             with self.assertRaises(RuntimeError):
                 qwen.call_with_search('qwen3.7-plus', 'sys', 'user')
 
