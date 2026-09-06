@@ -6261,3 +6261,73 @@ class Parche519_AlternativasAlDRM(TestCase):
                                           'topic': 'otros'})
         self.assertTrue(Post.objects.filter(url='https://youtu.be/altABC123',
                                             platform='youtube').exists())
+
+
+class Parche520_GestionDelPost(TestCase):
+    """5.20 (orden de David): gestion sencilla del post para moderacion —
+    notas internas, censura entera con cortina (el lector puede verlo) y
+    eliminacion con confirmacion."""
+
+    def _mod(self):
+        from apps.accounts.models import User
+        u = make_user(username='gp520', email='gp520@example.org')
+        User.objects.filter(pk=u.pk).update(is_staff=True, is_superuser=True)
+        return User.objects.get(pk=u.pk)
+
+    def test_censura_con_cortina_y_opcion_de_verlo(self):
+        mod = self._mod()
+        post = Post.objects.create(author=mod, url='https://youtu.be/gp520a',
+                                   title='Contenido delicado')
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/censurar/', {'reason': 'difamación'})
+        post.refresh_from_db()
+        self.assertTrue(post.censored)
+        # el lector anonimo ve la cortina, el motivo y el boton de abrirla
+        self.client.logout()
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('Post censurado por moderación', html)
+        self.assertIn('difamación', html)
+        self.assertIn('Ver de todos modos', html)
+        self.assertIn('censura-contenido', html)
+        # descensurar
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/censurar/')
+        post.refresh_from_db()
+        self.assertFalse(post.censored)
+
+    def test_notas_internas_solo_para_moderacion(self):
+        mod = self._mod()
+        post = Post.objects.create(author=mod, url='https://youtu.be/gp520b')
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/nota/', {'text': 'ojo con este autor'})
+        self.assertEqual(post.mod_notes.count(), 1)
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('ojo con este autor', html)
+        self.client.logout()
+        html2 = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertNotIn('ojo con este autor', html2, 'las notas son internas')
+
+    def test_eliminar_exige_confirmacion_y_deja_rastro(self):
+        from apps.panel.models import AuditLog
+        mod = self._mod()
+        post = Post.objects.create(author=mod, url='https://youtu.be/gp520c',
+                                   title='A eliminar')
+        pk = post.pk
+        self.client.force_login(mod)
+        self.client.post(f'/post/{pk}/eliminar/', {'confirm': 'no'})
+        self.assertTrue(Post.objects.filter(pk=pk).exists(),
+                        'sin confirmacion correcta no se borra')
+        self.client.post(f'/post/{pk}/eliminar/', {'confirm': str(pk)})
+        self.assertFalse(Post.objects.filter(pk=pk).exists())
+        self.assertTrue(AuditLog.objects.filter(action='post_delete',
+                                                detail__contains='A eliminar').exists())
+
+    def test_un_usuario_normal_no_gestiona_nada(self):
+        u = make_user(username='norm520', email='norm520@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/gp520d')
+        self.client.force_login(u)
+        self.client.post(f'/post/{post.pk}/censurar/', {'reason': 'x'})
+        self.client.post(f'/post/{post.pk}/eliminar/', {'confirm': str(post.pk)})
+        post.refresh_from_db()
+        self.assertFalse(post.censored)
+        self.assertTrue(Post.objects.filter(pk=post.pk).exists())

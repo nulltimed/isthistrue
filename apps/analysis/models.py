@@ -95,6 +95,14 @@ class Post(models.Model):
     duration_seconds = models.IntegerField(default=0)
     category = models.CharField(max_length=10, choices=CATEGORIES, default='MAIN')
     status = models.CharField(max_length=24, choices=STATUSES, default='NEW')
+    # 5.20 (orden de David): censura de moderacion con cortina — el post entero
+    # queda cubierto con el motivo, y el LECTOR decide verlo igualmente.
+    censored = models.BooleanField(default=False)
+    censored_reason = models.CharField(max_length=200, blank=True, default='')
+    censored_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,
+                                    blank=True, on_delete=models.SET_NULL,
+                                    related_name='censored_posts')
+    censored_at = models.DateTimeField(null=True, blank=True)
     voluntary_offtopic = models.BooleanField(default=False)  # coste CERO hasta 10 votos
     is_adult = models.BooleanField(default=False)            # marcado por autor/agente/moderador
     adult_flag_source = models.CharField(max_length=10, blank=True, default='')  # author|agent|mod
@@ -247,6 +255,19 @@ class ValidationVote(models.Model):
 
     class Meta:
         unique_together = ('post', 'user', 'kind')
+
+
+class PostModNote(models.Model):
+    """5.20: notas internas de moderacion sobre un post (solo las ven mods)."""
+    post = models.ForeignKey(Post, on_delete=models.CASCADE,
+                             related_name='mod_notes')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True,
+                               on_delete=models.SET_NULL)
+    text = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 class CostEntry(models.Model):

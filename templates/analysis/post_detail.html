@@ -23,6 +23,17 @@
     </details>
     {% endif %}
   </div>
+  {# 5.20 (orden de David): censura de moderacion con CORTINA — el post entero #}
+  {# cubierto con su motivo, y el LECTOR decide verlo igualmente (un clic). #}
+  {% if post.censored and not is_mod %}
+  <div class="censura-cortina" id="censura-aviso">
+    <h1>🚫 {% trans "Post censurado por moderación" %}</h1>
+    {% if post.censored_reason %}<p>{{ post.censored_reason }}</p>{% endif %}
+    <button class="primary" onclick="document.getElementById('censura-aviso').hidden = true; document.getElementById('censura-contenido').hidden = false;">{% trans "Ver de todos modos" %}</button>
+  </div>
+  <div id="censura-contenido" hidden>
+  {% endif %}
+  {% if post.censored and is_mod %}<p class="warning">🚫 {% trans "Este post está censurado" %}{% if post.censored_reason %}: {{ post.censored_reason }}{% endif %} <span class="hint">({% trans "los lectores ven la cortina y pueden abrirla" %})</span></p>{% endif %}
   <h1>{{ post.title|default:post.url }}</h1>
   <div id="post-body">
     {% include 'partials/post_body.html' %}
@@ -69,6 +80,7 @@
     <a href="https://www.facebook.com/sharer/sharer.php?u=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Facebook</a>
     <a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a>
   </div>
+{% if post.censored and not is_mod %}</div>{% endif %}
 </article>
 <script src="{% static 'js/transcript.js' %}" defer></script>
 <script src="{% static 'js/vigia_post.js' %}" defer></script>

@@ -202,6 +202,35 @@
       {# sin JavaScript). Patron <details> como el tutorial del panel. #}
       <details class="mod-menu">
         <summary title="{% trans 'Relanzar una etapa del análisis' %}">{% icon 'wrench' 18 %} {% trans "Relanzar análisis" %}</summary>
+        {# 5.20 (orden de David): gestion del post en un solo sitio. #}
+        <details class="gestion-post">
+          <summary>🛡 {% trans "Gestión del post" %}</summary>
+          <form method="post" action="{% url 'post_censor' post.pk %}" class="gestion-form">{% csrf_token %}
+            {% if post.censored %}
+            <button class="mini">{% trans "Retirar la censura" %}</button>
+            {% else %}
+            <input name="reason" maxlength="200" placeholder="{% trans 'Motivo de la censura (lo verá el lector)' %}">
+            <button class="mini">🚫 {% trans "Censurar entero" %}</button>
+            {% endif %}
+          </form>
+          <form method="post" action="{% url 'post_delete' post.pk %}" class="gestion-form"
+                onsubmit="return confirm('{% trans '¿Eliminar el post y su hilo? No hay vuelta atrás.' %}');">{% csrf_token %}
+            <input name="confirm" required placeholder="{% blocktrans with n=post.pk %}Escribe {{ n }} para confirmar{% endblocktrans %}">
+            <button class="mini danger">🗑 {% trans "Eliminar post" %}</button>
+          </form>
+          <div class="gestion-notas">
+            <strong>{% trans "Notas de moderación" %}</strong>
+            <form method="post" action="{% url 'post_mod_note' post.pk %}" class="gestion-form">{% csrf_token %}
+              <input name="text" maxlength="2000" required placeholder="{% trans 'Nueva nota (solo la ve moderación)' %}">
+              <button class="mini">＋</button>
+            </form>
+            <ul>
+              {% for n in post.mod_notes.all %}
+              <li><span class="hint">{{ n.created_at|date:'d/m H:i' }} · {{ n.author.username|default:'—' }}:</span> {{ n.text }}</li>
+              {% empty %}<li class="hint">{% trans "Sin notas." %}</li>{% endfor %}
+            </ul>
+          </div>
+        </details>
         <ul class="relaunch-list">
           {% for r in relaunch_rows %}
           <li>

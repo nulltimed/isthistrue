@@ -712,3 +712,12 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 #istt-pp-cerrar{position:fixed;top:14px;right:14px;z-index:2147483647;
   background:#141414;color:#fff;border:2px solid #fff;border-radius:20px;
   padding:.45rem .9rem;cursor:pointer;font-size:1rem}
+
+/* 5.20: la cortina de censura y la caja de gestion del post. */
+.censura-cortina{text-align:center;padding:3rem 1rem;border:2px solid #141414;
+  border-radius:8px;background:#f7f7f7;margin:1rem 0}
+.gestion-post{border:1px dashed #999;border-radius:6px;padding:.4rem .6rem;margin:.5rem 0}
+.gestion-form{display:flex;gap:.4rem;margin:.35rem 0;flex-wrap:wrap}
+.gestion-form input{flex:1;min-width:180px}
+.mini.danger{background:#8a1111;color:#fff}
+.gestion-notas ul{margin:.3rem 0;padding-left:1rem}

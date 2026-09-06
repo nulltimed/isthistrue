@@ -777,6 +777,75 @@ def relaunch(request, pk, stage):
     return redirect('post_detail', pk=pk)
 
 
+# ---------------- 5.20: gestion del post (moderacion) ----------------
+
+@login_required
+def post_mod_note(request, pk):
+    """5.20: nota interna de moderacion sobre el post."""
+    from .models import PostModNote
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect('post_detail', pk=pk)
+    texto = request.POST.get('text', '').strip()[:2000]
+    if texto:
+        PostModNote.objects.create(post=post, author=request.user, text=texto)
+        messages.success(request, 'Nota de moderación guardada.')
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+def post_censor(request, pk):
+    """5.20: censurar/descensurar el post ENTERO — cortina con motivo; el
+    lector puede elegir verlo igualmente (orden de David)."""
+    from django.utils import timezone as _tz
+    from apps.panel.models import AuditLog
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect('post_detail', pk=pk)
+    if post.censored:
+        post.censored = False
+        post.censored_reason = ''
+        post.censored_by = None
+        post.censored_at = None
+        accion, aviso = 'post_uncensor', 'Censura retirada.'
+    else:
+        post.censored = True
+        post.censored_reason = request.POST.get('reason', '').strip()[:200]
+        post.censored_by = request.user
+        post.censored_at = _tz.now()
+        accion, aviso = 'post_censor', 'Post censurado (el lector puede optar por verlo).'
+    post.save(update_fields=['censored', 'censored_reason',
+                             'censored_by', 'censored_at'])
+    AuditLog.objects.create(user=request.user, action=accion,
+                            detail=f'post {post.pk}: {post.censored_reason[:80]}')
+    messages.success(request, aviso)
+    return redirect('post_detail', pk=pk)
+
+
+@login_required
+def post_delete(request, pk):
+    """5.20: eliminar el post (con su hilo del foro). Accion irreversible:
+    exige confirmacion y deja rastro en AuditLog."""
+    from apps.panel.models import AuditLog
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect('post_detail', pk=pk)
+    if request.POST.get('confirm') != post.pk.__str__():
+        messages.error(request, 'Confirmación incorrecta: escribe el número '
+                                'del post para eliminarlo.')
+        return redirect('post_detail', pk=pk)
+    from apps.forum.machina_glue import get_topic_for_post
+    titulo = (post.title or post.url)[:120]
+    topic = get_topic_for_post(post)
+    AuditLog.objects.create(user=request.user, action='post_delete',
+                            detail=f'post {post.pk} «{titulo}»')
+    if topic:
+        topic.delete()
+    post.delete()
+    messages.success(request, f'Post «{titulo}» eliminado.')
+    return redirect('index')
+
+
 @login_required
 def unrelegate(request, pk):
     """Devolver un post a Principal (tambien repara los relegados por el

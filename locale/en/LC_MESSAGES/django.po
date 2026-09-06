@@ -1717,3 +1717,46 @@ msgstr "Analyse the chosen version"
 
 msgid "Volver e intentar con otro enlace"
 msgstr "Go back and try another link"
+
+# 5.20: gestion del post
+msgid "Post censurado por moderación"
+msgstr "Post censored by moderation"
+
+msgid "Ver de todos modos"
+msgstr "View anyway"
+
+msgid "Este post está censurado"
+msgstr "This post is censored"
+
+msgid "los lectores ven la cortina y pueden abrirla"
+msgstr "readers see the curtain and can open it"
+
+msgid "Gestión del post"
+msgstr "Post management"
+
+msgid "Retirar la censura"
+msgstr "Lift the censorship"
+
+msgid "Motivo de la censura (lo verá el lector)"
+msgstr "Reason for censorship (the reader will see it)"
+
+msgid "Censurar entero"
+msgstr "Censor entirely"
+
+msgid "¿Eliminar el post y su hilo? No hay vuelta atrás."
+msgstr "Delete the post and its thread? There is no way back."
+
+msgid "Escribe %(n)s para confirmar"
+msgstr "Type %(n)s to confirm"
+
+msgid "Eliminar post"
+msgstr "Delete post"
+
+msgid "Notas de moderación"
+msgstr "Moderation notes"
+
+msgid "Nueva nota (solo la ve moderación)"
+msgstr "New note (moderation only)"
+
+msgid "Sin notas."
+msgstr "No notes."
