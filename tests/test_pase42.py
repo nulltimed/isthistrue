@@ -5954,3 +5954,35 @@ class Parche511_Serie(TestCase):
         trozo = t[i:i + 700]
         self.assertIn('seek-frase', trozo)
         self.assertIn('onclick="seekTo({{ row.seg.start_seconds }})"', trozo)
+
+
+class Parche512_HistorialDelClaim(TestCase):
+    """5.12 (orden de David): el historial de cada claim, como enlace en la
+    parte de ARRIBA de la ficha. (La wiki ya se actualizaba sola con cada
+    re-verificacion — upsert_claim + ClaimVersion; esto lo hace visible.)"""
+
+    def test_el_historial_existe_y_la_ficha_lo_enlaza_arriba(self):
+        from apps.wiki.models import Claim, ClaimVersion
+        claim = Claim.objects.create(text_original='La Tierra es redonda',
+                                     color='GREEN', slug='tierra-512')
+        ClaimVersion.objects.create(claim=claim, color='UNDECIDED',
+                                    body_snapshot={'what_evidence_says': 'v1 sin fuentes'})
+        ClaimVersion.objects.create(claim=claim, color='GREEN',
+                                    body_snapshot={'what_evidence_says': 'v2 confirmada',
+                                                   'model_used': 'qwen3.8-max',
+                                                   'sources': [{'url': 'https://x'}]})
+        ficha = self.client.get('/wiki/claim/tierra-512/').content.decode()
+        arriba = ficha[:ficha.index('Qué se afirma')]
+        self.assertIn('/wiki/claim/tierra-512/historial/', arriba,
+                      'el enlace va ARRIBA de la ficha')
+        hist = self.client.get('/wiki/claim/tierra-512/historial/').content.decode()
+        self.assertIn('v2 confirmada', hist)
+        self.assertIn('v1 sin fuentes', hist)
+        self.assertLess(hist.index('v2 confirmada'), hist.index('v1 sin fuentes'),
+                        'de la mas nueva a la primera')
+        self.assertIn('qwen3.8-max', hist)
+
+    def test_las_apariciones_saltan_con_t_sin_ancla(self):
+        t = open('templates/analysis/claim_detail.html').read()
+        self.assertNotIn('#seg-', t, '5.10-C: sin scroll automatico al entrar')
+        self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', t)

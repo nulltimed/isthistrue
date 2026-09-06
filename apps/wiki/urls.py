@@ -21,5 +21,7 @@ urlpatterns = [
     path('persona/<slug:slug>/', views.person_page_legacy, name='person_page_legacy'),
     path('claim/<slug:slug>/tarjeta.png', claim_card, name='claim_card'),
     path('claim/<slug:slug>/seguir/', views.follow_claim, name='follow_claim'),
+    # 5.12: el historial del claim (orden de David).
+    path('claim/<slug:slug>/historial/', views.claim_history, name='claim_history'),
     path('claim/<slug:slug>/', views.claim_page, name='claim_page'),
 ]

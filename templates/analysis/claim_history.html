@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Historial" %} — {{ claim.title|default:claim.text_original|truncatechars:60 }}{% endblock %}
+{% block content %}
+{# 5.12 (orden de David): cada re-verificación dejó su versión — aquí se leen todas. #}
+<article class="claim">
+  <h1>{% trans "Historial de verificaciones" %}</h1>
+  <blockquote class="claim-literal">«{{ claim.text_original }}»</blockquote>
+  <p class="hint"><a href="/wiki/claim/{{ claim.slug|default:claim.pk }}/">{% trans "Volver a la verificación actual" %}</a></p>
+
+  {% for f in versiones %}
+  <section class="claim-group group-{{ f.v.color }}">
+    <h2><span class="verdict verdict-{{ f.v.color }}">{% trans f.v.get_color_display %}</span>
+      <small class="hint">{{ f.v.created_at|date:'d/m/Y H:i' }}{% if f.modelo %} · {{ f.modelo }}{% endif %}{% if f.n_fuentes %} · {% blocktrans count n=f.n_fuentes %}{{ n }} fuente{% plural %}{{ n }} fuentes{% endblocktrans %}{% endif %}</small></h2>
+    {% if f.evidencia %}<p>{{ f.evidencia }}</p>{% endif %}
+  </section>
+  {% empty %}
+  <p class="hint">{% trans "Todavía no hay re-verificaciones: esta es la primera y única versión." %}</p>
+  {% endfor %}
+</article>
+{% endblock %}

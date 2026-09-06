@@ -1671,3 +1671,16 @@ msgstr "The video starts at second %(s)s, right before the claim."
 
 msgid "Salta al segundo anterior para oír quién lo dice"
 msgstr "Jump to one second earlier to hear who says it"
+
+# 5.12: el historial del claim
+msgid "Historial"
+msgstr "History"
+
+msgid "Historial de verificaciones"
+msgstr "Verification history"
+
+msgid "Volver a la verificación actual"
+msgstr "Back to the current verification"
+
+msgid "Todavía no hay re-verificaciones: esta es la primera y única versión."
+msgstr "No re-verifications yet: this is the first and only version."

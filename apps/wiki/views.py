@@ -62,6 +62,30 @@ def _autolink(claim):
     return text
 
 
+def claim_history(request, slug):
+    """5.12 (orden de David): el HISTORIAL del claim, accesible como enlace en
+    la parte de arriba de cada ficha. Cada re-verificacion (profunda, votada o
+    del clarificador) dejo su ClaimVersion; aqui se leen todas, de la mas
+    nueva a la primera."""
+    from django.http import Http404
+    claim = Claim.objects.filter(slug=slug).first()
+    if not claim and slug.isdigit():
+        claim = Claim.objects.filter(pk=int(slug)).first()
+    if not claim:
+        raise Http404
+    versiones = []
+    for v in claim.versions.order_by('-created_at'):
+        s = v.body_snapshot or {}
+        versiones.append({
+            'v': v, 'evidencia': (s.get('what_evidence_says') or '')[:400],
+            'modelo': s.get('model_used') or '',
+            'n_fuentes': len(s.get('sources') or []),
+        })
+    return render(request, 'analysis/claim_history.html',
+                  {'claim': claim, 'versiones': versiones,
+                   'indexable': people_indexable()})
+
+
 def recent_changes(request):
     """Pagina 'Cambios recientes' (quiz 11A)."""
     versions = ClaimVersion.objects.select_related('claim').order_by('-created_at')[:100]
