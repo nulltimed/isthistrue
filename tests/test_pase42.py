@@ -477,14 +477,18 @@ class Pase43A5(TestCase):
         self.assertEqual(tiempos, sorted(tiempos))          # cronológico, no de inserción
         self.assertEqual(tiempos[0], 5.01)
 
-    def test_frase_activa_en_negro_texto_blanco(self):
+    def test_frase_activa_estilo_karaoke(self):
+        """5.4-A (orden de David, supersede al 4.3-A5): la intervencion activa
+        YA NO se pinta entera de negro — el karaoke marca en blanco con
+        contorno negro SOLO lo que se va diciendo. El hover conserva su negro."""
         css = open('static/css/main.css').read()
-        # 4.3-A.7 fusiono .live y :hover en una regla: el negro se declara para ambas.
-        self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
-        # La regla del color agrupa .live y :hover en dos lineas (A.7): se comprueba
-        # el selector real, no una cadena de una sola linea que ya no existe.
-        self.assertIn('.segment.live,.segment.live .text,', css)
-        self.assertIn(".transcript .segment:hover .text{color:#fff}", css)
+        self.assertIn('.transcript .segment:hover{background:#141414', css)
+        self.assertNotIn('.segment.live,.transcript .segment:hover{background:#141414', css)
+        self.assertIn('-webkit-text-stroke:1px #000', css)
+        js = open('static/js/transcript.js').read()
+        self.assertIn('karaokeFull', js)
+        self.assertIn('full.slice(0, n)', js)
+        self.assertNotIn('clipPath', js, 'el recorte geometrico pintaba todas las lineas')
 
     def test_reanalizar_solo_moderador(self):
         from apps.analysis.models import TranscriptSegment
@@ -5164,7 +5168,6 @@ class Parche53_Serie(TestCase):
     def test_el_karaoke_progresivo_esta_cableado(self):
         js = open('static/js/transcript.js').read()
         self.assertIn('karaoke-cap', js)
-        self.assertIn('clipPath', js)
         css = open('static/css/main.css').read()
         self.assertIn('.karaoke-cap', css)
 
@@ -5249,3 +5252,70 @@ class Parche53D_LibroSoloReal(TestCase):
         self.assertIn('analisis', conceptos)
         self.assertIn('busqueda', conceptos)
         self.assertTrue(all(c.args[0] == 'anthropic' for c in rec.call_args_list))
+
+
+class Parche54_WikiDelVideo(TestCase):
+    """5.4 (ordenes de David): titulo IA por claim (modelo profundo), la
+    enunciacion literal en el cuerpo, la wiki de cada video con DOS enlaces por
+    afirmacion (al segundo anterior y a la ficha), portada wiki apuntando alli,
+    y karaoke v2 por subcadena."""
+
+    def _escena(self, n=0):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username=f'w54{n}', email=f'w54{n}@example.org')
+        post = Post.objects.create(author=u, url=f'https://youtu.be/w54{n}',
+                                   title=f'Video wiki {n}')
+        seg = post.transcript_segments.create(start_seconds=12.6, end_seconds=20,
+                                              text='frase larga del video')
+        claim = Claim.objects.create(text_original='La deuda pública bajó en 2025',
+                                     color='GREEN', slug=f'deuda-{n}',
+                                     title='Abascal: la deuda pública «bajó» en 2025',
+                                     what_evidence_says='El INE dice lo contrario.')
+        claim.sources.create(url='https://ine.es/x', title='INE')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='...')
+        return post, claim
+
+    def test_el_titulo_ia_se_genera_al_crear_el_claim(self):
+        from unittest import mock
+        from django.test import override_settings
+        from apps.wiki.services import upsert_claim
+        from apps.wiki.models import Claim
+        u = make_user(username='t54', email='t54@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/t54', title='V')
+        post.transcript_segments.create(start_seconds=0, end_seconds=1, text='t')
+        with override_settings(MOCK_AGENTS=False), \
+             mock.patch('apps.wiki.services._pivot_en', return_value='p'), \
+             mock.patch('apps.wiki.services._embed', return_value=None), \
+             mock.patch('apps.agents.client.call_json',
+                        return_value={'titulo': 'Abascal: España «al lado de Hamás»'}):
+            upsert_claim(post, {'text': 'texto largo de la afirmacion',
+                                'segment_index': 0},
+                         {'color': 'GREY', 'sources': []})
+        self.assertEqual(Claim.objects.get().title,
+                         'Abascal: España «al lado de Hamás»')
+
+    def test_la_ficha_muestra_titulo_y_enunciacion_literal(self):
+        _, claim = self._escena(1)
+        html = self.client.get(f'/wiki/claim/{claim.slug}/').content.decode()
+        self.assertIn('Abascal: la deuda pública', html)
+        self.assertIn('«La deuda pública bajó en 2025»', html)
+
+    def test_la_wiki_del_video_lleva_los_dos_enlaces(self):
+        post, claim = self._escena(2)
+        html = self.client.get(f'/wiki/video/{post.slug}/').content.decode()
+        self.assertIn(f'{post.get_absolute_url()}?t=12', html,
+                      'falta el enlace al segundo del vídeo')
+        self.assertIn(f'/wiki/claim/{claim.slug}/', html,
+                      'falta el enlace a la ficha')
+        self.assertIn('El INE dice lo contrario', html)
+        self.assertIn('https://ine.es/x', html)
+
+    def test_la_portada_wiki_enlaza_al_analisis_no_al_post(self):
+        post, _ = self._escena(3)
+        html = self.client.get('/wiki/').content.decode()
+        self.assertIn(f'/wiki/video/{post.slug}/', html)
+
+    def test_el_salto_t_esta_cableado(self):
+        js = open('static/js/transcript.js').read()
+        self.assertIn("get('t')", js)
+        self.assertIn('seekTo(tParam)', js)

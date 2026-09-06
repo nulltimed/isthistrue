@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Análisis" %}: {{ post.title|default:post.url|truncatechars:60 }} — esestocierto?{% endblock %}
+{% block og %}{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}{% endblock %}
+{% block content %}
+<h1>{% trans "El análisis" %} · {{ post.title|default:post.url }}</h1>
+<p class="hint"><a href="{{ post.get_absolute_url }}">{% trans "Ver el post completo (transcripción, hilo y votos)" %}</a></p>
+
+{% if embed %}<div class="embed wiki-embed">{{ embed|safe }}</div>{% endif %}
+
+<h2>{% trans "Afirmaciones y opiniones analizadas" %} <span class="badge">{{ filas|length }}</span></h2>
+{% for f in filas %}
+<article class="wiki-claim-row color-{{ f.claim.color }}">
+  <h3>{% if f.claim.kind == 'OPINION' %}💭 {% endif %}<span class="verdict verdict-{{ f.claim.color }}">{% trans f.claim.get_color_display %}</span>
+      <a href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/">{{ f.claim.title|default:f.claim.text_original|truncatechars:110 }}</a></h3>
+  <blockquote class="claim-literal">«{{ f.claim.text_original|truncatechars:300 }}»</blockquote>
+  {% if f.claim.what_evidence_says %}<p>{{ f.claim.what_evidence_says|truncatechars:400 }}</p>{% endif %}
+  {% if f.claim.sources.exists %}
+  <p class="hint">{% trans "Referencias" %}:
+    {% for s in f.claim.sources.all|slice:":5" %}<a href="{{ s.url }}" rel="noopener">[{{ forloop.counter }}]</a> {% endfor %}</p>
+  {% endif %}
+  <p class="wiki-claim-enlaces">
+    <a href="{{ post.get_absolute_url }}?t={{ f.t }}">▶ {% trans "Ver en el vídeo" %} ({{ f.t }}s)</a> ·
+    <a href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/">{% trans "Ficha completa con todas las fuentes" %}</a>
+  </p>
+</article>
+{% empty %}
+<p class="hint">{% trans "Aún sin veredictos: el análisis está en marcha o esperando los votos de la comunidad." %}</p>
+{% endfor %}
+{% endblock %}

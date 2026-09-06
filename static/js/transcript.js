@@ -74,17 +74,26 @@
     var ini = parseFloat(seg.getAttribute('data-start'));
     var fin = parseFloat(seg.getAttribute('data-end'));
     if (!isFinite(ini) || !isFinite(fin) || fin <= ini) return;
-    var pct = Math.max(0, Math.min(100, (t - ini) / (fin - ini) * 100));
+    /* 5.4-A: revelar por SUBCADENA (misma caja, mismo salto de linea): la capa
+     * repite el texto y solo enseña lo ya dicho, completando la palabra en
+     * curso. Interpolacion lineal por caracteres dentro de la frase (no hay
+     * relojes por palabra guardados; fleco anotado). */
+    var frac = Math.max(0, Math.min(1, (t - ini) / (fin - ini)));
+    if (!seg.dataset.karaokeFull) seg.dataset.karaokeFull = texto.textContent;
+    var full = seg.dataset.karaokeFull;
     var capa = seg.querySelector('.karaoke-cap');
     if (!capa) {
-      if (getComputedStyle(texto).position === 'static') texto.style.position = 'relative';
       capa = document.createElement('span');
       capa.className = 'karaoke-cap';
       capa.setAttribute('aria-hidden', 'true');
-      capa.textContent = texto.textContent;
       texto.appendChild(capa);
     }
-    capa.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
+    var n = Math.round(full.length * frac);
+    if (n > 0 && n < full.length) {
+      var corte = full.indexOf(' ', n);          // completa la palabra en curso
+      n = (corte === -1) ? full.length : corte;
+    }
+    capa.textContent = full.slice(0, n);
   }
   function quitarKaraoke(seg) {
     var capa = seg.querySelector('.karaoke-cap');
@@ -113,6 +122,19 @@
     }
     // tiktok / spotify / link-card: sin salto fiable — no hacemos nada.
   };
+
+  /* 5.4-C: los enlaces de la wiki llegan con ?t=<segundos>; seekTo ya resta
+   * 1 s — «el segundo anterior» que pidio David. Se espera a la API. */
+  var tParam = parseFloat(new URLSearchParams(location.search).get('t'));
+  if (isFinite(tParam)) {
+    var intentos = 0;
+    var esperar = setInterval(function () {
+      if (ytReady || intentos++ > 20) {
+        clearInterval(esperar);
+        window.seekTo(tParam);
+      }
+    }, 400);
+  }
 
   if (!seekable) { box.classList.add('no-seek'); return; }
   box.classList.add('seekable');

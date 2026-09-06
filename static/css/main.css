@@ -377,11 +377,14 @@ main.wide .post > #hilo{max-width:none;width:100%;margin-left:0;margin-right:0}
 /* 4.3-A.5 O2 (decisión de David): la intervención que suena va en NEGRO, con su texto
    y su marca de tiempo en BLANCO — el resto de frases quedan en su color claro por
    hablante. Así se sigue el hilo de la conversación de un vistazo. */
-.segment.live,.transcript .segment:hover{background:#141414;border-left:3px solid #141414;
+.transcript .segment:hover{background:#141414;border-left:3px solid #141414;
   border-radius:4px;transition:background .12s,color .12s}
-.segment.live,.segment.live .text,
+/* 5.4-A (orden de David): la intervencion activa YA NO se pinta entera de
+   negro — solo un filo lateral; el karaoke (abajo) marca en blanco con
+   contorno negro UNICAMENTE lo que se va diciendo. */
+.segment.live{border-left:3px solid #141414;border-radius:4px}
 .transcript .segment:hover,.transcript .segment:hover .text{color:#fff}
-.segment.live .ts,.transcript .segment:hover .ts{color:#fff;font-weight:700}
+.transcript .segment:hover .ts{color:#fff;font-weight:700}
 /* 4.3-A.7 (reporte de David en el primer analisis real): al posar el raton sobre
    una frase, la frase "desaparecia". No desaparecia: la regla de hover le devolvia
    un fondo casi blanco SIN devolverle el color a la letra -> blanco sobre blanco.
@@ -653,9 +656,23 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .tabla-gastos th,.tabla-gastos td{border:1px solid var(--line);padding:.45rem .7rem;text-align:left}
 .tabla-gastos td:last-child,.tabla-gastos th:last-child{text-align:right}
 
-/* 5.3-B: barrido karaoke — lo YA DICHO en blanco con letra negra (orden de
-   David); la intervencion activa sigue oscura de base y el blanco avanza. */
+/* 5.4-A: karaoke v2 — la capa repite el MISMO texto (misma caja, mismo salto
+   de linea) y solo muestra la SUBCADENA ya dicha, palabra a palabra: letras
+   blancas con contorno negro. El recorte geometrico del 5.3-B pintaba una
+   franja que tocaba TODAS las lineas a la vez. */
 .segment.live .text{position:relative}
-.karaoke-cap{position:absolute;inset:-2px -4px;padding:2px 4px;background:#fff;color:#141414;
-  border-radius:3px;white-space:pre-wrap;pointer-events:none;clip-path:inset(0 100% 0 0)}
+.karaoke-cap{position:absolute;top:0;left:0;right:0;bottom:0;color:#fff;
+  -webkit-text-stroke:1px #000;
+  text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+  white-space:pre-wrap;pointer-events:none;overflow:hidden}
 .badge-opinion{background:#eef;border:1px solid #99c}
+
+/* 5.4-C: la wiki del video */
+.wiki-claim-row{border:1px solid var(--line);border-left-width:4px;border-radius:6px;
+  padding:.7rem 1rem;margin:.7rem 0}
+.wiki-claim-row.color-GREEN{border-left-color:#16a34a}
+.wiki-claim-row.color-AMBER{border-left-color:#d97706}
+.wiki-claim-row.color-RED{border-left-color:#dc2626}
+.claim-literal{margin:.4rem 0;padding:.3rem .8rem;border-left:3px solid var(--line);
+  font-style:italic;color:var(--muted,#555)}
+.wiki-embed{max-width:640px;margin:.8rem 0}

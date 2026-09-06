@@ -271,3 +271,14 @@ RED = opinion DESMENTIDA: premisas falsas o falacia central que la desmonta.
 GREY = NO CALIFICABLE: juicio de valor puro, sin premisas comprobables.
 Se exigente y honesto: si es GREY, dilo sin miedo. Lista en sources las URLs \
 reales que uses para comprobar premisas."""
+
+
+# 5.4-B (orden de David): titulo corto de la pagina wiki de cada
+# afirmacion/opinion, atado a su interlocutor cuando se conoce.
+CLAIM_TITLE_SYSTEM = """Eres el titulador de una wiki de fact-checking. Recibes \
+una afirmacion u opinion dicha en un video (con el titulo del video y, si se \
+conoce, quien la dijo). Devuelve SOLO JSON:
+{"titulo": "<resumen de la enunciacion en 90 caracteres o menos>"}
+Reglas: si se conoce el interlocutor, empieza por su apellido y dos puntos \
+(«Abascal: ...»); neutro y descriptivo, sin juzgar; en castellano; sin comillas \
+de apertura tipograficas raras; jamas superes los 90 caracteres."""

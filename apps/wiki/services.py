@@ -52,6 +52,8 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     if verdict.get('kind') in ('FACTUAL', 'OPINION'):
         claim.kind = verdict['kind']
     claim.sources_ok = sources_ok
+    if not claim.title:
+        claim.title = _titulo_ia(post, claim, verdict)
     claim.save()
     # 4.3-A J3: el semaforo de un claim seguido cambia -> aviso a sus seguidores
     if old_color and old_color != claim.color:
@@ -124,3 +126,29 @@ def _embed(text):
         return _model.encode(text, normalize_embeddings=True).tolist()
     except Exception:
         return None
+
+
+def _titulo_ia(post, claim, verdict):
+    """5.4-B: titulo corto por el modelo de analisis profundo (rueda de David).
+    Una llamada minuscula por claim NUEVO; en mock, recorte del texto."""
+    import json
+    from apps.agents import client, prompts
+    from apps.agents.catalog import model_for, fallback_for
+    quien = ''
+    try:
+        from apps.wiki.views import speakers_of_claim
+        hablantes = speakers_of_claim(claim)
+        if hablantes:
+            quien = hablantes[0].name
+    except Exception:
+        pass
+    payload = json.dumps({'texto': claim.text_original[:600],
+                          'tipo': claim.kind,
+                          'video': (post.title or '')[:120],
+                          'interlocutor': quien}, ensure_ascii=False)
+    datos = client.call_json(model_for('deep'), prompts.CLAIM_TITLE_SYSTEM,
+                             payload, max_tokens=80,
+                             fallback=fallback_for('deep'),
+                             mock_payload={'titulo': claim.text_original[:90]})
+    titulo = str(datos.get('titulo', '') or '').strip()
+    return titulo[:120] if titulo else claim.text_original[:120]

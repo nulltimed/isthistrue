@@ -1572,3 +1572,25 @@ msgstr "monthly goal"
 
 msgid "¿Quieres empujar?"
 msgstr "Want to help push?"
+
+# ---- 5.4: wiki del video, titulos IA y karaoke v2 (2026-09-07) ----
+msgid "Afirmaciones y opiniones analizadas"
+msgstr "Claims and opinions analysed"
+
+msgid "Aún sin veredictos: el análisis está en marcha o esperando los votos de la comunidad."
+msgstr "No verdicts yet: the analysis is running or waiting for community votes."
+
+msgid "El análisis"
+msgstr "The analysis"
+
+msgid "Ficha completa con todas las fuentes"
+msgstr "Full page with every source"
+
+msgid "Referencias"
+msgstr "References"
+
+msgid "Ver el post completo (transcripción, hilo y votos)"
+msgstr "See the full post (transcript, thread and votes)"
+
+msgid "Ver en el vídeo"
+msgstr "Watch in the video"

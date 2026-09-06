@@ -38,6 +38,11 @@ class Claim(models.Model):
     # un verde de opinion significa «fundada», jamas «verificada».
     KINDS = [('FACTUAL', 'Afirmación'), ('OPINION', 'Opinión')]
     kind = models.CharField(max_length=8, choices=KINDS, default='FACTUAL')
+    # 5.4-B (orden de David): el TITULO de la pagina wiki es un resumen corto
+    # generado por el modelo de analisis profundo (rueda 'deep' del panel),
+    # atado al interlocutor cuando se conoce. El cuerpo conserva SIEMPRE la
+    # afirmacion/opinion completa y literal.
+    title = models.CharField(max_length=120, blank=True, default='')
     # 4.4-B (decision de David: "nunca es nunca"): contra que serie y que rango
     # se comparo. Sin esto, "mas trabajadores que nunca" sale VERDE mirando diez
     # años y ROJO mirando la serie completa de la EPA desde 1976. El lector tiene

@@ -396,3 +396,37 @@ def co_speakers(person):
     out = [{'person': f['person'], 'n': len(f['posts'])} for f in filas.values()]
     out.sort(key=lambda f: -f['n'])
     return out
+
+
+# ------------------------- 5.4-C: la pagina wiki del video -------------------------
+
+def video_analysis(request, slug):
+    """5.4-C (orden de David): la wiki de CADA analisis — el video incluido y
+    cada afirmacion/opinion con su explicacion, sus referencias y DOS enlaces:
+    al segundo anterior del video y a su ficha completa."""
+    from django.http import Http404
+    from apps.analysis.models import Post
+    from apps.wiki.models import ClaimAppearance
+    post = Post.objects.filter(slug=slug).first()
+    if not post and slug.isdigit():
+        post = Post.objects.filter(pk=int(slug)).first()
+    if not post or post.is_adult:
+        raise Http404
+    filas = []
+    vistos = set()
+    for a in (ClaimAppearance.objects.filter(segment__post=post)
+              .select_related('claim', 'segment')
+              .order_by('segment__start_seconds', 'segment__pk')):
+        if a.claim_id in vistos:
+            continue
+        vistos.add(a.claim_id)
+        filas.append({'claim': a.claim, 'seg': a.segment,
+                      't': int(a.segment.start_seconds)})
+    from apps.embeds.adapters import build_embed
+    try:
+        embed = build_embed(post)
+    except Exception:
+        embed = ''
+    return render(request, 'wiki/video.html',
+                  {'post': post, 'filas': filas, 'embed': embed,
+                   'indexable': people_indexable()})

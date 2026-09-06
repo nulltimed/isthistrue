@@ -7,7 +7,8 @@
 {% endblock %}
 {% block content %}
 <article class="claim color-{{ claim.color }}">
-  <h1>{% trans claim.get_color_display %} — {{ claim.text_original|truncatechars:120 }}</h1>
+  <h1>{% trans claim.get_color_display %} — {{ claim.title|default:claim.text_original|truncatechars:120 }}</h1>
+  <blockquote class="claim-literal">«{{ claim.text_original }}»</blockquote>
   {% if claim.kind == 'OPINION' %}<p class="badge badge-opinion">{% trans "Opinión analizada por su lógica — verde significa «fundada», nunca «verificada»" %}</p>{% endif %}
   {% if hablantes %}<p class="hint">{% trans "Dicho por" %}:
     {% for h in hablantes %}<a href="/persona/{{ h.slug }}/">{{ h.name }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
