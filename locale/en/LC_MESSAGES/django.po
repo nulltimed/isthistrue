@@ -1594,3 +1594,7 @@ msgstr "See the full post (transcript, thread and votes)"
 
 msgid "Ver en el vídeo"
 msgstr "Watch in the video"
+
+# ---- 5.5 (2026-09-07) ----
+msgid "Ver este análisis en la wiki"
+msgstr "See this analysis in the wiki"

@@ -18,14 +18,14 @@
 {% endif %}
 
 {% if comentados %}<h2>{% trans "Los más comentados" %}</h2>
-<ul class="post-list">{% for f in comentados %}<li><a href="{% url 'wiki_video' f.post.slug|default:f.post.pk %}">{{ f.post.title|default:f.post.url }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}</ul>{% endif %}
+<ul class="post-list">{% for f in comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}</ul>{% endif %}
 
 <h2>{% trans "Los más nuevos" %}</h2>
-<ul class="post-list">{% for p in nuevos %}<li><a href="{% url 'wiki_video' p.slug|default:p.pk %}">{{ p.title|default:p.url }}</a> <span class="badge">{% trans p.get_topic_display %}</span></li>
+<ul class="post-list">{% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">{% trans p.get_topic_display %}</span></li>
 {% empty %}<li class="hint">{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}</ul>
 
 {% if top %}<h2>{% trans "Los más votados (7 días)" %}</h2>
-<ul class="post-list">{% for p in top %}<li><a href="{% url 'wiki_video' p.slug|default:p.pk %}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
+<ul class="post-list">{% for p in top %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
 
 {% if personas %}
 <h2>{% trans "Personas" %} <a class="hint" href="{% url 'people_index' %}">({% trans "ver todas" %})</a></h2>

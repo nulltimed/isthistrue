@@ -202,6 +202,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'opus_rescan_percent': '40',
     'opus_rescan_min_users': '50',
     'donation_goal_eur': '100',
+    'vision_pass': '1',           # 5.5-D: la vista encendida
     'trending_votes_threshold': '5',
     'trending_window_days': '7',
     'segment_opus_downvotes': '5',

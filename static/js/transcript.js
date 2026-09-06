@@ -78,7 +78,6 @@
      * repite el texto y solo enseña lo ya dicho, completando la palabra en
      * curso. Interpolacion lineal por caracteres dentro de la frase (no hay
      * relojes por palabra guardados; fleco anotado). */
-    var frac = Math.max(0, Math.min(1, (t - ini) / (fin - ini)));
     if (!seg.dataset.karaokeFull) seg.dataset.karaokeFull = texto.textContent;
     var full = seg.dataset.karaokeFull;
     var capa = seg.querySelector('.karaoke-cap');
@@ -88,10 +87,34 @@
       capa.setAttribute('aria-hidden', 'true');
       texto.appendChild(capa);
     }
-    var n = Math.round(full.length * frac);
-    if (n > 0 && n < full.length) {
-      var corte = full.indexOf(' ', n);          // completa la palabra en curso
-      n = (corte === -1) ? full.length : corte;
+    var n;
+    var wt = seg.getAttribute('data-wt');
+    if (wt) {
+      /* 5.5-A: RELOJES REALES por palabra (AssemblyAI). Cuantas palabras han
+       * empezado ya; el corte cae en el limite de esa palabra en el texto. */
+      if (!seg._wtArr) {
+        seg._wtArr = wt.split(',').map(parseFloat);
+        seg._wOff = [];                       // offset del FIN de cada palabra
+        var off = 0;
+        full.split(/(\s+)/).forEach(function (tr) {
+          off += tr.length;
+          if (tr.trim()) seg._wOff.push(off);
+        });
+      }
+      var dichas = 0;
+      for (var j = 0; j < seg._wtArr.length; j++) {
+        if (t >= seg._wtArr[j]) dichas++; else break;
+      }
+      dichas = Math.min(dichas, seg._wOff.length);
+      n = dichas > 0 ? seg._wOff[dichas - 1] : 0;
+    } else {
+      /* sin relojes (segmentos de la era anterior): interpolacion lineal */
+      var frac = Math.max(0, Math.min(1, (t - ini) / (fin - ini)));
+      n = Math.round(full.length * frac);
+      if (n > 0 && n < full.length) {
+        var corte = full.indexOf(' ', n);
+        n = (corte === -1) ? full.length : corte;
+      }
     }
     capa.textContent = full.slice(0, n);
   }

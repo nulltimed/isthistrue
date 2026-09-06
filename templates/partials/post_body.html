@@ -67,7 +67,7 @@
       <div class="transcript transcript-box" data-platform="{{ post.platform }}">
       {% for s in segments %}
         <div class="segment {% if s.spk_color is not None %}spk-{{ s.spk_color }}{% endif %} {% if hide_opinions and s.signal == 'OPINION' %}blurred{% endif %}"
-             data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}">
+             data-start="{{ s.start_seconds|stringformat:'s'|cut:',' }}" data-end="{{ s.end_seconds|stringformat:'s'|cut:',' }}" data-spk="{{ s.spk_color }}"{% if s.word_times %} data-wt="{{ s.wt_csv }}"{% endif %}>
           <a class="ts" href="#" onclick="seekTo({{ s.start_seconds }});return false;">[{{ s.start_seconds|floatformat:0 }}s]</a>{% if s.spk_idx is not None %}<span class="speaker-tag spk-{{ s.spk_color }}">{% if s.spk_name %}{{ s.spk_name }}{% else %}{% trans "Hablante" %} {{ s.spk_idx|add:1 }}{% endif %}</span>{% endif %}
           <span class="text">{{ s.text }}</span>{% if s.attribution_uncertain %} <span class="uncertain" title="{{ s.attribution_note }}">{% trans "atribución incierta" %}</span>{% endif %}
           {# 4.4-B (decisión de David): en cuanto hay veredicto, la señal barata #}
@@ -144,7 +144,8 @@
   {# pase), asi que el aviso solo se veia en los analisis relegados y jamas en un #}
   {# post normal, que es donde el lector lo necesita. Lo cazo el test del pase. #}
   {% if post.status == 'DONE' %}
-  <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}</p>
+  <p class="disclaimer">{% trans "Las afirmaciones con semáforo se han contrastado con fuentes enlazadas: pulsa cualquiera para ver la verificación completa. Las que siguen con una señal gris no se han verificado todavía." %}
+    <a href="{% url 'wiki_video' post.slug|default:post.pk %}">{% trans "Ver este análisis en la wiki" %}</a></p>
   {% else %}
   <p class="disclaimer">{% trans "Señales de la fase inicial: son automáticas y baratas, y NO incluyen búsqueda de fuentes. La verificación con fuentes llega después." %}</p>
   {% endif %}

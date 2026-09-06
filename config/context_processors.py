@@ -34,7 +34,10 @@ def quota_banner(request):
         from apps.panel.services import live_monthly_cap, live_daily_budget
         from apps.panel.models import SystemSetting
         cap, donated, base = live_monthly_cap()
-        goal = SystemSetting.get_int('donation_goal_eur', 60)
+        # 5.5-B (reporte de David): «costear el proyecto» ES el presupuesto
+        # base de su panel — el «Faltan X €» lo sigue a el, no a una meta
+        # aparte que se desincronizaba.
+        goal = base
         return {'quota_banner': {
             'daily_spent': float(today.spent_eur) if today else 0.0,
             'daily_budget': live_daily_budget(),

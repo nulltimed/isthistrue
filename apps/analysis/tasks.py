@@ -98,12 +98,15 @@ def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
             if fuera:
                 logger.info('Post %s: %d reacciones incrustadas extirpadas',
                             post.pk, fuera)
-            merged = [{k: v for k, v in seg.items() if k != 'words'}
-                      for seg in segments]
+            merged = [dict(seg) for seg in segments]
         else:
             merged = merge_into_sentences(segments, turns)
         for seg in merged:
-            TranscriptSegment.objects.create(post=post, **seg)
+            # 5.5-A: los relojes por palabra se GUARDAN (antes se tiraban)
+            ws = seg.pop('words', None) or []
+            TranscriptSegment.objects.create(
+                post=post, word_times=[[round(w['start'], 2), round(w['end'], 2)]
+                                       for w in ws] or None, **seg)
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
         _costs.set_post(None)   # 4.9-A: higiene del hilo del worker
@@ -145,8 +148,12 @@ def resume_after_aai(self, post_id, transcript_id):
             logger.info('Post %s: %d reacciones incrustadas extirpadas',
                         post.pk, fuera)
         for seg in segments:
+            ws = seg.get('words') or []
             TranscriptSegment.objects.create(
-                post=post, **{k: v for k, v in seg.items() if k != 'words'})
+                post=post,
+                word_times=[[round(w['start'], 2), round(w['end'], 2)]
+                            for w in ws] or None,
+                **{k: v for k, v in seg.items() if k != 'words'})
         if post.cheap_started_at:
             post.transcribe_seconds = round(
                 (timezone.now() - post.cheap_started_at).total_seconds(), 1)

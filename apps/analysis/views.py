@@ -1114,6 +1114,11 @@ def donation_capture(request):
     return JsonResponse({'ok': True})
 
 
+def _base_mensual():
+    from apps.panel.services import live_monthly_cap
+    return live_monthly_cap()[2]
+
+
 def spending_page(request, ym=None):
     """5.3-A (orden de David): «en que se va gastando todo» — datos REALES del
     libro de cuentas, por tecnologia, del mes en curso (se reinicia solo cada
@@ -1153,5 +1158,6 @@ def spending_page(request, ym=None):
     return render(request, 'analysis/gastos.html', {
         'ym': ym, 'es_actual': ym == actual,
         'filas': filas.values(), 'total': total, 'donado': donado,
-        'objetivo': SystemSetting.get_int('donation_goal_eur', 60),
+        # 5.5-B: el objetivo es el presupuesto base del panel (ver banner)
+        'objetivo': _base_mensual(),
         'meses': meses})

@@ -5417,3 +5417,85 @@ class Parche54D_VigilanteChina(TestCase):
         SystemSetting.objects.update_or_create(key='model_china_guard',
                                                defaults={'value': 'qwen3.8-flash'})
         self.assertIn('modelo chino', warning_for('china_guard'))
+
+
+class Parche55_Serie(TestCase):
+    """5.5 (ordenes de David): relojes por palabra guardados, enlaces de la
+    portada wiki de vuelta al POST, el «Faltan X» sigue al presupuesto base,
+    y LA VISTA (imagen vs. audio con los ojos de Qwen/Claude)."""
+
+    def test_los_relojes_por_palabra_se_guardan_y_sirven(self):
+        u = make_user(username='wt55', email='wt55@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/wt55', title='V')
+        s = post.transcript_segments.create(
+            start_seconds=0, end_seconds=2, text='hola mundo cruel',
+            word_times=[[0.0, 0.4], [0.5, 1.1], [1.2, 1.9]])
+        self.assertEqual(s.wt_csv(), '0.00,0.50,1.20')
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('data-wt="0.00,0.50,1.20"', html)
+        js = open('static/js/transcript.js').read()
+        self.assertIn("getAttribute('data-wt')", js)
+
+    def test_el_faltan_sigue_al_presupuesto_base(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='budget_base_eur',
+                                               defaults={'value': '77'})
+        html = self.client.get('/').content.decode()
+        self.assertIn('Faltan 77', html)
+
+    def test_la_portada_wiki_vuelve_a_enlazar_el_post(self):
+        u = make_user(username='wl55', email='wl55@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/wl55',
+                                   title='Video del reporte')
+        html = self.client.get('/wiki/').content.decode()
+        self.assertIn(post.get_absolute_url(), html)
+        self.assertNotIn(f'/wiki/video/{post.slug}/"', html.split('Subtemas')[0])
+        # y el post enlaza a su wiki
+        html2 = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn(f'/wiki/video/{post.slug}/', html2)
+
+    def test_la_vista_detecta_referencias_visuales(self):
+        from apps.agents import vision
+        self.assertTrue(vision.procede('como ven en este gráfico, el paro bajó'))
+        self.assertTrue(vision.procede('look at this chart'))
+        self.assertFalse(vision.procede('el paro bajó un tres por ciento'))
+
+    def test_el_hallazgo_visual_entra_en_el_expediente(self):
+        from unittest import mock
+        from apps.agents import verdict as va
+        u = make_user(username='vi55', email='vi55@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/vi55',
+                                   platform='youtube', title='V')
+        post.transcript_segments.create(
+            start_seconds=30, end_seconds=35,
+            text='como ven en este gráfico el paro bajó',
+            signal='FACTUAL_UNVERIFIED')
+        payloads = []
+        def falso(model, system, payload, **kw):
+            payloads.append(payload)
+            return ({'color': 'GREY', 'what_is_claimed': 'x', 'sources': []}, model)
+        with mock.patch.object(va.client, 'call_search_json', side_effect=falso), \
+             mock.patch('apps.agents.vision.mirar',
+                        return_value={'veredicto_visual': 'contradice',
+                                      'detalle': 'el gráfico muestra subida',
+                                      'modelo': 'qwen3-vl-plus'}) as ojo, \
+             mock.patch('apps.wiki.services._titulo_ia', return_value='t'):
+            va.run(post)
+        ojo.assert_called_once()
+        self.assertIn('CONTRASTE VISUAL', payloads[0])
+        self.assertIn('CONTRADICE', payloads[0])
+
+    def test_la_vista_se_apaga_desde_el_panel_y_china_usa_claude(self):
+        from unittest import mock
+        from apps.panel.models import SystemSetting
+        from apps.agents import vision
+        from apps.agents.catalog import models_for_post
+        u = make_user(username='vi56', email='vi56@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/vi56',
+                                   platform='youtube', title='V')
+        SystemSetting.objects.update_or_create(key='vision_pass',
+                                               defaults={'value': '0'})
+        self.assertIsNone(vision.mirar(post, 'x', 1))
+        post.china_related = True
+        m, _fb = models_for_post('vision', post)
+        self.assertTrue(m.startswith('claude'), 'los ojos de China son de Claude')

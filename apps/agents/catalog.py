@@ -41,6 +41,11 @@ CATALOG = [
     ('qwen3.8-flash',             'Qwen3.8 Flash',  1,  0.11,   0.80, True),
     ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.39,   2.34, True),
     ('qwen3.8-max',               'Qwen3.8 Max',    4,  0.78,   3.90, True),
+    # 5.5-D (pregunta de David hecha orden): los ojos de la familia — para
+    # contrastar lo que se VE en pantalla con lo que se DICE. Precios estimados
+    # de fuentes publicas; ajustar con la consola. Sin busqueda web.
+    ('qwen3-vl-flash',            'Qwen3 VL Flash (ojos)', 1, 0.10, 0.40, False),
+    ('qwen3-vl-plus',             'Qwen3 VL Plus (ojos)',  2, 0.40, 1.20, False),
     ('claude-haiku-4-5-20251001', 'Haiku 4.5',      1,   1.0,   5.0,  True),
     ('claude-sonnet-4-6',         'Sonnet 4.6',     2,   3.0,  15.0,  True),
     ('claude-opus-4-6',           'Opus 4.6',       3,   5.0,  25.0,  True),
@@ -134,6 +139,9 @@ TASKS = [
     # NO puede ser un modelo chino (el zorro no vigila el gallinero).
     ('china_guard', 'Detector de temas sobre China', 'claude-haiku-4-5-20251001',
                     'una por vídeo'),
+    # 5.5-D: LA VISTA — ¿la imagen en pantalla sostiene lo que se dice?
+    ('vision', 'La vista (imagen vs. audio)', 'qwen3-vl-plus',
+               'solo claims con referencia visual'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
 
@@ -188,6 +196,7 @@ FALLBACK_DEFAULTS = {
     'innocuous': 'claude-sonnet-4-6',
     'categories': 'claude-sonnet-4-6',
     'china_guard': 'claude-haiku-4-5-20251001',
+    'vision': 'claude-sonnet-4-6',   # Claude tambien ve
 }
 
 

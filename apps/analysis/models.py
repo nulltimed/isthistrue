@@ -293,6 +293,17 @@ class TranscriptSegment(models.Model):
     # de ninguna persona en la wiki hasta que alguien la resuelva.
     attribution_uncertain = models.BooleanField(default=False)
     attribution_note = models.CharField(max_length=160, blank=True, default='')
+    # 5.5-A (orden de David): los RELOJES POR PALABRA de AssemblyAI, que hasta
+    # hoy llegaban y se tiraban (el patron de los embeddings). Lista compacta
+    # [[inicio, fin], ...] alineada con las palabras del texto; el karaoke los
+    # usa para el clavado perfecto. NULL en segmentos de la era anterior.
+    word_times = models.JSONField(null=True, blank=True)
+
+    def wt_csv(self):
+        """Los inicios de palabra como CSV para el data-attr del karaoke."""
+        if not self.word_times:
+            return ''
+        return ','.join(f'{w[0]:.2f}' for w in self.word_times)
 
     class Meta:
         ordering = ['start_seconds']
