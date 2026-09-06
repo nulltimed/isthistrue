@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-06 (tarde) · Commit en producción: `a31349c` — 5.2-B: LAS DOS PUERTAS DE QWEN. El Token Plan de David NO busca (medido); volumen por el plan (compatible-OpenAI + enable_thinking:false, QWEN_API_KEY sk-sp-... + QWEN_BASE_URL del plan), búsqueda por pago-por-uso (QWEN_SEARCH_API_KEY, pendiente de David — .env línea 84; hasta entonces veredictos caen a Claude con constancia). PROBADO EN VIVO: 3 modelos OK, barrido real JSON válido con qwen3.7-plus, respaldo de veredictos funcionando. También de David: MX IONOS (nombre @) y decisión Google (entregado 5/5) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-06 (noche) · Commit en producción: `10f11ef` — 5.2-C: QWEN EN MARCHA DE PUNTA A PUNTA. Clave sk-ws (pago-por-uso) única; búsqueda por API Responses con tools=[web_search] (¡NO enable_search!), fuentes en web_search_call.action.sources; libro de cuentas registra cada llamada qwen. PRUEBA REAL post 1: veredicto ROJO con 7 fuentes oficiales por qwen3.7-plus — 3,5 céntimos todo incluido. Flecos: monólogo 50s en UNA frase (troceo), Token Plan huérfano (autorrenovación vence 06-10). De David: MX IONOS · decisión Google (5/5 entregado) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe

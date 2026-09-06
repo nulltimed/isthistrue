@@ -1352,3 +1352,15 @@ por el plan (chat/completions + enable_thinking:false), busqueda por pago-por-us
 OK, barrido real con JSON valido en qwen3.7-plus, veredicto sin 2a clave cayo limpio
 a Sonnet. Trampas: sk-sp- (plan) y sk- clasica son mundos separados; 400 «url error»
 en el host del plan = ruta inexistente, no body malo. Informe: docs/72.
+
+## 68. Parche 5.2-C: Qwen en marcha — busqueda, fuentes y costes reales (2026-09-06)
+
+Puerta definitiva: claves sk-ws solo modo compatible en dashscope-intl; la busqueda
+va por la API Responses con tools=[{type:web_search}] (el enable_search del folleto
+se ignora); fuentes en web_search_call.action.sources. El libro de cuentas registra
+cada llamada qwen (usage x precios + busquedas). PRUEBA REAL post 1: analisis
+completo + veredicto ROJO con 7 fuentes oficiales (Moncloa, Consejo UE) por
+qwen3.7-plus — 3,5 centimos TODO INCLUIDO. Flecos: monologo de 50 s en UNA frase
+(MAX_SENTENCE no partio; revisar troceo de monologos), Token Plan huerfano (David
+decide autorrenovacion), cuota de bienvenida puede enmascarar gasto real del primer
+extracto. Informe: docs/73.
