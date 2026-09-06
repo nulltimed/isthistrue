@@ -481,7 +481,7 @@ def reverify_post(post_id, borrar_previos=True, skip_charge=False):
     post.full_started_at = None
     post.full_finished_at = None
     post.save(update_fields=['status', 'full_started_at', 'full_finished_at'])
-    launch_full_analysis(post)
+    launch_full_analysis(post, skip_charge=skip_charge)
     return 'reverifying'
 
 
@@ -505,15 +505,17 @@ def _submit_batch(post, model=None):
     return True
 
 
-def launch_full_analysis(post):
+def launch_full_analysis(post, skip_charge=False):
     """Cola con prioridad: manipulacion con claims = paciente grave, primero."""
     prio = settings.PRIORITY_MANIPULATION if post.manipulation_detected \
         else settings.CELERY_TASK_DEFAULT_PRIORITY
-    run_full_analysis.apply_async(args=[post.pk], priority=prio)
+    run_full_analysis.apply_async(args=[post.pk],
+                                  kwargs={'skip_charge': skip_charge},
+                                  priority=prio)
 
 
 @shared_task(bind=True, max_retries=1)
-def run_full_analysis(self, post_id):
+def run_full_analysis(self, post_id, skip_charge=False):
     """Sonnet + SearXNG adaptativo + wiki + reincidencia. Solo tras validacion."""
     from .models import Post, DailyBudget
     from apps.agents import verdict as verdict_agent

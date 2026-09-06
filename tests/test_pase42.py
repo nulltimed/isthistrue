@@ -3188,7 +3188,7 @@ class Pase44G(TestCase):
             tarea.assert_not_called()
             r = self.client.post(f'/post/{post.pk}/relanzar/verdicts/', {'confirm': '1'})
             self.assertEqual(r.status_code, 302)
-            tarea.assert_called_once_with(post.pk)
+            tarea.assert_called_once_with(post.pk, skip_charge=False)
         self.assertTrue(AuditLog.objects.filter(action='relaunch_verdicts',
                                                 detail__contains=f'post {post.pk}').exists())
 
@@ -3198,7 +3198,7 @@ class Pase44G(TestCase):
         self.client.force_login(self._mod(17))
         with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as tarea:
             self.client.post(f'/post/{post.pk}/relanzar/cheap/', {'confirm': '1', 'speakers': '3'})
-        tarea.assert_called_once_with(post.pk)
+        tarea.assert_called_once_with(post.pk, skip_charge=False)
         post.refresh_from_db()
         self.assertEqual((post.speakers_count, post.speakers_count_source), (3, 'mod'))
         self.assertEqual(post.status, 'NEW')
@@ -6184,12 +6184,14 @@ class Parche518_SinFusibleParaElSuper(TestCase):
     def test_las_cuatro_tareas_aceptan_el_salto(self):
         import inspect
         from apps.analysis import tasks
+        # reverify_post no tiene fusible propio: lo hereda run_full_analysis.
         for fn in (tasks.run_cheap_phase, tasks.redate_post,
-                   tasks.reverify_post, tasks.opus_rescan):
+                   tasks.run_full_analysis, tasks.opus_rescan):
             src = inspect.getsource(fn)
-            self.assertIn('skip_charge', src, fn.__name__)
             self.assertIn('not skip_charge and not DailyBudget.try_spend', src,
                           fn.__name__)
+        self.assertIn('skip_charge=skip_charge',
+                      inspect.getsource(tasks.reverify_post))
 
     def test_el_super_salta_el_fusible_y_queda_constancia(self):
         from unittest import mock
