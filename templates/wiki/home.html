@@ -10,23 +10,8 @@
   <div><strong>{{ totales.personas }}</strong> {% trans "figuras públicas con ficha" %}</div>
 </div>
 
-{% if subtemas %}
-<h2>{% trans "Subtemas" %}</h2>
-<p class="subtemas-chips">
-  {% for f in subtemas %}<a class="chip" href="{% url 'tema_page' f.cat.slug %}">{{ f.cat.name }} ({{ f.n_posts }})</a>{% endfor %}
-</p>
-{% endif %}
-
-{% if comentados %}<h2>{% trans "Los más comentados" %}</h2>
-<ul class="post-list">{% for f in comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}</ul>{% endif %}
-
-<h2>{% trans "Los más nuevos" %}</h2>
-<ul class="post-list">{% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">{% trans p.get_topic_display %}</span></li>
-{% empty %}<li class="hint">{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}</ul>
-
-{% if top %}<h2>{% trans "Los más votados (7 días)" %}</h2>
-<ul class="post-list">{% for p in top %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
-
+{# 5.5-E (orden de David): «una wiki conectada, basada en los interlocutores» — #}
+{# las personas mandan y abren la portada; los listados de posts van después. #}
 {% if personas %}
 <h2>{% trans "Personas" %} <a class="hint" href="{% url 'people_index' %}">({% trans "ver todas" %})</a></h2>
 <ul class="person-grid">
@@ -46,6 +31,23 @@
   {% endfor %}
 </ul>
 {% endif %}
+
+{% if subtemas %}
+<h2>{% trans "Subtemas" %}</h2>
+<p class="subtemas-chips">
+  {% for f in subtemas %}<a class="chip" href="{% url 'tema_page' f.cat.slug %}">{{ f.cat.name }} ({{ f.n_posts }})</a>{% endfor %}
+</p>
+{% endif %}
+
+{% if comentados %}<h2>{% trans "Los más comentados" %}</h2>
+<ul class="post-list">{% for f in comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}</ul>{% endif %}
+
+<h2>{% trans "Los más nuevos" %}</h2>
+<ul class="post-list">{% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">{% trans p.get_topic_display %}</span></li>
+{% empty %}<li class="hint">{% trans "Nada todavía. Sé el primero en analizar algo." %}</li>{% endfor %}</ul>
+
+{% if top %}<h2>{% trans "Los más votados (7 días)" %}</h2>
+<ul class="post-list">{% for p in top %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url }}</a> <span class="badge">▲ {{ p.n }}</span></li>{% endfor %}</ul>{% endif %}
 
 <p class="hint"><a href="{% url 'recent_changes' %}">{% trans "Últimos cambios" %}</a> ·
   <a href="/buscar/">{% trans "Buscar" %}</a></p>

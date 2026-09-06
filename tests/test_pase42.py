@@ -5505,3 +5505,31 @@ class Parche55_Serie(TestCase):
         post.china_related = True
         m, _fb = models_for_post('vision', post)
         self.assertTrue(m.startswith('claude'), 'los ojos de China son de Claude')
+
+
+class Parche55E_WikiDeInterlocutores(TestCase):
+    """5.5-E (reporte de David): la wiki gira sobre los INTERLOCUTORES.
+
+    «Quiero una wiki conectada, basada en los interlocutores como estaba antes,
+    con todos sus claims separados por semaforo, con un enlace a cada explicacion
+    del claim al que va anadido un enlace por claim del segundo del video en
+    donde lo dijo (la base de la fuente es el post del foro)».
+    """
+
+    def test_la_portada_wiki_abre_con_las_personas(self):
+        # Las personas van ANTES que los listados de posts en la plantilla.
+        t = open('templates/wiki/home.html').read()
+        pos_personas = t.find('person-grid')
+        pos_listados = t.find('Los más nuevos')
+        self.assertGreater(pos_personas, 0)
+        self.assertGreater(pos_listados, pos_personas,
+                           'las personas deben abrir la portada de la wiki')
+
+    def test_cada_claim_de_la_ficha_salta_al_segundo_del_video(self):
+        # El enlace al post lleva ?t=<segundo>: transcript.js salta al segundo
+        # ANTERIOR y reproduce (mismo circuito que el enlace de la wiki del video).
+        t = open('templates/analysis/person_detail.html').read()
+        self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', t)
+        # y el manejador de ?t= existe en el JS
+        js = open('static/js/transcript.js').read()
+        self.assertIn("get('t')", js)

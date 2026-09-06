@@ -65,8 +65,9 @@
         {% for a in g.filas %}
           <li>
             <a href="/wiki/claim/{{ a.claim.slug|default:a.claim.pk }}/">{{ a.claim.text_original|truncatechars:160 }}</a>
-            <span class="hint">— {% trans "en" %} <a href="{{ a.segment.post.get_absolute_url }}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }}</a>,
-              {% trans "minuto" %} {{ a.segment.start_seconds|floatformat:0 }}s</span>
+            {# 5.5-E (orden de David): DOS enlaces por claim — la explicación (arriba) y el #}
+            {# segundo del vídeo en que lo dijo. El ?t= salta al segundo ANTERIOR (transcript.js). #}
+            <span class="hint">— {% trans "en" %} <a href="{{ a.segment.post.get_absolute_url }}?t={{ a.segment.start_seconds|floatformat:0 }}">{{ a.segment.post.title|default:a.segment.post.url|truncatechars:60 }} · {% trans "minuto" %} {{ a.segment.start_seconds|floatformat:0 }}s ▶</a></span>
           </li>
         {% endfor %}
       </ul>
