@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-05 · Commit en producción: `5e3eddc` — 5.1-C: LOS TEMAS (/tema/<slug>/ nace con el primer post analizado de la categoría; portada wiki corregida: números + 10 subtemas + listados + tira de 6 personas, rejilla en /wiki/personas/). **LA SERIE 5.1 (WIKI-RED) QUEDA COMPLETA** (docs/67-70). De David: MX en IONOS. ⏰ Google: contador 4/5 — EL PRÓXIMO PARCHE dispara el recordatorio (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-06 · Commit en producción: `264bfbf` — 5.2-A: QWEN3 PRINCIPAL, CLAUDE DE RESPALDO (cliente nativo DashScope con búsqueda+fuentes, dispatch con respaldo por tarea model_fb_, ruedas de producción giradas por qwen_por_defecto con el Claude previo como respaldo, privacidad actualizada). SIN QWEN_API_KEY el respaldo Claude sostiene TODO — probado en vivo. PENDIENTE DE DAVID: cuenta Alibaba + clave en .env (guía en docs/71) · MX en IONOS (nombre @) · ⏰ GOOGLE ENTREGADO (5/5): espera su decisión sobre wiki_index_people (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe

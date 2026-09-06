@@ -1331,3 +1331,14 @@ el primer post analizado de la categoria (antes 404, sin paginas vacias); en viv
 politica (3 videos, 56 claims) y ciencia. Ojo espejo: el 302 del PRIMER request tras
 el arranque es cronico (gate de invitados); verificar siempre con una segunda
 peticion. Informe: docs/70. La wiki-red entera: docs/67-70.
+
+## 66. Parche 5.2-A: Qwen3 principal, Claude de respaldo (2026-09-06)
+
+Orden de David tras discusion honesta de pros/contras. Cliente nativo DashScope
+(el compatible-OpenAI NO devuelve fuentes de busqueda — candado primero), dispatch
+por prefijo en client.py con respaldo por tarea (rueda model_fb_ del panel),
+catalogo con la familia qwen3.8-flash/3.7-plus/3.8-max, lotes apagados con Qwen,
+qwen_por_defecto giro las ruedas de produccion guardando cada Claude previo como
+respaldo. Probado en vivo: sin QWEN_API_KEY el respaldo Claude responde — la web
+no cambia hasta que David pegue la clave. Trampa de tests: los fakes de
+call_json necesitan **kw (kwarg fallback nuevo). Informe: docs/71.
