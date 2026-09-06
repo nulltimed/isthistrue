@@ -1524,3 +1524,12 @@ publica (2 rutas de probe); mensajes honestos con duracion desconocida.
 C2=Donation.post (panel/0004) + boton de cantidad exacta en el post en cola +
 lanzamiento automatico al verificar + insignia «Apadrinable» en foro/portada.
 PENDIENTE deploy: migracion panel/0004.
+
+## 80. Serie 5.14: apadrinar al instante, video de Spotify y ojos ciegos (2026-09-07)
+
+Informe en docs/85. A=apadrinar lanza AL DONAR (verificacion solo para el
+tope; riesgo curl documentado — propuesta PAYPAL_CLIENT_SECRET pendiente de
+David). B=embed Spotify a 352px (152 era solo-audio). C=los ojos CIEGOS en
+silencio: YouTube solo adaptativos, selector bv*[height<=480]/bv*/best/worst
+(probado en vivo). Fleco: el fail-soft necesita contador a la vista.
+Trampa: <meta music:duration> de Spotify va en SEGUNDOS.
