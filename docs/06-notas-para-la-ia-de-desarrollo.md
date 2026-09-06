@@ -1553,3 +1553,17 @@ CI con HEAD dinamico se contamina — fijar sha). 5.19=Spotify jamas es post:
 busqueda de alternativas analizables y el usuario elige. 5.20=caja de
 moderacion (notas internas, censura con cortina que el lector abre,
 eliminacion con confirmacion; analysis/0021).
+
+## 83. Serie 5.21: paraleliza siempre (2026-09-08)
+
+Ordenes de David: «paraleliza siempre» + «sube la rueda a 12». verdict.run y
+clarify.run_pending: llamadas CARAS (busquedas+ojos) en ThreadPoolExecutor
+(rueda `verdict_parallel`, 4 fabrica/12 en prod por David, tope 12), escritura
+en la wiki EN SERIE (el dedupe por embedding no tolera carreras — 5.1-B).
+TRES lecciones de hilos cazadas por el CI: (1) bajo TestCase un hilo abre OTRA
+conexion que no ve la transaccion del test → con pool=1 se corre EN LINEA y
+settings_test fija 1; (2) close_old_connections SOLO en hilos del pool — en
+linea cierra la conexion del llamante y tumbo 17 tests en cascada; (3) los
+apuntes de coste necesitan _costs.set_post POR HILO (thread-local).
+De ~2,5 min/afirmacion en serie a ~12 a la vez: un post de 26 claims pasa de
+~1 h a ~6 min de pared.
