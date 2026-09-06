@@ -273,6 +273,11 @@ ASSEMBLYAI_API_KEY = os.getenv('ASSEMBLYAI_API_KEY', '')
 # Portal INTERNACIONAL (Singapur). Acepta tambien el nombre DASHSCOPE_API_KEY.
 QWEN_API_KEY = os.getenv('QWEN_API_KEY', os.getenv('DASHSCOPE_API_KEY', ''))
 QWEN_BASE_URL = os.getenv('QWEN_BASE_URL', 'https://dashscope-intl.aliyuncs.com')
+# 5.2-B: el Token Plan NO busca (medido). La busqueda con fuentes va por la
+# clave clasica de PAGO-POR-USO contra la API nativa de dashscope-intl.
+QWEN_SEARCH_API_KEY = os.getenv('QWEN_SEARCH_API_KEY', '')
+QWEN_SEARCH_BASE_URL = os.getenv('QWEN_SEARCH_BASE_URL',
+                                 'https://dashscope-intl.aliyuncs.com')
 ASSEMBLYAI_TIMEOUT = int(os.getenv('ASSEMBLYAI_TIMEOUT', '900'))
 # 4.10-A: el TIMBRE — AssemblyAI nos avisa al terminar (webhook) y el worker
 # queda libre mientras cocinan. El secreto viaja en cabecera y se valida.

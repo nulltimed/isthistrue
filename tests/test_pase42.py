@@ -5029,8 +5029,8 @@ class Parche52A_QwenPrincipal(TestCase):
                 {'index': 1, 'title': 'INE', 'url': 'https://ine.es/dato'}]}}}
         fake = mock.Mock(); fake.json.return_value = respuesta
         fake.raise_for_status = mock.Mock()
-        with override_settings(MOCK_AGENTS=False, QWEN_API_KEY='k',
-                               QWEN_BASE_URL='https://ejemplo.test'), \
+        with override_settings(MOCK_AGENTS=False, QWEN_SEARCH_API_KEY='k',
+                               QWEN_SEARCH_BASE_URL='https://ejemplo.test'), \
              mock.patch('requests.post', return_value=fake):
             datos, usado = client.call_search_json('qwen3.7-plus', 'sys', 'user')
         self.assertEqual(usado, 'qwen3.7-plus')
@@ -5049,6 +5049,35 @@ class Parche52A_QwenPrincipal(TestCase):
         html = self.client.get('/panel/modelos/').content.decode()
         self.assertIn('model_fb_verdict', html)
         self.assertIn('Qwen3.7 Plus', html)
+
+
+
+    def test_el_volumen_va_por_la_puerta_compatible_del_plan(self):
+        """5.2-B: call_full habla el modo compatible (chat/completions) con el
+        pensamiento APAGADO — la puerta que el Token Plan de David si tiene."""
+        from unittest import mock
+        from django.test import override_settings
+        from apps.agents import qwen
+        fake = mock.Mock()
+        fake.json.return_value = {'choices': [{'message': {'content': 'OK'}}]}
+        fake.raise_for_status = mock.Mock()
+        with override_settings(QWEN_API_KEY='k', QWEN_BASE_URL='https://plan.test'), \
+             mock.patch('requests.post', return_value=fake) as p:
+            texto, usado = qwen.call_full('qwen3.7-plus', 'sys', 'user')
+        self.assertEqual(texto, 'OK')
+        url = p.call_args[0][0]
+        body = p.call_args[1]['json']
+        self.assertIn('/compatible-mode/v1/chat/completions', url)
+        self.assertIs(body['enable_thinking'], False)
+
+    def test_sin_clave_de_busqueda_los_veredictos_caen_a_claude(self):
+        """El Token Plan no busca: sin QWEN_SEARCH_API_KEY, call_with_search
+        falla honestamente y el respaldo Claude entra desde client.py."""
+        from django.test import override_settings
+        from apps.agents import qwen
+        with override_settings(QWEN_API_KEY='k', QWEN_SEARCH_API_KEY=''):
+            with self.assertRaises(RuntimeError):
+                qwen.call_with_search('qwen3.7-plus', 'sys', 'user')
 
     def test_la_privacidad_nombra_a_alibaba_y_a_claude_como_respaldo(self):
         html = self.client.get('/legal/privacidad/').content.decode()

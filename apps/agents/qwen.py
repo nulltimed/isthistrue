@@ -1,20 +1,22 @@
-"""5.2-A (orden de David, 2026-09-06): la familia Qwen3 de Alibaba como motor
-PRINCIPAL; Claude queda de respaldo (el dispatch vive en client.py).
+"""5.2-A/B (orden de David): la familia Qwen3 de Alibaba como motor PRINCIPAL;
+Claude queda de respaldo (el dispatch vive en client.py).
 
-API nativa de DashScope (portal internacional, Singapur) — NO el modo
-compatible-OpenAI, porque ese no devuelve las fuentes de la busqueda web y
-aqui rige el candado «sin fuentes no hay color». Contrato verificado contra la
-documentacion viva el 2026-09-06:
+DOS PUERTAS, medidas en vivo el 2026-09-06 contra la cuenta real de David:
 
-  POST {QWEN_BASE_URL}/api/v1/services/aigc/text-generation/generation
-  Authorization: Bearer $QWEN_API_KEY
-  body: {model, input:{messages}, parameters:{result_format:'message', ...}}
-  busqueda: parameters.enable_search=true + search_options{enable_source,...}
-  fuentes: output.search_info.search_results[] -> {title, url}
-  respuesta: output.choices[0].message.content
+1) SU TOKEN PLAN (suscripcion Model Studio): host propio
+   token-plan.ap-southeast-1.maas.aliyuncs.com, SOLO modo compatible-OpenAI
+   (/compatible-mode/v1/chat/completions). La API nativa da «url error» y
+   enable_search SE IGNORA (probado: tools=[], el modelo dice «NO PUEDO
+   BUSCAR»). Sirve para TODO el volumen; jamas para veredictos con fuentes.
 
-La busqueda con estrategia 'agent' cuesta 10 $/1.000 llamadas (como la de
-Anthropic) mas los tokens.
+2) PAGO-POR-USO (clave clasica de Model Studio, QWEN_SEARCH_API_KEY): API
+   NATIVA en dashscope-intl con enable_search + search_options; las fuentes
+   vienen en output.search_info.search_results — lo que exige el candado
+   «sin fuentes no hay color». Sin esta clave, las tareas con busqueda caen
+   al respaldo Claude y la web sigue entera.
+
+`enable_thinking: false` en las llamadas de volumen: los qwen3.x razonan por
+defecto y el razonamiento cuesta tokens y ensucia los JSON.
 """
 import json
 import logging
@@ -24,15 +26,15 @@ from django.conf import settings
 
 logger = logging.getLogger('agents.qwen')
 
-RUTA = '/api/v1/services/aigc/text-generation/generation'
+RUTA_COMPAT = '/compatible-mode/v1/chat/completions'
+RUTA_NATIVA = '/api/v1/services/aigc/text-generation/generation'
 
 
-def _post(body, timeout=180):
-    resp = requests.post(
-        settings.QWEN_BASE_URL.rstrip('/') + RUTA,
-        headers={'Authorization': f'Bearer {settings.QWEN_API_KEY}',
-                 'Content-Type': 'application/json'},
-        json=body, timeout=timeout)
+def _post(base, key, ruta, body, timeout=180):
+    resp = requests.post(base.rstrip('/') + ruta,
+                         headers={'Authorization': f'Bearer {key}',
+                                  'Content-Type': 'application/json'},
+                         json=body, timeout=timeout)
     resp.raise_for_status()
     datos = resp.json()
     if datos.get('code'):    # DashScope devuelve 200 con code de error a veces
@@ -41,36 +43,35 @@ def _post(body, timeout=180):
     return datos
 
 
-def _mensajes(system, user_content, cacheable):
-    texto = (cacheable + '\n\n' + user_content) if cacheable else user_content
-    return [{'role': 'system', 'content': system},
-            {'role': 'user', 'content': texto}]
-
-
-def _texto_de(datos):
-    return datos['output']['choices'][0]['message']['content']
-
-
 def call_full(model, system, user_content, max_tokens=2000, cacheable=None):
-    """Devuelve (texto, modelo). Sin clave configurada, falla YA (el respaldo
-    Claude entra desde client.py; el sistema jamas se queda mudo)."""
+    """Volumen por el Token Plan (modo compatible). Devuelve (texto, modelo)."""
     if not settings.QWEN_API_KEY:
         raise RuntimeError('QWEN_API_KEY vacía: Qwen sin configurar')
-    datos = _post({'model': model,
-                   'input': {'messages': _mensajes(system, user_content, cacheable)},
-                   'parameters': {'result_format': 'message',
-                                  'max_tokens': max_tokens}})
-    return _texto_de(datos), model
+    texto = (cacheable + '\n\n' + user_content) if cacheable else user_content
+    datos = _post(settings.QWEN_BASE_URL, settings.QWEN_API_KEY, RUTA_COMPAT,
+                  {'model': model,
+                   'messages': [{'role': 'system', 'content': system},
+                                {'role': 'user', 'content': texto}],
+                   'max_tokens': max_tokens,
+                   'enable_thinking': False})
+    return datos['choices'][0]['message']['content'], model
 
 
 def call_with_search(model, system, user_content, max_tokens=2000,
                      cacheable=None, max_searches=3):
-    """Devuelve (texto, modelo, n_busquedas, fuentes) — fuentes de
-    output.search_info, para reforzar el candado «sin fuentes no hay color»."""
-    if not settings.QWEN_API_KEY:
-        raise RuntimeError('QWEN_API_KEY vacía: Qwen sin configurar')
-    datos = _post({'model': model,
-                   'input': {'messages': _mensajes(system, user_content, cacheable)},
+    """Busqueda con fuentes por la clave PAGO-POR-USO (API nativa).
+    Devuelve (texto, modelo, n_busquedas, fuentes)."""
+    if not settings.QWEN_SEARCH_API_KEY:
+        raise RuntimeError('QWEN_SEARCH_API_KEY vacía: la búsqueda Qwen exige '
+                           'la clave pago-por-uso de Model Studio (el Token '
+                           'Plan no busca)')
+    texto = (cacheable + '\n\n' + user_content) if cacheable else user_content
+    datos = _post(settings.QWEN_SEARCH_BASE_URL, settings.QWEN_SEARCH_API_KEY,
+                  RUTA_NATIVA,
+                  {'model': model,
+                   'input': {'messages': [
+                       {'role': 'system', 'content': system},
+                       {'role': 'user', 'content': texto}]},
                    'parameters': {'result_format': 'message',
                                   'max_tokens': max_tokens,
                                   'enable_search': True,
@@ -85,5 +86,6 @@ def call_with_search(model, system, user_content, max_tokens=2000,
                   or {}).get('search_results', []) or []
     fuentes = [{'url': r.get('url', ''), 'title': r.get('title', '')}
                for r in resultados if r.get('url')]
+    salida = datos['output']['choices'][0]['message']['content']
     # forced_search: la estrategia agent cuenta como UNA llamada de busqueda
-    return _texto_de(datos), model, 1, fuentes
+    return salida, model, 1, fuentes
