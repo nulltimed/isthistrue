@@ -1543,3 +1543,13 @@ quedo zombi en CHEAP_RUNNING: try/finally sin except). SPOTIFY NO SE PUEDE
 ANALIZAR (DRM): opciones YouTube o ingesta RSS (decision de David). Flecos:
 devolver la reserva de presupuesto al fallar; contador visible de fallos de
 la vista.
+
+## 82. Series 5.17-5.20 (2026-09-07/08)
+
+Informe en docs/87. 5.17=campo numerico selecciona «Otra cantidad» + salida
+del overlay PayPal (✕+Escape). 5.18=skip_charge en las 4 fases para el super
+(el fusible de veredictos vive en run_full_analysis, NO en reverify; poll de
+CI con HEAD dinamico se contamina — fijar sha). 5.19=Spotify jamas es post:
+busqueda de alternativas analizables y el usuario elige. 5.20=caja de
+moderacion (notas internas, censura con cortina que el lector abre,
+eliminacion con confirmacion; analysis/0021).
