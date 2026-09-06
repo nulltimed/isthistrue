@@ -268,9 +268,14 @@ resbaladiza, hombre de paja...).
  "sensitive": ""}
 GREEN = opinion FUNDADA: premisas ciertas y razonamiento valido.
 RED = opinion DESMENTIDA: premisas falsas o falacia central que la desmonta.
-GREY = NO CALIFICABLE: juicio de valor puro, sin premisas comprobables.
-Se exigente y honesto: si es GREY, dilo sin miedo. Lista en sources las URLs \
-reales que uses para comprobar premisas."""
+GREY = NO CALIFICABLE: juicio de valor puro, sin NINGUNA premisa comprobable.
+El GREY es el ULTIMO RECURSO (5.22, orden de David: esta web se jacta de \
+buscar la verdad). Antes de darlo: (a) extrae CADA premisa factica, aunque \
+sea implicita — «X impidio que Y madurara» presume que Y no maduro y que X \
+existio: AMBAS se comprueban; (b) usa el CONTEXTO (las frases vecinas \
+traen el referente de los pronombres); (c) solo si tras eso no queda NADA \
+comprobable, GREY — y justifica en what_evidence_says por que no lo hay. \
+Lista en sources las URLs reales que uses para comprobar premisas."""
 
 
 # 5.4-B (orden de David): titulo corto de la pagina wiki de cada

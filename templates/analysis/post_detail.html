@@ -35,6 +35,37 @@
   {% endif %}
   {% if post.censored and is_mod %}<p class="warning">🚫 {% trans "Este post está censurado" %}{% if post.censored_reason %}: {{ post.censored_reason }}{% endif %} <span class="hint">({% trans "los lectores ven la cortina y pueden abrirla" %})</span></p>{% endif %}
   <h1>{{ post.title|default:post.url }}</h1>
+  {# 5.22 (orden de David): el resultado del analisis en 4 colores bajo el #}
+  {# titulo; clic en un color abre su listado; clic en un claim reproduce #}
+  {# el multimedia desde un segundo antes (seekTo ya resta 1). #}
+  {% if semaforo_post %}
+  <div class="semaforo-post">
+    <button class="sf-chip sf-verde" data-cubo="verde">🟢 {{ semaforo_post.verde|length }}</button>
+    <button class="sf-chip sf-ambar" data-cubo="ambar">🟡 {{ semaforo_post.ambar|length }}</button>
+    <button class="sf-chip sf-rojo" data-cubo="rojo">🔴 {{ semaforo_post.rojo|length }}</button>
+    <button class="sf-chip sf-sin" data-cubo="sin">⚪ {{ semaforo_post.sin|length }} {% trans "sin respuesta" %}</button>
+  </div>
+  {% for nombre, filas in semaforo_post.items %}{% if nombre != 'total' %}
+  <dialog class="sf-lista" id="sf-{{ nombre }}">
+    <form method="dialog"><button class="mini sf-cerrar">✕</button></form>
+    <ul>
+      {% for f in filas %}
+      <li><a href="#" onclick="seekTo({{ f.s }});document.getElementById('sf-{{ nombre }}').close();return false;">[{{ f.s }}s]</a>
+        <span class="sf-texto" onclick="seekTo({{ f.s }});document.getElementById('sf-{{ nombre }}').close();">{{ f.texto }}</span>
+        <a class="hint" href="/wiki/claim/{{ f.slug }}/" target="_blank" rel="noopener">{% trans "ficha" %}</a></li>
+      {% empty %}<li class="hint">—</li>{% endfor %}
+    </ul>
+  </dialog>
+  {% endif %}{% endfor %}
+  <script>
+  document.querySelectorAll('.sf-chip').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var d = document.getElementById('sf-' + b.dataset.cubo);
+      if (d) d.showModal();
+    });
+  });
+  </script>
+  {% endif %}
   <div id="post-body">
     {% include 'partials/post_body.html' %}
   </div>

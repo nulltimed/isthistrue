@@ -1760,3 +1760,10 @@ msgstr "New note (moderation only)"
 
 msgid "Sin notas."
 msgstr "No notes."
+
+# 5.22: el semaforo del post
+msgid "sin respuesta"
+msgstr "unanswered"
+
+msgid "ficha"
+msgstr "fact page"

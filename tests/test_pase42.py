@@ -6379,3 +6379,67 @@ class Parche521_ParalelizaSiempre(TestCase):
         SystemSetting.objects.update_or_create(key='verdict_parallel',
                                                defaults={'value': '99'})
         self.assertEqual(parallel_workers(), 12, 'tope de cordura')
+
+
+class Parche522_GuerraAlGris(TestCase):
+    """5.22 (ordenes de David): contexto 2+2 para opiniones, GREY como ULTIMO
+    recurso, saneamiento de los grises heredados, y el semaforo del post bajo
+    el titulo con listados clicables que reproducen desde un segundo antes."""
+
+    def test_contexto_dos_mas_dos_y_grey_ultimo_recurso(self):
+        from django.conf import settings as st
+        self.assertEqual(st.SETTING_DEFAULTS.get('verdict_context_before'), '2')
+        self.assertEqual(st.SETTING_DEFAULTS.get('verdict_context_after'), '2')
+        from apps.agents import prompts
+        self.assertIn('ULTIMO RECURSO', prompts.OPINION_VERDICT_SYSTEM)
+        self.assertIn('premisa', prompts.OPINION_VERDICT_SYSTEM)
+
+    def test_sanear_grises_retira_fragmentos_y_reanaliza_frases(self):
+        from unittest import mock
+        from io import StringIO
+        from django.core.management import call_command
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='gr522', email='gr522@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/gr522',
+                                   platform='youtube', status='DONE')
+        seg = post.transcript_segments.create(start_seconds=10, end_seconds=14,
+                                              text='Suiza es un país plurinacional',
+                                              signal='FACTUAL_UNVERIFIED')
+        frag = Claim.objects.create(text_original='que asesoró', color='GREY',
+                                    slug='frag-522')
+        vivo = Claim.objects.create(text_original='Suiza es un país plurinacional',
+                                    color='GREY', slug='suiza-522')
+        ClaimAppearance.objects.create(claim=vivo, segment=seg, quote='...')
+        v = {'color': 'GREEN', 'what_is_claimed': 'x', 'what_evidence_says': 'y',
+             'sources': [{'url': 'https://admin.ch'}]}
+        with mock.patch('apps.agents.client.call_search_json',
+                        return_value=(v, 'm')), \
+             mock.patch('apps.agents.vision.mirar', return_value=None), \
+             mock.patch('apps.wiki.services._titulo_ia', return_value='t'):
+            call_command('sanear_grises', stdout=StringIO())
+        self.assertFalse(Claim.objects.filter(slug='frag-522').exists(),
+                         'el fragmento se retira')
+        vivo.refresh_from_db()
+        self.assertEqual(vivo.color, 'GREEN', 'la frase con sustancia gana color')
+
+    def test_el_semaforo_del_post_bajo_el_titulo(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='sf522', email='sf522@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/sf522',
+                                   platform='youtube', status='DONE',
+                                   title='Con semaforo')
+        for i, (col, txt) in enumerate([('GREEN', 'verdad uno'),
+                                        ('RED', 'mentira uno'),
+                                        ('UNDECIDED', 'sin resolver uno')]):
+            seg = post.transcript_segments.create(start_seconds=i * 30 + 5,
+                                                  end_seconds=i * 30 + 9, text=txt)
+            c = Claim.objects.create(text_original=txt, color=col,
+                                     slug=f'sf522-{i}')
+            ClaimAppearance.objects.create(claim=c, segment=seg, quote='...')
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('semaforo-post', html)
+        self.assertIn('sin respuesta', html)
+        self.assertIn('sf-verde', html)
+        # el clic reproduce desde un segundo antes: seekTo ya resta 1
+        self.assertIn('seekTo(5)', html)
+        self.assertIn('id="sf-sin"', html)

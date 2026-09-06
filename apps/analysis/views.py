@@ -479,7 +479,34 @@ def _post_context(request, post):
         'my_subscription': (post.subscriptions.filter(user=u).first() if u else None),
         # 5.7-A: la huella del analisis que vigila el navegador (vigia_post.js)
         'estado_analisis': _huella_analisis(post)[0],
+        # 5.22 (orden de David): el semaforo del post bajo el titulo, clicable.
+        'semaforo_post': _semaforo_del_post(post),
     }
+
+
+def _semaforo_del_post(post):
+    """5.22: los claims del post en CUATRO cubos — verde, ambar, rojo y sin
+    respuesta — con su marca temporal, para la barra clicable bajo el titulo."""
+    if post.status != 'DONE':
+        return None
+    from apps.wiki.models import ClaimAppearance
+    cubos = {'GREEN': [], 'AMBER': [], 'RED': [], 'SIN': []}
+    vistos = set()
+    for ap in (ClaimAppearance.objects.filter(segment__post=post)
+               .select_related('claim', 'segment')
+               .order_by('segment__start_seconds')):
+        if ap.claim_id in vistos:
+            continue
+        vistos.add(ap.claim_id)
+        cubo = ap.claim.color if ap.claim.color in ('GREEN', 'AMBER', 'RED') else 'SIN'
+        cubos[cubo].append({
+            's': int(ap.segment.start_seconds or 0),
+            'texto': (ap.claim.title or ap.claim.text_original)[:110],
+            'slug': ap.claim.slug or ap.claim.pk})
+    if not vistos:
+        return None
+    return {'verde': cubos['GREEN'], 'ambar': cubos['AMBER'],
+            'rojo': cubos['RED'], 'sin': cubos['SIN'], 'total': len(vistos)}
 
 
 def _huella_analisis(post):

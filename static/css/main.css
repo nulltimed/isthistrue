@@ -721,3 +721,16 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .gestion-form input{flex:1;min-width:180px}
 .mini.danger{background:#8a1111;color:#fff}
 .gestion-notas ul{margin:.3rem 0;padding-left:1rem}
+
+/* 5.22: el semaforo del post bajo el titulo, con sus listados en dialogo. */
+.semaforo-post{display:flex;gap:.5rem;margin:.4rem 0 .8rem;flex-wrap:wrap}
+.sf-chip{border:1px solid #ccc;border-radius:18px;padding:.35rem .8rem;
+  cursor:pointer;background:#fff;font-size:.95rem}
+.sf-chip:hover{border-color:#141414}
+.sf-lista{border:2px solid #141414;border-radius:8px;max-width:640px;width:92%}
+.sf-lista::backdrop{background:rgba(0,0,0,.45)}
+.sf-lista ul{list-style:none;padding:0;margin:.4rem 0;max-height:60vh;overflow-y:auto}
+.sf-lista li{padding:.3rem 0;border-bottom:1px solid #eee}
+.sf-texto{cursor:pointer}
+.sf-texto:hover{text-decoration:underline}
+.sf-cerrar{float:right}
