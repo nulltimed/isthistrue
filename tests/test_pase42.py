@@ -5769,7 +5769,9 @@ class Parche57_Serie(TestCase):
 
     def test_el_hilo_se_apila_con_scroll_infinito(self):
         post, u = self._post_con_hilo(replicas=25)   # 20 por pagina -> 2 paginas
-        html = self.client.get(post.get_absolute_url()).content.decode()
+        # Leccion 4.3: sin ?pagina= el hilo aterriza en la ULTIMA pagina (sin
+        # siguiente no hay centinela) — se pide la primera explicitamente.
+        html = self.client.get(post.get_absolute_url() + '?pagina=1').content.decode()
         self.assertIn('hilo-centinela', html)
         self.assertIn('hx-trigger="revealed"', html)
         frag = self.client.get(

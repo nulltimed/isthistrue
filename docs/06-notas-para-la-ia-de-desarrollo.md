@@ -1445,3 +1445,17 @@ Commit `28a64b0`. Informe completo en docs/77.
   `{% endfor %}` que aparece puede ser de un bucle interior — anclar el corte
   al cierre estructural (`</div>\n  {% endfor %}`), y comprobar llaves y
   fors=endfors del resultado.
+
+## 73. Serie 5.7: el vigia del post y el scroll infinito (2026-09-07)
+
+Commit `77dd767`. Informe completo en docs/78.
+- **A**: /post/<pk>/estado/ (huella del analisis + ultimo mensaje) +
+  vigia_post.js — ante CUALQUIER cambio recarga la pagina con su bocadillo;
+  jamas con un borrador a medio escribir. La recarga es del lado cliente y por
+  orden expresa de David (el «recargas extintas» del 4.x era de /status/).
+- **B**: scroll infinito con centinela htmx `revealed` (?apilar=1 apila solo
+  mensajes); el re-pintado total del hilo cada 12 s SE RETIRA (borraba lo
+  apilado); bucle de mensajes extraido a _thread_msg_list.html.
+- Trampa: `docker compose exec` vive dentro del contenedor — un `up --build`
+  mata los comandos largos en curso (clarificador). Mirar los exec vivos antes
+  de recrear, no solo los analisis en vuelo.
