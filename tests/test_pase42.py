@@ -5213,3 +5213,21 @@ class Parche53_Serie(TestCase):
         claims = {c.what_is_claimed: c.color for c in Claim.objects.all()}
         self.assertEqual(claims['x0'], 'GREY', 'el gris sin fuentes es legitimo en opinion')
         self.assertEqual(claims['x1'], 'UNDECIDED', 'un verde sin fuentes no puede publicarse')
+
+
+class Parche53C1_SensibleTruncado(TestCase):
+    """El analista de logica escribio un 'sensitive' largo y el varchar(10)
+    tumbo la fase completa en bucle (cazado EN VIVO en el estreno). El candado:
+    truncar al tamaño real del campo, venga el prompt que venga."""
+
+    def test_un_sensitive_kilometrico_no_tumba_el_alta(self):
+        from apps.wiki.services import upsert_claim
+        from apps.wiki.models import Claim
+        u = make_user(username='sens53', email='sens53@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/sens53', title='V')
+        post.transcript_segments.create(start_seconds=0, end_seconds=1, text='t')
+        upsert_claim(post, {'text': 'afirmacion sensible', 'segment_index': 0},
+                     {'color': 'GREY', 'sources': [],
+                      'sensitive': 'politica nacional espanola de alto voltaje'})
+        c = Claim.objects.get()
+        self.assertLessEqual(len(c.sensitive), 10)

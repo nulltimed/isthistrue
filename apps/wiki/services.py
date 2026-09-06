@@ -39,7 +39,11 @@ def upsert_claim(post, claim_data, verdict, sources_ok=True):
     claim.what_evidence_says = verdict.get('what_evidence_says', '')
     claim.the_difference = verdict.get('the_difference', '')
     old_color = Claim.objects.filter(pk=claim.pk).values_list('color', flat=True).first()
-    claim.sensitive = verdict.get('sensitive') or ''
+    # 5.3-C (mismo patron que _nota en 4.4-J): el campo mide lo que mide y el
+    # modelo escribe lo que quiere — se trunca al tamano REAL del campo, para
+    # cualquier prompt presente o futuro. Un DataError aqui tumba la fase entera.
+    _max_sens = Claim._meta.get_field('sensitive').max_length
+    claim.sensitive = (verdict.get('sensitive') or '')[:_max_sens]
     # 4.4-B: contra que serie y que rango se comparo (decision de David).
     claim.temporal_basis = (verdict.get('temporal_basis') or '')[:300]
     claim.model_used = (verdict.get('model_used') or '')[:60]
