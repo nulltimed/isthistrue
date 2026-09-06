@@ -1701,3 +1701,6 @@ msgstr "In a hurry? Sponsor it with a %(d)s € donation: it will be tied to THI
 
 msgid "¡Apadrinado! El análisis sale de la cola ahora mismo."
 msgstr "Sponsored! The analysis is leaving the queue right now."
+
+msgid "Cerrar"
+msgstr "Close"

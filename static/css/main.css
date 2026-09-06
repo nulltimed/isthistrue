@@ -707,3 +707,8 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 
 /* 5.13-C: la insignia de apadrinamiento, a la vista en los listados. */
 .badge-apadrina{background:#f5c518;color:#141414;text-decoration:none}
+
+/* 5.17-C: la puerta de salida del overlay de PayPal, por encima de todo. */
+#istt-pp-cerrar{position:fixed;top:14px;right:14px;z-index:2147483647;
+  background:#141414;color:#fff;border:2px solid #fff;border-radius:20px;
+  padding:.45rem .9rem;cursor:pointer;font-size:1rem}

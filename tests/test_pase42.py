@@ -6157,3 +6157,21 @@ class Parche516_DRM(TestCase):
         self.assertIn("'DRM' in str(exc)", fuente)
         self.assertIn("post.status = 'FAILED'", fuente)
         self.assertIn("return 'drm'", fuente)
+
+
+class Parche517_DonarUX(TestCase):
+    """5.17 (tres reportes de David): el campo numerico selecciona «Otra
+    cantidad» al tocarlo; el overlay de PayPal tiene salida (✕ + Escape)."""
+
+    def test_el_campo_numerico_selecciona_otra_cantidad(self):
+        base = open('templates/base.html').read()
+        self.assertIn("['focus', 'input']", base)
+        self.assertNotIn('aria-label="{% trans \'Otra cantidad en euros (mínimo 1)\' %}" hidden>',
+                         base, 'el campo va siempre visible')
+
+    def test_el_overlay_tiene_salida(self):
+        base = open('templates/base.html').read()
+        self.assertIn('istt-pp-cerrar', base)
+        self.assertIn("e.key === 'Escape'", base)
+        css = open('static/css/main.css').read()
+        self.assertIn('#istt-pp-cerrar', css)

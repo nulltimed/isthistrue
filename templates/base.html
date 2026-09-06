@@ -64,7 +64,7 @@
       <label><input type="radio" name="donate-amount" value="5" checked><span>5 €</span></label>
       <label><input type="radio" name="donate-amount" value="10"><span>10 €</span></label>
       <label><input type="radio" name="donate-amount" value="other"><span>{% trans "Otra cantidad" %}</span></label>
-      <input type="number" id="donate-other" min="1" step="0.01" inputmode="decimal" placeholder="€" aria-label="{% trans 'Otra cantidad en euros (mínimo 1)' %}" hidden>
+      <input type="number" id="donate-other" min="1" step="0.01" inputmode="decimal" placeholder="€" aria-label="{% trans 'Otra cantidad en euros (mínimo 1)' %}">
     </fieldset>
     <div id="paypal-banner-btn" class="paypal-banner-btn"></div>
   </div>
@@ -83,8 +83,15 @@
   Array.prototype.forEach.call(radios, function (r) {
     r.addEventListener('change', function () {
       var sel = document.querySelector('input[name="donate-amount"]:checked').value;
-      other.hidden = (sel !== 'other');
-      if (!other.hidden) other.focus();
+      if (sel === 'other') other.focus();
+    });
+  });
+  /* 5.17-A (reporte de David): clicar o teclear en el campo numerico
+   * SELECCIONA «Otra cantidad» — antes se donaba lo que estuviera marcado. */
+  ['focus', 'input'].forEach(function (ev) {
+    other.addEventListener(ev, function () {
+      var r = document.querySelector('input[name="donate-amount"][value="other"]');
+      if (r && !r.checked) r.checked = true;
     });
   });
   function amount() {
@@ -133,6 +140,42 @@
       z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
     }
   }, 5000);
+  /* 5.17-C (reporte de David): el overlay en-pagina de PayPal no ofrecia
+   * salida (solo recargar). Un ✕ propio por ENCIMA del overlay y la tecla
+   * Escape lo retiran. El clic-fuera literal no es posible: el iframe de
+   * PayPal cubre toda la pantalla y se traga los clics. */
+  function esDePaypal(el) {
+    var pinta = (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
+    return /paypal|xcomponent|zoid/i.test(pinta);
+  }
+  function cerrarOverlayPaypal() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll('body > div, body > iframe'), function (el) {
+        if (esDePaypal(el) && getComputedStyle(el).position === 'fixed') el.remove();
+      });
+    var b = document.getElementById('istt-pp-cerrar');
+    if (b) b.remove();
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') cerrarOverlayPaypal();
+  });
+  new MutationObserver(function () {
+    var hay = Array.prototype.some.call(
+      document.querySelectorAll('body > div, body > iframe'), function (el) {
+        return esDePaypal(el) && getComputedStyle(el).position === 'fixed';
+      });
+    var btn = document.getElementById('istt-pp-cerrar');
+    if (hay && !btn) {
+      btn = document.createElement('button');
+      btn.id = 'istt-pp-cerrar';
+      btn.type = 'button';
+      btn.textContent = '✕ {% trans "Cerrar" %}';
+      btn.onclick = cerrarOverlayPaypal;
+      document.body.appendChild(btn);
+    } else if (!hay && btn) {
+      btn.remove();
+    }
+  }).observe(document.body, { childList: true });
 })();
 </script>
 {% endif %}
