@@ -13,7 +13,8 @@ def live_monthly_cap():
     hard = SystemSetting.get_int('budget_hard_ceiling_eur', 200)
     today = timezone.localdate()
     donated = sum(float(d.amount_eur) for d in Donation.objects.filter(
-        created_at__year=today.year, created_at__month=today.month))
+        created_at__year=today.year, created_at__month=today.month,
+        verified=True))   # 5.3-A: solo lo confirmado sube el tope
     return min(base + donated, hard), donated, base
 
 

@@ -1081,3 +1081,77 @@ def aai_webhook(request):
         post.save(update_fields=['aai_job_id'])
         run_cheap_phase.delay(post.pk, skip_charge=True, skip_aai=True)
     return HttpResponse('ok')
+
+
+# ------------------- 5.3-A: donaciones vivas y gastos a la vista -------------------
+
+@csrf_exempt
+def donation_capture(request):
+    """El boton PayPal del banner captura en el navegador; hasta hoy nadie lo
+    anotaba y el «Faltan X EUR» no se movia. Ahora el navegador avisa aqui.
+    La donacion entra SIN verificar (un desconocido no puede inflar el tope de
+    gasto con un POST): David la confirma en su panel contra su cuenta PayPal."""
+    import json as _json
+    from decimal import Decimal, InvalidOperation
+    from apps.panel.models import Donation
+    if request.method != 'POST':
+        return redirect('donations')
+    try:
+        datos = _json.loads(request.body.decode() or '{}')
+        cantidad = Decimal(str(datos.get('amount', '')))
+        orden = str(datos.get('order', ''))[:60]
+    except (ValueError, InvalidOperation):
+        return HttpResponsePermanentRedirect('/donaciones/')
+    if not (Decimal('1') <= cantidad <= Decimal('10000')) or not orden:
+        from django.http import JsonResponse
+        return JsonResponse({'ok': False}, status=400)
+    nota = f'paypal-web:{orden}'
+    from django.http import JsonResponse
+    if Donation.objects.filter(note=nota).exists():   # idempotente
+        return JsonResponse({'ok': True, 'dup': True})
+    Donation.objects.create(amount_eur=cantidad, method='PAYPAL',
+                            note=nota, verified=False)
+    return JsonResponse({'ok': True})
+
+
+def spending_page(request, ym=None):
+    """5.3-A (orden de David): «en que se va gastando todo» — datos REALES del
+    libro de cuentas, por tecnologia, del mes en curso (se reinicia solo cada
+    dia 1 porque se agrupa por mes) y con el historico enlazado."""
+    from collections import OrderedDict
+    from django.utils import timezone as tz
+    from django.http import Http404
+    from .models import CostEntry
+    from apps.panel.models import Donation, SystemSetting
+    NOMBRES = {'anthropic': 'Claude (Anthropic) — análisis IA',
+               'qwen': 'Qwen (Alibaba) — análisis IA y búsquedas',
+               'assemblyai': 'AssemblyAI — transcripción y voces',
+               'runpod': 'Runpod — GPU de audio',
+               'brevo': 'Brevo — emails'}
+    hoy = tz.localdate()
+    actual = hoy.strftime('%Y-%m')
+    ym = ym or actual
+    try:
+        year, month = int(ym[:4]), int(ym[5:7])
+        assert 1 <= month <= 12 and ym[4] == '-'
+    except (ValueError, AssertionError, IndexError):
+        raise Http404
+    filas = OrderedDict()
+    total = 0.0
+    for e in CostEntry.objects.filter(created_at__year=year,
+                                      created_at__month=month):
+        clave = e.provider
+        filas.setdefault(clave, {'nombre': NOMBRES.get(clave, clave),
+                                 'eur': 0.0, 'apuntes': 0})
+        filas[clave]['eur'] += float(e.eur)
+        filas[clave]['apuntes'] += 1
+        total += float(e.eur)
+    donado = sum(float(d.amount_eur) for d in Donation.objects.filter(
+        created_at__year=year, created_at__month=month, verified=True))
+    meses = sorted({e.strftime('%Y-%m') for e in
+                    CostEntry.objects.dates('created_at', 'month')}, reverse=True)
+    return render(request, 'analysis/gastos.html', {
+        'ym': ym, 'es_actual': ym == actual,
+        'filas': filas.values(), 'total': total, 'donado': donado,
+        'objetivo': SystemSetting.get_int('donation_goal_eur', 60),
+        'meses': meses})

@@ -52,7 +52,7 @@
   </div>
   <div class="qb-message">
     {% trans "Si donas, estos cupos suben." %}
-    {% if quota_banner.goal_missing %}<a href="{% url 'donations' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'donations' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
+    {% if quota_banner.goal_missing %}<a href="{% url 'spending' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'spending' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
   </div>
   <div class="donate-inline">
     <fieldset class="donate-amounts">
@@ -104,9 +104,15 @@
       return actions.order.create({ purchase_units: [{ amount: { value: amount(), currency_code: 'EUR' } }] });
     },
     onApprove: function (data, actions) {
-      return actions.order.capture().then(function () {
+      return actions.order.capture().then(function (det) {
         var m = document.querySelector('.qb-message');
         if (m) { m.innerHTML = '🎉 {% trans "¡Donación recibida — gracias! Se sumará al depósito del mes." %}'; }
+        /* 5.3-A: anotar la donacion en el servidor (entra sin verificar). */
+        try {
+          fetch('{% url "donation_capture" %}', {method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({amount: amount(), order: data.orderID || ''})});
+        } catch (e) {}
       });
     }
   }).render('#paypal-banner-btn');

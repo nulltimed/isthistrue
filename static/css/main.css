@@ -647,3 +647,8 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 
 /* 5.1-C: subtemas de la portada wiki */
 .subtemas-chips .chip{margin:0 .35rem .35rem 0;display:inline-block;text-decoration:none}
+
+/* 5.3-A: tabla de gastos */
+.tabla-gastos{border-collapse:collapse;width:100%;max-width:640px;margin:.8rem 0}
+.tabla-gastos th,.tabla-gastos td{border:1px solid var(--line);padding:.45rem .7rem;text-align:left}
+.tabla-gastos td:last-child,.tabla-gastos th:last-child{text-align:right}

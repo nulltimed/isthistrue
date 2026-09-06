@@ -68,6 +68,12 @@ class Donation(models.Model):
     amount_eur = models.DecimalField(max_digits=8, decimal_places=2)
     method = models.CharField(max_length=8, choices=METHODS)
     note = models.CharField(max_length=200, blank=True)
+    # 5.3-A: las donaciones capturadas por el boton PayPal de la web entran
+    # SIN verificar; David las confirma en su panel contra su cuenta PayPal.
+    # Solo las verificadas suben el tope de gasto (candado del presupuesto) y
+    # cuentan en el «Faltan X EUR» publico. Las que añade David a mano nacen
+    # verificadas.
+    verified = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
