@@ -1484,3 +1484,15 @@ SOLO enlaces (nuevos/comentados/profundos-por-votos + Off-Topic
 nuevos/comentados); sin cuerpos de mensajes (supersede 5.1-B).
 «Analizados en profundidad» = DONE ordenado por votos (interpretacion anotada
 en foro_home, ajustable en una linea si David quiso los re-escaneados).
+
+## 76. Serie 5.10: cinco reportes de una tacada (2026-09-07)
+
+Commit `6f89d8d`. Informe en docs/81. A=iframe YouTube sin loading=lazy +
+preconnects (6-7s de arranque); B=wiki desde el post en pestana nueva;
+C=avisos sin #hilo (entrar en un post no hace scroll; el seguimiento vive en
+la caja con overflow propio); D=el banner ensena GASTO REAL del libro
+(day_total/month_total_all en costs.py; las reservas del fusible ya no se
+pintan — en MOCK el banner marca 0,00 y es correcto; actualiza la vieja
+leccion «el gasto simulado prueba el banner»); E=PayPal con locale FIJADO
+es_ES/en_US + .catch con enlace clasico (el marcado EN era identico al ES:
+el fallo era del autodetect del SDK).
