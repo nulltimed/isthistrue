@@ -29,6 +29,24 @@ from django.conf import settings
 
 logger = logging.getLogger('agents.client')
 
+
+def _apunte_claude(model, usage, busquedas=0):
+    """5.3-D: gasto REAL de Anthropic al libro (tokens de usage a precios del
+    catalogo + busquedas), como hace qwen._apunte. Nunca rompe la llamada."""
+    try:
+        from apps.agents.catalog import prices, USD_EUR, USD_PER_SEARCH
+        from apps.analysis import costs
+        pin, pout = prices(model)
+        eur = (getattr(usage, 'input_tokens', 0) * pin
+               + getattr(usage, 'output_tokens', 0) * pout) / 1_000_000 * USD_EUR
+        if eur > 0:
+            costs.record('anthropic', 'analisis', round(eur, 6))
+        if busquedas:
+            costs.record('anthropic', 'busqueda',
+                         round(busquedas * USD_PER_SEARCH * USD_EUR, 6))
+    except Exception:
+        logger.warning('Apunte claude fallido (no bloquea)', exc_info=True)
+
 # Bloques mas cortos que esto no compensa cachear (la escritura cuesta 1,25x).
 MIN_CACHE_CHARS = 4000
 
@@ -91,6 +109,7 @@ def call_full(model, system, user_content, max_tokens=2000, mock_payload=None,
                 logger.warning('SUPLENTE en uso: %s no respondió, contestó %s',
                                model, modelo)
                 _avisar_suplente(model, modelo)
+            _apunte_claude(modelo, getattr(msg, 'usage', None))
             return (''.join(b.text for b in msg.content
                             if getattr(b, 'type', '') == 'text'), modelo)
         except Exception as exc:
@@ -170,6 +189,7 @@ def call_with_search(model, system, user_content, max_tokens=2000,
                 logger.warning('SUPLENTE en uso: %s no respondió, contestó %s',
                                model, modelo)
                 _avisar_suplente(model, modelo)
+            _apunte_claude(modelo, getattr(msg, 'usage', None), n_busquedas)
             return (texto, modelo, n_busquedas)
         except Exception as exc:
             ultimo = exc

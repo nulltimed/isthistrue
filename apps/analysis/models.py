@@ -326,7 +326,9 @@ class DailyBudget(models.Model):
             # 4.9-A: el mismo peaje deja apunte en el libro, colgado del post
             # en curso del worker (transparencia de donaciones).
             from apps.analysis import costs
-            costs.record('anthropic', 'analisis', amount_eur)
+# 5.3-D: el presupuesto ya NO escribe en el libro publico — era una
+            # ESTIMACION y mentia en /gastos/; los gastos reales los apuntan los
+            # clientes (tokens de usage por proveedor).
             return True
 
 

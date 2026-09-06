@@ -4205,9 +4205,10 @@ class Parche49A(TestCase):
             self.assertTrue(DailyBudget.try_spend(0.03))
         finally:
             costs.set_post(None)
+        # 5.3-D: el presupuesto ya NO escribe en el libro (era una ESTIMACION y
+        # mentia en /gastos/); los gastos reales los apuntan los clientes.
         filas, total = costs.post_breakdown(p)
-        self.assertAlmostEqual(total, 0.03)
-        self.assertEqual(filas[0]['provider'], 'anthropic')
+        self.assertEqual(total, 0, 'try_spend volvio a escribir estimaciones')
 
     def test_el_tope_de_assemblyai_hace_caer_a_la_gpu(self):
         from apps.agents import assembly
@@ -5231,3 +5232,20 @@ class Parche53C1_SensibleTruncado(TestCase):
                       'sensitive': 'politica nacional espanola de alto voltaje'})
         c = Claim.objects.get()
         self.assertLessEqual(len(c.sensitive), 10)
+
+
+class Parche53D_LibroSoloReal(TestCase):
+    """5.3-D: el libro de cuentas SOLO gasto real — Claude apunta sus tokens
+    de usage como Qwen, y el presupuesto (try_spend) deja de escribir
+    estimaciones que mentian en la pagina publica /gastos/."""
+
+    def test_claude_apunta_su_gasto_real(self):
+        from unittest import mock
+        from apps.agents.client import _apunte_claude
+        uso = mock.Mock(input_tokens=1000, output_tokens=500)
+        with mock.patch('apps.analysis.costs.record') as rec:
+            _apunte_claude('claude-sonnet-4-6', uso, busquedas=2)
+        conceptos = [c.args[1] for c in rec.call_args_list]
+        self.assertIn('analisis', conceptos)
+        self.assertIn('busqueda', conceptos)
+        self.assertTrue(all(c.args[0] == 'anthropic' for c in rec.call_args_list))
