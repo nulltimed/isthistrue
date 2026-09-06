@@ -1,0 +1,30 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Elige la versión analizable" %} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.19 (orden de David): Spotify no se puede analizar (DRM) — se busca el #}
+{# mismo contenido por la web y el usuario elige cuál se convierte en post. #}
+<h1>{% trans "Elige la versión analizable" %}</h1>
+<p class="hint">{% trans "Enlace original (Spotify, no analizable):" %} <a href="{{ original }}" rel="noopener" target="_blank">{{ original|truncatechars:80 }}</a></p>
+
+{% if alternativas %}
+<form method="post" action="{% url 'submit' %}">{% csrf_token %}
+  <ul class="post-list alternativas">
+    {% for a in alternativas %}
+    <li><label>
+      <input type="radio" name="url" value="{{ a.url }}" {% if forloop.first %}checked{% endif %}>
+      <strong>{{ a.titulo }}</strong> <span class="badge">{{ a.plataforma }}</span>
+      <span class="hint">{{ a.url|truncatechars:70 }}</span>
+    </label></li>
+    {% endfor %}
+  </ul>
+  <input type="hidden" name="topic" value="{{ topic }}">
+  <input type="hidden" name="tags" value="{{ tags }}">
+  <input type="hidden" name="opinion" value="{{ opinion }}">
+  {% if offtopic %}<input type="hidden" name="offtopic" value="on">{% endif %}
+  {% if is_adult %}<input type="hidden" name="is_adult" value="on">{% endif %}
+  <button class="primary">{% trans "Analizar la versión elegida" %}</button>
+</form>
+{% else %}
+<p><a class="btn" href="{% url 'submit' %}">{% trans "Volver e intentar con otro enlace" %}</a></p>
+{% endif %}
+{% endblock %}

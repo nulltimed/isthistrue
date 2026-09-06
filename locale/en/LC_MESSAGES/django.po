@@ -1704,3 +1704,16 @@ msgstr "Sponsored! The analysis is leaving the queue right now."
 
 msgid "Cerrar"
 msgstr "Close"
+
+# 5.19: alternativas analizables al DRM de Spotify
+msgid "Elige la versión analizable"
+msgstr "Choose the analysable version"
+
+msgid "Enlace original (Spotify, no analizable):"
+msgstr "Original link (Spotify, not analysable):"
+
+msgid "Analizar la versión elegida"
+msgstr "Analyse the chosen version"
+
+msgid "Volver e intentar con otro enlace"
+msgstr "Go back and try another link"

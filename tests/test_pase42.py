@@ -6213,3 +6213,49 @@ class Parche518_SinFusibleParaElSuper(TestCase):
         t = open('templates/partials/post_body.html').read()
         self.assertIn('· ≈ {{ r.cost|floatformat:2 }} €</button>', t)
         self.assertNotIn('<span class="relaunch-cost">', t)
+
+
+class Parche519_AlternativasAlDRM(TestCase):
+    """5.19 (orden de David): Spotify ya NO se acepta como post — al pulsar
+    «Analizar» se busca el mismo contenido por la web y el usuario elige la
+    version analizable, que es la que se convierte en post."""
+
+    def _entrar(self):
+        u = make_user(username='alt519', email='alt519@example.org')
+        from apps.accounts.models import User
+        User.objects.filter(pk=u.pk).update(email_verified=True)
+        self.client.force_login(User.objects.get(pk=u.pk))
+        return u
+
+    def test_spotify_no_crea_post_y_ofrece_alternativas(self):
+        from unittest import mock
+        self._entrar()
+        falsas = {'resultados': [
+            {'url': 'https://youtu.be/altABC123', 'titulo': 'El mismo podcast',
+             'plataforma': 'youtube'},
+            {'url': 'https://open.spotify.com/episode/x', 'titulo': 'spotify otra vez',
+             'plataforma': 'spotify'}]}
+        with mock.patch('apps.agents.client.call_search_json',
+                        return_value=(falsas, 'm')):
+            r = self.client.post('/submit/', {
+                'url': 'https://open.spotify.com/episode/abc519', 'topic': 'otros'})
+        html = r.content.decode()
+        self.assertEqual(Post.objects.filter(url__contains='abc519').count(), 0,
+                         'Spotify jamas se convierte en post')
+        self.assertIn('Elige la versión analizable', html)
+        self.assertIn('https://youtu.be/altABC123', html)
+        self.assertNotIn('value="https://open.spotify.com/episode/x"', html,
+                         'las alternativas con DRM se filtran')
+
+    def test_la_eleccion_crea_el_post_analizable(self):
+        from unittest import mock
+        self._entrar()
+        with mock.patch('apps.analysis.tasks.run_cheap_phase.delay'), \
+             mock.patch('apps.embeds.adapters.probe',
+                        return_value={'ok': True, 'title': 'Elegido',
+                                      'duration_seconds': 600, 'age_limit': 0,
+                                      'reason': ''}):
+            self.client.post('/submit/', {'url': 'https://youtu.be/altABC123',
+                                          'topic': 'otros'})
+        self.assertTrue(Post.objects.filter(url='https://youtu.be/altABC123',
+                                            platform='youtube').exists())

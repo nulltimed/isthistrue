@@ -89,6 +89,41 @@ def _novedades_en_seguidos(user):
     return filas[:10]
 
 
+def _alternativas_web(url, platform):
+    """5.19: busca el MISMO podcast/video fuera de la plataforma con DRM.
+    Devuelve [{url, titulo, plataforma}] SOLO de plataformas analizables."""
+    import json as _json
+    from apps.agents import client
+    from apps.agents.catalog import fallback_for, model_for
+    from apps.embeds.adapters import (NON_ANALYZABLE, detect_platform,
+                                      fetch_title)
+    titulo = fetch_title(url, platform) or url
+    sistema = ('Buscas contenidos multimedia. Responde SOLO JSON: '
+               '{"resultados": [{"url": "...", "titulo": "...", '
+               '"plataforma": "youtube|twitch|tiktok"}]} — hasta 5, los mas '
+               'fieles primero. Solo URLs REALES halladas en la busqueda.')
+    payload = (f'Busca este podcast/episodio FUERA de Spotify (preferencia: '
+               f'YouTube con video completo): «{titulo}». Si existe en varias '
+               f'plataformas, listalas todas.')
+    try:
+        datos, _usado = client.call_search_json(
+            model_for('sweep'), sistema, payload, max_tokens=700,
+            max_searches=2, fallback=fallback_for('sweep'),
+            mock_payload={'resultados': [
+                {'url': 'https://youtu.be/simulado', 'titulo': f'[SIMULADO] {titulo}',
+                 'plataforma': 'youtube'}]})
+    except Exception:
+        return []
+    limpias = []
+    for r in (datos.get('resultados') or [])[:5]:
+        u = str(r.get('url') or '')
+        p, _vid = detect_platform(u)
+        if p and p not in NON_ANALYZABLE:
+            limpias.append({'url': u, 'titulo': str(r.get('titulo') or u)[:120],
+                            'plataforma': p})
+    return limpias
+
+
 VIDEO_RX = re.compile(r'(youtube\.com|youtu\.be|tiktok\.com|twitch\.tv|spotify\.com)', re.I)
 
 
@@ -165,6 +200,29 @@ def submit(request):
     if not platform:
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
         platform = 'link'
+    # 5.19 (orden de David): las fuentes NO ANALIZABLES (Spotify: DRM) ya no se
+    # aceptan como post. En su lugar, al pulsar «Analizar» se busca EL MISMO
+    # podcast por toda la web y el usuario elige la version analizable, que es
+    # la que se convierte en post.
+    from apps.embeds.adapters import NON_ANALYZABLE
+    if platform in NON_ANALYZABLE:
+        alternativas = _alternativas_web(url, platform)
+        if alternativas:
+            messages.info(request, 'Spotify protege su audio (DRM) y no se '
+                          'puede analizar. He buscado este mismo contenido '
+                          'por la web: elige una versión analizable.')
+        else:
+            messages.error(request, 'Spotify protege su audio (DRM) y no se '
+                           'puede analizar, y no he encontrado este contenido '
+                           'en otra plataforma. Si conoces su versión de '
+                           'YouTube o su RSS, pega ese enlace.')
+        return render(request, 'analysis/submit_alternativas.html',
+                      {'alternativas': alternativas, 'original': url,
+                       'topic': topic, 'tags': tags,
+                       'opinion': author_opinion,
+                       'offtopic': voluntary_offtopic,
+                       'is_adult': author_adult_flag,
+                       'categorias': Category.objects.all()})
 
     # 4.3-A.8 (decision de David): ANTES de postear se comprueba el video —
     # titulo (para colocarlo bien), duracion (para el aviso de donacion) y si es

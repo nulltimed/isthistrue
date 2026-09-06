@@ -6,6 +6,10 @@ Resto: tarjeta-enlace ('reproducir en origen'). Nunca se almacena multimedia.
 import re
 from urllib.parse import urlparse, parse_qs
 
+# 5.19 (orden de David): plataformas cuyo audio NO se puede analizar (DRM).
+# Se detectan para buscar el mismo contenido fuera, jamas para crear post.
+NON_ANALYZABLE = ('spotify',)
+
 PATTERNS = {
     'youtube': re.compile(r'(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]{6,20})'),
     'tiktok': re.compile(r'tiktok\.com/@[\w.]+/video/(\d+)'),
