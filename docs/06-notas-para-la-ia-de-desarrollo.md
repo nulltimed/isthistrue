@@ -1389,3 +1389,27 @@ falla). CAZA MAYOR: la capa SETTING_DEFAULTS de la cascada seguia en Claude y
 pisaba el catalogo Qwen — alineadas las TRES capas; tests de lotes anclan Claude
 (via exclusiva Anthropic). Leccion operativa: un script de edicion que muere a
 medias deja arreglos sin escribir — verificar el write. Informe: docs/75.
+
+## 71. Serie 5.5: relojes por palabra, karaoke v3, wiki de interlocutores y LA VISTA (2026-09-06/07)
+
+Commits `dffedfa` → `a3bf832`. Informe completo en docs/76.
+- **5.5-A**: `TranscriptSegment.word_times` (analysis/0020) guarda los relojes por
+  palabra de AssemblyAI que se estaban TIRANDO en los dos puntos de creacion de
+  segmentos de tasks.py; `wt_csv()` + `data-wt` los llevan al navegador.
+- **5.5-C karaoke v3** (especificacion FINAL de David): intervencion activa en
+  negro/blanco (`.segment.live` restaurada) y cada palabra dicha como chip
+  blanco/negro (`.kw.dicho`), spans EN FLUJO — nada de clip-path (v1 marcaba todas
+  las lineas) ni capas absolutas (v2 apilaba en vertical).
+- **5.5-D LA VISTA**: `apps/agents/vision.py` — si la frase apela a lo visible,
+  fotograma del segundo exacto (yt-dlp -g + ffmpeg, SIN descargar el video) mirado
+  por qwen3-vl-plus (fallback Claude); hallazgo como «CONTRASTE VISUAL» en el
+  expediente. Panel: tarea «La vista» + ajuste `vision_pass`. VL: `web=False`.
+- **5.5-E**: la wiki gira sobre los INTERLOCUTORES — personas al frente de la
+  portada; en la ficha cada claim con DOS enlaces: explicacion y `?t=<segundo>`
+  al post del foro.
+- **Leccion**: los dos reportes de David («karaoke sigue mal», «te has cargado la
+  wiki») eran contra PRODUCCION con el 5.4 — el repo ya llevaba el arreglo sin
+  desplegar. Antes de recodificar por un reporte, comprobar QUE version esta viendo
+  el usuario. Y tras un edit por script, grep del RESULTADO (el ancla
+  «Transcripción» fallo en silencio: el titulo real era «Transcripción
+  sincronizada» y el enlace quedo ausente).
