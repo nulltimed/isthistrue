@@ -5558,6 +5558,6 @@ class Parche55F_SemaforoCompleto(TestCase):
 
     def test_los_pendientes_tambien_llevan_sus_dos_enlaces(self):
         t = open('templates/analysis/person_detail.html').read()
-        bloque = t.split('sin_color')[2] if t.count('sin_color') >= 2 else ''
+        bloque = t.rsplit('sin_color', 1)[1]
         self.assertIn('/wiki/claim/', bloque)
         self.assertIn('?t={{ a.segment.start_seconds|floatformat:0 }}', bloque)

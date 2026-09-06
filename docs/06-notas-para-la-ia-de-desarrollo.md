@@ -1413,3 +1413,8 @@ Commits `dffedfa` → `a3bf832`. Informe completo en docs/76.
   el usuario. Y tras un edit por script, grep del RESULTADO (el ancla
   «Transcripción» fallo en silencio: el titulo real era «Transcripción
   sincronizada» y el enlace quedo ausente).
+- **Addendum F+G (mismo día)**: F = UNDECIDED entra en GRUPOS de la ficha (8/9
+  apariciones de Abascal caían a «pendientes» sin enlaces). G = LA VISTA COMPLETA
+  por orden de David: sin puerta de palabras clave (procede/VISUAL_RX retirados),
+  fotogramas a −lag/0/+lag (`vision_lag_seconds`, 4 s) por el retardo humano
+  pantalla↔voz, stream de yt-dlp cacheado por post.
