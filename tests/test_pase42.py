@@ -2996,7 +2996,7 @@ class Pase44G(TestCase):
                                                defaults={'value': 'claude-opus-4-8'})
         SystemSetting.objects.update_or_create(key='delivery_deep', defaults={'value': 'batch'})
         with mock.patch('apps.analysis.tasks._submit_batch', return_value=True) as lote, \
-                mock.patch('apps.analysis.tasks.DailyBudget.try_spend',
+                mock.patch('apps.analysis.models.DailyBudget.try_spend',
                            return_value=True), \
                 mock.patch('apps.agents.verdict.run') as directo:
             self.assertEqual(opus_rescan(post.pk, forced=True), 'batch_submitted')
