@@ -1459,3 +1459,20 @@ Commit `77dd767`. Informe completo en docs/78.
 - Trampa: `docker compose exec` vive dentro del contenedor — un `up --build`
   mata los comandos largos en curso (clarificador). Mirar los exec vivos antes
   de recrear, no solo los analisis en vuelo.
+
+## 74. Serie 5.8: el fotograma del claim, registrado en la wiki (2026-09-07)
+
+Commit `1ca71d9`. Informe completo en docs/79.
+- Orden expresa de David («me dan igual los derechos de autor, obedece»):
+  ENMIENDA ACOTADA de la linea roja de multimedia, documentada en CLAUDE.md —
+  UN fotograma JPEG por claim como cita visual; jamas video/audio/voz.
+- Claim.frame_image/frame_second/frame_note (wiki/0010); mirar() devuelve el
+  fotograma del segundo exacto; vision.registrar persiste SOLO si la vista
+  aporto (sostiene/contradice); verdict.run lo cablea; ficha con seccion
+  «Lo que mostraba la pantalla».
+- Clarificador (leccion de la tanda real): 11/13 json_parse era el JSON
+  TRUNCADO por max_tokens=1500 con el modelo exprimido → 3000 + recordatorio
+  solo-JSON; el claim 99 paso de json_parse a VERDE con fuentes. Y `ps` NO
+  EXISTE en el contenedor: comprobar procesos con /proc/<pid>, no con ps
+  (un grep de ps inexistente dio 0 y parecio «muerto» un proceso vivo —
+  se lanzaron tandas en paralelo y hubo que matar las viejas por /proc).
