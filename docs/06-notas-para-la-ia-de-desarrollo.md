@@ -1364,3 +1364,15 @@ qwen3.7-plus — 3,5 centimos TODO INCLUIDO. Flecos: monologo de 50 s en UNA fra
 (MAX_SENTENCE no partio; revisar troceo de monologos), Token Plan huerfano (David
 decide autorrenovacion), cuota de bienvenida puede enmascarar gasto real del primer
 extracto. Informe: docs/73.
+
+## 69. Serie 5.3: transparencia, karaoke y opiniones (2026-09-06)
+
+A: donaciones del boton PayPal ANOTADAS (sin verificar; David confirma en su panel —
+solo lo confirmado sube el tope) + /gastos/ publica con historico. B: karaoke
+progresivo (clip-path) + resumen del veredicto en el title del semaforo. C: OPINIONES
+al analisis profundo por su LOGICA (kind en Claim, wiki/0008; GREY sin fuentes
+legitimo); estreno real: la opinion de Abascal ROJA con 6 fuentes via qwen3.7-plus.
+D: el libro SOLO gasto real (Claude apunta usage; try_spend ya no escribe). Cazas:
+/panel/donaciones/ YA EXISTIA y mi vista lo piso (leccion 4.4-C reincidente — mirar
+urls antes de añadir rutas); varchar(10) de sensitive tumbo la fase en bucle (candado
+truncar-al-campo). Informe: docs/74.

@@ -30,7 +30,7 @@ Empieza por leer el handoff. No preguntes lo que ya esté escrito.
 
 
 **De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
-**Última actualización: 2026-09-06 (noche) · Commit en producción: `10f11ef` — 5.2-C: QWEN EN MARCHA DE PUNTA A PUNTA. Clave sk-ws (pago-por-uso) única; búsqueda por API Responses con tools=[web_search] (¡NO enable_search!), fuentes en web_search_call.action.sources; libro de cuentas registra cada llamada qwen. PRUEBA REAL post 1: veredicto ROJO con 7 fuentes oficiales por qwen3.7-plus — 3,5 céntimos todo incluido. Flecos: monólogo 50s en UNA frase (troceo), Token Plan huérfano (autorrenovación vence 06-10). De David: MX IONOS · decisión Google (5/5 entregado) (este documento se actualiza en cada parche)**
+**Última actualización: 2026-09-06 (madrugada 07) · Commit en producción: serie 5.3 completa (docs/74) — donaciones PayPal ANOTADAS con verificación de David en /panel/donaciones/, /gastos/ pública con histórico, karaoke progresivo, resumen en el semáforo, OPINIONES al análisis profundo por su lógica (Claim.kind; estreno real: Abascal ROJA con 6 fuentes vía qwen3.7-plus), y el libro de cuentas SOLO gasto real (try_spend ya no escribe). PENDIENTE de David: el MX de IONOS SIGUE sin aparecer en el apex (2ª vez — pedidas las filas de su panel) · autorrenovación del Token Plan. ⏰ Google: RESETEADO por David a DIEZ iteraciones (serie 5.3 = 1/10) (este documento se actualiza en cada parche)**
 
 > **REGLA DE MANTENIMIENTO (órdenes de David, 2026-08-15 y 2026-08-27): al FINALIZAR LA
 > IMPLEMENTACIÓN DE CADA PARCHE de Fable web se sube a GitHub /docs, junto con el informe
