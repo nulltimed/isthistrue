@@ -6144,3 +6144,16 @@ class Parche515_VerificacionPayPal(TestCase):
         with override_settings(PAYPAL_CLIENT_ID='MI-CLIENT-ID-515'):
             html = self.client.get('/').content.decode()
         self.assertIn('client-id=MI-CLIENT-ID-515', html)
+
+
+class Parche516_DRM(TestCase):
+    """5.16 (caza del post 6): el DRM de Spotify no deja bajar el audio — el
+    post pasa a FAILED con aviso, jamas a CHEAP_RUNNING zombi."""
+
+    def test_el_drm_deja_estado_honesto(self):
+        import inspect
+        from apps.analysis import tasks
+        fuente = inspect.getsource(tasks.run_cheap_phase)
+        self.assertIn("'DRM' in str(exc)", fuente)
+        self.assertIn("post.status = 'FAILED'", fuente)
+        self.assertIn("return 'drm'", fuente)

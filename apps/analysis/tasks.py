@@ -107,6 +107,20 @@ def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
             TranscriptSegment.objects.create(
                 post=post, word_times=[[round(w['start'], 2), round(w['end'], 2)]
                                        for w in ws] or None, **seg)
+    except Exception as exc:
+        # 5.16 (caza del post 6): Spotify protege sus episodios con DRM —
+        # yt-dlp no puede bajar el audio, la tarea reventaba y el post quedaba
+        # en CHEAP_RUNNING zombi para siempre. Estado honesto y sin reintentos
+        # ciegos: DRM no se arregla reintentando.
+        if 'DRM' in str(exc):
+            post.status = 'FAILED'
+            post.save(update_fields=['status'])
+            logger.warning('Post %s: contenido protegido con DRM — no '
+                           'analizable (%r)', post.pk, exc)
+            notify_post_event(post, 'analysis',
+                              'Contenido protegido (DRM): no se puede analizar')
+            return 'drm'
+        raise
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)  # audio SIEMPRE borrado
         _costs.set_post(None)   # 4.9-A: higiene del hilo del worker
