@@ -1418,3 +1418,10 @@ Commits `dffedfa` → `a3bf832`. Informe completo en docs/76.
   por orden de David: sin puerta de palabras clave (procede/VISUAL_RX retirados),
   fotogramas a −lag/0/+lag (`vision_lag_seconds`, 4 s) por el retardo humano
   pantalla↔voz, stream de yt-dlp cacheado por post.
+- **Addendum H (mismo día)**: la entrada a la wiki es una LANDING estilo
+  Wikipedia (orden de David): buscador único sin opciones en /wiki/buscar/
+  (personas+claims+vídeos+temas a la vez), listado de temas en portada, y
+  /tema/<slug>/ enseña sus Personas involucradas. Supersede los listados del
+  5.1-C y el «personas al frente» del 5.5-E; 5 tests de portadas viejas
+  reescritos. La portada wiki lleva TRES órdenes superpuestas en dos días
+  (5.4→5.5-B/E→5.5-H): antes de tocarla otra vez, releer la última.
