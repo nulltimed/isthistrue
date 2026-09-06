@@ -89,11 +89,16 @@ def probe(url, platform):
 
 
 def _duracion_spotify(url):
+    # Medido en la pagina real (2026-09-07): <meta name="music:duration"
+    # content="739"/> — SEGUNDOS. El duration_ms del folleto no aparece.
     import re
     import requests
     try:
         h = requests.get(url, timeout=8,
                          headers={'User-Agent': 'Mozilla/5.0'}).text
+        m = re.search(r'music:duration"\s*content="(\d+)"', h)
+        if m:
+            return int(m.group(1))
         m = re.search(r'"duration_ms"\s*:\s*(\d+)', h)
         return int(m.group(1)) // 1000 if m else 0
     except Exception:

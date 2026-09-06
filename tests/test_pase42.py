@@ -6046,7 +6046,7 @@ class Parche513_Serie(TestCase):
 
     def test_probe_lee_la_duracion_de_spotify(self):
         t = open('apps/embeds/adapters.py').read()
-        self.assertIn('duration_ms', t)
+        self.assertIn('music:duration', t)   # medido: Spotify sirve SEGUNDOS ahi
         self.assertIn("'spotify.com' in url", t)
         # y el mensaje del submit ya no MIENTE con duracion desconocida
         v = open('apps/analysis/views.py').read()
