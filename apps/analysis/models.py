@@ -99,6 +99,13 @@ class Post(models.Model):
     is_adult = models.BooleanField(default=False)            # marcado por autor/agente/moderador
     adult_flag_source = models.CharField(max_length=10, blank=True, default='')  # author|agent|mod
     manipulation_detected = models.BooleanField(default=False)
+    # 5.4-D (orden de David): el VIGILANTE DE CHINA. Los modelos chinos censuran
+    # los temas que tocan a China; un detector (Haiku por defecto, rueda
+    # «Detector de temas sobre China» del panel) marca el video al llegar la
+    # transcripcion y, si involucra a China, TODO el analisis posterior usa los
+    # modelos Anthropic seleccionados (las ruedas de respaldo) — jamas Qwen.
+    # None = aun sin comprobar.
+    china_related = models.BooleanField(null=True, default=None)
     relegation_reason = models.CharField(max_length=200, blank=True, default='')
     # 4.2 A2 (decision de David): NINGUN post va solo a Off-Topic. El clasificador
     # solo SUGIERE; relegar es accion manual de moderador.

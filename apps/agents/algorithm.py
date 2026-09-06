@@ -71,15 +71,16 @@ def second_opinion_rescues(post, sweep_result):
     apartar. Cualquier fallo del modelo = sin rescate, con WARNING (regla 5.7).
     """
     from apps.agents import client, prompts
-    from apps.agents.catalog import fallback_for, model_for
+    from apps.agents.catalog import fallback_for, model_for, models_for_post
     claims = sweep_result.get('claims') or []
     lineas = [f"- [{c.get('kind', '?')}] {c.get('text', '')}" for c in claims[:120]]
     payload = (f"TITULO: {post.title or '(sin titulo)'}\n"
                f"MOTIVO DE LA REGLA: {post.relegation_reason or '(sin motivo)'}\n"
                f"AFIRMACIONES EXTRAIDAS ({len(claims)}):\n" + '\n'.join(lineas))
     try:
-        datos = client.call_json(model_for('classify'), prompts.CLASSIFY_SYSTEM,
-                                 payload, fallback=fallback_for('classify'),
+        _m, _fb = models_for_post('classify', post)
+        datos = client.call_json(_m, prompts.CLASSIFY_SYSTEM,
+                                 payload, fallback=_fb,
                                  max_tokens=300, mock_payload=MOCK_CLASSIFY)
     except Exception as exc:
         logger.warning('Segunda opinión fallida en el post %s: %r', post.pk, exc)

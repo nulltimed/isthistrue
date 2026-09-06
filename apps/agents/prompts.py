@@ -282,3 +282,12 @@ conoce, quien la dijo). Devuelve SOLO JSON:
 Reglas: si se conoce el interlocutor, empieza por su apellido y dos puntos \
 («Abascal: ...»); neutro y descriptivo, sin juzgar; en castellano; sin comillas \
 de apertura tipograficas raras; jamas superes los 90 caracteres."""
+
+
+# 5.4-D (orden de David): el vigilante de China.
+CHINA_GUARD_SYSTEM = """Analiza si el contenido de este video involucra a China \
+de forma relevante: el pais, su gobierno o Partido, Taiwan, Hong Kong, Xinjiang, \
+Tibet, el mar de China, empresas chinas estrategicas (Huawei, TikTok/ByteDance, \
+Alibaba...), o relaciones geopoliticas donde China sea parte. Una mencion de \
+pasada (p. ej. «fabricado en China») NO cuenta. Responde SOLO JSON:
+{"involucra_china": true|false, "motivo": "<una frase>"}"""

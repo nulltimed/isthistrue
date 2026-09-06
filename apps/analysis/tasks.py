@@ -216,6 +216,11 @@ def _after_segments(post):
 def _date_and_hint(post, transcript_text):
     """Datacion + pista de voces en un viaje. Datar es una ayuda, no un requisito:
     cualquier fallo se registra y el analisis sigue."""
+    # 5.4-D (orden de David): ANTES de que ningun modelo chino toque el video,
+    # el vigilante decide si el tema involucra a China. Si si, models_for_post
+    # entregara los Anthropic del panel a todas las tareas posteriores.
+    from apps.agents.china_guard import detectar
+    detectar(post, transcript_text or '')
     try:
         from apps.agents.dating import date_and_count
         datos = date_and_count(post, transcript_text)
@@ -986,7 +991,7 @@ def opus_rescan_segment(segment_id, forced=False):
     from apps.agents import client, prompts
     from apps.agents.verdict import MOCK_VERDICT, transcript_dossier
     from apps.wiki.services import upsert_claim
-    from apps.agents.catalog import fallback_for, model_for, web_searches_per_claim
+    from apps.agents.catalog import fallback_for, model_for, models_for_post, web_searches_per_claim
     # 4.4-D/E (ordenes de David): expediente COMPLETO y el modelo busca sus
     # propias fuentes con la herramienta web de Anthropic. El reanalisis profundo
     # es justo donde mas falta hace: si alguien pide una segunda mirada es porque
@@ -999,11 +1004,12 @@ def opus_rescan_segment(segment_id, forced=False):
                + f"BUSCA TU MISMO LAS FUENTES (máx. {tope} búsquedas): primero "
                  f"organismos oficiales, prensa solo como apoyo. Lista en "
                  f"\"sources\" las URLs reales que uses. Sin nada útil: UNDECIDED.")
-    v, usado = client.call_search_json(model_for('deep'), prompts.VERDICT_SYSTEM,
+    _m, _fb = models_for_post('deep', post)
+    v, usado = client.call_search_json(_m, prompts.VERDICT_SYSTEM,
                                        payload, max_tokens=1500,
                                        mock_payload=MOCK_VERDICT,
                                        cacheable=expediente, max_searches=tope,
-                                       fallback=fallback_for('deep'))
+                                       fallback=_fb)
     if 'error' not in v:
         v['model_used'] = usado
         # Mismo bug de anclaje que cerró el 4.4-B, y seguía vivo AQUI: el Meta

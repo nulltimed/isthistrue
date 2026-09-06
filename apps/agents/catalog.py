@@ -130,6 +130,10 @@ TASKS = [
     # contrasta con las existentes para mantener la taxonomia ordenada.
     ('categories', 'Orden de categorías', 'qwen3.7-plus',
                    'solo al proponer una categoría nueva'),
+    # 5.4-D (orden de David): el detector de temas sobre China. Por naturaleza
+    # NO puede ser un modelo chino (el zorro no vigila el gallinero).
+    ('china_guard', 'Detector de temas sobre China', 'claude-haiku-4-5-20251001',
+                    'una por vídeo'),
 ]
 TASK_KEYS = [t[0] for t in TASKS]
 
@@ -183,6 +187,7 @@ FALLBACK_DEFAULTS = {
     'deep': 'claude-opus-4-8',
     'innocuous': 'claude-sonnet-4-6',
     'categories': 'claude-sonnet-4-6',
+    'china_guard': 'claude-haiku-4-5-20251001',
 }
 
 
@@ -303,9 +308,24 @@ def web_searches_per_claim():
     return max(1, SystemSetting.get_int('web_searches_per_claim', 3))
 
 
+def models_for_post(task, post):
+    """5.4-D: (principal, respaldo) de la tarea PARA ESTE VIDEO. Si el video
+    involucra a China, el principal pasa a ser el Anthropic de la rueda de
+    respaldo (sin caida posterior a Qwen): la censura no analiza."""
+    principal, respaldo = model_for(task), fallback_for(task)
+    if post is not None and getattr(post, 'china_related', None) and \
+            provider(principal) == 'qwen':
+        return (respaldo or FALLBACK_DEFAULTS.get(task, 'claude-sonnet-4-6')), ''
+    return principal, respaldo
+
+
 def warning_for(task):
     """El aviso de «te estás disparando en el pie», si procede."""
     # 4.4-E (peticion literal de David): la advertencia de los modelos ciegos.
+    # 5.4-D: el zorro no vigila el gallinero.
+    if task == 'china_guard' and provider(model_for(task)) == 'qwen':
+        return ('Un modelo chino no puede detectar la censura china: elige un '
+                'modelo de Anthropic para esta rueda.')
     if task in WEB_TASKS and not supports_web(model_for(task)):
         return ('Este modelo no permite búsqueda web, y esta tarea la necesita: '
                 'los veredictos saldrían sin fuentes. Elige un modelo con búsqueda.')

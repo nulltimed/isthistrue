@@ -768,7 +768,9 @@ class Pase43A7(TestCase):
     # --- 2. el hover ya no borra la frase ---
     def test_hover_comparte_el_negro_de_la_intervencion_activa(self):
         css = open('static/css/main.css').read()
-        self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
+        # 5.4-A supersede la fusion del A.7: el hover conserva su negro; la
+        # intervencion activa ya no (el karaoke marca solo lo dicho).
+        self.assertIn('.transcript .segment:hover{background:#141414', css)
         self.assertIn('.transcript .segment:hover,.transcript .segment:hover .text{color:#fff}', css)
         # la píldora del hablante (opción A de David) también en hover
         self.assertIn('.transcript .segment:hover .speaker-tag{', css)
@@ -2268,18 +2270,23 @@ class Pase44B(TestCase):
         self.assertTrue(vistas[0].startswith('site:'), vistas[:2])
 
     # ---------- 4. no pagar lo que no se verifica ----------
-    def test_las_opiniones_no_se_verifican_ni_se_pagan(self):
-        """Un `pass` vacío hacía que el bucle siguiera: 17 frases factuales y 32
-        veredictos en el post 4 de producción."""
+    def test_las_opiniones_van_al_analista_no_al_verificador(self):
+        """4.4-B evitaba pagar opiniones; la ORDEN 5.3-C de David lo supersede:
+        las opiniones SI se analizan — por su LOGICA, con el prompt del
+        analista, jamas con el del verificador factual."""
         from apps.agents import verdict as va
+        from apps.agents import prompts
         post, seg, _ = self._post_con_frase('Cataluña es una nación.', signal='OPINION')
-        llamadas = []
+        sistemas = []
         from unittest.mock import patch
-        with patch.object(va.client, 'call_json',
-                          side_effect=lambda *a, **k: llamadas.append(a) or {'color': 'GREY'}):
-            with patch.object(va.search, 'search_with_status', return_value=([], False)):
-                va.run(post)
-        self.assertEqual(llamadas, [], 'se ha pagado la verificación de una opinión')
+        def falso(model, system, *a, **k):
+            sistemas.append(system)
+            return ({'color': 'GREY', 'what_is_claimed': 'x', 'sources': []}, model)
+        with patch.object(va.client, 'call_search_json', side_effect=falso), \
+             patch('apps.wiki.services._titulo_ia', return_value='t'):
+            va.run(post)
+        self.assertEqual(sistemas, [prompts.OPINION_VERDICT_SYSTEM],
+                         'la opinion no fue (solo) al analista de logica')
 
     def test_sin_fuentes_no_se_pinta_color_y_queda_indecisa(self):
         from apps.agents import verdict as va
@@ -5319,3 +5326,69 @@ class Parche54_WikiDelVideo(TestCase):
         js = open('static/js/transcript.js').read()
         self.assertIn("get('t')", js)
         self.assertIn('seekTo(tParam)', js)
+
+
+class Parche54D_VigilanteChina(TestCase):
+    """5.4-D (orden de David): los modelos chinos censuran lo que toca a China.
+    Un detector (Haiku, rueda del panel) marca el video al llegar la
+    transcripcion; si involucra a China, TODO el analisis posterior usa los
+    Anthropic del panel — la censura no analiza."""
+
+    def _post(self, china=None, n=0):
+        u = make_user(username=f'ch{n}', email=f'ch{n}@example.org')
+        p = Post.objects.create(author=u, url=f'https://youtu.be/ch{n}',
+                                title='Debate sobre Taiwán')
+        if china is not None:
+            p.china_related = china
+            p.save(update_fields=['china_related'])
+        return p
+
+    def test_el_detector_marca_el_post(self):
+        from unittest import mock
+        from apps.agents.china_guard import detectar
+        p = self._post(n=1)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'involucra_china': True, 'motivo': 'Taiwán'}):
+            self.assertTrue(detectar(p, 'texto sobre Taiwán'))
+        p.refresh_from_db()
+        self.assertIs(p.china_related, True)
+
+    def test_si_el_detector_falla_se_marca_true_por_prudencia(self):
+        from unittest import mock
+        from apps.agents.china_guard import detectar
+        p = self._post(n=2)
+        with mock.patch('apps.agents.client.call_json',
+                        return_value={'error': 'json_parse'}):
+            self.assertTrue(detectar(p, 'x'))
+
+    def test_un_video_de_china_no_pasa_por_qwen(self):
+        from apps.agents.catalog import models_for_post
+        china = self._post(china=True, n=3)
+        normal = self._post(china=False, n=4)
+        m, fb = models_for_post('sweep', china)
+        self.assertTrue(m.startswith('claude'), 'la censura no analiza')
+        self.assertEqual(fb, '')
+        m2, fb2 = models_for_post('sweep', normal)
+        self.assertTrue(m2.startswith('qwen'))
+        self.assertTrue(fb2.startswith('claude'))
+
+    def test_el_barrido_de_un_video_de_china_llama_a_claude(self):
+        from unittest import mock
+        from apps.agents import sweep
+        p = self._post(china=True, n=5)
+        p.transcript_segments.create(start_seconds=0, end_seconds=2, text='frase')
+        modelos = []
+        def falso(model, *a, **k):
+            modelos.append(model)
+            return {'claims': [], 'manipulation': False, 'is_adult': False,
+                    'language': 'es'}
+        with mock.patch.object(sweep.client, 'call_json', side_effect=falso):
+            sweep.run(p)
+        self.assertTrue(all(m.startswith('claude') for m in modelos), modelos)
+
+    def test_el_panel_avisa_si_el_zorro_vigila_el_gallinero(self):
+        from apps.panel.models import SystemSetting
+        from apps.agents.catalog import warning_for
+        SystemSetting.objects.update_or_create(key='model_china_guard',
+                                               defaults={'value': 'qwen3.8-flash'})
+        self.assertIn('modelo chino', warning_for('china_guard'))

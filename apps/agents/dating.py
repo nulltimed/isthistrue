@@ -60,8 +60,9 @@ def date_and_count(post, transcript_text=None):
                f"FECHA DE SUBIDA (tope superior): "
                f"{subida.date().isoformat() if subida else '(desconocida)'}\n\n"
                f"TRANSCRIPCION (fragmento):\n{cuerpo}")
-    from apps.agents.catalog import fallback_for, model_for
-    datos = client.call_json(model_for('dating'), prompts.DATING_SYSTEM, payload, fallback=fallback_for('dating'),
+    from apps.agents.catalog import models_for_post
+    _m, _fb = models_for_post('dating', post)
+    datos = client.call_json(_m, prompts.DATING_SYSTEM, payload, fallback=_fb,
                              max_tokens=400, mock_payload=MOCK_DATING)
     if 'error' in datos:
         logger.warning('Datación fallida en el post %s: %s', post.pk, datos.get('error'))

@@ -14,7 +14,7 @@ ninguna persona en la wiki.
 import logging
 
 from apps.agents import client, prompts
-from apps.agents.catalog import fallback_for, model_for
+from apps.agents.catalog import fallback_for, model_for, models_for_post
 
 logger = logging.getLogger('agents.attribution')
 
@@ -51,20 +51,22 @@ def run(post):
                    f"FRASES (las {inicio - desde} primeras son contexto; corrige solo de la {inicio} a la {fin - 1}):\n"
                    + _lista(segments, desde, fin))
         try:
-            datos = client.call_json(model_for('attribution'), prompts.ATTRIBUTION_SYSTEM,
+            _m, _fb = models_for_post('attribution', post)
+            datos = client.call_json(_m, prompts.ATTRIBUTION_SYSTEM,
                                      payload, max_tokens=1500, mock_payload=MOCK_ATTRIBUTION,
-                                     fallback=fallback_for('attribution'))
+                                     fallback=_fb)
         except Exception as exc:
             logger.warning('Pasada de sentido fallida en el post %s: %r', post.pk, exc)
             return vacio
         if 'error' in datos:
             # 4.8-A: un JSON invalido puntual no puede tumbar la pasada — se
             # reintenta UNA vez (el modelo muestrea distinto).
-            datos = client.call_json(model_for('attribution'),
+            _m2, _fb2 = models_for_post('attribution', post)
+            datos = client.call_json(_m2,
                                      prompts.ATTRIBUTION_SYSTEM, payload,
                                      max_tokens=1500,
                                      mock_payload=MOCK_ATTRIBUTION,
-                                     fallback=fallback_for('attribution'))
+                                     fallback=_fb2)
         if 'error' in datos:
             logger.warning('Pasada de sentido fallida en el post %s: %s', post.pk, datos.get('error'))
             return vacio
@@ -140,10 +142,11 @@ def intro_rewrite(post):
     muestras = []
     for _ in range(3):
         try:
-            datos = client.call_json(model_for('attribution'),
+            _m3, _fb3 = models_for_post('attribution', post)
+            datos = client.call_json(_m3,
                                      prompts.INTRO_REWRITE_SYSTEM, payload,
                                      max_tokens=4000,
-                                     fallback=fallback_for('attribution'),
+                                     fallback=_fb3,
                                      mock_payload={'utterances': []})
         except Exception as exc:
             logger.warning('Reescritura de arranque: muestra fallida en el '
@@ -280,10 +283,11 @@ def adjudicate_minor_voices(post):
         bloques = [f'FRASE {n}: «{s2.text[:150]}»'
                    for n, s2 in enumerate(pendientes)]
         try:
-            datos = client.call_json(model_for('innocuous'),
+            _mi, _fbi = models_for_post('innocuous', post)
+            datos = client.call_json(_mi,
                                      prompts.ADJUDICATE_SYSTEM,
                                      '\n'.join(bloques), max_tokens=1500,
-                                     fallback=fallback_for('innocuous'),
+                                     fallback=_fbi,
                                      mock_payload={'decisiones': []})
         except Exception as exc:
             logger.warning('Criba de fantasmas fallida en el post %s: %r',

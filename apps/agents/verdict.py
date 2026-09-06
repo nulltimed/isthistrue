@@ -88,7 +88,7 @@ def run(post, model=None):
     # Va como bloque CACHEABLE: se paga una vez y las 80 afirmaciones lo releen a
     # una décima parte. Sin eso, esta decisión multiplicaría la factura por 2,6.
     expediente = transcript_dossier(post) if full_transcript_enabled() else None
-    from apps.agents.catalog import fallback_for, model_for, web_searches_per_claim
+    from apps.agents.catalog import fallback_for, model_for, models_for_post, web_searches_per_claim
     tope = web_searches_per_claim()
     for c in sw['claims']:
         # 5.3-C (orden de David, revierte el descarte del 4.4-B): las OPINIONES
@@ -107,11 +107,12 @@ def run(post, model=None):
         # buscadores le cerraban la puerta al servidor y el semaforo se quedaba
         # en 🔍 por falta de papeles.
         payload = build_payload(c, fecha, tope)
-        v, usado = client.call_search_json(model or model_for('verdict'),
+        _m, _fb = models_for_post('verdict', post)
+        v, usado = client.call_search_json(model or _m,
                                            sistema, payload,
                                            max_tokens=1500, mock_payload=MOCK_VERDICT,
                                            cacheable=expediente, max_searches=tope,
-                                           fallback=fallback_for('verdict'))
+                                           fallback=_fb)
         if 'error' not in v:
             v['model_used'] = usado
             v['kind'] = 'OPINION' if es_opinion else 'FACTUAL'
