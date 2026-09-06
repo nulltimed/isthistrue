@@ -4801,17 +4801,21 @@ class Parche51B_Malla(TestCase):
         self.assertIn('Video malla 4', html)
         self.assertIn('mensajes nuevos', html)   # el alta del topic + la respuesta = 2
 
-    def test_el_foro_muestra_los_dos_bloques_y_el_buscador(self):
+    def test_el_foro_es_categorias_de_solo_enlaces(self):
+        # 5.9 (orden de David) supersede los bloques-con-mensajes del 5.1-B:
+        # «Sin mostrar comentarios, sólo el enlace al post».
         from apps.forum.machina_glue import create_topic_for_post, add_reply
         post, _, _, _ = self._escena(5)
         create_topic_for_post(post)
         add_reply(post, post.author, 'hola desde el hilo')
         html = self.client.get('/foro/').content.decode()
         self.assertIn('Off-Topic', html)
-        self.assertIn('hola desde el hilo', html)
+        self.assertIn('Los más nuevos', html)
+        self.assertIn(post.get_absolute_url(), html)
+        self.assertNotIn('hola desde el hilo', html,
+                         'los comentarios ya no se muestran en el foro')
         self.assertIn('name="color"', html)
         self.assertIn('name="tema"', html)
-        self.assertIn(f'/post/{post.pk}/#hilo', html, 'el mensaje no enlaza al hilo')
 
     def test_buscar_solo_con_filtros(self):
         from apps.wiki.models import Claim
@@ -5845,3 +5849,28 @@ class Parche58_FotogramaEnLaWiki(TestCase):
         from apps.agents import verdict as va
         fuente = inspect.getsource(va.run)
         self.assertIn('vision.registrar', fuente)
+
+
+class Parche59_ForoEnCategorias(TestCase):
+    """5.9 (orden de David): el Foro en categorias de SOLO enlaces —
+    nuevos, comentados, analizados en profundidad por votos, y Off-Topic
+    con sus nuevos y comentados."""
+
+    def test_las_cinco_categorias_y_el_orden_por_votos(self):
+        from apps.forum.models import Vote
+        u = make_user(username='f59', email='f59@example.org')
+        a = Post.objects.create(author=u, url='https://youtu.be/f59a',
+                                title='Analizado sin votos', status='DONE')
+        b = Post.objects.create(author=u, url='https://youtu.be/f59b',
+                                title='Analizado con voto', status='DONE')
+        off = Post.objects.create(author=u, url='https://youtu.be/f59c',
+                                  title='Charla offtopic', category='OFFTOPIC')
+        Vote.objects.create(post=b, user=u)
+        html = self.client.get('/foro/').content.decode()
+        self.assertIn('Analizados en profundidad, por votos', html)
+        # el votado por delante del sin votos dentro de la seccion de profundos
+        bloque = html.split('Analizados en profundidad')[1]
+        self.assertLess(bloque.find('Analizado con voto'),
+                        bloque.find('Analizado sin votos'))
+        self.assertIn(off.get_absolute_url(), html)     # off-topic enlazado
+        self.assertNotIn('thread-body', html, 'sin cuerpos de mensajes')

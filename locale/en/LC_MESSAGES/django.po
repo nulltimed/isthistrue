@@ -1654,3 +1654,10 @@ msgstr "Video frame at the moment of the claim"
 
 msgid "segundo"
 msgstr "second"
+
+# 5.9: el foro en categorias de solo-enlaces
+msgid "Analizados en profundidad, por votos"
+msgstr "Analysed in depth, by votes"
+
+msgid "La conversación de cada vídeo analizado, ordenada por lo que importa."
+msgstr "The conversation of every analysed video, sorted by what matters."

@@ -24,17 +24,26 @@ def _mensajes_de(forum, n=10):
 
 
 def foro_home(request):
-    from machina.core.db.models import get_model
-    from apps.analysis.models import Category
+    """5.9 (orden de David, supersede los bloques-con-mensajes del 5.1-B):
+    el Foro en CATEGORIAS de SOLO ENLACES — «Sin mostrar comentarios, sólo el
+    enlace al post». Principal: mas nuevos, mas comentados, y analizados en
+    profundidad por votos (= analisis COMPLETO con veredictos, DONE; si David
+    quiso otra cosa por «en profundidad», se ajusta aqui). Off-Topic: mas
+    nuevos y mas comentados."""
+    from django.db.models import Count
+    from apps.analysis.models import Category, Post
+    from apps.analysis.views import _mas_comentados
     from apps.wiki.models import COLORS
-    Forum = get_model('forum', 'Forum')
-    principal = Forum.objects.filter(slug='principal').first()
-    offtopic = Forum.objects.filter(slug='off-topic').first()
+    main = Post.objects.filter(category='MAIN').exclude(is_adult=True)
+    off = Post.objects.filter(category='OFFTOPIC').exclude(is_adult=True)
+    profundos = (main.filter(status='DONE')
+                 .annotate(nv=Count('votes')).order_by('-nv', '-created_at')[:10])
     return render(request, 'forum/foro_home.html', {
-        'principal': principal,
-        'principal_msgs': _mensajes_de(principal) if principal else [],
-        'offtopic': offtopic,
-        'offtopic_msgs': _mensajes_de(offtopic) if offtopic else [],
+        'nuevos': main.order_by('-created_at')[:10],
+        'comentados': _mas_comentados(main),
+        'profundos': profundos,
+        'off_nuevos': off.order_by('-created_at')[:10],
+        'off_comentados': _mas_comentados(off),
         # 5.1-D: taxonomia viva — el buscador se puebla solo
         'temas': list(Category.objects.values_list('slug', 'name')),
         'colores': COLORS,
