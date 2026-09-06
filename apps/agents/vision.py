@@ -44,7 +44,11 @@ _STREAMS = {}
 def _stream_url(post):
     if post.pk not in _STREAMS:
         r = subprocess.run(
-            ['yt-dlp', '-g', '-f', 'best[height<=480]/worst', post.url],
+            # 5.14-C (cazado en el relanzamiento global): YouTube ya solo
+            # sirve streams ADAPTATIVOS y 'best[height<=480]' devolvia
+            # «Requested format is not available» — los ojos quedaban ciegos
+            # en silencio. Para UN fotograma basta el video solo (bv*).
+            ['yt-dlp', '-g', '-f', 'bv*[height<=480]/bv*/best/worst', post.url],
             capture_output=True, text=True, timeout=60)
         url = (r.stdout or '').strip().split('\n')[0]
         if not url.startswith('http'):
