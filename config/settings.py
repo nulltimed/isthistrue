@@ -209,13 +209,21 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'registration_open': '1',
     'lang_es': '1', 'lang_en': '1',
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
-    'model_sweep': 'claude-haiku-4-5-20251001',
-    'model_classify': 'claude-sonnet-4-6',
-    'model_dating': 'claude-haiku-4-5-20251001',
-    'model_attribution': 'claude-haiku-4-5-20251001',   # 4.4-I
-    'model_verdict': 'claude-sonnet-4-6',
-    'model_moderation': 'claude-haiku-4-5-20251001',
-    'model_deep': 'claude-opus-4-8',
+    # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa
+    # intermedia de la cascada (panel > .env > catalogo) seguia sembrando los
+    # Claude antiguos y PISABA los defaults Qwen del catalogo alli donde no
+    # habia fila del panel. Alineada con la orden de David: Qwen para todo;
+    # el detector de China es Claude POR DISEÑO.
+    'model_sweep': 'qwen3.8-flash',
+    'model_classify': 'qwen3.7-plus',
+    'model_dating': 'qwen3.8-flash',
+    'model_attribution': 'qwen3.8-flash',   # 4.4-I
+    'model_verdict': 'qwen3.7-plus',
+    'model_moderation': 'qwen3.8-flash',
+    'model_deep': 'qwen3.8-max',
+    'model_innocuous': 'qwen3.7-plus',
+    'model_categories': 'qwen3.7-plus',
+    'model_china_guard': 'claude-haiku-4-5-20251001',
     'delivery_sweep': 'direct', 'delivery_classify': 'direct',
     'delivery_dating': 'direct', 'delivery_verdict': 'direct', 'delivery_attribution': 'direct',
     'delivery_moderation': 'direct', 'delivery_deep': 'direct',

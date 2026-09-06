@@ -2867,8 +2867,10 @@ class Pase44G(TestCase):
                             for p in glob.glob('apps/**/*.py', recursive=True)
                             if '/migrations/' not in p and not p.endswith('catalog.py'))
         for clave in catalog.TASK_KEYS:
-            self.assertIn(f"model_for('{clave}')", fuentes,
-                          f'la rueda «{clave}» del panel no gobierna ninguna llamada')
+            # 5.4-D: la tuberia usa models_for_post (vigilante de China).
+            self.assertTrue(f"model_for('{clave}')" in fuentes
+                            or f"models_for_post('{clave}'" in fuentes,
+                            f'la rueda «{clave}» del panel no gobierna ninguna llamada')
 
     def test_el_panel_muestra_exactamente_lo_que_el_codigo_decide(self):
         from apps.agents import catalog
@@ -4999,6 +5001,10 @@ class Parche52A_QwenPrincipal(TestCase):
             self.assertIn(mid, catalog.BY_ID)
             self.assertTrue(catalog.supports_web(mid))
         for tarea in catalog.TASK_KEYS:
+            if tarea == 'china_guard':
+                # 5.4-D: el detector es Claude POR DISEÑO.
+                self.assertTrue(catalog.TASK_DEFAULTS[tarea].startswith('claude'))
+                continue
             self.assertTrue(catalog.TASK_DEFAULTS[tarea].startswith('qwen'),
                             f'{tarea} no arranca en Qwen')
             self.assertTrue(catalog.fallback_for(tarea).startswith('claude'),
