@@ -127,10 +127,18 @@ def run(post, model=None):
     expediente = transcript_dossier(post) if full_transcript_enabled() else None
     from apps.agents.catalog import web_searches_per_claim
     tope = web_searches_per_claim()
-    with ThreadPoolExecutor(max_workers=parallel_workers()) as pool:
-        resultados = list(pool.map(
-            lambda c: _verificar_uno(c, post, fecha, tope, expediente, model),
-            sw['claims']))
+    n = parallel_workers()
+    if n <= 1:
+        # En linea (sin hilos): mismo codigo, cero carreras. Es tambien el modo
+        # de los tests — bajo TestCase, un hilo nuevo abre OTRA conexion que no
+        # ve los datos de la transaccion del test.
+        resultados = [_verificar_uno(c, post, fecha, tope, expediente, model)
+                      for c in sw['claims']]
+    else:
+        with ThreadPoolExecutor(max_workers=n) as pool:
+            resultados = list(pool.map(
+                lambda c: _verificar_uno(c, post, fecha, tope, expediente, model),
+                sw['claims']))
     for r in resultados:
         if r is None:
             continue

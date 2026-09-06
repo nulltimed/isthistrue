@@ -157,6 +157,10 @@ def run_pending(post, limit=25):
         finally:
             close_old_connections()
 
-    with ThreadPoolExecutor(max_workers=parallel_workers()) as pool:
-        colores = list(pool.map(_uno, admitidos))
+    n = parallel_workers()
+    if n <= 1:
+        colores = [_uno(c) for c in admitidos]
+    else:
+        with ThreadPoolExecutor(max_workers=n) as pool:
+            colores = list(pool.map(_uno, admitidos))
     return sum(1 for col in colores if col not in (None, 'UNDECIDED'))

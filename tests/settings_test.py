@@ -15,4 +15,6 @@ ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ['testserver', 'escierto.xyztserver.com',
 # En el banco de pruebas eso son esperas REALES: la suite pasó de 5 s a 326 s en
 # el CI. Aquí la espera baja al mínimo — se sigue ejercitando el camino del
 # reintento, pero sin castigar cada ciclo del ritual con cinco minutos.
-SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'search_retry_seconds': '0'}
+SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'search_retry_seconds': '0',
+                    # 5.21: sin hilos en tests (TestCase = transaccion aislada)
+                    'verdict_parallel': '1'}

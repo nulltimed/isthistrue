@@ -5483,7 +5483,8 @@ class Parche55_Serie(TestCase):
         import inspect
         self.assertFalse(hasattr(vision, 'procede'),
                          'la puerta de palabras clave debe estar retirada')
-        fuente = inspect.getsource(va.run)
+        # 5.21: la mirada vive en _verificar_uno (la parte paralelizable)
+        fuente = inspect.getsource(va.run) + inspect.getsource(va._verificar_uno)
         self.assertNotIn('procede', fuente)
         self.assertIn('vision.mirar', fuente)
         self.assertIn('vision_lag_seconds', inspect.getsource(vision.mirar))
