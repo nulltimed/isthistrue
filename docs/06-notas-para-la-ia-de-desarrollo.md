@@ -1376,3 +1376,16 @@ D: el libro SOLO gasto real (Claude apunta usage; try_spend ya no escribe). Caza
 /panel/donaciones/ YA EXISTIA y mi vista lo piso (leccion 4.4-C reincidente — mirar
 urls antes de añadir rutas); varchar(10) de sensitive tumbo la fase en bucle (candado
 truncar-al-campo). Informe: docs/74.
+
+## 70. Serie 5.4: wiki por video, titulos IA, karaoke v2 y el vigilante de China (2026-09-06/07)
+
+A=karaoke por SUBCADENA (el recorte geometrico pintaba todas las lineas; blanco con
+contorno negro solo sobre lo dicho; supersede 4.3-A5). B=titulo IA por claim (rueda
+deep; «Abascal: ...»; enunciacion literal en blockquote; titular_claims 128/143).
+C=/wiki/video/<slug>/ con DOS enlaces por claim (?t= aterriza en el segundo
+anterior via seekTo); portada wiki enlaza al analisis. D=vigilante de China (rueda
+china_guard Haiku, models_for_post, 8 llamadas recableadas, prudencia=True si
+falla). CAZA MAYOR: la capa SETTING_DEFAULTS de la cascada seguia en Claude y
+pisaba el catalogo Qwen — alineadas las TRES capas; tests de lotes anclan Claude
+(via exclusiva Anthropic). Leccion operativa: un script de edicion que muere a
+medias deja arreglos sin escribir — verificar el write. Informe: docs/75.
