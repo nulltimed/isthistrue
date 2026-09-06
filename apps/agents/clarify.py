@@ -54,7 +54,12 @@ def _payload(claim, ap, tope):
           "textual y su fecha.\n"
           f"Tienes hasta {tope} búsquedas: úsalas. Lista en \"sources\" las "
           "URLs reales que uses. Solo si tras agotar todos los caminos no hay "
-          "nada: UNDECIDED.")
+          "nada: UNDECIDED.\n\n"
+          # Leccion de la primera tanda real: 11 de 13 fallaron con json_parse
+          # — el modelo, exprimido, se explaya y el JSON llegaba TRUNCADO por
+          # max_tokens. Mas aire (3000) y el recordatorio explicito.
+          "IMPORTANTE: responde ÚNICAMENTE con el objeto JSON del contrato, "
+          "sin ningún texto antes ni después.")
 
 
 def _aplicar(claim, v, sources_ok):
@@ -99,7 +104,7 @@ def clarify_claim(claim):
     tope = _tope()
     _m, _fb = models_for_post('deep', post)
     v, usado = client.call_search_json(
-        _m, sistema, _payload(claim, ap, tope), max_tokens=1500,
+        _m, sistema, _payload(claim, ap, tope), max_tokens=3000,
         mock_payload=verdict_agent.MOCK_VERDICT, max_searches=tope, fallback=_fb)
     if 'error' in v:
         logger.warning('Clarificador: el modelo fallo con el claim %s (%s)',
