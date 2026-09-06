@@ -3188,7 +3188,8 @@ class Pase44G(TestCase):
             tarea.assert_not_called()
             r = self.client.post(f'/post/{post.pk}/relanzar/verdicts/', {'confirm': '1'})
             self.assertEqual(r.status_code, 302)
-            tarea.assert_called_once_with(post.pk, skip_charge=False)
+            # 5.18: el fixture es superusuario -> relanza SIN fusible
+            tarea.assert_called_once_with(post.pk, skip_charge=True)
         self.assertTrue(AuditLog.objects.filter(action='relaunch_verdicts',
                                                 detail__contains=f'post {post.pk}').exists())
 
@@ -3198,7 +3199,8 @@ class Pase44G(TestCase):
         self.client.force_login(self._mod(17))
         with mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as tarea:
             self.client.post(f'/post/{post.pk}/relanzar/cheap/', {'confirm': '1', 'speakers': '3'})
-        tarea.assert_called_once_with(post.pk, skip_charge=False)
+        # 5.18: el fixture es superusuario -> relanza SIN fusible
+            tarea.assert_called_once_with(post.pk, skip_charge=True)
         post.refresh_from_db()
         self.assertEqual((post.speakers_count, post.speakers_count_source), (3, 'mod'))
         self.assertEqual(post.status, 'NEW')
