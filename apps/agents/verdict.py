@@ -60,7 +60,7 @@ def build_payload(c, fecha, tope):
               f"reales que uses. Si no encuentras nada útil: UNDECIDED.")
 
 
-def _verificar_uno(c, post, fecha, tope, expediente, model):
+def _verificar_uno(c, post, fecha, tope, expediente, model, en_hilo=True):
     """5.21 (orden de David: «paraleliza siempre»): el trabajo CARO de una
     afirmacion — ojos + busquedas del verificador — aislado para correr en un
     hilo del pool. Devuelve (c, v, usado, hallazgo) o None si no toca.
@@ -102,7 +102,10 @@ def _verificar_uno(c, post, fecha, tope, expediente, model):
         return (c, v, usado, hallazgo, es_opinion)
     finally:
         _costs.set_post(None)
-        close_old_connections()
+        # Higiene SOLO en hilos del pool: en linea, cerrar aqui mataria la
+        # conexion (y bajo TestCase, la transaccion) del llamante.
+        if en_hilo:
+            close_old_connections()
 
 
 def parallel_workers():
@@ -132,7 +135,8 @@ def run(post, model=None):
         # En linea (sin hilos): mismo codigo, cero carreras. Es tambien el modo
         # de los tests — bajo TestCase, un hilo nuevo abre OTRA conexion que no
         # ve los datos de la transaccion del test.
-        resultados = [_verificar_uno(c, post, fecha, tope, expediente, model)
+        resultados = [_verificar_uno(c, post, fecha, tope, expediente,
+                                     model, en_hilo=False)
                       for c in sw['claims']]
     else:
         with ThreadPoolExecutor(max_workers=n) as pool:

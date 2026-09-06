@@ -148,18 +148,19 @@ def run_pending(post, limit=25):
             break
         admitidos.append(c)
 
-    def _uno(c):
+    def _uno(c, en_hilo=True):
         try:
             return clarify_claim(c)
         except Exception as exc:
             logger.warning('Clarificador fallo con el claim %s (%r)', c.pk, exc)
             return None
         finally:
-            close_old_connections()
+            if en_hilo:
+                close_old_connections()
 
     n = parallel_workers()
     if n <= 1:
-        colores = [_uno(c) for c in admitidos]
+        colores = [_uno(c, en_hilo=False) for c in admitidos]
     else:
         with ThreadPoolExecutor(max_workers=n) as pool:
             colores = list(pool.map(_uno, admitidos))
