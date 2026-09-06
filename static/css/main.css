@@ -377,14 +377,14 @@ main.wide .post > #hilo{max-width:none;width:100%;margin-left:0;margin-right:0}
 /* 4.3-A.5 O2 (decisión de David): la intervención que suena va en NEGRO, con su texto
    y su marca de tiempo en BLANCO — el resto de frases quedan en su color claro por
    hablante. Así se sigue el hilo de la conversación de un vistazo. */
-.transcript .segment:hover{background:#141414;border-left:3px solid #141414;
+.segment.live,.transcript .segment:hover{background:#141414;border-left:3px solid #141414;
   border-radius:4px;transition:background .12s,color .12s}
-/* 5.4-A (orden de David): la intervencion activa YA NO se pinta entera de
-   negro — solo un filo lateral; el karaoke (abajo) marca en blanco con
-   contorno negro UNICAMENTE lo que se va diciendo. */
-.segment.live{border-left:3px solid #141414;border-radius:4px}
+/* 5.5-C (especificacion FINAL de David): la intervencion activa en NEGRO con
+   texto BLANCO (restaurada), y el karaoke marca cada palabra YA DICHA como un
+   chip BLANCO con texto NEGRO que avanza palabra a palabra. */
+.segment.live,.segment.live .text,
 .transcript .segment:hover,.transcript .segment:hover .text{color:#fff}
-.transcript .segment:hover .ts{color:#fff;font-weight:700}
+.segment.live .ts,.transcript .segment:hover .ts{color:#fff;font-weight:700}
 /* 4.3-A.7 (reporte de David en el primer analisis real): al posar el raton sobre
    una frase, la frase "desaparecia". No desaparecia: la regla de hover le devolvia
    un fondo casi blanco SIN devolverle el color a la letra -> blanco sobre blanco.
@@ -656,15 +656,11 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .tabla-gastos th,.tabla-gastos td{border:1px solid var(--line);padding:.45rem .7rem;text-align:left}
 .tabla-gastos td:last-child,.tabla-gastos th:last-child{text-align:right}
 
-/* 5.4-A: karaoke v2 — la capa repite el MISMO texto (misma caja, mismo salto
-   de linea) y solo muestra la SUBCADENA ya dicha, palabra a palabra: letras
-   blancas con contorno negro. El recorte geometrico del 5.3-B pintaba una
-   franja que tocaba TODAS las lineas a la vez. */
-.segment.live .text{position:relative}
-.karaoke-cap{position:absolute;top:0;left:0;right:0;bottom:0;color:#fff;
-  -webkit-text-stroke:1px #000;
-  text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
-  white-space:pre-wrap;pointer-events:none;overflow:hidden}
+/* 5.5-C: karaoke v3 — cada palabra es un span en flujo (nada de capas
+   absolutas: .text es inline y una capa superpuesta se apilaba en vertical
+   rompiendo la transcripcion, reporte de David). El chip .dicho avanza. */
+.kw.dicho{background:#fff;color:#141414;border-radius:3px;padding:0 2px;
+  margin:0 -2px}
 .badge-opinion{background:#eef;border:1px solid #99c}
 
 /* 5.4-C: la wiki del video */

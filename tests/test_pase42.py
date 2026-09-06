@@ -478,17 +478,18 @@ class Pase43A5(TestCase):
         self.assertEqual(tiempos[0], 5.01)
 
     def test_frase_activa_estilo_karaoke(self):
-        """5.4-A (orden de David, supersede al 4.3-A5): la intervencion activa
-        YA NO se pinta entera de negro — el karaoke marca en blanco con
-        contorno negro SOLO lo que se va diciendo. El hover conserva su negro."""
+        """5.5-C (especificacion FINAL de David): la intervencion activa en
+        NEGRO con texto BLANCO, y cada palabra YA DICHA como chip BLANCO con
+        texto NEGRO — spans en flujo, jamas capas absolutas (se apilaban en
+        vertical sobre el .text inline y rompian la transcripcion)."""
         css = open('static/css/main.css').read()
-        self.assertIn('.transcript .segment:hover{background:#141414', css)
-        self.assertNotIn('.segment.live,.transcript .segment:hover{background:#141414', css)
-        self.assertIn('-webkit-text-stroke:1px #000', css)
+        self.assertIn('.segment.live,.transcript .segment:hover{background:#141414', css)
+        self.assertIn('.kw.dicho{background:#fff;color:#141414', css)
+        self.assertNotIn('karaoke-cap', css, 'la capa absoluta rompia la estructura')
         js = open('static/js/transcript.js').read()
-        self.assertIn('karaokeFull', js)
-        self.assertIn('full.slice(0, n)', js)
-        self.assertNotIn('clipPath', js, 'el recorte geometrico pintaba todas las lineas')
+        self.assertIn("classList.toggle('dicho'", js)
+        self.assertNotIn('karaoke-cap', js)
+        self.assertNotIn('clipPath', js)
 
     def test_reanalizar_solo_moderador(self):
         from apps.analysis.models import TranscriptSegment
@@ -5194,9 +5195,9 @@ class Parche53_Serie(TestCase):
     # ---------- 5.3-B: karaoke + resumen ----------
     def test_el_karaoke_progresivo_esta_cableado(self):
         js = open('static/js/transcript.js').read()
-        self.assertIn('karaoke-cap', js)
+        self.assertIn('pintarKaraoke', js)
         css = open('static/css/main.css').read()
-        self.assertIn('.karaoke-cap', css)
+        self.assertIn('.kw.dicho', css)
 
     # ---------- 5.3-C: opiniones al analisis profundo ----------
     def test_las_opiniones_van_al_analista_de_logica(self):
