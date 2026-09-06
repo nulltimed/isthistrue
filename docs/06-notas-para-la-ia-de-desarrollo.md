@@ -1342,3 +1342,13 @@ qwen_por_defecto giro las ruedas de produccion guardando cada Claude previo como
 respaldo. Probado en vivo: sin QWEN_API_KEY el respaldo Claude responde — la web
 no cambia hasta que David pegue la clave. Trampa de tests: los fakes de
 call_json necesitan **kw (kwarg fallback nuevo). Informe: docs/71.
+
+## 67. Parche 5.2-B: las dos puertas de Qwen (2026-09-06)
+
+El Token Plan de David NO busca (medido: enable_search ignorado, tools=[]) y solo
+habla compatible-OpenAI en su host propio. qwen.py reescrito a dos puertas: volumen
+por el plan (chat/completions + enable_thinking:false), busqueda por pago-por-uso
+(QWEN_SEARCH_API_KEY, API nativa con search_info). Probado en produccion: 3 modelos
+OK, barrido real con JSON valido en qwen3.7-plus, veredicto sin 2a clave cayo limpio
+a Sonnet. Trampas: sk-sp- (plan) y sk- clasica son mundos separados; 400 «url error»
+en el host del plan = ruta inexistente, no body malo. Informe: docs/72.
