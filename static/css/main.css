@@ -778,3 +778,21 @@ main.wide .post > h1{text-align:center}
 [data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translateX(-50%)}
 [data-tip].tip-abajo::after{bottom:auto;top:calc(100% + 7px)}
 @media (max-width:640px){[data-tip]::after{display:none}}
+/* C: el karma con flechas — ▲ n ▼ n en post y comentarios; difuminado y
+   plegado por puntuacion negativa (umbrales del panel). */
+.votos{display:inline-flex;align-items:center;gap:.15rem;vertical-align:middle}
+.votos form{display:inline;margin:0}
+.votos .voto{padding:.05rem .2rem;color:#141414}
+.votos .voto.activo{background:#141414;color:#fff;border-radius:5px}
+.voto-n{font-size:.78rem;font-weight:700;font-variant-numeric:tabular-nums;padding:0 .2rem;color:#141414}
+.voto-n-up::before{content:"▲";font-size:.6rem;margin-right:.1rem;color:var(--green)}
+.voto-n-down::before{content:"▼";font-size:.6rem;margin-right:.1rem;color:var(--red)}
+.votos-post{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;justify-content:center;margin:.6rem auto}
+.msg-faded .thread-body,.msg-faded .signature{opacity:.4;filter:grayscale(1)}
+.msg-faded .thread-body:hover{opacity:1;filter:none}
+.msg-folded .thread-body-wrap,.msg-folded .signature{display:none}
+.msg-folded.desplegado .thread-body-wrap,.msg-folded.desplegado .signature{display:block}
+.msg-folded.desplegado .msg-desplegar{display:none}
+.msg-desplegar{display:block;width:100%;text-align:left;background:var(--paper);color:var(--grey);
+  border:1px dashed var(--line);border-radius:6px;padding:.4rem .7rem;font-size:.82rem;font-weight:600;cursor:pointer}
+.msg-desplegar:hover{color:#141414;border-color:#141414}

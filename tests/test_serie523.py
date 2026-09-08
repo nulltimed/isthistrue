@@ -126,3 +126,87 @@ class Parche523B_TranscripcionCabeceraCompartir(TestCase):
         html = self.client.get('/wiki/claim/c523/').content.decode()
         self.assertIn('share-menu', html)
         self.assertIn('menus.js', html)
+
+
+class Parche523C_KarmaConFlechas(TestCase):
+    """C (ENMIENDA de David al README): ▲/▼ en posts y comentarios; cada voto
+    mueve el karma del autor; nadie vota lo suyo; difuminado y plegado por
+    puntuacion negativa con umbrales del panel."""
+
+    def _post_con_hilo(self):
+        autor = make_user(username='autor523', email='autor523@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/k523',
+                                   platform='youtube', title='Karma',
+                                   author_opinion='Abro hilo')
+        from apps.forum.machina_glue import create_topic_for_post, get_topic_for_post
+        create_topic_for_post(post)
+        m = get_topic_for_post(post).posts.first()
+        return autor, post, m
+
+    def test_el_voto_al_post_mueve_el_karma_y_alterna(self):
+        autor, post, _m = self._post_con_hilo()
+        votante = make_user(username='vot523', email='vot523@example.org')
+        self.client.force_login(votante)
+        self.client.post(f'/post/{post.pk}/votar/up/')
+        autor.refresh_from_db()
+        self.assertEqual(autor.karma, 1)
+        self.client.post(f'/post/{post.pk}/votar/down/')     # cambia de signo
+        autor.refresh_from_db()
+        self.assertEqual(autor.karma, -1)
+        self.client.post(f'/post/{post.pk}/votar/down/')     # repetir lo retira
+        autor.refresh_from_db()
+        self.assertEqual(autor.karma, 0)
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('voto-n-up', html)
+        self.assertIn('voto-n-down', html)
+
+    def test_nadie_vota_lo_suyo_ni_ve_sus_flechas(self):
+        autor, post, m = self._post_con_hilo()
+        self.client.force_login(autor)
+        self.client.post(f'/post/{post.pk}/votar/up/')
+        self.client.post(f'/mensaje/{m.pk}/votar/up/')
+        autor.refresh_from_db()
+        self.assertEqual(autor.karma, 0)
+        from apps.forum.models import MessageVote, Vote
+        self.assertFalse(Vote.objects.exists())
+        self.assertFalse(MessageVote.objects.exists())
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('votos-propio', html)
+        self.assertNotIn(f'/mensaje/{m.pk}/votar/up/', html)
+
+    def test_el_comentario_se_difumina_y_se_pliega_con_los_umbrales_del_panel(self):
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='karma_fade_threshold', defaults={'value': '1'})
+        SystemSetting.objects.update_or_create(key='karma_fold_threshold', defaults={'value': '2'})
+        autor, post, m = self._post_con_hilo()
+        v1 = make_user(username='v1k', email='v1k@example.org')
+        v2 = make_user(username='v2k', email='v2k@example.org')
+        self.client.force_login(v1)
+        self.client.post(f'/mensaje/{m.pk}/votar/down/')
+        html = self.client.get(post.get_absolute_url() + '?pagina=1').content.decode()
+        self.assertIn('msg-faded', html)
+        self.assertNotIn('msg-folded', html)
+        self.client.force_login(v2)
+        self.client.post(f'/mensaje/{m.pk}/votar/down/')
+        html = self.client.get(post.get_absolute_url() + '?pagina=1').content.decode()
+        self.assertIn('msg-folded', html)
+        self.assertIn('Comentario plegado', html)
+        autor.refresh_from_db()
+        self.assertEqual(autor.karma, -2)
+
+    def test_trending_y_mas_votados_cuentan_solo_positivos(self):
+        from apps.forum.models import Vote
+        autor, post, _m = self._post_con_hilo()
+        for i in range(5):
+            u = make_user(username=f'neg{i}', email=f'neg{i}@example.org')
+            Vote.objects.create(post=post, user=u, value=-1)
+        self.assertEqual(post.trending_votes(), 0)
+        self.assertFalse(post.is_trending())
+
+    def test_los_umbrales_estan_en_el_panel(self):
+        from apps.panel.views import SETTINGS_DEF
+        claves = {k for k, *_ in SETTINGS_DEF}
+        self.assertIn('karma_fade_threshold', claves)
+        self.assertIn('karma_fold_threshold', claves)
+        po = open('README.md', encoding='utf-8').read()
+        self.assertIn('ENMENDADO 2026-09-08', po)

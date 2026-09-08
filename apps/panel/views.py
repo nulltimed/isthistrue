@@ -105,6 +105,11 @@ SETTINGS_DEF = [
      'Votos que meten un post en Trending dentro de la ventana.', 'num'),
     ('trending_window_days', 'Ventana de Trending (días)',
      'Días que se miran hacia atrás para contar esos votos.', 'num'),
+    # 5.23-C (decisión de David): el karma con flechas.
+    ('karma_fade_threshold', 'Votos negativos para difuminar un comentario',
+     'Cuando los ▼ superan a los ▲ en esta cantidad, el comentario se ve difuminado. 5 de fábrica.', 'num'),
+    ('karma_fold_threshold', 'Votos negativos para plegar un comentario',
+     'Con esta puntuación negativa el comentario se pliega y hay que pulsar «Mostrar» para leerlo. 10 de fábrica.', 'num'),
     # 4.3-A.8 (decisión de David): tramo gratuito y precio por minuto.
     ('analysis_free_minutes', 'Minutos gratuitos por vídeo',
      'Hasta aquí no se pide nada. Por encima se AVISA de la donación sugerida (nunca se bloquea el envío).', 'num'),

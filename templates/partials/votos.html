@@ -1,0 +1,15 @@
+{% load i18n istt_icons %}
+{# 5.23-C (orden de David): las flechas del karma. Parametros del include: #}
+{# url_up, url_down, ups, downs, mine (1/-1/0), own (es del propio usuario). #}
+{# Positivos y negativos SIEMPRE en numero; las flechas solo si hay sesion y #}
+{# no es lo tuyo. #}
+<span class="votos{% if own %} votos-propio{% endif %}">
+  {% if user.is_authenticated and not own %}
+  <form method="post" action="{{ url_up }}">{% csrf_token %}<button class="ibtn voto voto-up{% if mine == 1 %} activo{% endif %}" data-tip="{% trans 'Voto positivo: suma 1 al karma del autor. Repetirlo lo retira.' %}" aria-label="{% trans 'Votar a favor' %}">{% icon 'up' 15 %}</button></form>
+  {% endif %}
+  <span class="voto-n voto-n-up" data-tip="{% trans 'Votos positivos' %}">{{ ups }}</span>
+  <span class="voto-n voto-n-down" data-tip="{% trans 'Votos negativos' %}">{{ downs }}</span>
+  {% if user.is_authenticated and not own %}
+  <form method="post" action="{{ url_down }}">{% csrf_token %}<button class="ibtn voto voto-down{% if mine == -1 %} activo{% endif %}" data-tip="{% trans 'Voto negativo: resta 1 al karma del autor. Con muchos, el comentario se difumina y luego se pliega.' %}" aria-label="{% trans 'Votar en contra' %}">{% icon 'down' 15 %}</button></form>
+  {% endif %}
+</span>

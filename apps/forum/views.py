@@ -30,14 +30,15 @@ def foro_home(request):
     profundidad por votos (= analisis COMPLETO con veredictos, DONE; si David
     quiso otra cosa por «en profundidad», se ajusta aqui). Off-Topic: mas
     nuevos y mas comentados."""
-    from django.db.models import Count
+    from django.db.models import Count, Q
     from apps.analysis.models import Category, Post
     from apps.analysis.views import _mas_comentados
     from apps.wiki.models import COLORS
     main = Post.objects.filter(category='MAIN').exclude(is_adult=True)
     off = Post.objects.filter(category='OFFTOPIC').exclude(is_adult=True)
     profundos = (main.filter(status='DONE')
-                 .annotate(nv=Count('votes')).order_by('-nv', '-created_at')[:10])
+                 .annotate(nv=Count('votes', filter=Q(votes__value=1)))
+                 .order_by('-nv', '-created_at')[:10])
     return render(request, 'forum/foro_home.html', {
         'nuevos': main.order_by('-created_at')[:10],
         'comentados': _mas_comentados(main),

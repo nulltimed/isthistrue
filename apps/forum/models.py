@@ -60,10 +60,28 @@ class HiddenMessage(models.Model):
 
 
 class Vote(models.Model):
-    """Voto positivo de post (contador SOLO positivo, decision congelada)."""
+    """Voto de post. 5.23-C (ENMIENDA de David al README, 2026-09-08: «los
+    votos positivos y negativos se ven en numero»): value = +1 / -1. Los
+    listados «mas votados», Trending y el reescaneo de Opus siguen contando
+    SOLO los positivos (esa decision no se reabre). Cada voto suma o resta
+    karma al autor del post."""
     post = models.ForeignKey('analysis.Post', on_delete=models.CASCADE, related_name='votes')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    value = models.SmallIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('post', 'user')
+
+
+class MessageVote(models.Model):
+    """5.23-C (orden de David): ▲/▼ en cada comentario del hilo. +1/-1 al karma
+    del autor. El comentario se DIFUMINA a partir de -karma_fade_threshold y se
+    PLIEGA a partir de -karma_fold_threshold (ambos en el panel)."""
+    machina_post_id = models.IntegerField(db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    value = models.SmallIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('machina_post_id', 'user')

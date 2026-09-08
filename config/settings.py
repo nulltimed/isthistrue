@@ -212,6 +212,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'vision_lag_seconds': '4',    # 5.5-G: retardo humano pantalla↔voz
     'trending_votes_threshold': '5',
     'trending_window_days': '7',
+    # 5.23-C (David): karma con flechas — difuminar y plegar comentarios.
+    'karma_fade_threshold': '5',
+    'karma_fold_threshold': '10',
     'segment_opus_downvotes': '5',
     'message_sensitive_reports': '5',
     'registration_open': '1',

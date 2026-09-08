@@ -1106,7 +1106,7 @@ def maybe_trigger_opus_rescan(post, user=None):
     total = User.objects.filter(is_active=True, email_verified=True).count()
     if total < min_users or post.opus_rescanned:
         return False
-    votes = post.votes.count()
+    votes = post.votes.filter(value=1).count()   # 5.23-C: solo positivos
     if votes * 100 > total * percent:
         opus_rescan.delay(post.pk)
         return True

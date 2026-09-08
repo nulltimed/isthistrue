@@ -210,7 +210,8 @@ class Post(models.Model):
         from django.utils import timezone
         from apps.panel.models import SystemSetting
         days = SystemSetting.get_int('trending_window_days', 7)
-        return self.votes.filter(created_at__gte=timezone.now() - timedelta(days=days)).count()
+        # 5.23-C: Trending cuenta SOLO los positivos (decision no reabierta)
+        return self.votes.filter(value=1, created_at__gte=timezone.now() - timedelta(days=days)).count()
 
     def is_trending(self):
         """4.2 D4: Trending mientras los votos de la ventana alcanzan el umbral

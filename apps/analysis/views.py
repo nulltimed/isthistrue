@@ -32,7 +32,10 @@ def index(request):
     base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
     nuevos = base.order_by('-created_at')[:15]
     window = tz.now() - tz.timedelta(days=7)
-    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window)))               .filter(n__gt=0).order_by('-n')[:10]
+    # 5.23-C: «mas votados» = SOLO positivos (decision no reabierta)
+    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window,
+                                                  votes__value=1))) \
+              .filter(n__gt=0).order_by('-n')[:10]
     comentados = _mas_comentados(base)
     seguidos = _novedades_en_seguidos(request.user) \
         if request.user.is_authenticated else []
@@ -451,7 +454,15 @@ def _post_context(request, post):
         m.hidden_by_me = m.pk in hidden_ids
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
+    # 5.23-C: karma con flechas — recuentos del post y de cada mensaje
+    from apps.forum.karma import decorar_mensajes, recuento
+    from apps.forum.models import Vote
+    decorar_mensajes(thread_messages, u)
+    p_ups, p_downs, p_mio = recuento(Vote, {'post': post}, u)
+    votos_post = {'ups': p_ups, 'downs': p_downs, 'mine': p_mio,
+                  'own': bool(u and post.author_id == u.pk)}
     return {
+        'votos_post': votos_post,
         'costes_filas': costes_filas, 'costes_total': costes_total,
         'post': post, 'segments': segments, 'embed': build_embed(post),
         'hide_opinions': hide_opinions,
@@ -668,6 +679,8 @@ def post_thread_fragment(request, pk):
         m.hidden_by_me = m.pk in hidden_ids
         m.pm_allowed = bool(u and m.poster and m.poster != u and
                             (m.poster.accept_private_messages or is_mod))
+    from apps.forum.karma import decorar_mensajes
+    decorar_mensajes(thread_messages, u)   # 5.23-C
     # 5.7-B (orden de David): scroll infinito — las paginas siguientes se
     # APILAN bajo las anteriores (solo mensajes + centinela, sin barras).
     plantilla = ('partials/thread_messages_apilar.html'
@@ -1219,21 +1232,35 @@ def vote_speaker_name(request, proposal_id):
 
 @login_required
 def upvote(request, pk):
-    """Voto positivo (los negativos no existen: decision congelada)."""
+    """Voto positivo (ruta historica /upvote/): desde el 5.23-C es la flecha
+    arriba del voto con karma."""
+    return post_vote_karma(request, pk, 'up')
+
+
+@login_required
+def post_vote_karma(request, pk, direction):
+    """5.23-C (ENMIENDA de David al README): ▲/▼ en el post — cada voto suma o
+    resta 1 al karma del autor; positivos y negativos se ven en numero. Nadie
+    vota lo suyo. Trending y el reescaneo de Opus siguen mirando SOLO los ▲."""
     from apps.forum.models import Vote
+    from apps.forum.karma import aplicar_voto
     post = get_object_or_404(Post, pk=pk)
-    obj, created = Vote.objects.get_or_create(post=post, user=request.user)
-    if not created:
-        obj.delete()
+    if request.method != 'POST' or direction not in ('up', 'down'):
+        return redirect('post_detail', pk=pk)
+    if post.author_id == request.user.pk:
+        messages.error(request, 'No puedes votar tu propio post.')
+        return redirect('post_detail', pk=pk)
+    value = 1 if direction == 'up' else -1
+    delta = aplicar_voto(Vote, {'post': post}, request.user, value, post.author)
+    if delta < 0 or value == -1:
         if post.trending_notified and not post.is_trending():
             post.trending_notified = False  # se rearma al caer del umbral
             post.save(update_fields=['trending_notified'])
-    else:
+    if delta > 0 and value == 1:
         from apps.accounts.services import notify as _notify
-        if post.author_id != request.user.pk:
-            _notify(post.author, f'{request.user.username} ha votado tu post: '
-                                 f'{(post.title or post.url)[:80]}',
-                    f'/post/{post.pk}/', kind='post_votes')
+        _notify(post.author, f'{request.user.username} ha votado tu post: '
+                             f'{(post.title or post.url)[:80]}',
+                f'/post/{post.pk}/', kind='post_votes')
         # 4.2 D4: al CRUZAR el umbral (no en cada voto) avisa una sola vez.
         if not post.trending_notified and post.is_trending():
             post.trending_notified = True
@@ -1245,6 +1272,31 @@ def upvote(request, pk):
             messages.info(request, 'Este contenido ha alcanzado gran interés: '
                                    're-verificación con el modelo mayor en marcha.')
     return redirect('post_detail', pk=pk)
+
+
+@login_required
+def message_vote(request, mpost_id, direction):
+    """5.23-C (orden de David): ▲/▼ en cada comentario del hilo, con karma para
+    su autor. Sin votarse a uno mismo."""
+    from machina.core.db.models import get_model
+    from apps.forum.models import MessageVote
+    from apps.forum.karma import aplicar_voto
+    MPost = get_model('forum_conversation', 'Post')
+    m = get_object_or_404(MPost, pk=mpost_id)
+    destino = request.META.get('HTTP_REFERER') or '/'
+    try:
+        destino = f"/post/{int(m.topic.slug.split('-')[1])}/"
+    except (IndexError, ValueError, AttributeError):
+        pass
+    destino = destino.split('#')[0] + f'#msg-{m.pk}'
+    if request.method != 'POST' or direction not in ('up', 'down'):
+        return redirect(destino)
+    if m.poster_id == request.user.pk:
+        messages.error(request, 'No puedes votar tu propio comentario.')
+        return redirect(destino)
+    aplicar_voto(MessageVote, {'machina_post_id': m.pk}, request.user,
+                 1 if direction == 'up' else -1, m.poster)
+    return redirect(destino)
 
 
 def donations_page(request):

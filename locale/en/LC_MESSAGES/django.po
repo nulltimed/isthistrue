@@ -1810,3 +1810,28 @@ msgstr "jobs completed"
 
 msgid "fallidos (cayeron a la CPU)"
 msgstr "failed (fell back to CPU)"
+
+# --- 5.23-C: karma con flechas ---
+msgid "Voto positivo: suma 1 al karma del autor. Repetirlo lo retira."
+msgstr "Upvote: adds 1 to the author's karma. Click again to withdraw it."
+
+msgid "Votar a favor"
+msgstr "Vote up"
+
+msgid "Votos positivos"
+msgstr "Upvotes"
+
+msgid "Votos negativos"
+msgstr "Downvotes"
+
+msgid "Voto negativo: resta 1 al karma del autor. Con muchos, el comentario se difumina y luego se pliega."
+msgstr "Downvote: takes 1 from the author's karma. With enough of them the comment fades and then folds."
+
+msgid "Votar en contra"
+msgstr "Vote down"
+
+msgid "Vota el post: cada flecha suma o resta karma a quien lo publicó."
+msgstr "Vote on the post: each arrow adds or takes karma from whoever published it."
+
+msgid "Comentario plegado por la comunidad (puntuación %(n)s). Mostrar."
+msgstr "Comment folded by the community (score %(n)s). Show."

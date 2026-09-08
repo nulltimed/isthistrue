@@ -2,7 +2,8 @@
     {% for m in thread_messages %}
       {% if m.first_unread %}<div class="unread-divider" id="nuevo">— {% trans "Nuevos desde tu última visita" %} —</div>{% endif %}
       {# 4.3-G: .fmsg es la piel de foro clasico (ficha del autor + cuerpo). #}
-      <div class="thread-msg fmsg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}" id="msg-{{ m.pk }}">
+      {# 5.23-C: difuminado desde -karma_fade_threshold, plegado desde -karma_fold_threshold #}
+      <div class="thread-msg fmsg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}{% if m.folded %} msg-folded{% elif m.faded %} msg-faded{% endif %}" id="msg-{{ m.pk }}">
         <div class="msg-author">
           {% if m.poster.avatar and m.poster.avatar_approved %}
             <img class="msg-avatar" src="{{ m.poster.avatar.url }}" alt="" width="54" height="54">
@@ -25,6 +26,8 @@
               {% if m.updates_count %}<span class="msg-edited">· {% trans "editado" %}</span>{% endif %}
             </span>
             <span class="msg-tools">
+            {% url 'message_vote' m.pk 'up' as mvu %}{% url 'message_vote' m.pk 'down' as mvd %}
+            {% include 'partials/votos.html' with url_up=mvu url_down=mvd ups=m.ups downs=m.downs mine=m.my_vote own=m.is_own %}
             {% if user.is_authenticated %}
             <button type="button" class="ibtn quote-btn" data-author="{{ m.poster.username }}" data-num="{{ m.number }}" data-pk="{{ m.pk }}" title="{% trans 'Citar este mensaje' %}">{% icon 'chat' 15 %}{% trans "Citar" %}</button>
             <button type="button" class="ibtn reply-btn" title="{% trans 'Escribir una respuesta' %}">{% icon 'up' 15 %}{% trans "Responder" %}</button>
@@ -36,6 +39,7 @@
             {% endif %}
             </span>
           </div>
+          {% if m.folded %}<button type="button" class="msg-desplegar" onclick="this.closest('.thread-msg').classList.add('desplegado')">{% blocktrans with n=m.score %}Comentario plegado por la comunidad (puntuación {{ n }}). Mostrar.{% endblocktrans %}</button>{% endif %}
           <div class="thread-body-wrap">
             <div class="thread-body">{{ m.content.rendered|safe }}</div>
             {% if m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Este contenido puede ser sensible. Clic para verlo." %}</button>{% endif %}

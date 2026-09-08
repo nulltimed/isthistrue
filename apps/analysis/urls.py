@@ -49,6 +49,9 @@ urlpatterns = [
     path('person/<slug:slug>/', wiki_views.person_page),   # alias EN
     path('hablante/votar/<int:proposal_id>/', views.vote_speaker_name, name='vote_speaker_name'),
     path('post/<int:pk>/upvote/', views.upvote, name='post_upvote'),
+    # 5.23-C: karma con flechas (post y comentario)
+    path('post/<int:pk>/votar/<str:direction>/', views.post_vote_karma, name='post_vote_karma'),
+    path('mensaje/<int:mpost_id>/votar/<str:direction>/', views.message_vote, name='message_vote'),
     path('donaciones/', views.donations_page, name='donations'),
     # 5.3-A: registro de la captura PayPal del banner + transparencia de gastos
     path('donaciones/registrar/', views.donation_capture, name='donation_capture'),
