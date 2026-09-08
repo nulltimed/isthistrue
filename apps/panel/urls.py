@@ -10,4 +10,5 @@ urlpatterns = [
     path('moderadores/', views.moderators_panel, name='panel_moderators'),
     path('moderador/', views.moderator_settings_panel, name='panel_moderator_settings'),
     path('categorias/', views.categories_panel, name='panel_categories'),  # 5.23-E
+    path('logs/', views.logs_panel, name='panel_logs'),  # 5.23-H
 ]

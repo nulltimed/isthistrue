@@ -2173,3 +2173,64 @@ msgstr "See the explanation and the references right here"
 
 msgid "Ver en el post"
 msgstr "See it in the post"
+
+# --- 5.23-H: panel de logs ---
+msgid "Panel · Logs"
+msgstr "Panel · Logs"
+
+msgid "Logs del sistema"
+msgstr "System logs"
+
+msgid "Todo lo que escriben los contenedores web, worker y beat (nivel INFO en adelante) queda aquí además de en su consola: %(n)s registros guardados, se conservan %(d)s días (ajuste «Días que se guardan los logs» en Ajustes). La auditoría es aparte y no se borra nunca."
+msgstr "Everything the web, worker and beat containers write (INFO level and up) is kept here as well as in their console: %(n)s records stored, kept for %(d)s days (the “Days system logs are kept” setting). The audit log is separate and is never deleted."
+
+msgid "Tipo"
+msgstr "Type"
+
+msgid "Contiene"
+msgstr "Contains"
+
+msgid "texto, post 12, gpu…"
+msgstr "text, post 12, gpu…"
+
+msgid "Hasta"
+msgstr "Until"
+
+msgid "Aplica los filtros"
+msgstr "Apply the filters"
+
+msgid "Filtrar"
+msgstr "Filter"
+
+msgid "Copia al portapapeles las líneas que ves (texto plano)."
+msgstr "Copy the lines you see to the clipboard (plain text)."
+
+msgid "Copiar lo visible"
+msgstr "Copy what's shown"
+
+msgid "¿Borrar estos registros de log? La auditoría no se toca."
+msgstr "Delete these log records? The audit log is untouched."
+
+msgid "Borra TODOS los registros que cumplen los filtros actuales (no solo esta página)."
+msgstr "Deletes ALL records matching the current filters (not just this page)."
+
+msgid "Limpiar los filtrados"
+msgstr "Clear the filtered ones"
+
+msgid "Cuándo"
+msgstr "When"
+
+msgid "Origen"
+msgstr "Origin"
+
+msgid "Módulo"
+msgstr "Module"
+
+msgid "Mensaje"
+msgstr "Message"
+
+msgid "Nada que enseñar con estos filtros."
+msgstr "Nothing to show with these filters."
+
+msgid "Logs copiados al portapapeles"
+msgstr "Logs copied to the clipboard"

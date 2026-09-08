@@ -144,6 +144,31 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {'priority_steps': list(range(10)), 'queue_ord
 CELERY_TASK_DEFAULT_PRIORITY = 5
 PRIORITY_MANIPULATION = 9
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# 5.23-H: Celery NO secuestra el logger raiz — asi el handler de BD (abajo)
+# sigue vivo dentro del worker y del beat, no solo en la web.
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+# --- 5.23-H (orden de David): los logs del sistema, tambien a la BD ---
+# Consola como siempre + panel.SystemLog (config/logdb.py) para /panel/logs/.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'plano': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'}},
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'plano'},
+        'db': {'class': 'config.logdb.DBLogHandler', 'level': 'INFO'},
+    },
+    'root': {'handlers': ['console', 'db'], 'level': 'INFO'},
+    'loggers': {
+        'django.db.backends': {'level': 'WARNING', 'propagate': True},
+        'django.utils.autoreload': {'level': 'WARNING', 'propagate': True},
+        'httpx': {'level': 'WARNING', 'propagate': True},
+        'httpcore': {'level': 'WARNING', 'propagate': True},
+        'urllib3': {'level': 'WARNING', 'propagate': True},
+        'celery.utils.functional': {'level': 'WARNING', 'propagate': True},
+        'yt_dlp': {'level': 'WARNING', 'propagate': True},
+    },
+}
 
 # --- Agentes / economia (100 EUR/mes, ~3 EUR/dia: decidido por David en Fase 3.3) ---
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
@@ -216,6 +241,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 5.23-C (David): karma con flechas — difuminar y plegar comentarios.
     'karma_fade_threshold': '5',
     'karma_fold_threshold': '10',
+    'logs_retention_days': '30',   # 5.23-H: purga nocturna de panel.SystemLog
     'segment_opus_downvotes': '5',
     'message_sensitive_reports': '5',
     'registration_open': '1',

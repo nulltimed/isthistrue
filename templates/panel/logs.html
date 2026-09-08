@@ -1,0 +1,58 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Logs" %}{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
+{# 5.23-H (orden de David): consultar, copiar y limpiar todos los tipos de logs. #}
+<h2 class="panel-sub">{% icon 'list' 18 %} {% trans "Logs del sistema" %} <span class="badge">{{ total }}</span></h2>
+<p class="hint">{% blocktrans with n=total_sistema d=retencion %}Todo lo que escriben los contenedores web, worker y beat (nivel INFO en adelante) queda aquí además de en su consola: {{ n }} registros guardados, se conservan {{ d }} días (ajuste «Días que se guardan los logs» en Ajustes). La auditoría es aparte y no se borra nunca.{% endblocktrans %}</p>
+
+<form method="get" class="logs-filtros">
+  <label>{% trans "Tipo" %}<select name="tipo">{% for k, v in tipos %}<option value="{{ k }}" {% if k == tipo %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label>{% trans "Nivel" %}<select name="nivel"><option value="">{% trans "Todos" %}</option>{% for n in niveles %}<option value="{{ n }}" {% if n == nivel %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+  <label>{% trans "Contiene" %}<input name="q" value="{{ q }}" maxlength="120" placeholder="{% trans 'texto, post 12, gpu…' %}"></label>
+  <label>{% trans "Desde" %}<input type="date" name="desde" value="{{ desde }}"></label>
+  <label>{% trans "Hasta" %}<input type="date" name="hasta" value="{{ hasta }}"></label>
+  <button class="mini" data-tip="{% trans 'Aplica los filtros' %}">{% trans "Filtrar" %}</button>
+</form>
+
+<div class="logs-acciones">
+  <button type="button" class="mini copiar-logs" data-tip="{% trans 'Copia al portapapeles las líneas que ves (texto plano).' %}">{% icon 'link' 14 %} {% trans "Copiar lo visible" %}</button>
+  {% if tipo != 'auditoria' %}
+  <form method="post" onsubmit="return confirm('{% trans '¿Borrar estos registros de log? La auditoría no se toca.' %}');">{% csrf_token %}
+    <input type="hidden" name="accion" value="limpiar"><input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="nivel" value="{{ nivel }}"><input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="desde" value="{{ desde }}"><input type="hidden" name="hasta" value="{{ hasta }}">
+    <button class="mini danger" data-tip="{% trans 'Borra TODOS los registros que cumplen los filtros actuales (no solo esta página).' %}">{% icon 'trash' 14 %} {% trans "Limpiar los filtrados" %}</button>
+  </form>
+  {% endif %}
+  <span class="hint">{% blocktrans with n=page_obj.number t=page_obj.paginator.num_pages %}Página {{ n }} de {{ t }}{% endblocktrans %} · {% if page_obj.has_previous %}<a href="?tipo={{ tipo }}&nivel={{ nivel }}&q={{ q|urlencode }}&desde={{ desde }}&hasta={{ hasta }}&pagina={{ page_obj.previous_page_number }}">‹ {% trans "Anterior" %}</a>{% endif %} {% if page_obj.has_next %}<a href="?tipo={{ tipo }}&nivel={{ nivel }}&q={{ q|urlencode }}&desde={{ desde }}&hasta={{ hasta }}&pagina={{ page_obj.next_page_number }}">{% trans "Siguiente" %} ›</a>{% endif %}</span>
+</div>
+
+<textarea id="logs-texto" class="sr-only" readonly aria-hidden="true">{{ texto }}</textarea>
+<div class="logs-tabla-wrap">
+<table class="logs-tabla">
+  <thead><tr><th>{% trans "Cuándo" %}</th><th>{% trans "Nivel" %}</th><th>{% trans "Origen" %}</th><th>{% trans "Módulo" %}</th><th>{% trans "Mensaje" %}</th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+  <tr class="nivel-{{ f.nivel }}">
+    <td class="logs-cuando">{{ f.cuando|date:'d/m H:i:s' }}</td>
+    <td><span class="log-nivel log-{{ f.nivel }}">{{ f.nivel }}</span></td>
+    <td>{{ f.rol }}</td>
+    <td class="logs-logger">{{ f.logger }}{% if f.post_id %} <a class="hint" href="/post/{{ f.post_id }}/">#{{ f.post_id }}</a>{% endif %}</td>
+    <td class="logs-msg"><pre>{{ f.mensaje }}</pre></td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="hint">{% trans "Nada que enseñar con estos filtros." %}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<script>
+document.querySelectorAll('.copiar-logs').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var ta = document.getElementById('logs-texto');
+    var texto = ta ? ta.value : '';
+    var listo = function () { if (window.isttToast) window.isttToast('{% trans "Logs copiados al portapapeles" %}'); b.textContent = '✓'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(texto).then(listo); }
+    else { ta.classList.remove('sr-only'); ta.select(); try { document.execCommand('copy'); listo(); } catch (e) {} ta.classList.add('sr-only'); }
+  });
+});
+</script>
+{% endblock %}

@@ -898,3 +898,21 @@ body.viajero main.wide .post > #hilo{max-width:none}
 .wv-fila.abierta .wv-detalle{display:block}
 .wv-fila .wv-detalle p{margin:.2rem 0}
 @media (max-width:700px){.wv-fila .wv-detalle{padding-left:.4rem}}
+/* H: el panel de logs. */
+.logs-filtros{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;margin:.6rem 0}
+.logs-filtros label{margin:0;font-size:.82rem}
+.logs-filtros input,.logs-filtros select{margin-top:.15rem;padding:.3rem .45rem;font-size:.84rem;max-width:220px}
+.logs-filtros button.mini{color:#fff;padding:.45rem .8rem}
+.logs-acciones{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .6rem}
+.logs-acciones form{margin:0}
+.logs-acciones button.mini{color:#fff}
+.logs-tabla-wrap{overflow-x:auto}
+.logs-tabla{font-size:.8rem}
+.logs-tabla td{vertical-align:top;padding:.3rem .5rem}
+.logs-cuando{white-space:nowrap;font-family:ui-monospace,'Courier Prime','Courier New',monospace;color:var(--grey)}
+.logs-logger{font-family:ui-monospace,'Courier Prime','Courier New',monospace;font-size:.75rem;color:var(--grey);max-width:220px;overflow-wrap:anywhere}
+.logs-msg pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem;background:none;border:0;padding:0;max-height:14rem;overflow:auto}
+.log-nivel{font-size:.7rem;font-weight:700;padding:.05rem .4rem;border-radius:4px;background:var(--paper);border:1px solid var(--line);color:#141414}
+.log-WARNING{background:#fdf3dd;color:#7a5405;border-color:#f0dcae}
+.log-ERROR,.log-CRITICAL{background:#fbe6e6;color:#8c1c1c;border-color:#eec2c2}
+.log-AUDIT{background:#e8f0fe;color:#1d3f74;border-color:#ccd6e8}

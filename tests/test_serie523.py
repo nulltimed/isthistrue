@@ -545,3 +545,84 @@ class Parche523FG_ViajeroYWikiDelVideo(TestCase):
         html = self.client.get(f'/wiki/video/{post.slug}/').content.decode()
         self.assertIn('Ver las 11', html)
         self.assertIn('oculta-por-tope', html)
+
+
+class Parche523H_PanelDeLogs(TestCase):
+    """H (orden de David): «un apartado Logs donde se podrán consultar, limpiar,
+    copiar todos los tipos de logs sobre el sistema, potente y completo»."""
+
+    def _sup(self):
+        return make_user(username='logsup', email='logsup@example.org',
+                         is_staff=True, is_superuser=True)
+
+    def test_el_handler_guarda_lo_que_escribe_el_logger(self):
+        import logging
+        from apps.panel.models import SystemLog
+        logging.getLogger('apps.agents.gpu').warning('GPU (prueba): trabajo j9 -> FAILED: CUDA OOM')
+        fila = SystemLog.objects.filter(logger='apps.agents.gpu', message__icontains='CUDA OOM').first()
+        self.assertIsNotNone(fila, 'el registro debe llegar a la BD')
+        self.assertEqual(fila.level, 'WARNING')
+        self.assertIn(fila.role, ('web', 'worker', 'beat', 'other'))
+        # los loggers ruidosos de la BD no se guardan (bucle)
+        logging.getLogger('django.db.backends').warning('ruido')
+        self.assertFalse(SystemLog.objects.filter(message='ruido').exists())
+
+    def test_el_panel_lista_filtra_copia_y_limpia(self):
+        import logging
+        from apps.panel.models import AuditLog, SystemLog
+        self.client.force_login(self._sup())
+        logging.getLogger('apps.analysis.tasks').info('Post 7: transcribir 12.0s')
+        logging.getLogger('apps.agents.gpu').error('GPU (diarización): agotados los intentos')
+        html = self.client.get('/panel/logs/').content.decode()
+        self.assertIn('transcribir 12.0s', html)
+        self.assertIn('agotados los intentos', html)
+        self.assertIn('id="logs-texto"', html)          # lo que copia el boton
+        self.assertIn('Copiar lo visible', html)
+        self.assertIn('Limpiar los filtrados', html)
+        html = self.client.get('/panel/logs/?tipo=errores').content.decode()
+        self.assertIn('agotados los intentos', html)
+        self.assertNotIn('transcribir 12.0s', html)
+        html = self.client.get('/panel/logs/?tipo=gpu&q=diarizaci').content.decode()
+        self.assertIn('agotados los intentos', html)
+        # auditoria: aparte y visible
+        AuditLog.objects.create(action='prueba_audit', detail='hecho por el test')
+        html = self.client.get('/panel/logs/?tipo=auditoria').content.decode()
+        self.assertIn('hecho por el test', html)
+        # limpiar SOLO los filtrados y dejar rastro
+        antes = SystemLog.objects.count()
+        self.client.post('/panel/logs/', {'accion': 'limpiar', 'tipo': 'errores'})
+        self.assertFalse(SystemLog.objects.filter(level='ERROR', message__icontains='agotados').exists())
+        self.assertTrue(SystemLog.objects.filter(message__icontains='transcribir 12.0s').exists())
+        self.assertTrue(AuditLog.objects.filter(action='logs_cleared').exists())
+        # la auditoria jamas se limpia
+        self.client.post('/panel/logs/', {'accion': 'limpiar', 'tipo': 'auditoria'})
+        self.assertTrue(AuditLog.objects.filter(action='prueba_audit').exists())
+
+    def test_solo_el_staff_entra(self):
+        u = make_user(username='nolog', email='nolog@example.org')
+        self.client.force_login(u)
+        self.assertNotEqual(self.client.get('/panel/logs/').status_code, 200)
+
+    def test_la_purga_respeta_la_retencion_del_panel(self):
+        from django.utils import timezone
+        from apps.panel.models import SystemLog, SystemSetting
+        from apps.panel.tasks import purge_system_logs
+        from config.celery import app
+        SystemSetting.objects.update_or_create(key='logs_retention_days', defaults={'value': '7'})
+        viejo = SystemLog.objects.create(level='INFO', logger='x', role='web', message='viejo')
+        SystemLog.objects.filter(pk=viejo.pk).update(created_at=timezone.now() - timezone.timedelta(days=9))
+        nuevo = SystemLog.objects.create(level='INFO', logger='x', role='web', message='nuevo')
+        purge_system_logs()
+        self.assertFalse(SystemLog.objects.filter(pk=viejo.pk).exists())
+        self.assertTrue(SystemLog.objects.filter(pk=nuevo.pk).exists())
+        self.assertEqual(app.conf.beat_schedule['purgar-logs-del-sistema']['task'],
+                         'apps.panel.tasks.purge_system_logs')
+
+    def test_los_contenedores_declaran_su_rol(self):
+        for f in ('docker-compose.yml', 'docker-compose.staging.yml'):
+            s = open(f, encoding='utf-8').read()
+            for rol in ('web', 'worker', 'beat'):
+                self.assertIn(f'ISTT_ROLE: {rol}', s, f'{f}: {rol}')
+        from django.conf import settings as st
+        self.assertFalse(st.CELERY_WORKER_HIJACK_ROOT_LOGGER)
+        self.assertIn('db', st.LOGGING['root']['handlers'])

@@ -12,6 +12,7 @@ services:
       STAGING_MODE: "true"
       MOCK_AGENTS: "true"
       ALLOWED_HOSTS: "stagings.xyztserver.com,staging.xyztserver.com,localhost,127.0.0.1"
+      ISTT_ROLE: web
     volumes: [ "./media-staging:/app/media" ]
     depends_on: [ db, redis ]
     ports: [ "127.0.0.1:8081:8000" ]
@@ -19,14 +20,14 @@ services:
     build: .
     command: celery -A config worker -l info --concurrency 1
     env_file: .env
-    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true", HF_HOME: /hfcache }
+    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true", HF_HOME: /hfcache, ISTT_ROLE: worker }
     volumes: [ "./media-staging:/app/media", "hfcache_staging:/hfcache" ]
     depends_on: [ db, redis ]
   beat:
     build: .
     command: celery -A config beat -l info
     env_file: .env
-    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true" }
+    environment: { STAGING_MODE: "true", MOCK_AGENTS: "true", ISTT_ROLE: beat }
     depends_on: [ redis ]
   db:
     image: pgvector/pgvector:pg16

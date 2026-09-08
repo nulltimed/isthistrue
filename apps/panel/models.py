@@ -56,6 +56,24 @@ class ModelHealth(models.Model):
         return f'{self.model_id}: {"ok" if self.ok else "CAÍDO"}'
 
 
+class SystemLog(models.Model):
+    """5.23-H (orden de David): «en el panel del superusuario un apartado
+    Logs donde se podrán consultar, limpiar, copiar todos los tipos de logs
+    sobre el sistema». Cada contenedor (web, worker, beat) escribe aqui lo que
+    escribe a su consola (config/logdb.py, nivel INFO en adelante). La purga
+    nocturna respeta `logs_retention_days` del panel."""
+    ROLES = [('web', 'Web'), ('worker', 'Worker'), ('beat', 'Beat'), ('other', 'Otro')]
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    level = models.CharField(max_length=10, db_index=True)      # INFO|WARNING|ERROR|CRITICAL
+    logger = models.CharField(max_length=80, db_index=True)     # apps.agents.gpu, celery...
+    role = models.CharField(max_length=10, choices=ROLES, default='other', db_index=True)
+    message = models.TextField()
+    post_id = models.IntegerField(null=True, blank=True)        # el post en curso del worker
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class AuditLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     action = models.CharField(max_length=120)

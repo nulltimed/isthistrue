@@ -22,5 +22,6 @@ título de la ventana del navegador.
   <a href="{% url 'pending_list' %}"{% if cur == 'pending_list' %} class="active" aria-current="page"{% endif %}>⏳ {% trans "Pendientes" %}{% if pendientes_aprobacion %} <span class="badge">{{ pendientes_aprobacion }}</span>{% endif %}</a>
   <a href="{% url 'panel_complaints' %}"{% if cur == 'panel_complaints' %} class="active" aria-current="page"{% endif %}>{% icon 'flag' 16 %} {% trans "Reclamaciones" %}</a>
   <a href="{% url 'panel_staging' %}"{% if cur == 'panel_staging' %} class="active" aria-current="page"{% endif %}>{% icon 'eye' 16 %} {% trans "Espejo" %}</a>
+  <a href="{% url 'panel_logs' %}"{% if cur == 'panel_logs' %} class="active" aria-current="page"{% endif %}>{% icon 'list' 16 %} Logs</a>
 </nav>
 {% endwith %}

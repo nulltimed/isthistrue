@@ -35,4 +35,9 @@ app.conf.beat_schedule = {
         'task': 'apps.analysis.tasks.launch_queued_analyses',
         'schedule': 3600.0,
     },
+    # 5.23-H: purga nocturna de los logs del sistema (retencion del panel).
+    'purgar-logs-del-sistema': {
+        'task': 'apps.panel.tasks.purge_system_logs',
+        'schedule': 86400.0,
+    },
 }

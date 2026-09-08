@@ -110,6 +110,9 @@ SETTINGS_DEF = [
      'Cuando los ▼ superan a los ▲ en esta cantidad, el comentario se ve difuminado. 5 de fábrica.', 'num'),
     ('karma_fold_threshold', 'Votos negativos para plegar un comentario',
      'Con esta puntuación negativa el comentario se pliega y hay que pulsar «Mostrar» para leerlo. 10 de fábrica.', 'num'),
+    # 5.23-H (orden de David): los logs del sistema en el panel.
+    ('logs_retention_days', 'Días que se guardan los logs del sistema',
+     'La pestaña Logs del panel enseña lo que escriben web, worker y beat. Cada noche se borra lo más viejo que estos días. 30 de fábrica; el registro de auditoría no se borra nunca.', 'num'),
     # 4.3-A.8 (decisión de David): tramo gratuito y precio por minuto.
     ('analysis_free_minutes', 'Minutos gratuitos por vídeo',
      'Hasta aquí no se pide nada. Por encima se AVISA de la donación sugerida (nunca se bloquea el envío).', 'num'),
@@ -389,6 +392,114 @@ def moderators_panel(request):
     from apps.accounts.models import User as U
     mods = U.objects.filter(level='MOD', is_active=True).order_by('username')
     return render(request, 'panel/moderators.html', {'mods': mods})
+
+
+# 5.23-H (orden de David): «un apartado Logs donde se podrán consultar,
+# limpiar, copiar todos los tipos de logs sobre el sistema».
+LOG_TIPOS = [
+    ('', 'Todos los tipos'),
+    ('web', 'Aplicación web'),
+    ('worker', 'Worker (análisis)'),
+    ('beat', 'Beat (tareas programadas)'),
+    ('errores', 'Solo errores'),
+    ('analisis', 'Análisis (agentes y tareas)'),
+    ('gpu', 'GPU / Runpod'),
+    ('pagos', 'Pagos y donaciones'),
+    ('moderacion', 'Moderación y foro'),
+    ('auditoria', 'Auditoría (acciones del staff)'),
+]
+
+
+def _logs_filtrados(tipo, nivel, q, desde, hasta):
+    """El queryset de SystemLog para un tipo (menos «auditoria», que es AuditLog)."""
+    from django.db.models import Q
+    from .models import AuditLog, SystemLog
+    if tipo == 'auditoria':
+        qs = AuditLog.objects.select_related('user').order_by('-created_at')
+        if q:
+            qs = qs.filter(Q(action__icontains=q) | Q(detail__icontains=q) |
+                           Q(user__username__icontains=q))
+    else:
+        qs = SystemLog.objects.all()
+        if tipo in ('web', 'worker', 'beat'):
+            qs = qs.filter(role=tipo)
+        elif tipo == 'errores':
+            qs = qs.filter(level__in=['ERROR', 'CRITICAL'])
+        elif tipo == 'analisis':
+            qs = qs.filter(Q(logger__startswith='apps.analysis') | Q(logger__startswith='apps.agents')
+                           | Q(logger__startswith='apps.wiki'))
+        elif tipo == 'gpu':
+            qs = qs.filter(Q(logger='apps.agents.gpu') | Q(message__icontains='GPU') |
+                           Q(message__icontains='runpod'))
+        elif tipo == 'pagos':
+            qs = qs.filter(Q(logger__icontains='paypal') | Q(message__icontains='paypal') |
+                           Q(message__icontains='donaci'))
+        elif tipo == 'moderacion':
+            qs = qs.filter(Q(logger__startswith='apps.forum') | Q(message__icontains='moderaci'))
+        if nivel:
+            qs = qs.filter(level=nivel)
+        if q:
+            qs = qs.filter(Q(message__icontains=q) | Q(logger__icontains=q))
+    if desde:
+        qs = qs.filter(created_at__date__gte=desde)
+    if hasta:
+        qs = qs.filter(created_at__date__lte=hasta)
+    return qs
+
+
+@staff_member_required
+def logs_panel(request):
+    from datetime import date
+    from django.core.paginator import Paginator
+    from .models import AuditLog, SystemLog
+    tipo = request.GET.get('tipo', request.POST.get('tipo', ''))
+    if tipo not in dict(LOG_TIPOS):
+        tipo = ''
+    nivel = request.GET.get('nivel', '')
+    if nivel not in ('', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+        nivel = ''
+    q = request.GET.get('q', '').strip()[:120]
+
+    def _fecha(v):
+        try:
+            return date.fromisoformat(v) if v else None
+        except ValueError:
+            return None
+    desde, hasta = _fecha(request.GET.get('desde', '')), _fecha(request.GET.get('hasta', ''))
+    if request.method == 'POST' and request.POST.get('accion') == 'limpiar':
+        if tipo == 'auditoria':
+            messages.error(request, 'El registro de auditoría no se borra.')
+            return redirect('panel_logs')
+        qs = _logs_filtrados(tipo, request.POST.get('nivel', ''), request.POST.get('q', '').strip(),
+                             _fecha(request.POST.get('desde', '')), _fecha(request.POST.get('hasta', '')))
+        n = qs.count()
+        qs.delete()
+        AuditLog.objects.create(user=request.user, action='logs_cleared',
+                                detail=f'{n} registros ({dict(LOG_TIPOS).get(tipo, "todos")})')
+        messages.success(request, f'Limpiados {n} registros de log.')
+        return redirect(f'/panel/logs/?tipo={tipo}')
+    qs = _logs_filtrados(tipo, nivel, q, desde, hasta)
+    page = Paginator(qs, 200).get_page(request.GET.get('pagina', 1))
+    filas = []
+    for r in page:
+        if tipo == 'auditoria':
+            filas.append({'cuando': r.created_at, 'nivel': 'AUDIT', 'rol': r.user.username if r.user else '—',
+                          'logger': r.action, 'mensaje': r.detail})
+        else:
+            filas.append({'cuando': r.created_at, 'nivel': r.level, 'rol': r.role,
+                          'logger': r.logger, 'mensaje': r.message,
+                          'post_id': r.post_id})
+    texto = '\n'.join(f"{f['cuando']:%Y-%m-%d %H:%M:%S} {f['nivel']:<8} {f['rol']:<7} {f['logger']}: {f['mensaje']}"
+                      for f in filas)
+    return render(request, 'panel/logs.html', {
+        'filas': filas, 'page_obj': page, 'texto': texto,
+        'tipo': tipo, 'tipos': LOG_TIPOS, 'nivel': nivel, 'q': q,
+        'niveles': ['INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        'desde': desde.isoformat() if desde else '', 'hasta': hasta.isoformat() if hasta else '',
+        'total': page.paginator.count,
+        'total_sistema': SystemLog.objects.count(),
+        'retencion': SystemSetting.get_int('logs_retention_days', 30),
+    })
 
 
 @staff_member_required

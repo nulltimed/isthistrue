@@ -7,6 +7,7 @@ services:
     # CUALQUIER recreacion lo vacia (CSS 404, "web fea") — candado 2026-08-13.
     command: sh -c "python manage.py ensure_superuser && { python manage.py compilemessages --ignore=venv || true; } && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     env_file: .env
+    environment: { ISTT_ROLE: web }   # 5.23-H: origen en /panel/logs/
     volumes: [ "./media:/app/media" ]
     depends_on: [ db, redis ]
     ports: [ "127.0.0.1:8090:8000" ]  # 8080 lo ocupa ntfy en el host (intocable)
@@ -17,6 +18,7 @@ services:
     env_file: .env
     environment:
       HF_HOME: /hfcache   # cache persistente de modelos pyannote (4.1 B1)
+      ISTT_ROLE: worker   # 5.23-H
     volumes: [ "./media:/app/media", "hfcache:/hfcache" ]
     depends_on: [ db, redis ]
     restart: unless-stopped
@@ -24,6 +26,7 @@ services:
     build: .
     command: celery -A config beat -l info
     env_file: .env
+    environment: { ISTT_ROLE: beat }   # 5.23-H
     depends_on: [ redis ]
     restart: unless-stopped
   db:

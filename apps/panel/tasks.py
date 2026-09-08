@@ -87,3 +87,16 @@ def generate_code_batch(batch_id):
         batch.save()
         raise e
     batch.save()
+
+
+@shared_task
+def purge_system_logs():
+    """5.23-H: cada noche se borra de panel.SystemLog lo mas viejo que
+    `logs_retention_days` (panel, 30 de fabrica). AuditLog no se toca jamas."""
+    from django.utils import timezone
+    from .models import SystemLog, SystemSetting
+    dias = max(1, SystemSetting.get_int('logs_retention_days', 30))
+    limite = timezone.now() - timezone.timedelta(days=dias)
+    n, _ = SystemLog.objects.filter(created_at__lt=limite).delete()
+    logger.info('Logs del sistema purgados: %d registros anteriores a %d días', n, dias)
+    return n
