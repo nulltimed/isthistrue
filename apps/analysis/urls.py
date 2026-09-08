@@ -23,6 +23,13 @@ urlpatterns = [
     path('post/<int:pk>/censurar/', views.post_censor, name='post_censor'),
     path('post/<int:pk>/eliminar/', views.post_delete, name='post_delete'),
     path('post/<int:pk>/fragmento/cuerpo/', views.post_body_fragment, name='post_body_fragment'),
+    # 5.23-D: el menu de tres puntos
+    path('post/<int:pk>/comentarios/', views.post_toggle_comments, name='post_toggle_comments'),
+    path('post/<int:pk>/fijar/', views.post_toggle_pin, name='post_toggle_pin'),
+    path('post/<int:pk>/sensible/', views.post_toggle_adult, name='post_toggle_adult'),
+    path('post/<int:pk>/mover/', views.post_move_category, name='post_move_category'),
+    path('post/<int:pk>/titulo/', views.post_edit_title, name='post_edit_title'),
+    path('mensaje/<int:mpost_id>/eliminar/', views.message_delete_toggle, name='message_delete'),
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),
     path('post/<int:pk>/relegate/', views.relegate, name='post_relegate'),
     path('post/<int:pk>/unrelegate/', views.unrelegate, name='post_unrelegate'),

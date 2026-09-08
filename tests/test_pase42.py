@@ -784,7 +784,9 @@ class Pase43A7(TestCase):
         self.client.force_login(make_user(username='lectorA7', email='lectora7@example.org'))
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('/votar/down/', html)
-        self.assertNotIn('/votar/up/', html)          # el plebiscito, fuera
+        import re as _re
+        # el plebiscito por FRASE, fuera (5.23-C: el ▲ del POST/comentario si existe)
+        self.assertIsNone(_re.search(r'/oracion/\d+/votar/up/', html))
         self.assertIn('Discuto', html)
 
     def test_el_quinto_voto_en_contra_dispara_opus(self):
@@ -1790,8 +1792,11 @@ class Pase43F(TestCase):
         from apps.analysis.models import STATUSES
         self.assertIn('AWAITING_BUDGET', [c for c, _l in STATUSES])
         migracion = open('apps/analysis/migrations/0009_pase43f_estado_en_cola.py').read()
+        self.assertIn("'AWAITING_BUDGET'", migracion)
+        # 5.23-E: la ULTIMA migracion que altera status debe traer TODOS los estados
+        ultima = open('apps/analysis/migrations/0022_subforos_y_menu.py').read()
         for codigo, _label in STATUSES:
-            self.assertIn(f"'{codigo}'", migracion)       # modelo y migración, iguales
+            self.assertIn(f"'{codigo}'", ultima)       # modelo y migración, iguales
 
     def test_la_cola_esta_programada_cada_hora(self):
         from config.celery import app
@@ -6283,13 +6288,15 @@ class Parche520_GestionDelPost(TestCase):
         self.client.post(f'/post/{post.pk}/censurar/', {'reason': 'difamación'})
         post.refresh_from_db()
         self.assertTrue(post.censored)
-        # el lector anonimo ve la cortina, el motivo y el boton de abrirla
+        # 5.23-D (precision de David): censurado = INACCESIBLE para el lector
+        # (403 con el motivo); ya no hay «Ver de todos modos».
         self.client.logout()
-        html = self.client.get(post.get_absolute_url()).content.decode()
+        r = self.client.get(post.get_absolute_url())
+        html = r.content.decode()
+        self.assertEqual(r.status_code, 403)
         self.assertIn('Post censurado por moderación', html)
         self.assertIn('difamación', html)
-        self.assertIn('Ver de todos modos', html)
-        self.assertIn('censura-contenido', html)
+        self.assertNotIn('Ver de todos modos', html)
         # descensurar
         self.client.force_login(mod)
         self.client.post(f'/post/{post.pk}/censurar/')
@@ -6438,7 +6445,7 @@ class Parche522_GuerraAlGris(TestCase):
             ClaimAppearance.objects.create(claim=c, segment=seg, quote='...')
         html = self.client.get(post.get_absolute_url()).content.decode()
         self.assertIn('semaforo-post', html)
-        self.assertIn('sin respuesta', html)
+        self.assertIn('Sin respuesta', html)   # 5.23-B: leyenda con mayuscula en el globo
         self.assertIn('sf-verde', html)
         # el clic reproduce desde un segundo antes: seekTo ya resta 1
         self.assertIn('seekTo(5)', html)

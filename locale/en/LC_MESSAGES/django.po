@@ -1835,3 +1835,145 @@ msgstr "Vote on the post: each arrow adds or takes karma from whoever published 
 
 msgid "Comentario plegado por la comunidad (puntuación %(n)s). Mostrar."
 msgstr "Comment folded by the community (score %(n)s). Show."
+
+# --- 5.23-D: menu de tres puntos y moderacion ---
+msgid "Más opciones"
+msgstr "More options"
+
+msgid "Copia la dirección de este post al portapapeles."
+msgstr "Copy this post's address to the clipboard."
+
+msgid "Avisa a moderación de un problema con este post (formulario con acuse de recibo)."
+msgstr "Tell moderation about a problem with this post (form with acknowledgement of receipt)."
+
+msgid "Vuelve a permitir respuestas en el hilo."
+msgstr "Allow replies in the thread again."
+
+msgid "Cierra el hilo: nadie más podrá responder (el post sigue visible)."
+msgstr "Close the thread: nobody else can reply (the post stays visible)."
+
+msgid "Abrir comentarios"
+msgstr "Open comments"
+
+msgid "Cerrar comentarios"
+msgstr "Close comments"
+
+msgid "Quita el post de lo alto de los listados."
+msgstr "Remove the post from the top of the lists."
+
+msgid "Mantiene el post arriba en su categoría del foro."
+msgstr "Keep the post at the top of its forum category."
+
+msgid "Desfijar"
+msgstr "Unpin"
+
+msgid "Fijar arriba"
+msgstr "Pin to top"
+
+msgid "Contenido sensible: violencia, sexo o imágenes duras. NO es una infracción: el post se queda, pero solo en la sala +18 y quien oculta contenido adulto no lo ve."
+msgstr "Sensitive content: violence, sex or graphic images. NOT a rule violation: the post stays, but only in the 18+ room, and those hiding adult content don't see it."
+
+msgid "Quitar «contenido sensible»"
+msgstr "Remove “sensitive content”"
+
+msgid "Contenido sensible"
+msgstr "Sensitive content"
+
+msgid "Cambia el subforo en el que se archiva este post."
+msgstr "Change the sub-forum this post is filed under."
+
+msgid "Mover de categoría"
+msgstr "Move to another category"
+
+msgid "Mover"
+msgstr "Move"
+
+msgid "Corrige el título. La dirección del post no cambia."
+msgstr "Fix the title. The post's address does not change."
+
+msgid "Editar título"
+msgstr "Edit title"
+
+msgid "Levanta la censura: el post vuelve a ser accesible."
+msgstr "Lift the censorship: the post becomes accessible again."
+
+msgid "Censurar es un acto de MODERACIÓN: el post incumple las normas y queda inaccesible para todos, marcado, sin análisis y reversible. Queda en el registro de auditoría."
+msgstr "Censoring is a MODERATION act: the post breaks the rules and becomes inaccessible to everyone, flagged, without analysis and reversible. It is written to the audit log."
+
+msgid "Censurar"
+msgstr "Censor"
+
+msgid "Motivo (lo verá quien intente entrar)"
+msgstr "Reason (shown to whoever tries to open it)"
+
+msgid "Notas internas sobre este post: solo las ve moderación."
+msgstr "Internal notes about this post: only moderation sees them."
+
+msgid "Relanzar una etapa del análisis con su coste delante."
+msgstr "Relaunch one stage of the analysis with its cost up front."
+
+msgid "Borra el post y su hilo para siempre. Escribe el número del post para confirmar."
+msgstr "Delete the post and its thread forever. Type the post number to confirm."
+
+msgid "Eliminar"
+msgstr "Delete"
+
+msgid "Mover, editar título, censurar, eliminar y notas: en la página del post."
+msgstr "Move, edit title, censor, delete and notes: on the post page."
+
+msgid "Más acciones en el post"
+msgstr "More actions on the post"
+
+msgid "Fijado arriba por moderación"
+msgstr "Pinned to top by moderation"
+
+msgid "Suscribirte a este post: cambios del análisis, mensajes nuevos, Trending."
+msgstr "Subscribe to this post: analysis changes, new messages, Trending."
+
+msgid "inaccesible para los usuarios y sin análisis; se revierte desde el menú ⋮"
+msgstr "inaccessible to users and without analysis; revert it from the ⋮ menu"
+
+msgid "Comentarios cerrados por moderación."
+msgstr "Comments closed by moderation."
+
+msgid "el staff aún puede escribir"
+msgstr "staff can still write"
+
+msgid "Post censurado"
+msgstr "Censored post"
+
+msgid "Este contenido ha sido retirado por moderación y no está accesible."
+msgstr "This content has been removed by moderation and is not accessible."
+
+msgid "Volver a la portada"
+msgstr "Back to the home page"
+
+msgid "Copia la dirección de este mensaje al portapapeles."
+msgstr "Copy this message's address to the clipboard."
+
+msgid "Reportar como inadecuado: con varios reportes el mensaje se difumina para todos."
+msgstr "Report as inappropriate: with several reports the message is blurred for everyone."
+
+msgid "Solo para ti: el mensaje se difumina en tu pantalla y puedes deshacerlo."
+msgstr "Only for you: the message is blurred on your screen and you can undo it."
+
+msgid "Ocultar para mí"
+msgstr "Hide for me"
+
+msgid "Puedes editar tu mensaje durante 15 minutos."
+msgstr "You can edit your message for 15 minutes."
+
+msgid "Escribe en privado a esta persona."
+msgstr "Write privately to this person."
+
+msgid "Contenido sensible: el mensaje se queda pero difuminado para todos, con un clic para verlo. No es una infracción."
+msgstr "Sensitive content: the message stays but blurred for everyone, one click to see it. Not a rule violation."
+
+msgid "Elimina el comentario del hilo. Solo el staff lo sigue viendo y puede restaurarlo."
+msgstr "Removes the comment from the thread. Only staff still see it and can restore it."
+
+msgid "Restaurar"
+msgstr "Restore"
+
+msgid "Comentario eliminado por moderación (solo lo ve el staff; se puede restaurar desde ⋮)."
+msgstr "Comment removed by moderation (only staff see it; it can be restored from ⋮)."

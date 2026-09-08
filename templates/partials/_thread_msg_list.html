@@ -3,7 +3,7 @@
       {% if m.first_unread %}<div class="unread-divider" id="nuevo">— {% trans "Nuevos desde tu última visita" %} —</div>{% endif %}
       {# 4.3-G: .fmsg es la piel de foro clasico (ficha del autor + cuerpo). #}
       {# 5.23-C: difuminado desde -karma_fade_threshold, plegado desde -karma_fold_threshold #}
-      <div class="thread-msg fmsg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}{% if m.folded %} msg-folded{% elif m.faded %} msg-faded{% endif %}" id="msg-{{ m.pk }}">
+      <div class="thread-msg fmsg {% if m.is_sensitive %}msg-sensitive{% endif %} {% if m.hidden_by_me %}msg-hidden-own{% endif %}{% if m.folded %} msg-folded{% elif m.faded %} msg-faded{% endif %}{% if m.deleted %} msg-deleted{% endif %}" id="msg-{{ m.pk }}">
         <div class="msg-author">
           {% if m.poster.avatar and m.poster.avatar_approved %}
             <img class="msg-avatar" src="{{ m.poster.avatar.url }}" alt="" width="54" height="54">
@@ -28,20 +28,34 @@
             <span class="msg-tools">
             {% url 'message_vote' m.pk 'up' as mvu %}{% url 'message_vote' m.pk 'down' as mvd %}
             {% include 'partials/votos.html' with url_up=mvu url_down=mvd ups=m.ups downs=m.downs mine=m.my_vote own=m.is_own %}
-            {% if user.is_authenticated %}
-            <button type="button" class="ibtn quote-btn" data-author="{{ m.poster.username }}" data-num="{{ m.number }}" data-pk="{{ m.pk }}" title="{% trans 'Citar este mensaje' %}">{% icon 'chat' 15 %}{% trans "Citar" %}</button>
-            <button type="button" class="ibtn reply-btn" title="{% trans 'Escribir una respuesta' %}">{% icon 'up' 15 %}{% trans "Responder" %}</button>
-            {% if m.poster == user %}<a class="ibtn" href="{% url 'message_edit' m.pk %}" title="{% trans 'Editar (15 min)' %}">✎ {% trans "Editar" %}</a>{% endif %}
-            {% if m.pm_allowed %}<a class="ibtn" href="{% url 'pm_send' m.poster.pk %}" title="{% trans 'Mensaje privado' %}">{% icon 'mail' 15 %}{% trans "MP" %}</a>{% endif %}
-            <form method="post" action="{% url 'message_report' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% trans 'Reportar como inadecuado' %}">{% icon 'flag' 15 %}{% trans "Reportar" %}</button></form>
-            <form method="post" action="{% url 'message_hide' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.hidden_by_me %}{% trans 'Mostrar de nuevo' %}{% else %}{% trans 'Difuminar para mí' %}{% endif %}">{% if m.hidden_by_me %}{% icon 'eye' 15 %}{% else %}{% icon 'eye_off' 15 %}{% endif %}</button></form>
-            {% if is_mod %}<form method="post" action="{% url 'message_sensitive' m.pk %}">{% csrf_token %}<button class="ibtn" title="{% if m.is_sensitive %}{% trans 'Quitar difuminado para todos' %}{% else %}{% trans 'Difuminar para todos' %}{% endif %}">{% icon 'shield' 15 %}{% trans "Sensible" %}</button></form>{% endif %}
+            {% if user.is_authenticated and not m.deleted %}
+            <button type="button" class="ibtn quote-btn" data-author="{{ m.poster.username }}" data-num="{{ m.number }}" data-pk="{{ m.pk }}" data-tip="{% trans 'Citar este mensaje' %}">{% icon 'chat' 15 %}{% trans "Citar" %}</button>
+            <button type="button" class="ibtn reply-btn" data-tip="{% trans 'Escribir una respuesta' %}">{% icon 'up' 15 %}{% trans "Responder" %}</button>
             {% endif %}
+            {# 5.23-D (orden de David): el menu de tres puntos de cada comentario. #}
+            <details class="kebab kebab-msg">
+              <summary data-tip="{% trans 'Más opciones' %}" aria-label="{% trans 'Más opciones' %}">{% icon 'dots' 16 %}</summary>
+              <ul class="kebab-menu">
+                <li><button type="button" class="copiar-enlace" data-url="https://{{ request.get_host }}{{ post.get_absolute_url }}?pagina={{ page_obj.number|default:1 }}#msg-{{ m.pk }}" data-ok="{% trans 'Enlace copiado' %}" data-tip="{% trans 'Copia la dirección de este mensaje al portapapeles.' %}">{% icon 'link' 15 %} {% trans "Copiar enlace" %}</button></li>
+                {% if user.is_authenticated %}
+                <li><form method="post" action="{% url 'message_report' m.pk %}">{% csrf_token %}<button data-tip="{% trans 'Reportar como inadecuado: con varios reportes el mensaje se difumina para todos.' %}">{% icon 'flag' 15 %} {% trans "Reportar" %}</button></form></li>
+                <li><form method="post" action="{% url 'message_hide' m.pk %}">{% csrf_token %}<button data-tip="{% trans 'Solo para ti: el mensaje se difumina en tu pantalla y puedes deshacerlo.' %}">{% if m.hidden_by_me %}{% icon 'eye' 15 %} {% trans "Mostrar de nuevo" %}{% else %}{% icon 'eye_off' 15 %} {% trans "Ocultar para mí" %}{% endif %}</button></form></li>
+                {% if m.poster == user %}<li><a href="{% url 'message_edit' m.pk %}" data-tip="{% trans 'Puedes editar tu mensaje durante 15 minutos.' %}">{% icon 'edit' 15 %} {% trans "Editar (15 min)" %}</a></li>{% endif %}
+                {% if m.pm_allowed %}<li><a href="{% url 'pm_send' m.poster.pk %}" data-tip="{% trans 'Escribe en privado a esta persona.' %}">{% icon 'mail' 15 %} {% trans "Mensaje privado" %}</a></li>{% endif %}
+                {% if is_mod %}
+                <li class="kebab-sep" aria-hidden="true"></li>
+                <li><form method="post" action="{% url 'message_sensitive' m.pk %}">{% csrf_token %}<button data-tip="{% trans 'Contenido sensible: el mensaje se queda pero difuminado para todos, con un clic para verlo. No es una infracción.' %}">{% icon 'shield' 15 %} {% if m.is_sensitive %}{% trans "Quitar «contenido sensible»" %}{% else %}{% trans "Contenido sensible" %}{% endif %}</button></form></li>
+                <li><form method="post" action="{% url 'message_delete' m.pk %}">{% csrf_token %}<button data-tip="{% trans 'Elimina el comentario del hilo. Solo el staff lo sigue viendo y puede restaurarlo.' %}">{% icon 'trash' 15 %} {% if m.deleted %}{% trans "Restaurar" %}{% else %}{% trans "Eliminar" %}{% endif %}</button></form></li>
+                {% endif %}
+                {% endif %}
+              </ul>
+            </details>
             </span>
           </div>
           {% if m.folded %}<button type="button" class="msg-desplegar" onclick="this.closest('.thread-msg').classList.add('desplegado')">{% blocktrans with n=m.score %}Comentario plegado por la comunidad (puntuación {{ n }}). Mostrar.{% endblocktrans %}</button>{% endif %}
           <div class="thread-body-wrap">
-            <div class="thread-body">{{ m.content.rendered|safe }}</div>
+            {% if m.deleted %}<div class="thread-body msg-borrado hint">🗑 {% trans "Comentario eliminado por moderación (solo lo ve el staff; se puede restaurar desde ⋮)." %}</div>
+            {% else %}<div class="thread-body">{{ m.content.rendered|safe }}</div>{% endif %}
             {% if m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Este contenido puede ser sensible. Clic para verlo." %}</button>{% endif %}
             {% if m.hidden_by_me and not m.is_sensitive %}<button type="button" class="blur-cover" onclick="this.parentElement.classList.add('revealed')">{% trans "Ocultado por ti. Clic para verlo." %}</button>{% endif %}
           </div>

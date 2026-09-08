@@ -3,7 +3,7 @@
 <p class="hint">{% trans "Recibirás un número de referencia y acuse por email. Si eres el autor del contenido analizado, indícalo: tu reclamación entra en cola prioritaria (respuesta en 7 días)." %}</p>
 <form method="post">{% csrf_token %}
   <label>{% trans "Tu email" %}<input type="email" name="email" required></label>
-  <label>{% trans "Enlace al contenido reclamado" %}<input name="content_url" required placeholder="https://..."></label>
+  <label>{% trans "Enlace al contenido reclamado" %}<input name="content_url" required placeholder="https://..." value="{{ initial_url|default:'' }}"></label>
   <label>{% trans "Motivo" %}<select name="reason">
     <option value="ERROR">{% trans "Error factual" %}</option>
     <option value="DEFAMATION">{% trans "Considero que me difama" %}</option>

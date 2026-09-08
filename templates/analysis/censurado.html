@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Post censurado" %} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.23-D (precision de David): censurado = INACCESIBLE para todos los usuarios. #}
+<div class="censura-cortina">
+  <h1>🚫 {% trans "Post censurado por moderación" %}</h1>
+  <p>{% trans "Este contenido ha sido retirado por moderación y no está accesible." %}</p>
+  {% if post.censored_reason %}<p class="hint">{% trans "Motivo" %}: {{ post.censored_reason }}</p>{% endif %}
+  <p><a href="/">{% trans "Volver a la portada" %}</a> · <a href="{% url 'complaint_form' %}">{% trans "Reclamaciones" %}</a></p>
+</div>
+{% endblock %}

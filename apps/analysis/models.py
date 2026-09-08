@@ -27,6 +27,9 @@ STATUSES = [
     ('OFFTOPIC_RAW', 'Off-Topic sin analizar (voluntario)'),
     ('HELD_FOR_REVIEW', 'Retenido (anti-acoso)'),
     ('FAILED', 'Error'),
+    # 5.23-E (orden de David): un post con categoria PROPUESTA no arranca, no
+    # se ve y su categoria no aparece hasta que moderacion lo aprueba.
+    ('PENDING_APPROVAL', 'Pendiente de aprobación (categoría propuesta)'),
 ]
 
 
@@ -40,6 +43,11 @@ class Category(models.Model):
     slug = models.SlugField(max_length=40, unique=True)
     times_used = models.IntegerField(default=0)
     created_by_agent = models.BooleanField(default=False)
+    # 5.23-E (ENMIENDA de David al README, 2026-09-08): categorias en ARBOL.
+    # Los 12 temas historicos cuelgan de la raiz «principal»; se pueden anidar
+    # subforos sin limite desde el panel o aprobando la propuesta de un usuario.
+    parent = models.ForeignKey('self', null=True, blank=True,
+                               on_delete=models.SET_NULL, related_name='children')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -47,6 +55,62 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    ROOT_SLUG = 'principal'
+
+    @property
+    def is_root(self):
+        return self.slug == self.ROOT_SLUG
+
+    def ancestors(self):
+        """De la raiz hacia aqui (sin incluirse). Tope de 12 niveles: un bucle
+        accidental en parent no puede colgar la pagina."""
+        out, cur, n = [], self.parent, 0
+        while cur is not None and n < 12:
+            out.append(cur)
+            cur, n = cur.parent, n + 1
+        return list(reversed(out))
+
+    def path_label(self):
+        """«Principal › Política › Elecciones»."""
+        return ' › '.join([a.name for a in self.ancestors()] + [self.name])
+
+    @classmethod
+    def root(cls):
+        obj, _ = cls.objects.get_or_create(slug=cls.ROOT_SLUG,
+                                           defaults={'name': 'Principal'})
+        return obj
+
+    @classmethod
+    def tree(cls):
+        """[(categoria, profundidad)] en orden de arbol, sin la raiz. Una sola
+        consulta; profundidad limitada por seguridad."""
+        todas = list(cls.objects.order_by('name'))
+        hijos = {}
+        for c in todas:
+            hijos.setdefault(c.parent_id, []).append(c)
+        raiz = next((c for c in todas if c.slug == cls.ROOT_SLUG), None)
+        out = []
+
+        def bajar(padre_id, prof):
+            for c in sorted(hijos.get(padre_id, []), key=lambda x: x.name.lower()):
+                if c.slug == cls.ROOT_SLUG or prof > 12:
+                    continue
+                out.append((c, prof))
+                bajar(c.pk, prof + 1)
+        bajar(raiz.pk if raiz else None, 0)
+        # huerfanas (sin padre y sin ser la raiz) al final, al nivel 0
+        if raiz:
+            for c in hijos.get(None, []):
+                if c.slug != cls.ROOT_SLUG:
+                    out.append((c, 0))
+                    bajar(c.pk, 1)
+        return out
+
+    @classmethod
+    def elegibles(cls):
+        """Las que puede elegir quien publica: todas menos la raiz."""
+        return [c for c, _p in cls.tree()]
 
 
 class Channel(models.Model):
@@ -77,7 +141,19 @@ class Channel(models.Model):
         return videos_with_bad >= 5
 
 
+class PostQuerySet(models.QuerySet):
+    def publicos(self):
+        """5.23-D/E: lo que ve el publico en cualquier listado — fuera los
+        censurados (inaccesibles para todos, orden de David) y los pendientes
+        de aprobacion (solo el staff los ve, en /pendiente/)."""
+        return self.exclude(censored=True).exclude(status='PENDING_APPROVAL')
+
+    def fijados_primero(self):
+        return self.order_by('-pinned', '-created_at')
+
+
 class Post(models.Model):
+    objects = PostQuerySet.as_manager()
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='analysis_posts')
     channel = models.ForeignKey(Channel, null=True, blank=True, on_delete=models.SET_NULL, related_name='posts')
     url = models.URLField(max_length=500)
@@ -103,6 +179,16 @@ class Post(models.Model):
                                     blank=True, on_delete=models.SET_NULL,
                                     related_name='censored_posts')
     censored_at = models.DateTimeField(null=True, blank=True)
+    # 5.23-D (orden de David): menu de tres puntos — cerrar comentarios y fijar.
+    comments_closed = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False)
+    # 5.23-E (orden de David): categoria propuesta por el autor, a la espera de
+    # que moderacion la apruebe (o la encaje en otra). Vacio = nada pendiente.
+    pending_category = models.CharField(max_length=40, blank=True, default='')
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                    on_delete=models.SET_NULL,
+                                    related_name='approved_posts')
+    approved_at = models.DateTimeField(null=True, blank=True)
     voluntary_offtopic = models.BooleanField(default=False)  # coste CERO hasta 10 votos
     is_adult = models.BooleanField(default=False)            # marcado por autor/agente/moderador
     adult_flag_source = models.CharField(max_length=10, blank=True, default='')  # author|agent|mod

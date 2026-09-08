@@ -29,8 +29,8 @@ def index(request):
     from django.utils import timezone as tz
     # 4.3-A.8 (decision de David): el contenido +18 NO vive en los listados
     # publicos; tiene su sala cerrada (/mas18/).
-    base = Post.objects.filter(category='MAIN').exclude(is_adult=True)
-    nuevos = base.order_by('-created_at')[:15]
+    base = Post.objects.publicos().filter(category='MAIN').exclude(is_adult=True)
+    nuevos = base.fijados_primero()[:15]   # 5.23-D: los fijados, arriba
     window = tz.now() - tz.timedelta(days=7)
     # 5.23-C: «mas votados» = SOLO positivos (decision no reabierta)
     top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window,
@@ -77,7 +77,7 @@ def _novedades_en_seguidos(user):
     subs = PostSubscription.objects.filter(user=user).select_related('post')[:100]
     for sub in subs:
         post = sub.post
-        if post.is_adult:
+        if post.is_adult or post.censored or post.status == 'PENDING_APPROVAL':
             continue
         mensajes = MPost.objects.filter(topic__slug=f'post-{post.pk}',
                                         approved=True, created__gt=desde) \
@@ -366,7 +366,7 @@ def adult_room(request):
     tiene 18 anos cumplidos segun su fecha de nacimiento."""
     if not _can_see_adult(request):
         return render(request, 'analysis/adult_blocked.html', status=403)
-    posts = Post.objects.filter(is_adult=True).order_by('-created_at')[:50]
+    posts = Post.objects.publicos().filter(is_adult=True).fijados_primero()[:50]
     return render(request, 'analysis/adult_room.html', {'posts': posts})
 
 
@@ -441,7 +441,8 @@ def _post_context(request, post):
     relaunch_rows = relaunch_options(post) if is_mod else []
     # 4.3-F: cifras del cartel de la cola (solo se pintan si el post está en ella).
     _en_cola, queue_cost, queue_sponsor = needs_sponsorship(post)
-    thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(topic_obj, u, request)
+    thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(
+        topic_obj, u, request, incluir_borrados=is_mod)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
     from apps.forum.models import MessageSensitive, HiddenMessage
     msg_ids = [m.pk for m in thread_messages]
@@ -461,8 +462,11 @@ def _post_context(request, post):
     p_ups, p_downs, p_mio = recuento(Vote, {'post': post}, u)
     votos_post = {'ups': p_ups, 'downs': p_downs, 'mine': p_mio,
                   'own': bool(u and post.author_id == u.pk)}
+    # 5.23-D: el menu de tres puntos necesita el arbol para «Mover de categoria»
+    from .models import Category
+    categorias = Category.elegibles() if is_mod else []
     return {
-        'votos_post': votos_post,
+        'votos_post': votos_post, 'categorias': categorias,
         'costes_filas': costes_filas, 'costes_total': costes_total,
         'post': post, 'segments': segments, 'embed': build_embed(post),
         'hide_opinions': hide_opinions,
@@ -567,6 +571,17 @@ def post_detail(request, pk=None, slug=None):
         return HttpResponsePermanentRedirect(destino)
     if _adult_blocked(request, post):
         return render(request, 'analysis/adult_blocked.html', status=403)
+    es_staff = _require_mod(request.user)
+    # 5.23-D (precision de David): un post censurado queda INACCESIBLE para
+    # todos los usuarios; solo el staff lo ve (marcado) para poder revertirlo.
+    if post.censored and not es_staff:
+        return render(request, 'analysis/censurado.html', {'post': post}, status=403)
+    # 5.23-E: un post pendiente de aprobacion no existe para el publico.
+    if post.status == 'PENDING_APPROVAL':
+        if es_staff:
+            return redirect('pending_review', slug=post.slug or post.pk)
+        from django.http import Http404
+        raise Http404
     return render(request, 'analysis/post_detail.html', _post_context(request, post))
 
 
@@ -610,13 +625,17 @@ def _require_mod(user):
     return user.is_authenticated and (user.is_staff or user.level == 'MOD')
 
 
-def _thread_page(topic_obj, u, request, per_page=20):
+def _thread_page(topic_obj, u, request, per_page=20, incluir_borrados=False):
     """4.3-A J4: pagina del hilo (foro clasico: 20/pagina) + primer no leido.
-    Registra el punto de lectura del usuario (TopicRead) al servir la pagina."""
+    Registra el punto de lectura del usuario (TopicRead) al servir la pagina.
+    5.23-D: el staff ve tambien los comentarios eliminados (no aprobados), como
+    muñon restaurable."""
     from django.core.paginator import Paginator
     if not topic_obj:
         return [], None, None, 0
-    qs = topic_obj.posts.filter(approved=True).select_related('poster').order_by('created')
+    qs = topic_obj.posts.select_related('poster').order_by('created')
+    if not incluir_borrados:
+        qs = qs.filter(approved=True)
     paginator = Paginator(qs, per_page)
     first_unread_pk = None
     if u:
@@ -640,6 +659,7 @@ def _thread_page(topic_obj, u, request, per_page=20):
     for i, m in enumerate(messages_list):
         m.first_unread = (m.pk == first_unread_pk)
         m.number = inicio + i
+        m.deleted = not m.approved
     # 4.3-G: el "Mensajes: N" de la ficha del autor, en UNA sola consulta para
     # toda la pagina. OJO (trampa conocida): sin .order_by() vacio, el ordering
     # del Meta de machina se cuela en el GROUP BY y el recuento sale partido.
@@ -667,7 +687,8 @@ def post_thread_fragment(request, pk):
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
     from apps.forum.machina_glue import get_topic_for_post
     topic_obj = get_topic_for_post(post)
-    thread_messages, page_obj, _first, newest_pk = _thread_page(topic_obj, u, request)
+    thread_messages, page_obj, _first, newest_pk = _thread_page(
+        topic_obj, u, request, incluir_borrados=is_mod)
     from apps.forum.models import MessageSensitive, HiddenMessage
     msg_ids = [m.pk for m in thread_messages]
     sensitive_ids = set(MessageSensitive.objects.filter(
@@ -853,7 +874,10 @@ def post_censor(request, pk):
         post.censored_reason = request.POST.get('reason', '').strip()[:200]
         post.censored_by = request.user
         post.censored_at = _tz.now()
-        accion, aviso = 'post_censor', 'Post censurado (el lector puede optar por verlo).'
+        # 5.23-D (precision de David): censurado = INACCESIBLE para todos los
+        # usuarios, marcado, reversible y SIN analisis (las tareas lo saltan).
+        accion, aviso = 'post_censor', ('Post censurado: inaccesible para los '
+                                        'usuarios y sin análisis hasta que se retire.')
     post.save(update_fields=['censored', 'censored_reason',
                              'censored_by', 'censored_at'])
     AuditLog.objects.create(user=request.user, action=accion,
@@ -884,6 +908,142 @@ def post_delete(request, pk):
     post.delete()
     messages.success(request, f'Post «{titulo}» eliminado.')
     return redirect('index')
+
+
+# ---------------- 5.23-D: el menu de tres puntos (orden de David) ----------------
+
+def _accion_staff(request, pk):
+    """Comprobaciones comunes de las acciones del menu: POST + moderacion."""
+    post = get_object_or_404(Post, pk=pk)
+    if request.method != 'POST' or not _require_mod(request.user):
+        return post, redirect('post_detail', pk=pk)
+    return post, None
+
+
+def _volver(request, post):
+    """Al post, o a la pagina desde la que se actuo (foro, portada)."""
+    ref = request.META.get('HTTP_REFERER', '')
+    if ref and '/pendiente/' not in ref and post.get_absolute_url() not in ref:
+        return redirect(ref)
+    return redirect(post.get_absolute_url())
+
+
+@login_required
+def post_toggle_comments(request, pk):
+    """Cerrar/abrir los comentarios nuevos del hilo (clasico de foro)."""
+    from apps.panel.models import AuditLog
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    post.comments_closed = not post.comments_closed
+    post.save(update_fields=['comments_closed'])
+    AuditLog.objects.create(user=request.user, detail=f'post {post.pk}',
+                            action='comments_closed' if post.comments_closed else 'comments_opened')
+    messages.success(request, 'Comentarios cerrados: nadie puede responder.'
+                     if post.comments_closed else 'Comentarios abiertos de nuevo.')
+    return _volver(request, post)
+
+
+@login_required
+def post_toggle_pin(request, pk):
+    """Fijar arriba en los listados (y desfijar)."""
+    from apps.panel.models import AuditLog
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    post.pinned = not post.pinned
+    post.save(update_fields=['pinned'])
+    AuditLog.objects.create(user=request.user, detail=f'post {post.pk}',
+                            action='post_pinned' if post.pinned else 'post_unpinned')
+    messages.success(request, 'Post fijado arriba.' if post.pinned else 'Post desfijado.')
+    return _volver(request, post)
+
+
+@login_required
+def post_toggle_adult(request, pk):
+    """Contenido sensible (+18): el post pasa a la sala cerrada o vuelve."""
+    from apps.panel.models import AuditLog
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    post.is_adult = not post.is_adult
+    post.adult_flag_source = 'mod' if post.is_adult else ''
+    post.save(update_fields=['is_adult', 'adult_flag_source'])
+    AuditLog.objects.create(user=request.user, detail=f'post {post.pk}',
+                            action='post_adult_on' if post.is_adult else 'post_adult_off')
+    messages.success(request, 'Marcado como contenido sensible (+18): solo en la sala cerrada.'
+                     if post.is_adult else 'Ya no está marcado como contenido sensible.')
+    return _volver(request, post)
+
+
+@login_required
+def post_move_category(request, pk):
+    """Mover el post a otra categoria del arbol."""
+    from apps.panel.models import AuditLog
+    from .models import Category
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    slug = request.POST.get('topic', '').strip()
+    cat = Category.objects.filter(slug=slug).exclude(slug=Category.ROOT_SLUG).first()
+    if not cat:
+        messages.error(request, 'Categoría no válida.')
+        return _volver(request, post)
+    antes = post.topic
+    if antes != cat.slug:
+        Category.objects.filter(slug=antes).update(times_used=models.F('times_used') - 1)
+        Category.objects.filter(slug=cat.slug).update(times_used=models.F('times_used') + 1)
+        post.topic = cat.slug
+        post.save(update_fields=['topic'])
+    AuditLog.objects.create(user=request.user, action='post_moved',
+                            detail=f'post {post.pk}: {antes} -> {cat.slug}')
+    messages.success(request, f'Post movido a «{cat.path_label()}».')
+    return _volver(request, post)
+
+
+@login_required
+def post_edit_title(request, pk):
+    """Editar el titulo (y el asunto del hilo). La URL (slug) NO cambia: las
+    direcciones compartidas no se rompen (decision 5.0-D)."""
+    from apps.panel.models import AuditLog
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    titulo = ' '.join(request.POST.get('title', '').split())[:300]
+    if len(titulo) < 3:
+        messages.error(request, 'El título es demasiado corto.')
+        return _volver(request, post)
+    antes = post.title
+    post.title = titulo
+    post.save(update_fields=['title'])
+    from apps.forum.machina_glue import get_topic_for_post
+    topic = get_topic_for_post(post)
+    if topic:
+        type(topic).objects.filter(pk=topic.pk).update(subject=titulo[:100])
+    AuditLog.objects.create(user=request.user, action='post_title_edited',
+                            detail=f'post {post.pk}: «{antes[:60]}» -> «{titulo[:60]}»')
+    messages.success(request, 'Título actualizado.')
+    return _volver(request, post)
+
+
+@login_required
+def message_delete_toggle(request, mpost_id):
+    """Eliminar un comentario (reversible: queda como no aprobado y solo lo ve
+    el staff, que puede restaurarlo). AuditLog siempre."""
+    from machina.core.db.models import get_model
+    from apps.panel.models import AuditLog
+    MPost = get_model('forum_conversation', 'Post')
+    m = get_object_or_404(MPost, pk=mpost_id)
+    destino = request.META.get('HTTP_REFERER') or '/'
+    if request.method != 'POST' or not _require_mod(request.user):
+        return redirect(destino)
+    m.approved = not m.approved
+    m.save()
+    AuditLog.objects.create(user=request.user, detail=f'mensaje {m.pk}',
+                            action='message_restored' if m.approved else 'message_deleted')
+    messages.success(request, 'Comentario restaurado.' if m.approved
+                     else 'Comentario eliminado (el staff puede restaurarlo).')
+    return redirect(destino.split('#')[0] + f'#msg-{m.pk}')
 
 
 @login_required
@@ -1085,6 +1245,10 @@ def reply(request, pk):
     if not request.user.email_verified:
         messages.error(request, 'Verifica tu email para poder comentar.')
         return redirect('post_detail', pk=pk)
+    # 5.23-D: comentarios cerrados por moderacion (el staff sigue pudiendo)
+    if post.comments_closed and not _require_mod(request.user):
+        messages.error(request, 'Los comentarios de este post están cerrados.')
+        return redirect('post_detail', pk=pk)
     content = request.POST.get('content', '').strip()[:8000]
     if content:
         from apps.forum.machina_glue import add_reply
@@ -1153,7 +1317,7 @@ def search(request):
         query = SearchQuery(q, config='spanish') if q else None
         if scope in ('all', 'posts'):
             # 4.3-A.8: el buscador era la puerta de atras de la sala +18.
-            visibles = Post.objects.all()
+            visibles = Post.objects.publicos()   # 5.23-D: ni censurados ni pendientes
             if not _can_see_adult(request):
                 visibles = visibles.exclude(is_adult=True)
             if tema:

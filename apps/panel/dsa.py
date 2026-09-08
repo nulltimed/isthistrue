@@ -21,4 +21,6 @@ def complaint_form(request):
         messages.success(request, f'Reclamación registrada (ref. #{c.pk}). '
                                   'Recibirás acuse de recibo por email.')
         return redirect('complaint_form')
-    return render(request, 'panel/complaint_form.html')
+    # 5.23-D: «Reportar» del menu de tres puntos llega con la URL rellena.
+    return render(request, 'panel/complaint_form.html',
+                  {'initial_url': request.GET.get('url', '')[:400]})

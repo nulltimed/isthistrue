@@ -121,7 +121,7 @@ def try_autopilot(post, factual=None):
     Devuelve True si lanzo la fase cara.
     """
     from .tasks import auto_verify_slot_free, launch_full_analysis, notify_post_event
-    if post.status != 'PENDING_VALIDATION':
+    if post.status != 'PENDING_VALIDATION' or post.censored:   # 5.23-D: sin analisis
         return False
     if factual is None:
         factual = not post.offtopic_suggested

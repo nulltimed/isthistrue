@@ -1,0 +1,44 @@
+{% load i18n istt_icons %}
+{# 5.23-D (orden de David): el menu de TRES PUNTOS del post. Para todos: #}
+{# Copiar enlace y Reportar. Para moderadores y superusuario: las acciones #}
+{# clasicas de foro. `compact` = version de los listados (sin formularios). #}
+{# Cada opcion lleva su bocadillo explicativo (data-tip). #}
+<details class="kebab{% if compact %} kebab-compact{% endif %}">
+  <summary data-tip="{% trans 'Más opciones' %}" aria-label="{% trans 'Más opciones' %}">{% icon 'dots' 20 %}</summary>
+  <ul class="kebab-menu">
+    <li><button type="button" class="copiar-enlace" data-url="https://{{ request.get_host }}{{ post.get_absolute_url }}" data-ok="{% trans 'Enlace copiado' %}" data-tip="{% trans 'Copia la dirección de este post al portapapeles.' %}">{% icon 'link' 15 %} {% trans "Copiar enlace" %}</button></li>
+    <li><a href="{% url 'complaint_form' %}?url=https://{{ request.get_host }}{{ post.get_absolute_url }}" data-tip="{% trans 'Avisa a moderación de un problema con este post (formulario con acuse de recibo).' %}">{% icon 'flag' 15 %} {% trans "Reportar" %}</a></li>
+    {% if is_mod %}
+    <li class="kebab-sep" aria-hidden="true"></li>
+    <li><form method="post" action="{% url 'post_toggle_comments' post.pk %}">{% csrf_token %}<button data-tip="{% if post.comments_closed %}{% trans 'Vuelve a permitir respuestas en el hilo.' %}{% else %}{% trans 'Cierra el hilo: nadie más podrá responder (el post sigue visible).' %}{% endif %}">{% if post.comments_closed %}{% icon 'unlock' 15 %} {% trans "Abrir comentarios" %}{% else %}{% icon 'lock' 15 %} {% trans "Cerrar comentarios" %}{% endif %}</button></form></li>
+    <li><form method="post" action="{% url 'post_toggle_pin' post.pk %}">{% csrf_token %}<button data-tip="{% if post.pinned %}{% trans 'Quita el post de lo alto de los listados.' %}{% else %}{% trans 'Mantiene el post arriba en su categoría del foro.' %}{% endif %}">{% icon 'bookmark' 15 %} {% if post.pinned %}{% trans "Desfijar" %}{% else %}{% trans "Fijar arriba" %}{% endif %}</button></form></li>
+    <li><form method="post" action="{% url 'post_toggle_adult' post.pk %}">{% csrf_token %}<button data-tip="{% trans 'Contenido sensible: violencia, sexo o imágenes duras. NO es una infracción: el post se queda, pero solo en la sala +18 y quien oculta contenido adulto no lo ve.' %}">{% icon 'eye_off' 15 %} {% if post.is_adult %}{% trans "Quitar «contenido sensible»" %}{% else %}{% trans "Contenido sensible" %}{% endif %}</button></form></li>
+    {% if not compact %}
+    <li><form method="post" action="{% url 'post_move_category' post.pk %}" class="kebab-form">{% csrf_token %}
+      <label data-tip="{% trans 'Cambia el subforo en el que se archiva este post.' %}">{% icon 'folder' 15 %} {% trans "Mover de categoría" %}
+        <select name="topic">{% for c in categorias %}<option value="{{ c.slug }}" {% if c.slug == post.topic %}selected{% endif %}>{{ c.path_label }}</option>{% endfor %}</select></label>
+      <button class="mini">{% trans "Mover" %}</button></form></li>
+    <li><form method="post" action="{% url 'post_edit_title' post.pk %}" class="kebab-form">{% csrf_token %}
+      <label data-tip="{% trans 'Corrige el título. La dirección del post no cambia.' %}">{% icon 'edit' 15 %} {% trans "Editar título" %}
+        <input name="title" value="{{ post.title }}" maxlength="300" required></label>
+      <button class="mini">{% trans "Guardar" %}</button></form></li>
+    <li><form method="post" action="{% url 'post_censor' post.pk %}" class="kebab-form">{% csrf_token %}
+      {% if post.censored %}
+      <button data-tip="{% trans 'Levanta la censura: el post vuelve a ser accesible.' %}">{% icon 'ban' 15 %} {% trans "Retirar la censura" %}</button>
+      {% else %}
+      <label data-tip="{% trans 'Censurar es un acto de MODERACIÓN: el post incumple las normas y queda inaccesible para todos, marcado, sin análisis y reversible. Queda en el registro de auditoría.' %}">{% icon 'ban' 15 %} {% trans "Censurar" %}
+        <input name="reason" maxlength="200" placeholder="{% trans 'Motivo (lo verá quien intente entrar)' %}"></label>
+      <button class="mini danger">{% trans "Censurar" %}</button>
+      {% endif %}</form></li>
+    <li><a href="#gestion-notas" data-tip="{% trans 'Notas internas sobre este post: solo las ve moderación.' %}">{% icon 'note' 15 %} {% trans "Notas de moderación" %}</a></li>
+    <li><a href="#llave-inglesa" data-tip="{% trans 'Relanzar una etapa del análisis con su coste delante.' %}">{% icon 'wrench' 15 %} {% trans "Relanzar análisis" %}</a></li>
+    <li><form method="post" action="{% url 'post_delete' post.pk %}" class="kebab-form" onsubmit="return confirm('{% trans '¿Eliminar el post y su hilo? No hay vuelta atrás.' %}');">{% csrf_token %}
+      <label data-tip="{% trans 'Borra el post y su hilo para siempre. Escribe el número del post para confirmar.' %}">{% icon 'trash' 15 %} {% trans "Eliminar post" %}
+        <input name="confirm" required placeholder="{% blocktrans with n=post.pk %}Escribe {{ n }} para confirmar{% endblocktrans %}"></label>
+      <button class="mini danger">{% trans "Eliminar" %}</button></form></li>
+    {% else %}
+    <li><a href="{{ post.get_absolute_url }}" data-tip="{% trans 'Mover, editar título, censurar, eliminar y notas: en la página del post.' %}">{% icon 'wrench' 15 %} {% trans "Más acciones en el post" %}</a></li>
+    {% endif %}
+    {% endif %}
+  </ul>
+</details>

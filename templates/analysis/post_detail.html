@@ -11,9 +11,10 @@
 <article class="post">
   <div class="post-topbar">
     {% if is_trending %}<span class="trending-badge">{% icon 'flame' 14 %} Trending</span>{% endif %}
+    {% if post.pinned %}<span class="trending-badge" data-tip="{% trans 'Fijado arriba por moderación' %}">{% icon 'bookmark' 14 %}</span>{% endif %}
     {% if user.is_authenticated %}
     <details class="subscribe-box">
-      <summary title="{% trans 'Suscribirse a este post' %}">{% if my_subscription %}{% icon 'bell' 20 %}{% else %}{% icon 'bell_off' 20 %}{% endif %}</summary>
+      <summary data-tip="{% trans 'Suscribirte a este post: cambios del análisis, mensajes nuevos, Trending.' %}" aria-label="{% trans 'Suscribirse a este post' %}">{% if my_subscription %}{% icon 'bell' 20 %}{% else %}{% icon 'bell_off' 20 %}{% endif %}</summary>
       <form method="post" action="{% url 'post_subscribe' post.pk %}">{% csrf_token %}
         <label><input type="checkbox" name="on_analysis" {% if not my_subscription or my_subscription.on_analysis %}checked{% endif %}> {% trans "Cambios en el análisis" %}</label>
         <label><input type="checkbox" name="on_messages" {% if my_subscription.on_messages %}checked{% endif %}> {% trans "Nuevos mensajes" %}</label>
@@ -22,18 +23,12 @@
       </form>
     </details>
     {% endif %}
+    {# 5.23-D (orden de David): el menu de tres puntos, a la derecha de la campana. #}
+    {% include 'partials/post_menu.html' %}
   </div>
-  {# 5.20 (orden de David): censura de moderacion con CORTINA — el post entero #}
-  {# cubierto con su motivo, y el LECTOR decide verlo igualmente (un clic). #}
-  {% if post.censored and not is_mod %}
-  <div class="censura-cortina" id="censura-aviso">
-    <h1>🚫 {% trans "Post censurado por moderación" %}</h1>
-    {% if post.censored_reason %}<p>{{ post.censored_reason }}</p>{% endif %}
-    <button class="primary" onclick="document.getElementById('censura-aviso').hidden = true; document.getElementById('censura-contenido').hidden = false;">{% trans "Ver de todos modos" %}</button>
-  </div>
-  <div id="censura-contenido" hidden>
-  {% endif %}
-  {% if post.censored and is_mod %}<p class="warning">🚫 {% trans "Este post está censurado" %}{% if post.censored_reason %}: {{ post.censored_reason }}{% endif %} <span class="hint">({% trans "los lectores ven la cortina y pueden abrirla" %})</span></p>{% endif %}
+  {# 5.23-D (precision de David): el censurado es INACCESIBLE para los usuarios #}
+  {# (la vista los manda a analysis/censurado.html); el staff lo ve marcado. #}
+  {% if post.censored %}<p class="warning">🚫 {% trans "Este post está censurado" %}{% if post.censored_reason %}: {{ post.censored_reason }}{% endif %} <span class="hint">({% trans "inaccesible para los usuarios y sin análisis; se revierte desde el menú ⋮" %})</span></p>{% endif %}
   <h1>{{ post.title|default:post.url }}</h1>
   {# 5.22 (orden de David): el resultado del analisis en 4 colores bajo el #}
   {# titulo; clic en un color abre su listado; clic en un claim reproduce #}
@@ -89,7 +84,10 @@
     </div>
     <div id="vigia-post" hidden data-url="{% url 'post_estado' post.pk %}"
          data-a="{{ estado_analisis }}" data-m="{{ newest_pk|default:0 }}"></div>
-    {% if user.is_authenticated %}
+    {% if post.comments_closed and not is_mod %}
+      <p class="hint comentarios-cerrados">🔒 {% trans "Comentarios cerrados por moderación." %}</p>
+    {% elif user.is_authenticated %}
+      {% if post.comments_closed %}<p class="hint comentarios-cerrados">🔒 {% trans "Comentarios cerrados por moderación." %} <span class="hint">({% trans "el staff aún puede escribir" %})</span></p>{% endif %}
       <form method="post" action="{% url 'post_reply' post.pk %}" class="thread-reply" id="responder">{% csrf_token %}
         <textarea name="content" rows="10" required data-mdtoolbar maxlength="8000"
           data-preview-url="{% url 'md_preview' %}"
@@ -104,7 +102,6 @@
     {% endif %}
   </section>
   {% include 'partials/share.html' %}
-{% if post.censored and not is_mod %}</div>{% endif %}
 </article>
 <script src="{% static 'js/transcript.js' %}" defer></script>
 <script src="{% static 'js/vigia_post.js' %}" defer></script>

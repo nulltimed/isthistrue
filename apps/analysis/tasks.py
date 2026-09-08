@@ -40,6 +40,12 @@ def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
     from apps.agents import sweep, algorithm
 
     post = Post.objects.get(pk=post_id)
+    # 5.23-D (precision de David): censurado = SIN analisis. 5.23-E: pendiente
+    # de aprobacion = tampoco arranca.
+    if post.censored or post.status == 'PENDING_APPROVAL':
+        logger.info('Post %s: analisis omitido (%s)', post.pk,
+                    'censurado' if post.censored else 'pendiente de aprobación')
+        return 'skipped'
     from .services import cost_cheap_eur
     from apps.analysis import costs as _costs
     _costs.set_post(post)   # 4.9-A: los apuntes Anthropic se cuelgan del post
@@ -568,7 +574,8 @@ def launch_queued_analyses():
     from .models import Post
     from .services import budget_left_today, cost_cheap_eur, cost_full_eur
     lanzados = 0
-    for post in Post.objects.filter(status='AWAITING_BUDGET').order_by('created_at'):
+    for post in Post.objects.filter(status='AWAITING_BUDGET', censored=False) \
+                            .order_by('created_at'):
         coste = cost_cheap_eur(post) + cost_full_eur(post)
         if coste > budget_left_today():
             break

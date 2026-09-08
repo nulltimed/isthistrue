@@ -796,3 +796,33 @@ main.wide .post > h1{text-align:center}
 .msg-desplegar{display:block;width:100%;text-align:left;background:var(--paper);color:var(--grey);
   border:1px dashed var(--line);border-radius:6px;padding:.4rem .7rem;font-size:.82rem;font-weight:600;cursor:pointer}
 .msg-desplegar:hover{color:#141414;border-color:#141414}
+/* D: el menu de TRES PUNTOS (post, comentario, listados del foro). */
+.post-topbar{align-items:center;gap:.35rem}
+.kebab{position:relative;display:inline-block}
+.kebab summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;
+  justify-content:center;width:2rem;height:2rem;border-radius:50%;color:#141414}
+.kebab summary::-webkit-details-marker{display:none}
+.kebab summary:hover,.kebab[open] summary{background:var(--paper);outline:1px solid var(--line)}
+.kebab-menu{position:absolute;right:0;top:calc(100% + .25rem);z-index:45;list-style:none;margin:0;
+  padding:.3rem;background:#fff;border:1px solid #141414;border-radius:8px;box-shadow:var(--shadow);
+  min-width:230px;max-width:min(360px,92vw);text-align:left;font-size:.86rem}
+.kebab-menu li{margin:0}
+.kebab-menu form{margin:0}
+.kebab-menu > li > a,.kebab-menu > li > button,.kebab-menu > li > form > button{display:flex;align-items:center;
+  gap:.45rem;width:100%;text-align:left;padding:.42rem .7rem;text-decoration:none;color:#141414;
+  background:none;border:0;font:inherit;font-weight:600;font-size:.86rem;border-radius:5px;cursor:pointer;line-height:1.3}
+.kebab-menu > li > a:hover,.kebab-menu > li > button:hover,.kebab-menu > li > form > button:hover{background:#141414;color:#fff}
+.kebab-sep{border-top:1px solid var(--line);margin:.25rem .4rem}
+.kebab-form{display:flex;flex-direction:column;gap:.3rem;padding:.4rem .7rem;border-top:1px dotted var(--line)}
+.kebab-form label{display:flex;flex-direction:column;gap:.25rem;margin:0;font-weight:600;font-size:.84rem;color:#141414}
+.kebab-form input,.kebab-form select{max-width:100%;width:100%;font-size:.84rem;padding:.3rem .45rem;margin:0}
+.kebab-form button.mini{align-self:flex-start;color:#fff}
+.kebab-form button.mini.danger{background:#8a1111}
+.kebab-msg summary{width:1.6rem;height:1.6rem}
+.kebab-msg .kebab-menu{font-size:.82rem;min-width:210px}
+.kebab-compact summary{width:1.7rem;height:1.7rem}
+.post-list li{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.post-list li > a:first-child{flex:1;min-width:0}
+.post-list li .kebab{margin-left:auto}
+.msg-deleted .thread-body.msg-borrado{font-style:italic}
+.comentarios-cerrados{text-align:center;margin:.8rem 0}

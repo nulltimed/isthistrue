@@ -310,7 +310,7 @@ def wiki_search(request):
             Q(text_original__icontains=q) | Q(title__icontains=q) |
             Q(what_evidence_says__icontains=q)).distinct()
             .order_by('-updated_at')[:40])
-        res['posts'] = list(Post.objects.filter(title__icontains=q)
+        res['posts'] = list(Post.objects.publicos().filter(title__icontains=q)
                             .exclude(is_adult=True).order_by('-created_at')[:20])
         res['temas'] = list(Category.objects.filter(name__icontains=q)
                             .order_by('name')[:10])
@@ -338,7 +338,7 @@ def wiki_suggest(request):
             out.append({'tipo': 'claim',
                         'label': (c.title or c.text_original)[:90],
                         'url': f'/wiki/claim/{c.slug or c.pk}/'})
-        for post in Post.objects.filter(title__icontains=q)                               .exclude(is_adult=True).order_by('-created_at')[:3]:
+        for post in Post.objects.publicos().filter(title__icontains=q)                               .exclude(is_adult=True).order_by('-created_at')[:3]:
             out.append({'tipo': 'video', 'label': (post.title or post.url)[:90],
                         'url': post.get_absolute_url()})
         for cat in Category.objects.filter(name__icontains=q)[:2]:
@@ -383,7 +383,7 @@ def temas_activos():
     from apps.analysis.models import Category, Post
     filas = []
     for cat in Category.objects.all():
-        n = Post.objects.filter(topic=cat.slug,
+        n = Post.objects.publicos().filter(topic=cat.slug,
                                 transcript_segments__claims__isnull=False) \
                         .distinct().count()
         if n:
@@ -400,7 +400,7 @@ def tema_page(request, slug):
     cat = Category.objects.filter(slug=slug).first()
     if not cat:
         raise Http404
-    posts = list(Post.objects.filter(topic=slug,
+    posts = list(Post.objects.publicos().filter(topic=slug,
                                      transcript_segments__claims__isnull=False)
                  .exclude(is_adult=True).distinct().order_by('-created_at'))
     if not posts:
@@ -498,6 +498,11 @@ def video_analysis(request, slug):
     if not post and slug.isdigit():
         post = Post.objects.filter(pk=int(slug)).first()
     if not post or post.is_adult:
+        raise Http404
+    # 5.23-D/E: censurados y pendientes no existen para el publico
+    es_staff = request.user.is_authenticated and (
+        request.user.is_staff or request.user.level == 'MOD')
+    if (post.censored or post.status == 'PENDING_APPROVAL') and not es_staff:
         raise Http404
     filas = []
     vistos = set()

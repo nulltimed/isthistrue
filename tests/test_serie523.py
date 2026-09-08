@@ -210,3 +210,131 @@ class Parche523C_KarmaConFlechas(TestCase):
         self.assertIn('karma_fold_threshold', claves)
         po = open('README.md', encoding='utf-8').read()
         self.assertIn('ENMENDADO 2026-09-08', po)
+
+
+class Parche523D_MenuTresPuntos(TestCase):
+    """D (orden de David): el menu ⋮ en post y comentarios; censura =
+    inaccesible para todos, sin analisis y reversible; acciones clasicas de
+    foro con bocadillos."""
+
+    def _mod(self):
+        return make_user(username='mod523', email='mod523@example.org', is_staff=True)
+
+    def _post(self):
+        autor = make_user(username='aut523d', email='aut523d@example.org')
+        post = Post.objects.create(author=autor, url='https://youtu.be/d523',
+                                   platform='youtube', title='Menu', topic='politica',
+                                   author_opinion='hola')
+        from apps.forum.machina_glue import create_topic_for_post, get_topic_for_post
+        create_topic_for_post(post)
+        return autor, post, get_topic_for_post(post).posts.first()
+
+    def test_todos_ven_copiar_y_reportar_y_solo_el_staff_lo_demas(self):
+        _a, post, _m = self._post()
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('class="kebab', html)
+        self.assertIn('copiar-enlace', html)
+        self.assertIn('Reportar', html)
+        self.assertNotIn('Cerrar comentarios', html)
+        self.client.force_login(self._mod())
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        for opcion in ('Cerrar comentarios', 'Fijar arriba', 'Contenido sensible',
+                       'Mover de categoría', 'Editar título', 'Censurar',
+                       'Notas de moderación', 'Eliminar post'):
+            self.assertIn(opcion, html, opcion)
+        self.assertIn('data-tip=', html)
+        # Reportar llega al formulario DSA con la URL rellena
+        r = self.client.get('/reclamaciones/?url=https://x/post/1/')
+        self.assertIn('value="https://x/post/1/"', r.content.decode())
+
+    def test_cerrar_comentarios_fijar_sensible_titulo_y_mover(self):
+        from apps.analysis.models import Category
+        _a, post, _m = self._post()
+        mod = self._mod()
+        otro = make_user(username='otro523', email='otro523@example.org', email_verified=True)
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/comentarios/')
+        post.refresh_from_db()
+        self.assertTrue(post.comments_closed)
+        self.client.force_login(otro)
+        self.client.post(f'/post/{post.pk}/reply/', {'content': 'no deberia entrar'})
+        from apps.forum.machina_glue import get_topic_for_post
+        self.assertEqual(get_topic_for_post(post).posts.count(), 1, 'cerrado = sin respuestas')
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('Comentarios cerrados', html)
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/fijar/')
+        self.client.post(f'/post/{post.pk}/sensible/')
+        self.client.post(f'/post/{post.pk}/titulo/', {'title': 'Titulo corregido'})
+        Category.objects.get_or_create(slug='ciencia', defaults={'name': 'Ciencia'})
+        self.client.post(f'/post/{post.pk}/mover/', {'topic': 'ciencia'})
+        post.refresh_from_db()
+        self.assertTrue(post.pinned)
+        self.assertTrue(post.is_adult)
+        self.assertEqual(post.adult_flag_source, 'mod')
+        self.assertEqual(post.title, 'Titulo corregido')
+        self.assertEqual(post.topic, 'ciencia')
+        self.assertEqual(get_topic_for_post(post).subject, 'Titulo corregido')
+        from apps.panel.models import AuditLog
+        self.assertGreaterEqual(AuditLog.objects.filter(user=mod).count(), 5)
+
+    def test_censurado_es_inaccesible_sin_analisis_y_reversible(self):
+        _a, post, _m = self._post()
+        mod = self._mod()
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/censurar/', {'reason': 'insultos'})
+        post.refresh_from_db()
+        self.assertTrue(post.censored)
+        # el staff lo ve marcado
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('Este post está censurado', html)
+        # el publico: fuera
+        self.client.logout()
+        r = self.client.get(post.get_absolute_url())
+        self.assertEqual(r.status_code, 403)
+        self.assertIn('Post censurado por moderación', r.content.decode())
+        self.assertNotIn('Ver de todos modos', r.content.decode())
+        for url in ('/', '/foro/', '/buscar/?q=Menu'):
+            self.assertNotIn('Menu</a>', self.client.get(url).content.decode(), url)
+        # sin analisis
+        from apps.analysis.tasks import run_cheap_phase
+        self.assertEqual(run_cheap_phase(post.pk), 'skipped')
+        # reversible
+        self.client.force_login(mod)
+        self.client.post(f'/post/{post.pk}/censurar/')
+        post.refresh_from_db()
+        self.assertFalse(post.censored)
+        self.client.logout()
+        self.assertEqual(self.client.get(post.get_absolute_url()).status_code, 200)
+
+    def test_eliminar_comentario_es_reversible_y_solo_lo_ve_el_staff(self):
+        _a, post, m = self._post()
+        mod = self._mod()
+        self.client.force_login(mod)
+        self.client.post(f'/mensaje/{m.pk}/eliminar/')
+        m.refresh_from_db()
+        self.assertFalse(m.approved)
+        html = self.client.get(post.get_absolute_url() + '?pagina=1').content.decode()
+        self.assertIn('Comentario eliminado por moderación', html)
+        self.assertIn('Restaurar', html)
+        self.client.logout()
+        html = self.client.get(post.get_absolute_url() + '?pagina=1').content.decode()
+        self.assertNotIn('Comentario eliminado', html)
+        self.assertNotIn(f'id="msg-{m.pk}"', html)
+        self.client.force_login(mod)
+        self.client.post(f'/mensaje/{m.pk}/eliminar/')
+        m.refresh_from_db()
+        self.assertTrue(m.approved)
+
+    def test_un_usuario_normal_no_puede_usar_el_menu_de_staff(self):
+        _a, post, m = self._post()
+        u = make_user(username='nor523', email='nor523@example.org')
+        self.client.force_login(u)
+        for url in (f'/post/{post.pk}/comentarios/', f'/post/{post.pk}/fijar/',
+                    f'/post/{post.pk}/sensible/', f'/post/{post.pk}/titulo/',
+                    f'/post/{post.pk}/mover/', f'/mensaje/{m.pk}/eliminar/'):
+            self.client.post(url, {'title': 'x', 'topic': 'ciencia'})
+        post.refresh_from_db(); m.refresh_from_db()
+        self.assertFalse(post.comments_closed or post.pinned or post.is_adult)
+        self.assertEqual(post.title, 'Menu')
+        self.assertTrue(m.approved)
