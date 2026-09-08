@@ -289,3 +289,23 @@ fecha y commit de cabecera, §10 "Estado EXACTO", las reglas/trampas nuevas de l
 permitir que otra instancia de Claude Code (Fable 5) retome el trabajo como si nada. La
 instrucción de repetir esta entrega en cada parche queda escrita DENTRO del handoff, a
 perpetuidad.
+
+## Lecciones de la serie 5.23 (2026-09-08/09)
+- 🔴 **Un `ARG` con un secreto queda GRABADO en el historial de la imagen** (config blob,
+  legible con un GET anónimo si el paquete ghcr es público). El token de Hugging Face estuvo
+  publicado del 26-08 al 08-09. Secretos de build SOLO con `RUN --mount=type=secret` (BuildKit);
+  hay test que prohíbe `ARG HF_TOKEN` en `Dockerfile.slim`. En RunPod, los secretos van como
+  Secret referenciado (`{{ RUNPOD_SECRET_X }}`), nunca como valor en `env`.
+- **Compartir a Telegram se conserva por orden literal de David («déjalos»)**: es un enlace
+  de compartir, no un canal de la plataforma. La línea roja de Telegram sigue íntegra para
+  bots, notificaciones o cualquier integración.
+- **Un `msgid` duplicado en `django.po` rompe `compilemessages` en silencio** y los tests de
+  idioma pasan a ERROR (no FAIL). Antes de correr la suite, comprobar duplicados.
+- **`docker compose run` hereda `env_file`**: el banco local (`/home/claude/istt-test.sh`,
+  copia del workspace en `/opt/isthistrue-dev` + db/redis del espejo) hace `unset MODEL_*`;
+  sin eso, los costes de las etapas salen con Sonnet y el test 4.4-G falla solo en local.
+- **Censurado = inaccesible para todos (403 con motivo), sin análisis, reversible**; pendiente
+  de aprobación = no existe para el público. Todo listado nuevo pasa por
+  `Post.objects.publicos()`.
+- **Las decisiones congeladas del README las reabre SOLO David**, y quedan enmendadas con su
+  literal y fecha (votos negativos y subforos en árbol, 2026-09-08).

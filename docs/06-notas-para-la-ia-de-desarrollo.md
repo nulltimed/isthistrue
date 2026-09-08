@@ -1589,3 +1589,81 @@ config+apps+tests.
   = juicio de valor); 3 tozudos json_parse (#54-56) anotados. Semáforo final:
   57🟢 33🟡 8🔴 6💭 3🔍 2👁. Fleco nuevo: la vista dio 400 en qwen3-vl-plus
   (post 4, chat/completions) — investigar límite de imágenes/tamaño.
+
+## 85. Serie 5.23: RunPod, transcripción, karma, menú ⋮, subforos, viajero, wiki y logs (2026-09-08/09)
+
+Informe para David en `docs/88`. Ocho commits (`808bb18`→`cb66472`), 523 tests. Registro técnico:
+
+- **A · RunPod.** `gpu._run_job(ep, payload, etiqueta, reintentos=1)` envuelve a
+  `_run_job_una_vez` → (output, motivo); un fallo reintenta UNA vez en la GPU antes de caer a
+  CPU; el `error` del `status` de RunPod (antes se tiraba) va al log y a
+  `costs.record_failure` (apunte a CERO con concepto `… — fallo`); `costs.gpu_jobs_month` →
+  (ok, fallos) en `/gastos/`. **Lección de seguridad**: `ARG HF_TOKEN` + `RUN … $HF_TOKEN`
+  queda GRABADO en el historial de la imagen (config blob), y el paquete ghcr era público:
+  cualquiera leía el token. `Dockerfile.slim` usa `# syntax=docker/dockerfile:1` +
+  `RUN --mount=type=secret,id=hf_token`. Hay test que prohíbe el ARG. La reconstrucción y el
+  push a ghcr requieren PAT `write:packages` (pendiente de David).
+- **B · Transcripción/cabecera/compartir.** Causa raíz del «la caja no se mueve»:
+  `.transcript-col .transcript-box{max-height:none;overflow:visible}` (4.3-A.4) — la caja no
+  era contenedor de scroll y `box.scrollTo` no tenía efecto. Ahora
+  `.transcript-col{overflow:visible}` y la caja `max-height:calc(100vh - 9.5rem);overflow-y:auto`.
+  Globos con leyenda (`Verificado/Con matices/Falso/Sin respuesta`) centrados;
+  `partials/share.html` + `static/js/menus.js` (clic-fuera/Escape, portapapeles con
+  salvavidas); bocadillos `[data-tip]::after` en CSS puro.
+- **C · Karma.** `Vote.value` ±1 y `MessageVote` (forum_local/0004); `apps/forum/karma.py`
+  (`aplicar_voto` alterna/cambia y mueve `User.karma` con `F()`; `decorar_mensajes` en 2
+  consultas; `umbrales()` del panel `karma_fade_threshold`/`karma_fold_threshold`). Rutas
+  `/post/<pk>/votar/<up|down>/` y `/mensaje/<id>/votar/<dir>/`; `/upvote/` histórica delega.
+  Trending, «más votados» (portada y foro) y `maybe_trigger_opus_rescan` filtran `value=1`.
+  Hallazgo: NADA movía `karma` antes. README enmendado (dos decisiones congeladas reabiertas
+  por David con su literal).
+- **D · Menú ⋮.** `partials/post_menu.html` (con `compact` para listados) y kebab por mensaje
+  en `_thread_msg_list.html`. Vistas nuevas: `post_toggle_comments`, `post_toggle_pin`,
+  `post_toggle_adult`, `post_move_category`, `post_edit_title` (actualiza el `subject` del
+  topic machina), `message_delete_toggle` (aprobado↔no aprobado; `_thread_page(...,
+  incluir_borrados=is_mod)` enseña el muñón restaurable al staff). Censura: `post_detail`
+  devuelve `analysis/censurado.html` 403 al público; `Post.objects.publicos()` (excluye
+  censurados y PENDING_APPROVAL) en portada, foro, buscador, sala +18, wiki y sugerencias;
+  `run_cheap_phase`/`launch_queued`/`try_autopilot` saltan censurados. `complaint_form` acepta
+  `?url=`. Gestión del 5.20 queda como «Notas de moderación» (`#gestion-notas`); la llave
+  inglesa tiene `id="llave-inglesa"`.
+- **E · Subforos y aprobación.** `Category.parent` + `root()/tree()/elegibles()/ancestors()/
+  path_label()` (analysis/0022 crea `principal` y cuelga las 12); `Post.pending_category`,
+  `approved_by/at`, `comments_closed`, `pinned`; estado `PENDING_APPROVAL`. `submit` exige
+  categoría del árbol o propuesta; con propuesta → pendiente + `_avisar_staff_pendiente`
+  (`notify(kind='moderation')`); la cola de salida común es `_arrancar_post(request, post,
+  voluntary_offtopic, comprobar_cupo)` (la usa también la aprobación). `/pendiente/` y
+  `/pendiente/<slug>/` (staff): editar título/etiquetas, encajar o crear con padre (slug único
+  con `-n`), aprobar → NEW + `_arrancar_post`; rechazar → delete + aviso. `foro_home` agrupa
+  por categoría (`Category.tree()`, `_descendientes`); `/foro/c/<slug>/` (antes de machina en
+  `config/urls.py`). Panel `/panel/categorias/` (crear/renombrar/mover/borrar vacías; la raíz
+  intocable; anti-ciclo con `ancestors()`). Context processor `pendientes_aprobacion`
+  (campana ⏳ y pestaña). El bibliotecario LLM del 5.1-D (`_categoria_contrastada`) queda sin
+  uso en `submit` (sus dos tests reescritos a la aprobación humana).
+- **F · Modo viajero.** `static/js/viajero.js`: mueve los NODOS `.speakers-col` y
+  `.transcript-col` a `<aside class="viajero-panel">` fijos (`#viajero-izq/#viajero-der`) y
+  los devuelve a la rejilla al apagar; el iframe del vídeo NUNCA se mueve (moverlo lo
+  reinicia). `localStorage['istt-viajero']`; `body.viajero main.wide .post{padding…}` estrecha
+  los mensajes; `MIN_ANCHO=1100` (por debajo la rejilla ya es de una columna). La caja de
+  transcripción sigue siendo el contenedor de scroll dentro del panel (karaoke intacto).
+- **G · Wiki del vídeo.** La rejilla se EXTRAJO a `partials/media_grid.html` (post y wiki, una
+  plantilla). `wiki.views.video_analysis` usa `analysis.views._post_context` y construye
+  `grupos` (RED/AMBER/GREEN/SIN) con hablante, t y claim; acordeón `<details>` con 8 filas y
+  «Ver las N», chips por hablante (`data-spk`), fila desplegable con evidencia + referencias +
+  «Ver en el post ?t=» + ficha (el 5.4-C se conserva). Dos tests antiguos leían
+  `post_body.html` y ahora leen `media_grid.html`.
+- **H · Logs.** `panel.SystemLog` (panel/0005) + `config/logdb.DBLogHandler` (reentrada por
+  hilo, ignora `django.db`/httpx/…, jamás lanza, `role()` de `ISTT_ROLE` o argv);
+  `LOGGING` raíz INFO → consola+db; `CELERY_WORKER_HIJACK_ROOT_LOGGER=False` (si no, el worker
+  pierde el handler). `/panel/logs/` (`LOG_TIPOS`, `_logs_filtrados`, paginación 200, textarea
+  oculto para «Copiar», POST `limpiar` borra los filtrados y deja AuditLog; auditoría
+  intocable). `purge_system_logs` diario (`logs_retention_days`). `ISTT_ROLE` en ambos
+  compose.
+- **Trampas nuevas de esta serie**: (1) un `msgid` DUPLICADO en el `.po` rompe
+  `compilemessages` EN SILENCIO y los 10 tests de idioma pasan a ERROR (locale middleware sin
+  `.mo`) — comprobar duplicados antes de correr; (2) `docker compose run` hereda el `env_file`
+  del compose (el `.env` del espejo): el banco local tiene que `unset MODEL_*` o los costes
+  del test 4.4-G salen con Sonnet; (3) `{% for n in 'a b'.split %}` NO existe en Django
+  (Could not parse the remainder) — pasar la lista desde la vista; (4) `'Molinos' in html`
+  daba falso positivo por el `value=` del buscador — comprobar la URL del post, no el título;
+  (5) `docker cp` como `i` no puede leer mi scratchpad (`/tmp/claude-…`): copiar vía `/opt`.
