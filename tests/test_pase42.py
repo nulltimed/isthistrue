@@ -5923,11 +5923,12 @@ class Parche510_Serie(TestCase):
         html = self.client.get('/').content.decode()
         self.assertIn('0,50', html)
 
-    def test_paypal_con_locale_y_salvavidas(self):
+    def test_paypal_sin_sdk_en_el_navegador(self):
+        # 5.24-A (orden de David) supersede 5.10-E/5.11-A/5.17: el boton del SDK
+        # abria una ventana en blanco; ahora el pago va por el SERVIDOR.
         base = open('templates/base.html').read()
-        # 5.11-A supersede el condicional: locale FIJO es_ES (en_US no pintaba).
-        self.assertIn('&locale=es_ES', base)
-        self.assertIn(".catch(function", base)
+        self.assertNotIn('paypal.com/sdk/js', base)
+        self.assertIn("{% url 'donation_start' %}", base)
 
 
 class Parche511_Serie(TestCase):
@@ -5936,10 +5937,13 @@ class Parche511_Serie(TestCase):
     vigilante del hueco vacio; B=la ficha del claim carga el video en t-1."""
 
     def test_paypal_locale_fijo_y_vigilante(self):
+        # 5.24-A: el locale viaja ahora en el pedido del servidor (es-ES/en-US),
+        # no en un SDK; el banner ya no tiene hueco que vigilar.
         base = open('templates/base.html').read()
-        self.assertIn('&locale=es_ES', base)
-        self.assertNotIn('en_US', base, 'en_US dejaba el boton sin pintar')
-        self.assertIn('!z.children.length', base)
+        self.assertNotIn('paypal.com/sdk/js', base)
+        import inspect
+        from apps.analysis import views
+        self.assertIn("'en-US' if", inspect.getsource(views.donation_start))
 
     def test_la_ficha_del_claim_carga_el_video_un_segundo_antes(self):
         from apps.wiki.models import Claim, ClaimAppearance
@@ -6146,11 +6150,12 @@ class Parche515_VerificacionPayPal(TestCase):
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             self.assertIsNone(verify_order('X', 5))
 
-    def test_el_sdk_usa_el_client_id_del_env(self):
-        from django.test import override_settings
-        with override_settings(PAYPAL_CLIENT_ID='MI-CLIENT-ID-515'):
-            html = self.client.get('/').content.decode()
-        self.assertIn('client-id=MI-CLIENT-ID-515', html)
+    def test_el_pedido_lo_crea_el_servidor_con_las_credenciales_del_env(self):
+        # 5.24-A: ya no hay SDK con client-id en el HTML; el pedido se crea en el
+        # servidor con PAYPAL_CLIENT_ID/SECRET (create_order) — probado en test_serie524.
+        html = self.client.get('/').content.decode()
+        self.assertNotIn('client-id=', html)
+        self.assertIn('/donaciones/iniciar/', html)
 
 
 class Parche516_DRM(TestCase):
@@ -6176,12 +6181,14 @@ class Parche517_DonarUX(TestCase):
         self.assertNotIn('aria-label="{% trans \'Otra cantidad en euros (mínimo 1)\' %}" hidden>',
                          base, 'el campo va siempre visible')
 
-    def test_el_overlay_tiene_salida(self):
+    def test_ya_no_hay_overlay_que_cerrar(self):
+        # 5.24-A (orden de David): sin SDK no hay overlay ni ventana en blanco;
+        # el boton ✕ del 5.17-C y su CSS se retiran.
         base = open('templates/base.html').read()
-        self.assertIn('istt-pp-cerrar', base)
-        self.assertIn("e.key === 'Escape'", base)
+        self.assertNotIn('istt-pp-cerrar', base)
+        self.assertNotIn('paypal.Buttons', base)
         css = open('static/css/main.css').read()
-        self.assertIn('#istt-pp-cerrar', css)
+        self.assertNotIn('#istt-pp-cerrar', css)
 
 
 class Parche518_SinFusibleParaElSuper(TestCase):

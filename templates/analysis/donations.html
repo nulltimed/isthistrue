@@ -6,10 +6,15 @@
 <div class="progress"><div style="width:{% widthratio donated goal 100 %}%"></div></div>
 
 <h2>{% trans "Donación puntual" %}</h2>
-<p class="hint">{% trans "Elige 5 €, 10 € u otra cantidad en el banner de arriba y paga con el botón de PayPal — sin registrarte en ningún sitio nuevo." %}</p>
+{# 5.24-A (orden de David): sin ventana emergente — pago en paypal.com y vuelta. #}
+<p class="hint">{% trans "Elige la cantidad y pulsa «Donar con PayPal»: te llevamos a la página segura de PayPal a pantalla completa y volvemos aquí al terminar. Sin registrarte en ningún sitio nuevo." %}</p>
+<form method="post" action="{% url 'donation_start' %}" class="donar-pagina">{% csrf_token %}
+  <label>{% trans "Cantidad (euros, mínimo 1)" %}<input type="number" name="amount" min="1" step="0.01" inputmode="decimal" value="5" required style="max-width:140px"></label>
+  <button>{% trans "Donar con PayPal" %}</button>
+</form>
 {% if paypal_url %}
-<p><a href="{{ paypal_url }}" rel="noopener" target="_blank"><button>{% trans "O dona desde la página clásica de PayPal" %}</button></a></p>
+<p class="hint"><a href="{{ paypal_url }}" rel="noopener" target="_blank">{% trans "O dona desde la página clásica de PayPal" %}</a></p>
 {% endif %}
 
-<p class="hint" style="margin-top:1.2rem">{% trans "Transparencia: la web carga el software del botón de donación puntual de PayPal en todas las páginas (banner de la cabecera). Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera." %}</p>
+<p class="hint" style="margin-top:1.2rem">{% trans "Transparencia: la web ya no carga ningún programa de PayPal en tus páginas; el pago se hace en paypal.com y nuestro servidor lo confirma con PayPal antes de anotarlo. Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera." %}</p>
 {% endblock %}

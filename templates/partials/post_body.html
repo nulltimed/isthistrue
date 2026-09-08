@@ -12,33 +12,13 @@
       {# 5.13-C (orden de David): el apadrinamiento va ATADO a este post — el #}
       {# boton dona la cantidad EXACTA y la donacion queda ligada al analisis. #}
       <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} €: quedará atada a ESTE análisis, que saldrá de la cola AL INSTANTE.{% endblocktrans %}</p>
-      <div id="paypal-apadrinar" data-post="{{ post.pk }}" data-eur="{{ queue_sponsor }}"></div>
-      <script>
-      (function () {
-        var caja = document.getElementById('paypal-apadrinar');
-        if (!caja || !window.paypal) return;
-        var eur = parseFloat((caja.dataset.eur || '0').replace(',', '.')).toFixed(2);
-        paypal.Buttons({
-          style: { shape: 'pill', color: 'gold', layout: 'horizontal', height: 35, tagline: false },
-          createOrder: function (d, a) {
-            return a.order.create({ purchase_units: [{ amount: { value: eur, currency_code: 'EUR' } }] });
-          },
-          onApprove: function (d, a) {
-            return a.order.capture().then(function () {
-              try {
-                fetch('{% url "donation_capture" %}', { method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ amount: eur, order: d.orderID || '',
-                                         post: caja.dataset.post }) });
-              } catch (e) {}
-              caja.innerHTML = '<strong>🎉 {% trans "¡Apadrinado! El análisis sale de la cola ahora mismo." %}</strong>';
-            });
-          }
-        }).render('#paypal-apadrinar').catch(function () {
-          caja.innerHTML = '<a class="btn" href="/donaciones/">{% trans "Apadrinar este análisis" %}</a>';
-        });
-      })();
-      </script>
+      {# 5.24-A (orden de David): sin SDK ni ventana emergente — el servidor crea #}
+      {# el pedido atado al post y PayPal vuelve a /donaciones/retorno/. #}
+      <form method="post" action="{% url 'donation_start' %}" class="apadrinar-form">{% csrf_token %}
+        <input type="hidden" name="amount" value="{{ queue_sponsor|stringformat:'s'|cut:',' }}">
+        <input type="hidden" name="post" value="{{ post.pk }}">
+        <button class="apadrinar-btn" data-tip="{% trans 'Pagas en la página segura de PayPal y vuelves aquí: el análisis arranca al instante.' %}">💛 {% blocktrans with d=queue_sponsor %}Apadrinar con {{ d }} € por PayPal{% endblocktrans %}</button>
+      </form>
       <p class="hint">{% trans "El proyecto no cobra por publicar: la donación es voluntaria y el vídeo se analizará igualmente cuando llegue su turno." %}</p>
       {% if is_mod %}
       <form method="post" action="{% url 'post_greenlight' post.pk %}">{% csrf_token %}

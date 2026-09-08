@@ -59,7 +59,9 @@
     {% trans "Si donas, estos cupos suben." %}
     {% if quota_banner.goal_missing %}<a href="{% url 'spending' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'spending' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
   </div>
-  <div class="donate-inline">
+  {# 5.24-A (orden de David): sin boton del SDK ni ventana emergente. El #}
+  {# formulario manda al servidor, que crea el pedido y lleva a paypal.com. #}
+  <form class="donate-inline" method="post" action="{% url 'donation_start' %}">{% csrf_token %}
     <fieldset class="donate-amounts">
       <legend class="sr-only">{% trans "Cantidad a donar" %}</legend>
       <label><input type="radio" name="donate-amount" value="5" checked><span>5 €</span></label>
@@ -67,116 +69,49 @@
       <label><input type="radio" name="donate-amount" value="other"><span>{% trans "Otra cantidad" %}</span></label>
       <input type="number" id="donate-other" min="1" step="0.01" inputmode="decimal" placeholder="€" aria-label="{% trans 'Otra cantidad en euros (mínimo 1)' %}">
     </fieldset>
-    <div id="paypal-banner-btn" class="paypal-banner-btn"></div>
-  </div>
-  <noscript>
-    {% if quota_banner.paypal_url %}<a class="hint" href="{{ quota_banner.paypal_url }}" rel="noopener">{% trans "Donar por PayPal (la cantidad se elige en PayPal)" %}</a>
-    {% else %}<a class="hint" href="{% url 'donations' %}">{% trans "Donar" %}</a>{% endif %}
-  </noscript>
+    <input type="hidden" name="amount" id="donate-amount-final" value="5">
+    <button class="donar-btn" data-tip="{% trans 'Te llevamos a la página segura de PayPal a pantalla completa y volvemos aquí al terminar. Sin ventanas emergentes.' %}">{% trans "Donar con PayPal" %}</button>
+  </form>
   <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script src="https://www.paypal.com/sdk/js?client-id={{ quota_banner.paypal_client_id }}&currency=EUR&intent=capture&locale=es_ES"></script>
 <script>
 (function () {
-  if (!window.paypal || !document.getElementById('paypal-banner-btn')) return;
+  var form = document.querySelector('form.donate-inline');
+  if (!form) return;
   var other = document.getElementById('donate-other');
-  var radios = document.querySelectorAll('input[name="donate-amount"]');
+  var final = document.getElementById('donate-amount-final');
+  var radios = form.querySelectorAll('input[name="donate-amount"]');
+  function elegido() {
+    var r = form.querySelector('input[name="donate-amount"]:checked');
+    return r ? r.value : '5';
+  }
+  function sincronizar() {
+    var v = elegido();
+    if (v === 'other') v = (other.value || '').replace(',', '.');
+    final.value = v;
+  }
   Array.prototype.forEach.call(radios, function (r) {
-    r.addEventListener('change', function () {
-      var sel = document.querySelector('input[name="donate-amount"]:checked').value;
-      if (sel === 'other') other.focus();
-    });
+    r.addEventListener('change', function () { if (elegido() === 'other') other.focus(); sincronizar(); });
   });
-  /* 5.17-A (reporte de David): clicar o teclear en el campo numerico
-   * SELECCIONA «Otra cantidad» — antes se donaba lo que estuviera marcado. */
+  /* 5.17-A (reporte de David): clicar o teclear en el campo numerico SELECCIONA «Otra cantidad». */
   ['focus', 'input'].forEach(function (ev) {
     other.addEventListener(ev, function () {
-      var r = document.querySelector('input[name="donate-amount"][value="other"]');
+      var r = form.querySelector('input[name="donate-amount"][value="other"]');
       if (r && !r.checked) r.checked = true;
+      sincronizar();
     });
   });
-  function amount() {
-    var v = document.querySelector('input[name="donate-amount"]:checked').value;
-    if (v === 'other') v = (other.value || '').replace(',', '.');
-    var n = parseFloat(v);
-    return (isFinite(n) && n >= 1) ? n.toFixed(2) : null;
-  }
-  paypal.Buttons({
-    style: { shape: 'pill', color: 'blue', layout: 'horizontal', label: 'donate', height: 35, tagline: false },
-    onClick: function (data, actions) {
-      if (!amount()) {
-        other.hidden = false; other.focus();
-        other.setCustomValidity('{% trans "Cantidad mínima: 1 €" %}'); other.reportValidity();
-        return actions.reject();
-      }
-      other.setCustomValidity('');
-      return actions.resolve();
-    },
-    createOrder: function (data, actions) {
-      return actions.order.create({ purchase_units: [{ amount: { value: amount(), currency_code: 'EUR' } }] });
-    },
-    onApprove: function (data, actions) {
-      return actions.order.capture().then(function (det) {
-        var m = document.querySelector('.qb-message');
-        if (m) { m.innerHTML = '🎉 {% trans "¡Donación recibida — gracias! Se sumará al depósito del mes." %}'; }
-        /* 5.3-A: anotar la donacion en el servidor (entra sin verificar). */
-        try {
-          fetch('{% url "donation_capture" %}', {method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({amount: amount(), order: data.orderID || ''})});
-        } catch (e) {}
-      });
+  form.addEventListener('submit', function (e) {
+    sincronizar();
+    var n = parseFloat(final.value);
+    if (!isFinite(n) || n < 1) {
+      e.preventDefault();
+      other.focus();
+      other.setCustomValidity('{% trans "Cantidad mínima: 1 €" %}'); other.reportValidity();
+      return;
     }
-  }).render('#paypal-banner-btn').catch(function () {
-    /* 5.10-E (reporte de David: en ingles desaparecia el boton): si el SDK
-     * no pinta, el hueco no se queda mudo — enlace clasico a /donaciones/. */
-    var z = document.getElementById('paypal-banner-btn');
-    if (z) z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
+    other.setCustomValidity('');
   });
-  /* 5.11-A (2o reporte de David): la inelegibilidad no lanza error — si a
-   * los 5 s el hueco sigue vacio, el enlace clasico ocupa su sitio. */
-  setTimeout(function () {
-    var z = document.getElementById('paypal-banner-btn');
-    if (z && !z.children.length) {
-      z.innerHTML = '<a class="hint" href="/donaciones/">PayPal</a>';
-    }
-  }, 5000);
-  /* 5.17-C (reporte de David): el overlay en-pagina de PayPal no ofrecia
-   * salida (solo recargar). Un ✕ propio por ENCIMA del overlay y la tecla
-   * Escape lo retiran. El clic-fuera literal no es posible: el iframe de
-   * PayPal cubre toda la pantalla y se traga los clics. */
-  function esDePaypal(el) {
-    var pinta = (el.id || '') + ' ' + (typeof el.className === 'string' ? el.className : '');
-    return /paypal|xcomponent|zoid/i.test(pinta);
-  }
-  function cerrarOverlayPaypal() {
-    Array.prototype.forEach.call(
-      document.querySelectorAll('body > div, body > iframe'), function (el) {
-        if (esDePaypal(el) && getComputedStyle(el).position === 'fixed') el.remove();
-      });
-    var b = document.getElementById('istt-pp-cerrar');
-    if (b) b.remove();
-  }
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') cerrarOverlayPaypal();
-  });
-  new MutationObserver(function () {
-    var hay = Array.prototype.some.call(
-      document.querySelectorAll('body > div, body > iframe'), function (el) {
-        return esDePaypal(el) && getComputedStyle(el).position === 'fixed';
-      });
-    var btn = document.getElementById('istt-pp-cerrar');
-    if (hay && !btn) {
-      btn = document.createElement('button');
-      btn.id = 'istt-pp-cerrar';
-      btn.type = 'button';
-      btn.textContent = '✕ {% trans "Cerrar" %}';
-      btn.onclick = cerrarOverlayPaypal;
-      document.body.appendChild(btn);
-    } else if (!hay && btn) {
-      btn.remove();
-    }
-  }).observe(document.body, { childList: true });
 })();
 </script>
 {% endif %}

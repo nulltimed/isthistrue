@@ -1702,6 +1702,119 @@ def donation_capture(request):
     return JsonResponse({'ok': True})
 
 
+# ---------------- 5.24-A (orden de David): donar sin ventana emergente ----------------
+
+def _importe_donacion(raw):
+    from decimal import Decimal, InvalidOperation
+    try:
+        v = Decimal(str(raw).replace(',', '.').strip())
+    except (InvalidOperation, ValueError):
+        return None
+    if not (Decimal('1') <= v <= Decimal('10000')):
+        return None
+    return v.quantize(Decimal('0.01'))
+
+
+def donation_start(request):
+    """El formulario del banner (o del apadrinamiento) llega aqui: el servidor
+    crea el pedido en PayPal y manda al usuario a pagar a paypal.com a pantalla
+    completa. Sin credenciales, enlace clasico de PayPal (paypal_url del panel)."""
+    from django.urls import reverse
+    from apps.panel.models import SystemSetting
+    from .paypal_check import create_order, credenciales_ok
+    if request.method != 'POST':
+        return redirect('donations')
+    cantidad = _importe_donacion(request.POST.get('amount', ''))
+    if cantidad is None:
+        messages.error(request, 'Cantidad no válida: mínimo 1 €.')
+        return redirect('donations')
+    post_ap = None
+    try:
+        pk_ap = int(request.POST.get('post') or 0)
+        post_ap = Post.objects.filter(pk=pk_ap).first() if pk_ap else None
+    except (TypeError, ValueError):
+        post_ap = None
+    if not credenciales_ok():
+        url = SystemSetting.get_str('paypal_url', '')
+        if url:
+            return redirect(url)
+        messages.error(request, 'PayPal no está configurado todavía.')
+        return redirect('donations')
+    locale = 'en-US' if getattr(request, 'LANGUAGE_CODE', 'es') == 'en' else 'es-ES'
+    order_id, approve = create_order(
+        cantidad, return_url=request.build_absolute_uri(reverse('donation_return')),
+        cancel_url=request.build_absolute_uri(reverse('donations')) + '?cancelado=1',
+        custom_id=f'post:{post_ap.pk}' if post_ap else 'donacion', locale=locale)
+    if not approve:
+        messages.error(request, 'PayPal no ha respondido; inténtalo en un minuto.')
+        return redirect(post_ap.get_absolute_url() if post_ap else 'donations')
+    from apps.panel.models import AuditLog
+    AuditLog.objects.create(user=request.user if request.user.is_authenticated else None,
+                            action='donation_started',
+                            detail=f'{cantidad} EUR pedido {order_id}'
+                                   + (f' post {post_ap.pk}' if post_ap else ''))
+    return redirect(approve)
+
+
+def donation_return(request):
+    """PayPal devuelve aqui con ?token=<pedido>. El servidor CAPTURA (asi la
+    donacion nace VERIFICADA: la ha cobrado el propio servidor), la anota una
+    sola vez y, si estaba atada a un post en cola, lanza su analisis
+    (5.14-A: «sin verificación, que se haga»)."""
+    from decimal import Decimal
+    from apps.panel.models import AuditLog, Donation
+    from .paypal_check import capture_order
+    order_id = (request.GET.get('token') or '')[:60]
+    if not order_id:
+        return redirect('donations')
+    nota = f'paypal-web:{order_id}'
+    previa = Donation.objects.filter(note=nota).first()
+    if previa:   # idempotente: recargar la pagina de retorno no duplica
+        messages.success(request, 'Esa donación ya estaba anotada. ¡Gracias!')
+        return redirect(previa.post.get_absolute_url() if previa.post else 'donations')
+    datos = capture_order(order_id)
+    if not datos or datos.get('status') not in ('COMPLETED', 'APPROVED') or not datos.get('amount'):
+        AuditLog.objects.create(user=None, action='donation_reject',
+                                detail=f'captura fallida: {order_id}')
+        messages.error(request, 'PayPal no ha confirmado el pago. Si te ha cobrado, '
+                                'escríbenos a webmaster@esestocierto.com con la referencia '
+                                f'{order_id}.')
+        return redirect('donations')
+    post_ap = None
+    custom = datos.get('custom_id') or ''
+    if custom.startswith('post:'):
+        try:
+            post_ap = Post.objects.filter(pk=int(custom.split(':', 1)[1])).first()
+        except ValueError:
+            post_ap = None
+    cantidad = Decimal(str(datos['amount'])).quantize(Decimal('0.01'))
+    d = Donation.objects.create(amount_eur=cantidad, method='PAYPAL', note=nota,
+                                verified=True, post=post_ap)
+    AuditLog.objects.create(user=None, action='donation_captured',
+                            detail=f'{cantidad} EUR pedido {order_id}'
+                                   + (f' post {post_ap.pk}' if post_ap else ''))
+    if post_ap and post_ap.status == 'AWAITING_BUDGET':
+        from django.db.models import Sum
+        from .services import needs_sponsorship
+        _, coste, _ = needs_sponsorship(post_ap)
+        atado = float(Donation.objects.filter(post=post_ap)
+                      .aggregate(s=Sum('amount_eur'))['s'] or 0)
+        if atado >= float(coste):
+            from .tasks import run_cheap_phase
+            post_ap.status = 'PENDING'
+            post_ap.save(update_fields=['status'])
+            run_cheap_phase.delay(post_ap.pk)
+            messages.success(request, f'¡Gracias! Donación de {cantidad} € recibida: el '
+                                      f'análisis apadrinado arranca ahora mismo.')
+            return redirect(post_ap.get_absolute_url())
+        messages.success(request, f'¡Gracias! Donación de {cantidad} € atada a este análisis '
+                                  f'(faltan {max(0.0, float(coste) - atado):.2f} € para cubrirlo).')
+        return redirect(post_ap.get_absolute_url())
+    messages.success(request, f'¡Gracias! Donación de {cantidad} € recibida y sumada al '
+                              f'depósito del mes.')
+    return redirect(post_ap.get_absolute_url() if post_ap else 'donations')
+
+
 def _base_mensual():
     from apps.panel.services import live_monthly_cap
     return live_monthly_cap()[2]

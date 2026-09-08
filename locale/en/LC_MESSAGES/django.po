@@ -2234,3 +2234,25 @@ msgstr "Nothing to show with these filters."
 
 msgid "Logs copiados al portapapeles"
 msgstr "Logs copied to the clipboard"
+
+# --- 5.24-A: donar por el servidor ---
+msgid "Te llevamos a la página segura de PayPal a pantalla completa y volvemos aquí al terminar. Sin ventanas emergentes."
+msgstr "We take you to PayPal's secure page full-screen and bring you back here when done. No pop-ups."
+
+msgid "Donar con PayPal"
+msgstr "Donate with PayPal"
+
+msgid "Pagas en la página segura de PayPal y vuelves aquí: el análisis arranca al instante."
+msgstr "You pay on PayPal's secure page and come back here: the analysis starts at once."
+
+msgid "Apadrinar con %(d)s € por PayPal"
+msgstr "Sponsor with €%(d)s via PayPal"
+
+msgid "Elige la cantidad y pulsa «Donar con PayPal»: te llevamos a la página segura de PayPal a pantalla completa y volvemos aquí al terminar. Sin registrarte en ningún sitio nuevo."
+msgstr "Choose the amount and press “Donate with PayPal”: we take you to PayPal's secure page full-screen and bring you back when done. No new sign-ups anywhere."
+
+msgid "Cantidad (euros, mínimo 1)"
+msgstr "Amount (euros, minimum 1)"
+
+msgid "Transparencia: la web ya no carga ningún programa de PayPal en tus páginas; el pago se hace en paypal.com y nuestro servidor lo confirma con PayPal antes de anotarlo. Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera."
+msgstr "Transparency: the site no longer loads any PayPal software into your pages; payment happens on paypal.com and our server confirms it with PayPal before recording it. Bizum donations (charity code) will arrive once the association is set up. Every donation is recorded and spending is public in the header."

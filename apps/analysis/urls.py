@@ -65,6 +65,9 @@ urlpatterns = [
     path('donaciones/', views.donations_page, name='donations'),
     # 5.3-A: registro de la captura PayPal del banner + transparencia de gastos
     path('donaciones/registrar/', views.donation_capture, name='donation_capture'),
+    # 5.24-A: el pago por el servidor — sin ventana emergente
+    path('donaciones/iniciar/', views.donation_start, name='donation_start'),
+    path('donaciones/retorno/', views.donation_return, name='donation_return'),
     path('gastos/', views.spending_page, name='spending'),
     path('gastos/<str:ym>/', views.spending_page, name='spending_month'),
     path('reclamaciones/', complaint_form, name='complaint_form'),
