@@ -2,6 +2,11 @@
 {% block title %}{% trans "Panel · Donaciones" %}{% endblock %}
 {% block content %}
 {% include 'partials/panel_nav.html' %}
+{# 5.24-D: el estado REAL de las credenciales de PayPal, a la vista de David. #}
+{% if paypal_estado == 'ok' %}<p class="reg-gate reg-open">🟢 {% trans "PayPal: credenciales válidas" %} ({{ paypal_modo }}). {% trans "El botón «Donar con PayPal» funciona con dinero real." %}</p>
+{% elif paypal_estado == 'sandbox' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Nadie puede donar hasta cambiarlas: en developer.paypal.com → Apps & Credentials → pestaña «Live» → copia Client ID y Secret al .env de producción y avisa al operador." %}</p>
+{% elif paypal_estado == 'invalidas' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env NO son válidas (401). Nadie puede donar hasta corregirlas." %}</p>
+{% else %}<p class="reg-gate">⚪ {% trans "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)." %}</p>{% endif %}
 <p class="hint">Registra aquí cada donación recibida: el depósito del mes crece al instante (hasta el techo duro).</p>
 <form method="post">{% csrf_token %}
   <label>Importe (€)<input name="amount" required placeholder="5.00"></label>

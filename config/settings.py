@@ -176,6 +176,9 @@ ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 # del boton se VERIFICA contra la API antes de anotarse o lanzar nada.
 PAYPAL_CLIENT_ID = os.getenv('PAYPAL_CLIENT_ID', '')
 PAYPAL_CLIENT_SECRET = os.getenv('PAYPAL_CLIENT_SECRET', '')
+# 5.24-D: 'live' (dinero real) o 'sandbox' (pruebas de PayPal). Las credenciales
+# de una app SANDBOX no valen en live (401): el panel de donaciones lo avisa.
+PAYPAL_MODE = os.getenv('PAYPAL_MODE', 'live').strip().lower()
 MODEL_CHEAP = os.getenv('MODEL_CHEAP', 'claude-haiku-4-5-20251001')
 MODEL_VERDICT = os.getenv('MODEL_VERDICT', 'claude-sonnet-4-6')
 MODEL_OFFTOPIC = os.getenv('MODEL_OFFTOPIC', MODEL_CHEAP)

@@ -363,7 +363,9 @@ def donations_panel(request):
     items = Donation.objects.filter(verified=True).order_by('-created_at')[:100]
     pendientes = Donation.objects.filter(verified=False).order_by('-created_at')
     return render(request, 'panel/donations.html',
-                  {'items': items, 'pendientes': pendientes})
+                  {
+        'paypal_estado': __import__('apps.analysis.paypal_check', fromlist=['comprobar']).comprobar(),
+        'paypal_modo': __import__('django.conf', fromlist=['settings']).settings.PAYPAL_MODE,'items': items, 'pendientes': pendientes})
 
 
 @staff_member_required

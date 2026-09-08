@@ -2372,3 +2372,19 @@ msgstr "Copied to the clipboard"
 
 msgid "Gastos"
 msgstr "Spending"
+
+# --- 5.24-D: estado de PayPal en el panel ---
+msgid "PayPal: credenciales válidas"
+msgstr "PayPal: valid credentials"
+
+msgid "El botón «Donar con PayPal» funciona con dinero real."
+msgstr "The “Donate with PayPal” button works with real money."
+
+msgid "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Nadie puede donar hasta cambiarlas: en developer.paypal.com → Apps & Credentials → pestaña «Live» → copia Client ID y Secret al .env de producción y avisa al operador."
+msgstr "PayPal: the .env credentials belong to the SANDBOX (test) app, not the LIVE app. Nobody can donate until they are replaced: developer.paypal.com → Apps & Credentials → “Live” tab → copy Client ID and Secret into the production .env and tell the operator."
+
+msgid "PayPal: las credenciales del .env NO son válidas (401). Nadie puede donar hasta corregirlas."
+msgstr "PayPal: the .env credentials are NOT valid (401). Nobody can donate until they are fixed."
+
+msgid "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)."
+msgstr "PayPal: no credentials in the .env; the button goes to the classic PayPal link (if any)."

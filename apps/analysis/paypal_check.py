@@ -12,7 +12,9 @@ from django.conf import settings
 
 logger = logging.getLogger('analysis.paypal')
 
-API = 'https://api-m.paypal.com'
+# 5.24-D: el host sigue al modo del .env (live por defecto; sandbox para pruebas).
+API = ('https://api-m.sandbox.paypal.com'
+       if getattr(settings, 'PAYPAL_MODE', 'live') == 'sandbox' else 'https://api-m.paypal.com')
 
 
 def _token():
@@ -139,3 +141,32 @@ def capture_order(order_id):
     except Exception as exc:
         logger.warning('PayPal: captura de %s fallo (%r)', order_id, exc)
         return None
+
+
+def comprobar():
+    """5.24-D: estado de las credenciales para el panel — 'sin' (no hay), 'ok',
+    'sandbox' (valen en el entorno de pruebas de PayPal pero NO en live: David pego
+    las de la app Sandbox) o 'invalidas'. Cacheado 10 min; nunca lanza."""
+    from django.core.cache import cache
+    if not credenciales_ok():
+        return 'sin'
+    v = cache.get('paypal_estado')
+    if v:
+        return v
+    auth = (settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET)
+    estado = 'invalidas'
+    try:
+        r = requests.post(f'{API}/v1/oauth2/token', auth=auth,
+                          data={'grant_type': 'client_credentials'}, timeout=10)
+        if r.status_code == 200:
+            estado = 'ok'
+        elif API.startswith('https://api-m.paypal.com'):
+            r2 = requests.post('https://api-m.sandbox.paypal.com/v1/oauth2/token', auth=auth,
+                               data={'grant_type': 'client_credentials'}, timeout=10)
+            if r2.status_code == 200:
+                estado = 'sandbox'
+    except Exception as exc:
+        logger.warning('PayPal: comprobacion de credenciales fallo (%r)', exc)
+        estado = 'invalidas'
+    cache.set('paypal_estado', estado, 600)
+    return estado

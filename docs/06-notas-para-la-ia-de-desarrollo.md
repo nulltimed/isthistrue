@@ -1701,3 +1701,10 @@ Informe en `docs/89`. Registro técnico:
   `getattr(settings, 'X', '')` en código que puede correr bajo override. Y las pruebas de
   cantidad: un vídeo de 62 min va a la COLA (needs_sponsorship) y no llama a
   `run_cheap_phase`; el test usa 5 min.
+- **5.24-D (caza en producción, 01:45)**: el pedido real devolvió 401 en `/v1/oauth2/token`. Prueba
+  cruzada desde el contenedor (sin imprimir claves): live 401 / sandbox 200 / invertidas 401 → las
+  credenciales del `.env` son de la app **Sandbox**. Nuevo `PAYPAL_MODE` (settings + .env.example) elige
+  el host; `paypal_check.comprobar()` → 'sin'|'ok'|'sandbox'|'invalidas' (cacheado 600 s) y el panel
+  de donaciones lo pinta con `reg-gate`. **Lección**: una integración de pago se prueba con un pedido
+  REAL antes de darla por buena — el 5.15 se verificó solo con mocks y un curl inventado (400 esperado),
+  nunca con un 200 real.

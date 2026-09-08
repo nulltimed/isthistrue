@@ -313,3 +313,35 @@ class Parche524C_PanelGastos(TestCase):
         with override_settings(RUNPOD_API_KEY='k'), \
              mock.patch('requests.post', side_effect=Exception('sin red')):
             self.assertIsNone(saldo_runpod())
+
+
+class Parche524D_EstadoPayPal(TestCase):
+    """D (caza en produccion): las credenciales del .env eran de la app SANDBOX
+    (200 en sandbox, 401 en live) — el panel lo dice en rojo y el host de la
+    API sigue a PAYPAL_MODE."""
+
+    def test_detecta_sandbox_y_lo_avisa_en_el_panel(self):
+        from django.core.cache import cache
+        from apps.analysis import paypal_check
+        cache.clear()
+        def post(url, **kw):
+            return _R(200 if 'sandbox' in url else 401, {'access_token': 't'} if 'sandbox' in url else {'error': 'invalid_client'})
+        with override_settings(PAYPAL_CLIENT_ID='c', PAYPAL_CLIENT_SECRET='s'), \
+             mock.patch('apps.analysis.paypal_check.requests.post', side_effect=post):
+            self.assertEqual(paypal_check.comprobar(), 'sandbox')
+            sup = make_user(username='pp524', email='pp524@example.org', is_staff=True, is_superuser=True)
+            self.client.force_login(sup)
+            html = self.client.get('/panel/donaciones/').content.decode()
+        self.assertIn('SANDBOX', html)
+        self.assertIn('reg-closed', html)
+        cache.clear()
+        with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
+            self.assertEqual(paypal_check.comprobar(), 'sin')
+
+    def test_el_modo_del_env_elige_el_host(self):
+        import importlib
+        from django.conf import settings as st
+        self.assertIn(st.PAYPAL_MODE, ('live', 'sandbox'))
+        src = open('apps/analysis/paypal_check.py', encoding='utf-8').read()
+        self.assertIn("PAYPAL_MODE', 'live') == 'sandbox'", src)
+        self.assertIn('PAYPAL_MODE', open('.env.example', encoding='utf-8').read())
