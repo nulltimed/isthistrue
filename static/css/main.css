@@ -919,3 +919,7 @@ body.viajero main.wide .post > #hilo{max-width:none}
 .apadrinar-btn{background:#f5c518;color:#141414;border-radius:999px;font-weight:700}
 .donar-pagina{display:flex;gap:.6rem;align-items:flex-end;flex-wrap:wrap;margin:.6rem 0}
 .donar-pagina label{margin:0}
+/* 5.24-B: el audio original de un podcast (RSS). */
+.audio-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.8rem;text-align:center}
+.audio-card audio{width:100%}
+.badge-rss{background:#e8f7f9;border-color:#9fd3dc;color:#0b4a55}

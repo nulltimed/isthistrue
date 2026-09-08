@@ -125,3 +125,124 @@ class Parche524A_PayPalPorElServidor(TestCase):
         self.assertEqual(r['Location'], '/donaciones/')
         self.assertFalse(Donation.objects.exists())
         self.assertTrue(AuditLog.objects.filter(action='donation_reject').exists())
+
+
+class Parche524B_AudioOriginalPorRSS(TestCase):
+    """B (orden de David): al pegar un enlace de Spotify se ofrece ademas el
+    MP3 original del podcast (RSS), con el aviso de que una version con video
+    analiza mejor; el MP3 elegido entra como plataforma 'audio' y se analiza
+    (transcripcion + voces, sin fotogramas)."""
+
+    HTML_SPOTIFY = ('<html><head><title>El episodio 12 - Mi Programa | Podcast on Spotify</title>'
+                    '<meta property="og:title" content="El episodio 12"/></head></html>')
+    FEED = ('<?xml version="1.0"?><rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>'
+            '<item><title>El episodio 11</title><enclosure url="https://cdn.x/ep11.mp3" type="audio/mpeg"/></item>'
+            '<item><title>El episodio 12</title><itunes:duration>1:02:03</itunes:duration>'
+            '<enclosure url="https://cdn.x/ep12.mp3" type="audio/mpeg"/><pubDate>Mon, 01 Sep 2026</pubDate></item>'
+            '</channel></rss>')
+
+    def _requests(self):
+        class R:
+            def __init__(self, status, text=b'', data=None):
+                self.status_code, self.content, self._data = status, text, data
+                self.text = text.decode() if isinstance(text, bytes) else text
+            def json(self):
+                return self._data
+            def iter_content(self, n):
+                yield self.content
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                return False
+            def raise_for_status(self):
+                pass
+        def get(url, **kw):
+            if 'open.spotify.com' in url:
+                return R(200, self.HTML_SPOTIFY)
+            if 'itunes.apple.com' in url:
+                return R(200, b'{}', {'results': [{'feedUrl': 'https://feeds.x/mi-programa', 'collectionName': 'Mi Programa'}]})
+            if 'feeds.x' in url:
+                return R(200, self.FEED.encode())
+            return R(404)
+        return mock.patch('apps.embeds.rss.requests.get', side_effect=get)
+
+    def test_detecta_el_mp3_como_plataforma_audio_y_lo_reproduce(self):
+        from apps.embeds.adapters import build_embed, detect_platform
+        p, vid = detect_platform('https://cdn.x/ep12.mp3?ts=1')
+        self.assertEqual(p, 'audio')
+        self.assertTrue(vid)
+        self.assertEqual(detect_platform('https://cdn.x/pagina.html')[0], None)
+        u = make_user()
+        post = Post.objects.create(author=u, url='https://cdn.x/ep12.mp3', platform='audio',
+                                   external_id=vid, title='Ep 12')
+        self.assertIn('id="istt-audio"', build_embed(post))
+        js = open('static/js/transcript.js', encoding='utf-8').read()
+        self.assertIn("getElementById('istt-audio')", js)
+        self.assertIn('audioEl.currentTime = t', js)
+
+    def test_encuentra_el_audio_original_del_episodio(self):
+        from apps.embeds.rss import alternativas_rss, segundos
+        with self._requests():
+            alts = alternativas_rss('https://open.spotify.com/episode/abc')
+        self.assertEqual(len(alts), 1)
+        self.assertEqual(alts[0]['url'], 'https://cdn.x/ep12.mp3', 'casa el episodio 12, no el 11')
+        self.assertEqual(alts[0]['plataforma'], 'audio')
+        self.assertEqual(alts[0]['duracion'], 3723)
+        self.assertEqual(segundos('62:03'), 3723)
+
+    def test_la_pantalla_de_alternativas_ofrece_el_rss_y_avisa_del_video(self):
+        u = make_user(username='rss524', email='rss524@example.org')
+        u.email_verified = True
+        u.save()
+        self.client.force_login(u)
+        with self._requests(), mock.patch('apps.analysis.views._alternativas_web', return_value=[
+                {'url': 'https://youtu.be/vid524', 'titulo': 'Version con video', 'plataforma': 'youtube'}]):
+            html = self.client.post('/submit/', {'url': 'https://open.spotify.com/episode/abc',
+                                                 'topic': 'politica'}).content.decode()
+        self.assertIn('audio original (RSS)', html)
+        self.assertIn('https://cdn.x/ep12.mp3', html)
+        self.assertIn('https://youtu.be/vid524', html)
+        self.assertIn('CON VÍDEO', html)
+        self.assertIn('name="titulo"', html)
+        self.assertFalse(Post.objects.filter(url__contains='spotify').exists())
+
+    def test_elegir_el_mp3_crea_un_post_de_audio_con_titulo_y_duracion(self):
+        u = make_user(username='mp3524', email='mp3524@example.org')
+        u.email_verified = True
+        u.save()
+        self.client.force_login(u)
+        with mock.patch('apps.embeds.adapters.probe', return_value={'ok': False, 'title': '',
+                        'duration_seconds': 0, 'age_limit': 0, 'reason': 'x'}), \
+             mock.patch('apps.analysis.views.run_cheap_phase') as rcp:
+            self.client.post('/submit/', {'url': 'https://cdn.x/ep12.mp3', 'topic': 'politica',
+                                          'titulo': 'El episodio 12', 'duracion': '300'})
+        post = Post.objects.get(url='https://cdn.x/ep12.mp3')
+        self.assertEqual(post.platform, 'audio')
+        self.assertEqual(post.title, 'El episodio 12')
+        self.assertEqual(post.duration_seconds, 300)   # 5 min: cabe en el dia (>media asignacion iria a la cola)
+        rcp.delay.assert_called_once_with(post.pk)
+
+    def test_la_descarga_directa_escribe_el_fichero_y_respeta_el_tope(self):
+        import os
+        import tempfile
+        from apps.analysis.tasks import _descargar_audio_directo
+        class R:
+            status_code = 200
+            def raise_for_status(self):
+                pass
+            def iter_content(self, n):
+                yield b'ID3' + b'\0' * 1000
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                return False
+        with tempfile.TemporaryDirectory() as td, \
+             mock.patch('requests.get', return_value=R()):
+            destino = _descargar_audio_directo('https://cdn.x/ep.mp3', os.path.join(td, 'audio.mp3'))
+            self.assertEqual(os.path.getsize(destino), 1003)
+            with self.assertRaises(RuntimeError):
+                _descargar_audio_directo('https://cdn.x/ep.mp3', os.path.join(td, 'b.mp3'), tope_bytes=100)
+        from apps.agents.vision import mirar
+        u = make_user()
+        post = Post.objects.create(author=u, url='https://cdn.x/ep.mp3', platform='audio')
+        self.assertIsNone(mirar(post, 'frase', 3), 'sin video no hay fotogramas')

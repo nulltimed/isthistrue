@@ -11,12 +11,26 @@
   <ul class="post-list alternativas">
     {% for a in alternativas %}
     <li><label>
-      <input type="radio" name="url" value="{{ a.url }}" {% if forloop.first %}checked{% endif %}>
-      <strong>{{ a.titulo }}</strong> <span class="badge">{{ a.plataforma }}</span>
+      <input type="radio" name="url" value="{{ a.url }}" data-titulo="{{ a.titulo }}" data-duracion="{{ a.duracion|default:0 }}" {% if forloop.first %}checked{% endif %}>
+      <strong>{{ a.titulo }}</strong>
+      {% if a.plataforma == 'audio' %}<span class="badge badge-rss" data-tip="{% trans 'El MP3 original que publica el propio podcast en su canal RSS, sin DRM. Solo audio.' %}">🎧 {% trans "audio original (RSS)" %}{% if a.origen %} · {{ a.origen }}{% endif %}</span>
+      {% else %}<span class="badge">{{ a.plataforma }}</span>{% endif %}
       <span class="hint">{{ a.url|truncatechars:70 }}</span>
     </label></li>
     {% endfor %}
   </ul>
+  {# 5.24-B (orden de David): el aviso — con video, el analisis es mejor. #}
+  <p class="warning">🎥 {% trans "Si encuentras este mismo podcast CON VÍDEO en una dirección sin DRM (por ejemplo YouTube), pega ese enlace: el análisis será mejor, porque la vista contrasta también lo que se ve en pantalla. Con solo audio se transcribe y se separan las voces igual, pero sin fotogramas." %}</p>
+  <input type="hidden" name="titulo" id="alt-titulo" value="{{ alternativas.0.titulo }}">
+  <input type="hidden" name="duracion" id="alt-duracion" value="{{ alternativas.0.duracion|default:0 }}">
+  <script>
+  document.querySelectorAll('input[name="url"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      document.getElementById('alt-titulo').value = r.dataset.titulo || '';
+      document.getElementById('alt-duracion').value = r.dataset.duracion || '0';
+    });
+  });
+  </script>
   <input type="hidden" name="topic" value="{{ topic }}">
   <input type="hidden" name="topic_new" value="{{ topic_new }}">
   <input type="hidden" name="tags" value="{{ tags }}">

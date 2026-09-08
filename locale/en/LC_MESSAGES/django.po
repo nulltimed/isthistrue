@@ -2256,3 +2256,13 @@ msgstr "Amount (euros, minimum 1)"
 
 msgid "Transparencia: la web ya no carga ningún programa de PayPal en tus páginas; el pago se hace en paypal.com y nuestro servidor lo confirma con PayPal antes de anotarlo. Bizum de donaciones (código ONG) llegará cuando la asociación esté constituida. Todas las donaciones quedan registradas y el gasto es público en la cabecera."
 msgstr "Transparency: the site no longer loads any PayPal software into your pages; payment happens on paypal.com and our server confirms it with PayPal before recording it. Bizum donations (charity code) will arrive once the association is set up. Every donation is recorded and spending is public in the header."
+
+# --- 5.24-B: audio original por RSS ---
+msgid "El MP3 original que publica el propio podcast en su canal RSS, sin DRM. Solo audio."
+msgstr "The original MP3 the podcast itself publishes in its RSS feed, DRM-free. Audio only."
+
+msgid "audio original (RSS)"
+msgstr "original audio (RSS)"
+
+msgid "Si encuentras este mismo podcast CON VÍDEO en una dirección sin DRM (por ejemplo YouTube), pega ese enlace: el análisis será mejor, porque la vista contrasta también lo que se ve en pantalla. Con solo audio se transcribe y se separan las voces igual, pero sin fotogramas."
+msgstr "If you find this same podcast WITH VIDEO at a DRM-free address (YouTube, for instance), paste that link: the analysis will be better, because the vision pass also checks what is shown on screen. Audio-only is transcribed and speaker-separated just the same, but without frames."

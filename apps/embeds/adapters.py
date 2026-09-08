@@ -109,11 +109,20 @@ def _duracion_spotify(url):
         return 0
 
 
+AUDIO_RX = re.compile(r'^https?://[^?#]+\.(mp3|m4a|ogg|opus|wav|aac)(?:[?#].*)?$', re.I)
+
+
 def detect_platform(url):
     for platform, rx in PATTERNS.items():
         m = rx.search(url)
         if m:
             return platform, m.group(m.lastindex or 1)
+    # 5.24-B (orden de David): el MP3 original de un podcast (via RSS) es una
+    # plataforma mas: 'audio'. Se analiza igual (transcripcion + voces); sin
+    # video no hay fotogramas, y se avisa de que una version con video es mejor.
+    if AUDIO_RX.match(url or ''):
+        import hashlib
+        return 'audio', hashlib.sha1(url.encode()).hexdigest()[:16]
     return None, None
 
 
@@ -152,6 +161,12 @@ def build_embed(post, start_seconds=0):
                 f'&parent=escierto.xyztserver.com&autoplay=false&time={s}s" '
                 f'frameborder="0" allowfullscreen loading="lazy" '
                 f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
+    if p == 'audio':
+        # 5.24-B: reproductor de audio nativo; transcript.js lo maneja (seek).
+        return (f'<div class="audio-card"><audio id="istt-audio" controls preload="metadata" '
+                f'src="{post.url}"></audio>'
+                f'<p class="hint">🎧 Audio original del podcast (RSS). Sin vídeo: la vista no '
+                f'analiza fotogramas.</p></div>')
     # Tarjeta-enlace para plataformas sin adaptador:
     return (f'<div class="link-card"><a href="{post.url}" rel="noopener" target="_blank">'
             f'▶ Reproducir en origen — {post.title or post.url}</a>'

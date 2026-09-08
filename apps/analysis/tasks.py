@@ -902,6 +902,11 @@ def _transcribe_first_tranche(post, tmpdir, skip_aai=False):
     import yt_dlp
     from faster_whisper import WhisperModel
     outpath = os.path.join(tmpdir, 'audio.%(ext)s')
+    if post.platform == 'audio':
+        # 5.24-B: el MP3 original del podcast (RSS) se baja tal cual — sin
+        # yt-dlp ni subtitulos; el resto de la cadena es identico.
+        _descargar_audio_directo(post.url, os.path.join(tmpdir, 'audio.mp3'))
+        return _tras_la_descarga(post, tmpdir, None, skip_aai)
     opts = {'format': 'bestaudio/best', 'outtmpl': outpath, 'quiet': True,
             'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
             # 4.2.1 I4 (decision de David): si el video trae subtitulos HUMANOS,
@@ -928,6 +933,28 @@ def _transcribe_first_tranche(post, tmpdir, skip_aai=False):
         updates.append('duration_seconds')
     if updates:
         post.save(update_fields=updates)
+    return _tras_la_descarga(post, tmpdir, None, skip_aai)
+
+
+def _descargar_audio_directo(url, destino, tope_bytes=400_000_000):
+    """5.24-B: descarga en flujo de un MP3 (RSS) con tope de tamano."""
+    import requests
+    with requests.get(url, stream=True, timeout=60,
+                      headers={'User-Agent': 'Mozilla/5.0 (compatible; esestocierto/1.0)'}) as r:
+        r.raise_for_status()
+        total = 0
+        with open(destino, 'wb') as f:
+            for trozo in r.iter_content(1 << 20):
+                total += len(trozo)
+                if total > tope_bytes:
+                    raise RuntimeError('audio demasiado grande')
+                f.write(trozo)
+    return destino
+
+
+def _tras_la_descarga(post, tmpdir, _unused, skip_aai):
+    """Lo comun a yt-dlp y al MP3 directo: AssemblyAI -> subtitulos -> GPU -> CPU."""
+    from faster_whisper import WhisperModel
     files = sorted(os.listdir(tmpdir))
     audio = next((os.path.join(tmpdir, f) for f in files if not f.endswith('.vtt')), None)
     vtt = next((os.path.join(tmpdir, f) for f in files if f.endswith('.vtt')), None)

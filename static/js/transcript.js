@@ -8,7 +8,9 @@
   var box = document.querySelector('.transcript');
   if (!box) return;
   var platform = box.getAttribute('data-platform') || '';
-  var seekable = (platform === 'youtube' || platform === 'twitch');
+  /* 5.24-B: el audio original de un podcast (RSS) se controla con <audio>. */
+  var audioEl = (platform === 'audio') ? document.getElementById('istt-audio') : null;
+  var seekable = (platform === 'youtube' || platform === 'twitch' || !!audioEl);
   var ytPlayer = null, ytReady = false;
 
   function target(s) { return Math.max(0, Math.floor(s) - 1); } // 1 s antes (decidido)
@@ -44,9 +46,15 @@
     liveSpk = spk;
   }
   setInterval(function () {
-    if (!ytReady || !ytPlayer || !ytPlayer.getCurrentTime) return;
-    if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) return;
-    var t = ytPlayer.getCurrentTime();
+    var t;
+    if (audioEl) {
+      if (audioEl.paused) return;
+      t = audioEl.currentTime;
+    } else {
+      if (!ytReady || !ytPlayer || !ytPlayer.getCurrentTime) return;
+      if (ytPlayer.getPlayerState && ytPlayer.getPlayerState() !== 1) return;
+      t = ytPlayer.getCurrentTime();
+    }
     var segs = document.querySelectorAll('.transcript .segment[data-start]');
     var actual = null;
     for (var i = 0; i < segs.length; i++) {
@@ -131,6 +139,10 @@
   // seekTo global: los timestamps [12s] ya la invocan desde la plantilla.
   window.seekTo = function (s) {
     var t = target(s);
+    if (audioEl) {
+      try { audioEl.currentTime = t; audioEl.play(); } catch (e) { /* sin permiso de autoplay: el usuario pulsa play */ }
+      return;
+    }
     if (platform === 'youtube') {
       if (ytReady && ytPlayer && ytPlayer.seekTo) {
         ytPlayer.seekTo(t, true);

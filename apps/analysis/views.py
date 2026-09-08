@@ -196,10 +196,12 @@ def submit(request):
     voluntary_offtopic = request.POST.get('offtopic') == 'on'
     author_opinion = request.POST.get('opinion', '').strip()[:8000]  # 4.2 A5
     author_adult_flag = request.POST.get('is_adult') == 'on'
-    if not VIDEO_RX.search(url):
+    platform, external_id = detect_platform(url)
+    # 5.24-B: el MP3 de un podcast (elegido en la pantalla de alternativas) entra
+    # como plataforma 'audio'.
+    if not VIDEO_RX.search(url) and platform != 'audio':
         messages.error(request, 'El enlace debe ser de una plataforma soportada: YouTube, TikTok, Twitch o Spotify.')
         return render(request, 'analysis/submit.html', {'arbol': arbol})
-    platform, external_id = detect_platform(url)
     if not platform:
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
         platform = 'link'
@@ -210,6 +212,12 @@ def submit(request):
     from apps.embeds.adapters import NON_ANALYZABLE
     if platform in NON_ANALYZABLE:
         alternativas = _alternativas_web(url, platform)
+        # 5.24-B (orden de David): ademas, el AUDIO ORIGINAL del podcast por RSS.
+        try:
+            from apps.embeds.rss import alternativas_rss
+            alternativas = alternativas_rss(url) + alternativas
+        except Exception:
+            pass
         if alternativas:
             messages.info(request, 'Spotify protege su audio (DRM) y no se '
                           'puede analizar. He buscado este mismo contenido '
@@ -234,6 +242,16 @@ def submit(request):
     from apps.embeds.adapters import probe
     ficha = probe(url, platform)
     edad_plataforma = ficha['age_limit'] >= 18
+    if platform == 'audio':
+        # 5.24-B: titulo y duracion viajan desde la pantalla de alternativas (un
+        # MP3 no tiene oEmbed y yt-dlp no siempre lee la duracion de un fichero).
+        if not ficha.get('title'):
+            ficha['title'] = ' '.join(request.POST.get('titulo', '').split())[:300]
+        if not ficha.get('duration_seconds'):
+            try:
+                ficha['duration_seconds'] = max(0, int(request.POST.get('duracion') or 0))
+            except ValueError:
+                pass
 
     pendiente = bool(propuesta)
     with transaction.atomic():
