@@ -1667,3 +1667,37 @@ Informe para David en `docs/88`. Ocho commits (`808bb18`→`cb66472`), 523 tests
   (Could not parse the remainder) — pasar la lista desde la vista; (4) `'Molinos' in html`
   daba falso positivo por el `value=` del buscador — comprobar la URL del post, no el título;
   (5) `docker cp` como `i` no puede leer mi scratchpad (`/tmp/claude-…`): copiar vía `/opt`.
+
+## 86. Serie 5.24: PayPal por el servidor, audio RSS y panel Gastos (2026-09-09)
+
+Informe en `docs/89`. Registro técnico:
+- **A · PayPal.** `paypal_check.create_order(amount, return_url, cancel_url, custom_id,
+  locale)` (POST /v2/checkout/orders, `application_context.user_action=PAY_NOW`,
+  `shipping_preference=NO_SHIPPING`) y `capture_order(order_id)` (POST …/capture; si
+  `ORDER_ALREADY_CAPTURED`, GET del pedido para idempotencia). Vistas `donation_start`
+  (POST amount[,post] → 302 al `approve` link; sin credenciales → `paypal_url` del panel) y
+  `donation_return` (GET ?token= → captura → `Donation(verified=True, note='paypal-web:<id>',
+  post=custom_id 'post:<pk>')`; idempotente por `note`; si el post está AWAITING_BUDGET y lo
+  atado cubre el coste → `run_cheap_phase.delay`). El SDK, su `.catch`, el vigilante del hueco
+  y el ✕ del overlay (5.10-E/5.11-A/5.17-C) se retiran; `donation_capture` (JSON) se conserva
+  por compatibilidad. base.html: `<form class="donate-inline" action="donation_start">` con
+  el campo oculto `amount` sincronizado por JS mínimo. 5 tests antiguos reescritos.
+- **B · RSS.** `apps/embeds/rss.py`: `ficha_spotify` (og:title + `<title>` «Ep - Programa |
+  …»), `feeds_de` (itunes.apple.com/search media=podcast), `episodios` (ElementTree, tope 6 MB,
+  solo enclosures audio/*), `alternativas_rss` (parecido ≥0,6 con difflib; «a in b» = 0,95),
+  `segundos('1:02:03')`. `detect_platform` → `('audio', sha1[:16])` para URLs terminadas en
+  mp3/m4a/ogg/opus/wav/aac; `build_embed` → `<audio id="istt-audio">`; `transcript.js` maneja
+  `audioEl` (currentTime/paused) para karaoke y seek; `_transcribe_first_tranche` → rama
+  `_descargar_audio_directo` (requests en flujo, tope 400 MB) + `_tras_la_descarga` (la cola
+  común AAI→VTT→GPU→CPU, extraída sin cambios); `submit` acepta `titulo`/`duracion` ocultos
+  para el MP3 (no hay oEmbed); `vision.mirar` ya devuelve None fuera de youtube/twitch/spotify.
+- **C · Gastos.** `panel.views.gastos_panel` (`_rango` con atajos, filtros provider/concept/
+  post/fechas, agregados por servicio/día/post con `TruncDate`, media por análisis, resumen
+  fijo, `saldo_runpod()` por GraphQL `myself.clientBalance` cacheado 600 s, CSV `;` con coma
+  decimal, textarea para copiar). Pestaña en `panel_nav`.
+- **Trampa**: `override_settings(RUNPOD_API_KEY='')` en un test previo dejó al siguiente
+  con `AttributeError: 'Settings' object has no attribute 'RUNPOD_API_KEY'` al leer
+  `settings.RUNPOD_API_KEY` en la vista (el orden alfabético de los tests lo destapó) —
+  `getattr(settings, 'X', '')` en código que puede correr bajo override. Y las pruebas de
+  cantidad: un vídeo de 62 min va a la COLA (needs_sponsorship) y no llama a
+  `run_cheap_phase`; el test usa 5 min.
