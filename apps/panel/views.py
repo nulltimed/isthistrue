@@ -1,6 +1,7 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from apps.accounts.models import RedeemCode
 from .models import AuditLog, CodeBatch, SystemSetting
 from .tasks import BATCH_BG_THRESHOLD, generate_code_batch
@@ -499,6 +500,144 @@ def logs_panel(request):
         'total': page.paginator.count,
         'total_sistema': SystemLog.objects.count(),
         'retencion': SystemSetting.get_int('logs_retention_days', 30),
+    })
+
+
+# 5.24-C (orden de David): «una nueva categoría Gastos con todo lujo de detalles,
+# con buscador por servicio y fecha, todos los gastos reales de la plataforma».
+SERVICIOS = {'anthropic': 'Claude (Anthropic)', 'qwen': 'Qwen (Alibaba)',
+             'assemblyai': 'AssemblyAI (oído)', 'runpod': 'Runpod (GPU)', 'brevo': 'Brevo (emails)'}
+
+
+def saldo_runpod():
+    """Saldo PREPAGO de Runpod (no pasa por el libro): GraphQL con la clave del
+    .env, cacheado 10 min. None si no hay clave o no responde."""
+    from django.conf import settings as st
+    from django.core.cache import cache
+    clave = getattr(st, 'RUNPOD_API_KEY', '')
+    if not clave:
+        return None
+    v = cache.get('runpod_saldo')
+    if v is not None:
+        return v
+    try:
+        import requests
+        r = requests.post('https://api.runpod.io/graphql', params={'api_key': clave},
+                          json={'query': '{ myself { clientBalance } }'}, timeout=6)
+        v = float(r.json()['data']['myself']['clientBalance'])
+        cache.set('runpod_saldo', v, 600)
+        return v
+    except Exception:
+        return None
+
+
+def _rango(request):
+    """(desde, hasta, atajo) — por defecto el mes en curso."""
+    from datetime import date, timedelta
+    hoy = timezone.localdate()
+    atajo = request.GET.get('atajo', '')
+
+    def _f(v):
+        try:
+            return date.fromisoformat(v) if v else None
+        except ValueError:
+            return None
+    desde, hasta = _f(request.GET.get('desde', '')), _f(request.GET.get('hasta', ''))
+    if atajo == 'hoy':
+        desde = hasta = hoy
+    elif atajo == 'ayer':
+        desde = hasta = hoy - timedelta(days=1)
+    elif atajo == '7d':
+        desde, hasta = hoy - timedelta(days=6), hoy
+    elif atajo == 'mes':
+        desde, hasta = hoy.replace(day=1), hoy
+    elif atajo == 'mes_pasado':
+        fin = hoy.replace(day=1) - timedelta(days=1)
+        desde, hasta = fin.replace(day=1), fin
+    elif atajo == 'todo':
+        desde = hasta = None
+    elif not desde and not hasta:
+        desde, hasta, atajo = hoy.replace(day=1), hoy, 'mes'
+    return desde, hasta, atajo
+
+
+@staff_member_required
+def gastos_panel(request):
+    import csv
+    from datetime import timedelta
+    from django.core.paginator import Paginator
+    from django.db.models import Count, Sum
+    from django.db.models.functions import TruncDate
+    from django.http import HttpResponse
+    from apps.analysis.models import CostEntry, Post
+    hoy = timezone.localdate()
+    desde, hasta, atajo = _rango(request)
+    servicio = request.GET.get('servicio', '')
+    if servicio not in SERVICIOS:
+        servicio = ''
+    concepto = request.GET.get('concepto', '').strip()[:60]
+    post_pk = request.GET.get('post', '').strip()
+    qs = CostEntry.objects.select_related('post').order_by('-created_at')
+    if desde:
+        qs = qs.filter(created_at__date__gte=desde)
+    if hasta:
+        qs = qs.filter(created_at__date__lte=hasta)
+    if servicio:
+        qs = qs.filter(provider=servicio)
+    if concepto:
+        qs = qs.filter(concept__icontains=concepto)
+    if post_pk.isdigit():
+        qs = qs.filter(post_id=int(post_pk))
+    if request.GET.get('csv'):
+        resp = HttpResponse(content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = 'attachment; filename="gastos-esestocierto.csv"'
+        w = csv.writer(resp, delimiter=';')
+        w.writerow(['fecha', 'hora', 'servicio', 'concepto', 'post', 'titulo', 'eur'])
+        for e in qs.iterator():
+            t = timezone.localtime(e.created_at)
+            w.writerow([t.date().isoformat(), t.strftime('%H:%M:%S'), e.provider, e.concept,
+                        e.post_id or '', (e.post.title if e.post else '')[:80],
+                        f'{float(e.eur):.4f}'.replace('.', ',')])
+        return resp
+    total = float(qs.aggregate(s=Sum('eur'))['s'] or 0)
+    n = qs.count()
+    por_servicio = [{'servicio': r['provider'], 'nombre': SERVICIOS.get(r['provider'], r['provider']),
+                     'eur': float(r['s']), 'n': r['n'],
+                     'pct': (float(r['s']) / total * 100) if total else 0}
+                    for r in qs.values('provider').annotate(s=Sum('eur'), n=Count('pk')).order_by('-s')]
+    por_dia = [{'dia': r['d'], 'eur': float(r['s']), 'n': r['n']}
+               for r in qs.annotate(d=TruncDate('created_at')).values('d')
+               .annotate(s=Sum('eur'), n=Count('pk')).order_by('-d')[:62]]
+    por_post = []
+    for r in (qs.filter(post__isnull=False).values('post_id').annotate(s=Sum('eur'), n=Count('pk'))
+              .order_by('-s')[:15]):
+        p = Post.objects.filter(pk=r['post_id']).first()
+        por_post.append({'post': p, 'pk': r['post_id'], 'eur': float(r['s']), 'n': r['n']})
+    con_post = qs.filter(post__isnull=False)
+    n_posts = con_post.values('post_id').distinct().count()
+    media_post = (float(con_post.aggregate(s=Sum('eur'))['s'] or 0) / n_posts) if n_posts else 0.0
+
+    def _suma(d1, d2):
+        return float(CostEntry.objects.filter(created_at__date__gte=d1, created_at__date__lte=d2)
+                     .aggregate(s=Sum('eur'))['s'] or 0)
+    fin_mes_pasado = hoy.replace(day=1) - timedelta(days=1)
+    resumen = {'hoy': _suma(hoy, hoy), 'ayer': _suma(hoy - timedelta(days=1), hoy - timedelta(days=1)),
+               'mes': _suma(hoy.replace(day=1), hoy),
+               'mes_pasado': _suma(fin_mes_pasado.replace(day=1), fin_mes_pasado),
+               'dias30': _suma(hoy - timedelta(days=29), hoy),
+               'total_historico': float(CostEntry.objects.aggregate(s=Sum('eur'))['s'] or 0)}
+    page = Paginator(qs, 300).get_page(request.GET.get('pagina', 1))
+    texto = '\n'.join(
+        f"{timezone.localtime(e.created_at):%Y-%m-%d %H:%M:%S} {e.provider:<10} {e.concept:<24} "
+        f"post {e.post_id or '-':<5} {float(e.eur):.4f} €" for e in page)
+    return render(request, 'panel/gastos.html', {
+        'filas': page, 'page_obj': page, 'texto': texto, 'total': total, 'n': n,
+        'por_servicio': por_servicio, 'por_dia': por_dia, 'por_post': por_post,
+        'n_posts': n_posts, 'media_post': media_post, 'resumen': resumen,
+        'servicios': SERVICIOS, 'servicio': servicio, 'concepto': concepto, 'post_pk': post_pk,
+        'desde': desde.isoformat() if desde else '', 'hasta': hasta.isoformat() if hasta else '',
+        'atajo': atajo, 'saldo_runpod': saldo_runpod(),
+        'query': request.GET.urlencode(),
     })
 
 

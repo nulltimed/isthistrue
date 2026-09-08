@@ -923,3 +923,16 @@ body.viajero main.wide .post > #hilo{max-width:none}
 .audio-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.8rem;text-align:center}
 .audio-card audio{width:100%}
 .badge-rss{background:#e8f7f9;border-color:#9fd3dc;color:#0b4a55}
+/* 5.24-C: el panel de Gastos. */
+.gastos-resumen{justify-content:center}
+.gastos-resumen div{text-align:center}
+.gastos-atajos{display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.gastos-atajos .chip{text-decoration:none;color:#141414;background:#fff}
+.gastos-atajos .chip.activo{background:#141414;color:#fff;border-color:#141414}
+.gastos-cifras{display:flex;gap:.8rem;flex-wrap:wrap;margin:.6rem 0}
+.gastos-caja{background:#fff;border:1px solid var(--line);border-radius:8px;padding:.6rem .9rem;min-width:160px;display:flex;flex-direction:column}
+.gastos-caja strong{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.gastos-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:.6rem 0 1rem}
+.gastos-cols h3{margin:.2rem 0 .3rem;font-size:.95rem}
+.gastos-cols .tabla-gastos{margin:0;font-size:.84rem}
+.gastos-eur{text-align:right;font-variant-numeric:tabular-nums}

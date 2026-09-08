@@ -246,3 +246,70 @@ class Parche524B_AudioOriginalPorRSS(TestCase):
         u = make_user()
         post = Post.objects.create(author=u, url='https://cdn.x/ep.mp3', platform='audio')
         self.assertIsNone(mirar(post, 'frase', 3), 'sin video no hay fotogramas')
+
+
+class Parche524C_PanelGastos(TestCase):
+    """C (orden de David): «una nueva categoría Gastos con todo lujo de detalles,
+    con buscador por servicio y fecha, todos los gastos reales»."""
+
+    def _sup(self):
+        return make_user(username='gsup', email='gsup@example.org', is_staff=True, is_superuser=True)
+
+    def _apuntes(self):
+        from django.utils import timezone
+        from apps.analysis import costs
+        from apps.analysis.models import CostEntry
+        u = make_user(username='gp524', email='gp524@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/g524', title='Caro')
+        costs.record('qwen', 'analisis', 1.5, post=post)
+        costs.record('qwen', 'busqueda', 0.25, post=post)
+        costs.record('anthropic', 'analisis', 0.75)
+        viejo = costs.record('runpod', 'diarización', 0.004, post=post)
+        e = CostEntry.objects.filter(provider='runpod').first()
+        CostEntry.objects.filter(pk=e.pk).update(created_at=timezone.now() - timezone.timedelta(days=45))
+        return post
+
+    def test_solo_el_staff(self):
+        self.client.force_login(make_user(username='nog', email='nog@example.org'))
+        self.assertNotEqual(self.client.get('/panel/gastos/').status_code, 200)
+
+    def test_lista_filtra_por_servicio_y_fecha_y_resume(self):
+        post = self._apuntes()
+        self.client.force_login(self._sup())
+        html = self.client.get('/panel/gastos/').content.decode()      # mes en curso por defecto
+        self.assertIn('Gastos reales de la plataforma', html)
+        self.assertIn('2,5000 €', html)                                  # total del filtro (1.5+0.25+0.75)
+        self.assertIn('Caro', html)                                      # el post enlazado
+        self.assertNotIn('diarización', html, 'el apunte de hace 45 dias no es de este mes')
+        html = self.client.get('/panel/gastos/?servicio=qwen&atajo=mes').content.decode()
+        self.assertIn('1,7500 €', html)
+        self.assertNotIn('>anthropic<', html)
+        html = self.client.get('/panel/gastos/?atajo=todo&concepto=diariz').content.decode()
+        self.assertIn('diarización', html)
+        html = self.client.get(f'/panel/gastos/?atajo=todo&post={post.pk}').content.decode()
+        self.assertIn('Por análisis', html)
+        self.assertIn('coste medio por análisis', html)
+        # resumen fijo, atajos y lo que no pasa por el libro
+        for t in ('hoy', 'ayer', 'este mes', 'mes anterior', 'Lo que NO pasa por el libro', 'Copiar lo visible'):
+            self.assertIn(t, html, t)
+
+    def test_exporta_csv_con_todas_las_filas_del_filtro(self):
+        self._apuntes()
+        self.client.force_login(self._sup())
+        r = self.client.get('/panel/gastos/?atajo=todo&csv=1')
+        self.assertEqual(r['Content-Type'].split(';')[0], 'text/csv')
+        cuerpo = r.content.decode()
+        self.assertIn('fecha;hora;servicio;concepto;post;titulo;eur', cuerpo)
+        self.assertEqual(cuerpo.count('\n'), 5, '4 apuntes + cabecera')
+        self.assertIn('1,5000', cuerpo)
+
+    def test_la_pestaña_esta_en_el_panel_y_el_saldo_runpod_no_rompe_nada(self):
+        from apps.panel.views import saldo_runpod
+        self.client.force_login(self._sup())
+        html = self.client.get('/panel/settings/').content.decode()
+        self.assertIn('/panel/gastos/', html)
+        with override_settings(RUNPOD_API_KEY=''):
+            self.assertIsNone(saldo_runpod())
+        with override_settings(RUNPOD_API_KEY='k'), \
+             mock.patch('requests.post', side_effect=Exception('sin red')):
+            self.assertIsNone(saldo_runpod())

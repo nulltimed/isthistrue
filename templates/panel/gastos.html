@@ -1,0 +1,106 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Gastos" %}{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
+{# 5.24-C (orden de David): TODOS los gastos reales, con todo lujo de detalles. #}
+<h2 class="panel-sub">{% icon 'gauge' 18 %} {% trans "Gastos reales de la plataforma" %}</h2>
+<p class="hint">{% trans "Cada fila es una llamada pagada de verdad, apuntada por el libro de cuentas en el momento de hacerse (tokens × precio del catálogo, segundos de GPU × tarifa, minutos de audio × tarifa). Lo que no pasa por el libro va aparte, abajo." %}</p>
+
+<div class="wiki-totales gastos-resumen">
+  <div><strong>{{ resumen.hoy|floatformat:2 }} €</strong> {% trans "hoy" %}</div>
+  <div><strong>{{ resumen.ayer|floatformat:2 }} €</strong> {% trans "ayer" %}</div>
+  <div><strong>{{ resumen.dias30|floatformat:2 }} €</strong> {% trans "últimos 30 días" %}</div>
+  <div><strong>{{ resumen.mes|floatformat:2 }} €</strong> {% trans "este mes" %}</div>
+  <div><strong>{{ resumen.mes_pasado|floatformat:2 }} €</strong> {% trans "mes anterior" %}</div>
+  <div><strong>{{ resumen.total_historico|floatformat:2 }} €</strong> {% trans "desde el primer apunte" %}</div>
+</div>
+
+<form method="get" class="logs-filtros gastos-filtros">
+  <label>{% trans "Servicio" %}<select name="servicio"><option value="">{% trans "Todos" %}</option>{% for k, v in servicios.items %}<option value="{{ k }}" {% if k == servicio %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+  <label>{% trans "Concepto contiene" %}<input name="concepto" value="{{ concepto }}" maxlength="60" placeholder="{% trans 'busqueda, analisis, voces…' %}"></label>
+  <label>{% trans "Post nº" %}<input name="post" value="{{ post_pk }}" inputmode="numeric" style="max-width:90px"></label>
+  <label>{% trans "Desde" %}<input type="date" name="desde" value="{{ desde }}"></label>
+  <label>{% trans "Hasta" %}<input type="date" name="hasta" value="{{ hasta }}"></label>
+  <button class="mini">{% trans "Filtrar" %}</button>
+  <span class="gastos-atajos">
+    <a class="chip{% if atajo == 'hoy' %} activo{% endif %}" href="?atajo=hoy&servicio={{ servicio }}">{% trans "Hoy" %}</a>
+    <a class="chip{% if atajo == 'ayer' %} activo{% endif %}" href="?atajo=ayer&servicio={{ servicio }}">{% trans "Ayer" %}</a>
+    <a class="chip{% if atajo == '7d' %} activo{% endif %}" href="?atajo=7d&servicio={{ servicio }}">{% trans "7 días" %}</a>
+    <a class="chip{% if atajo == 'mes' %} activo{% endif %}" href="?atajo=mes&servicio={{ servicio }}">{% trans "Este mes" %}</a>
+    <a class="chip{% if atajo == 'mes_pasado' %} activo{% endif %}" href="?atajo=mes_pasado&servicio={{ servicio }}">{% trans "Mes anterior" %}</a>
+    <a class="chip{% if atajo == 'todo' %} activo{% endif %}" href="?atajo=todo&servicio={{ servicio }}">{% trans "Todo" %}</a>
+  </span>
+</form>
+
+<div class="gastos-cifras">
+  <div class="gastos-caja"><strong>{{ total|floatformat:4 }} €</strong><span class="hint">{% trans "total del filtro" %} · {{ n }} {% trans "apuntes" %}</span></div>
+  <div class="gastos-caja"><strong>{{ n_posts }}</strong><span class="hint">{% trans "análisis con gasto" %}</span></div>
+  <div class="gastos-caja"><strong>{{ media_post|floatformat:4 }} €</strong><span class="hint">{% trans "coste medio por análisis" %}</span></div>
+  {% if saldo_runpod is not None %}<div class="gastos-caja"><strong>{{ saldo_runpod|floatformat:2 }} $</strong><span class="hint">{% trans "saldo prepago en Runpod (vivo)" %}</span></div>{% endif %}
+</div>
+
+<div class="gastos-cols">
+  <section>
+    <h3>{% trans "Por servicio" %}</h3>
+    <table class="tabla-gastos"><tbody>
+      {% for s in por_servicio %}<tr><td>{{ s.nombre }}</td><td>{{ s.n }}</td><td>{{ s.eur|floatformat:4 }} €</td><td class="hint">{{ s.pct|floatformat:1 }} %</td></tr>
+      {% empty %}<tr><td colspan="4" class="hint">—</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+  <section>
+    <h3>{% trans "Por día" %}</h3>
+    <table class="tabla-gastos"><tbody>
+      {% for d in por_dia %}<tr><td>{{ d.dia|date:'d/m/Y' }}</td><td>{{ d.n }}</td><td>{{ d.eur|floatformat:4 }} €</td></tr>
+      {% empty %}<tr><td colspan="3" class="hint">—</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+  <section>
+    <h3>{% trans "Por análisis (los 15 que más)" %}</h3>
+    <table class="tabla-gastos"><tbody>
+      {% for f in por_post %}<tr><td>{% if f.post %}<a href="{{ f.post.get_absolute_url }}">#{{ f.pk }} {{ f.post.title|default:f.post.url|truncatechars:48 }}</a>{% else %}#{{ f.pk }} <span class="hint">({% trans "post borrado" %})</span>{% endif %}</td><td>{{ f.n }}</td><td>{{ f.eur|floatformat:4 }} €</td></tr>
+      {% empty %}<tr><td colspan="3" class="hint">—</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+</div>
+
+<div class="logs-acciones">
+  <button type="button" class="mini copiar-logs" data-tip="{% trans 'Copia al portapapeles las filas visibles (texto plano).' %}">{% icon 'link' 14 %} {% trans "Copiar lo visible" %}</button>
+  <a class="btn" href="?{{ query }}{% if query %}&{% endif %}csv=1" data-tip="{% trans 'Descarga TODAS las filas del filtro (no solo esta página) en CSV para tu hoja de cálculo.' %}">⬇ CSV</a>
+  <span class="hint">{% blocktrans with n=page_obj.number t=page_obj.paginator.num_pages %}Página {{ n }} de {{ t }}{% endblocktrans %} · {% if page_obj.has_previous %}<a href="?{{ query }}&pagina={{ page_obj.previous_page_number }}">‹ {% trans "Anterior" %}</a>{% endif %} {% if page_obj.has_next %}<a href="?{{ query }}&pagina={{ page_obj.next_page_number }}">{% trans "Siguiente" %} ›</a>{% endif %}</span>
+</div>
+<textarea id="logs-texto" class="sr-only" readonly aria-hidden="true">{{ texto }}</textarea>
+<div class="logs-tabla-wrap">
+<table class="logs-tabla gastos-tabla">
+  <thead><tr><th>{% trans "Cuándo" %}</th><th>{% trans "Servicio" %}</th><th>{% trans "Concepto" %}</th><th>{% trans "Post" %}</th><th>€</th></tr></thead>
+  <tbody>
+  {% for e in filas %}
+  <tr>
+    <td class="logs-cuando">{{ e.created_at|date:'d/m/Y H:i:s' }}</td>
+    <td>{{ e.provider }}</td>
+    <td>{{ e.concept }}</td>
+    <td>{% if e.post_id %}<a href="/post/{{ e.post_id }}/" data-tip="{{ e.post.title|default:''|truncatechars:80 }}">#{{ e.post_id }}</a>{% else %}<span class="hint">—</span>{% endif %}</td>
+    <td class="gastos-eur">{{ e.eur|floatformat:4 }}</td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="hint">{% trans "Sin gastos con estos filtros." %}</td></tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h3>{% trans "Lo que NO pasa por el libro" %}</h3>
+<ul class="hint">
+  <li>{% trans "Runpod se paga por adelantado: cada trabajo de GPU resta del saldo (arriba, si la clave responde). El libro apunta su equivalente en euros." %}</li>
+  <li>{% trans "Suscripciones externas (p. ej. planes de Alibaba) no pasan por aquí: revísalas en sus consolas." %}</li>
+  <li>{% trans "Los modelos en cuota gratuita del proveedor se apuntan a 0,00 € hasta que la cuota se agota y el catálogo recibe su precio real." %}</li>
+</ul>
+<script>
+document.querySelectorAll('.copiar-logs').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var ta = document.getElementById('logs-texto');
+    var listo = function () { if (window.isttToast) window.isttToast('{% trans "Copiado al portapapeles" %}'); b.textContent = '✓'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(ta.value).then(listo); }
+    else { ta.classList.remove('sr-only'); ta.select(); try { document.execCommand('copy'); listo(); } catch (e) {} ta.classList.add('sr-only'); }
+  });
+});
+</script>
+{% endblock %}

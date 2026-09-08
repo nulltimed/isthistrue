@@ -2266,3 +2266,109 @@ msgstr "original audio (RSS)"
 
 msgid "Si encuentras este mismo podcast CON VÍDEO en una dirección sin DRM (por ejemplo YouTube), pega ese enlace: el análisis será mejor, porque la vista contrasta también lo que se ve en pantalla. Con solo audio se transcribe y se separan las voces igual, pero sin fotogramas."
 msgstr "If you find this same podcast WITH VIDEO at a DRM-free address (YouTube, for instance), paste that link: the analysis will be better, because the vision pass also checks what is shown on screen. Audio-only is transcribed and speaker-separated just the same, but without frames."
+
+# --- 5.24-C: panel Gastos ---
+msgid "Panel · Gastos"
+msgstr "Panel · Spending"
+
+msgid "Gastos reales de la plataforma"
+msgstr "Real spending of the platform"
+
+msgid "Cada fila es una llamada pagada de verdad, apuntada por el libro de cuentas en el momento de hacerse (tokens × precio del catálogo, segundos de GPU × tarifa, minutos de audio × tarifa). Lo que no pasa por el libro va aparte, abajo."
+msgstr "Each row is a call actually paid for, recorded by the ledger as it happened (tokens × catalogue price, GPU seconds × rate, audio minutes × rate). What does not go through the ledger is listed separately below."
+
+msgid "hoy"
+msgstr "today"
+
+msgid "ayer"
+msgstr "yesterday"
+
+msgid "últimos 30 días"
+msgstr "last 30 days"
+
+msgid "este mes"
+msgstr "this month"
+
+msgid "mes anterior"
+msgstr "previous month"
+
+msgid "desde el primer apunte"
+msgstr "since the first entry"
+
+msgid "Servicio"
+msgstr "Service"
+
+msgid "Concepto contiene"
+msgstr "Concept contains"
+
+msgid "busqueda, analisis, voces…"
+msgstr "search, analysis, voices…"
+
+msgid "Post nº"
+msgstr "Post no."
+
+msgid "Ayer"
+msgstr "Yesterday"
+
+msgid "7 días"
+msgstr "7 days"
+
+msgid "Mes anterior"
+msgstr "Previous month"
+
+msgid "total del filtro"
+msgstr "filter total"
+
+msgid "apuntes"
+msgstr "entries"
+
+msgid "análisis con gasto"
+msgstr "analyses with spending"
+
+msgid "coste medio por análisis"
+msgstr "average cost per analysis"
+
+msgid "saldo prepago en Runpod (vivo)"
+msgstr "prepaid balance at Runpod (live)"
+
+msgid "Por servicio"
+msgstr "By service"
+
+msgid "Por día"
+msgstr "By day"
+
+msgid "Por análisis (los 15 que más)"
+msgstr "By analysis (top 15)"
+
+msgid "post borrado"
+msgstr "deleted post"
+
+msgid "Copia al portapapeles las filas visibles (texto plano)."
+msgstr "Copy the visible rows to the clipboard (plain text)."
+
+msgid "Descarga TODAS las filas del filtro (no solo esta página) en CSV para tu hoja de cálculo."
+msgstr "Download ALL rows of the filter (not just this page) as CSV for your spreadsheet."
+
+msgid "Concepto"
+msgstr "Concept"
+
+msgid "Sin gastos con estos filtros."
+msgstr "No spending with these filters."
+
+msgid "Lo que NO pasa por el libro"
+msgstr "What does NOT go through the ledger"
+
+msgid "Runpod se paga por adelantado: cada trabajo de GPU resta del saldo (arriba, si la clave responde). El libro apunta su equivalente en euros."
+msgstr "Runpod is prepaid: each GPU job draws down the balance (above, when the key responds). The ledger records its euro equivalent."
+
+msgid "Suscripciones externas (p. ej. planes de Alibaba) no pasan por aquí: revísalas en sus consolas."
+msgstr "External subscriptions (e.g. Alibaba plans) do not pass through here: check them in their consoles."
+
+msgid "Los modelos en cuota gratuita del proveedor se apuntan a 0,00 € hasta que la cuota se agota y el catálogo recibe su precio real."
+msgstr "Models within the provider's free quota are recorded at €0.00 until the quota runs out and the catalogue gets their real price."
+
+msgid "Copiado al portapapeles"
+msgstr "Copied to the clipboard"
+
+msgid "Gastos"
+msgstr "Spending"

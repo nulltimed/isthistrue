@@ -1784,7 +1784,7 @@ class Pase43F(TestCase):
                                                defaults={'value': '150'})
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('En cola por presupuesto', html)
-        self.assertIn('Apadrinar este análisis', html)
+        self.assertIn('Apadrinar con', html)          # 5.24-A: boton al servidor, sin SDK
         self.assertIn('/donaciones/', html)
         self.assertIn('no cobra por publicar', html)      # ni muro ni peaje
 
