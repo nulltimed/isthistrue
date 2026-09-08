@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{{ cat.name }} — {% trans "Foro" %} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.23-E: la pagina de un subforo del arbol. #}
+<ul class="breadcrumb">
+  <li><a href="{% url 'foro_home' %}">{% trans "Foro" %}</a></li>
+  {% for a in migas %}{% if not a.is_root %}<li><a href="{% url 'foro_categoria' a.slug %}">{{ a.name }}</a></li>{% else %}<li>{{ a.name }}</li>{% endif %}{% endfor %}
+  <li>{{ cat.name }}</li>
+</ul>
+<h1>{% icon 'folder' 20 %} {{ cat.name }} <span class="badge">{{ page_obj.paginator.count }}</span></h1>
+{% if hijas %}
+<p class="foro-chips">{% trans "Subforos" %}: {% for h in hijas %}<a class="chip" href="{% url 'foro_categoria' h.slug %}">↳ {{ h.name }}</a> {% endfor %}</p>
+{% endif %}
+<ul class="post-list">
+  {% for p in page_obj %}{% include 'partials/post_li.html' %}
+  {% empty %}<li class="hint">{% trans "Aún no hay posts en esta categoría." %}</li>{% endfor %}
+</ul>
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination-bar"><ul class="pagination">
+  {% if page_obj.has_previous %}<li><a href="?pagina={{ page_obj.previous_page_number }}">‹ {% trans "Anterior" %}</a></li>{% endif %}
+  <li><span class="cur">{{ page_obj.number }}</span></li>
+  {% if page_obj.has_next %}<li><a href="?pagina={{ page_obj.next_page_number }}">{% trans "Siguiente" %} ›</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

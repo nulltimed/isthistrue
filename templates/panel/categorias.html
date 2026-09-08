@@ -1,0 +1,34 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Categorías" %}{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
+{# 5.23-E (ENMIENDA de David): el arbol de subforos del foro. #}
+<h2 class="panel-sub">{% icon 'folder' 18 %} {% trans "Árbol de categorías (subforos)" %}</h2>
+<p class="hint">{% trans "Todo cuelga de «Principal». Crea subforos, renómbralos, muévelos de padre o bórralos (solo si están vacíos). Las propuestas de los usuarios llegan a" %} <a href="{% url 'pending_list' %}">{% trans "Pendientes de aprobación" %}</a>{% if pendientes %} <span class="badge">{{ pendientes }}</span>{% endif %}.</p>
+
+<form method="post" class="cat-nueva">{% csrf_token %}
+  <input type="hidden" name="accion" value="crear">
+  <label>{% trans "Nueva categoría" %}<input name="nombre" maxlength="40" required placeholder="{% trans 'p. ej. Energía' %}"></label>
+  <label>{% trans "Padre" %}<select name="parent"><option value="{{ raiz.slug }}">{{ raiz.name }}</option>
+    {% for f in filas %}<option value="{{ f.cat.slug }}">{% for _ in ''|center:f.prof %}&nbsp;&nbsp;&nbsp;{% endfor %}{{ f.cat.name }}</option>{% endfor %}</select></label>
+  <button class="mini">＋ {% trans "Crear" %}</button>
+</form>
+
+<table class="cat-tabla">
+  <thead><tr><th>{% trans "Categoría" %}</th><th>{% trans "Posts" %}</th><th>{% trans "Acciones" %}</th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+  <tr class="prof-{{ f.prof }}">
+    <td>{% for _ in ''|center:f.prof %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}{% if f.prof %}↳ {% endif %}<strong>{{ f.cat.name }}</strong> <span class="hint">/{{ f.cat.slug }}</span></td>
+    <td>{{ f.n }}</td>
+    <td class="cat-acciones">
+      <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="renombrar"><input type="hidden" name="pk" value="{{ f.cat.pk }}"><input name="nombre" value="{{ f.cat.name }}" maxlength="40" aria-label="{% trans 'Nuevo nombre' %}"><button class="mini">{% trans "Renombrar" %}</button></form>
+      <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="mover"><input type="hidden" name="pk" value="{{ f.cat.pk }}">
+        <select name="parent" aria-label="{% trans 'Nuevo padre' %}"><option value="{{ raiz.slug }}">{{ raiz.name }}</option>{% for g in filas %}{% if g.cat.pk != f.cat.pk %}<option value="{{ g.cat.slug }}" {% if g.cat.pk == f.cat.parent_id %}selected{% endif %}>{{ g.cat.name }}</option>{% endif %}{% endfor %}</select><button class="mini">{% trans "Mover" %}</button></form>
+      <form method="post" onsubmit="return confirm('{% trans '¿Borrar esta categoría?' %}');">{% csrf_token %}<input type="hidden" name="accion" value="borrar"><input type="hidden" name="pk" value="{{ f.cat.pk }}"><button class="mini danger" {% if f.n %}disabled data-tip="{% trans 'Tiene posts: muévelos antes.' %}"{% endif %}>{% trans "Borrar" %}</button></form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -30,6 +30,8 @@ urlpatterns = [
     # 5.1-B.1 (orden de David): /foro/ exacto es NUESTRA pagina (cada foro con
     # sus ultimos 10 mensajes + buscador); el resto de rutas siguen en machina.
     path('foro/', foro_views.foro_home, name='foro_home'),
+    # 5.23-E: la pagina de cada subforo del arbol (antes de machina, que no la reclama)
+    path('foro/c/<slug:slug>/', foro_views.foro_categoria, name='foro_categoria'),
     path('foro/', include(machina_urls)),                   # django-machina
     path('rss/veredictos/', RecentVerdictsFeed(), name='rss_verdicts'),
     path('rss/cambios/', RecentChangesFeed(), name='rss_changes'),

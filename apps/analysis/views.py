@@ -174,31 +174,31 @@ def submit(request):
     if not request.user.email_verified:
         messages.error(request, 'Verifica tu email para poder analizar (revisa tu buzón o pide un reenvío).')
         return redirect('index')
+    arbol = Category.tree()
     if request.method != 'POST':
-        return render(request, 'analysis/submit.html',
-                      {'categorias': Category.objects.all()})
+        return render(request, 'analysis/submit.html', {'arbol': arbol})
     url = request.POST.get('url', '').strip()
-    topic = request.POST.get('topic', 'otros')
-    # 5.1-D (orden de David): el posteador puede PROPONER una categoria; Sonnet
-    # la contrasta con la taxonomia existente para ayudarle a elegir mejor.
-    propuesta = request.POST.get('topic_new', '').strip()[:40]
-    if propuesta:
-        contraste = _categoria_contrastada(propuesta, url)
-        if contraste:
-            topic, aviso = contraste
-            messages.info(request, aviso)
-        else:
-            messages.info(request, 'No se pudo contrastar tu propuesta de '
-                                   'categoría; se usa la seleccionada.')
-    if not Category.objects.filter(slug=topic).exists():
-        topic = 'otros'
+    # 5.23-E (ENMIENDA de David al README): la categoria es OBLIGATORIA y sale
+    # del arbol de subforos. Si ninguna encaja, el usuario PROPONE una: el post
+    # nace pendiente de aprobacion (sin analisis, invisible) hasta que
+    # moderacion lo apruebe — y puede encajarlo o crear la categoria nueva.
+    topic = request.POST.get('topic', '').strip()
+    propuesta = ' '.join(request.POST.get('topic_new', '').split())[:40]
+    if not Category.objects.filter(slug=topic).exclude(slug=Category.ROOT_SLUG).exists():
+        topic = ''
+    if not topic and not propuesta:
+        messages.error(request, 'Elige una categoría del listado o propón una nueva.')
+        return render(request, 'analysis/submit.html',
+                      {'arbol': arbol, 'url_previa': url,
+                       'tags_previas': request.POST.get('tags', '')[:200],
+                       'opinion_previa': request.POST.get('opinion', '')[:8000]})
     tags = request.POST.get('tags', '').strip()[:200]
     voluntary_offtopic = request.POST.get('offtopic') == 'on'
     author_opinion = request.POST.get('opinion', '').strip()[:8000]  # 4.2 A5
     author_adult_flag = request.POST.get('is_adult') == 'on'
     if not VIDEO_RX.search(url):
         messages.error(request, 'El enlace debe ser de una plataforma soportada: YouTube, TikTok, Twitch o Spotify.')
-        return render(request, 'analysis/submit.html', {'categorias': Category.objects.all()})
+        return render(request, 'analysis/submit.html', {'arbol': arbol})
     platform, external_id = detect_platform(url)
     if not platform:
         messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
@@ -221,11 +221,11 @@ def submit(request):
                            'YouTube o su RSS, pega ese enlace.')
         return render(request, 'analysis/submit_alternativas.html',
                       {'alternativas': alternativas, 'original': url,
-                       'topic': topic, 'tags': tags,
+                       'topic': topic, 'topic_new': propuesta, 'tags': tags,
                        'opinion': author_opinion,
                        'offtopic': voluntary_offtopic,
                        'is_adult': author_adult_flag,
-                       'categorias': Category.objects.all()})
+                       'arbol': arbol})
 
     # 4.3-A.8 (decision de David): ANTES de postear se comprueba el video —
     # titulo (para colocarlo bien), duracion (para el aviso de donacion) y si es
@@ -235,6 +235,7 @@ def submit(request):
     ficha = probe(url, platform)
     edad_plataforma = ficha['age_limit'] >= 18
 
+    pendiente = bool(propuesta)
     with transaction.atomic():
         post, created = Post.objects.get_or_create(
             url=url, defaults={'author': request.user, 'platform': platform,
@@ -246,8 +247,10 @@ def submit(request):
                                'duration_seconds': ficha['duration_seconds'],
                                'is_adult': author_adult_flag or edad_plataforma,
                                'adult_flag_source': ('author' if author_adult_flag
-                                                     else 'platform' if edad_plataforma else '')})
-        if created:
+                                                     else 'platform' if edad_plataforma else ''),
+                               'status': 'PENDING_APPROVAL' if pendiente else 'NEW',
+                               'pending_category': propuesta if pendiente else ''})
+        if created and topic and not pendiente:
             # 5.1-D: el contador de uso alimenta el orden del buscador
             Category.objects.filter(slug=topic).update(
                 times_used=models.F('times_used') + 1)
@@ -260,30 +263,61 @@ def submit(request):
         AnalysisRequest.objects.create(post=post, user=request.user,
                                        served_from_cache=not created)
         if not created:
+            if post.status == 'PENDING_APPROVAL':
+                messages.info(request, 'Ese vídeo ya está propuesto y espera la '
+                                       'aprobación de moderación.')
+                return redirect('index')
             # Cache: gratis, instantaneo, pero cuenta como solicitante (umbral 5/10/5)
             return redirect('post_detail', pk=post.pk)
 
-        if voluntary_offtopic:
-            post.category = 'OFFTOPIC'
-            post.status = 'OFFTOPIC_RAW'  # coste CERO hasta reunir 10 votos
-            post.save()
-            return redirect('post_detail', pk=post.pk)
+    if pendiente:
+        # 5.23-E: ni analisis, ni post visible, ni categoria — aviso a TODO el staff.
+        _avisar_staff_pendiente(post)
+        messages.info(request, f'Has propuesto la categoría «{propuesta}». Un moderador '
+                               f'la revisará y, al aprobarla, tu vídeo se publicará y '
+                               f'analizará. Te avisaremos por la campana.')
+        return redirect('index')
+    return _arrancar_post(request, post, voluntary_offtopic, comprobar_cupo=True)
 
-        if not request.user.can_spend_credit():
-            post.delete()
-            messages.error(request, 'Has agotado tu cupo diario de análisis.')
-            return redirect('index')
-        # 4.3-F: el aviso de "presupuesto agotado" comparaba con settings.DAILY_BUDGET_EUR,
-        # una cifra CABLEADA (3,00 €) que ya no era la de nadie. El presupuesto vivo
-        # se calcula desde el panel; dos fuentes de verdad para el mismo número es
-        # justo el fallo que el operador cazó en 98d3442.
-        from .services import budget_left_today
-        if budget_left_today() <= 0:
-            waiting = Post.objects.filter(status='NEW').count() + 1
-            messages.info(request, f'Presupuesto diario agotado (proyecto sin ánimo de '
-                          f'lucro). Tu análisis es el nº {waiting} de mañana. '
-                          f'Si donas, el depósito crece.')
-        AnalysisCredit.objects.create(user=request.user, post=post)  # sin devolucion
+
+def _avisar_staff_pendiente(post):
+    """5.23-E: campana (y email segun preferencia) a moderadores y superusuario."""
+    from django.db.models import Q
+    from apps.accounts.models import User
+    from apps.accounts.services import notify
+    destino = f'/pendiente/{post.slug or post.pk}/'
+    titulo = (post.title or post.url)[:70]
+    for u in User.objects.filter(is_active=True).filter(Q(is_staff=True) | Q(level='MOD')):
+        notify(u, f'Post pendiente de aprobación (categoría propuesta «{post.pending_category}»): {titulo}',
+               destino, kind='moderation')
+
+
+def _arrancar_post(request, post, voluntary_offtopic, comprobar_cupo=True):
+    """La cola de salida de un post recien creado (o recien aprobado, 5.23-E):
+    Off-Topic voluntario, cupo del autor, avisos de presupuesto y duracion,
+    cola por presupuesto o arranque de la fase barata."""
+    from .models import Post as _Post
+    if voluntary_offtopic:
+        post.category = 'OFFTOPIC'
+        post.status = 'OFFTOPIC_RAW'  # coste CERO hasta reunir 10 votos
+        post.save()
+        return redirect('post_detail', pk=post.pk)
+
+    if comprobar_cupo and not post.author.can_spend_credit():
+        post.delete()
+        messages.error(request, 'Has agotado tu cupo diario de análisis.')
+        return redirect('index')
+    # 4.3-F: el aviso de "presupuesto agotado" comparaba con settings.DAILY_BUDGET_EUR,
+    # una cifra CABLEADA (3,00 €) que ya no era la de nadie. El presupuesto vivo
+    # se calcula desde el panel; dos fuentes de verdad para el mismo número es
+    # justo el fallo que el operador cazó en 98d3442.
+    from .services import budget_left_today
+    if budget_left_today() <= 0:
+        waiting = _Post.objects.filter(status='NEW').count() + 1
+        messages.info(request, f'Presupuesto diario agotado (proyecto sin ánimo de '
+                      f'lucro). Tu análisis es el nº {waiting} de mañana. '
+                      f'Si donas, el depósito crece.')
+    AnalysisCredit.objects.create(user=post.author, post=post)  # sin devolucion
 
     # 4.3-A.8: los dos avisos del pre-chequeo. Son AVISOS, no muros: la puerta de
     # submit sigue siendo login + email verificado (decision congelada).
@@ -326,6 +360,99 @@ def submit(request):
 
     run_cheap_phase.delay(post.pk)
     return redirect('post_detail', pk=post.pk)
+
+
+# ---------------- 5.23-E: posts pendientes de aprobacion (orden de David) ----------------
+
+@login_required
+def pending_list(request):
+    """Solo staff: los posts con categoria propuesta que esperan revision."""
+    if not _require_mod(request.user):
+        return redirect('index')
+    posts = Post.objects.filter(status='PENDING_APPROVAL').order_by('created_at')
+    return render(request, 'analysis/pendientes.html', {'posts': posts})
+
+
+@login_required
+def pending_review(request, slug):
+    """Solo staff, en /pendiente/<titulo>/: revisar lo que rellenó el autor
+    (título, categoría propuesta, etiquetas, opinión), encajarlo en una
+    categoría existente o CREAR la nueva (con su padre en el árbol), y aprobar
+    — momento en el que el post se publica y arranca su análisis — o rechazar."""
+    from django.http import Http404
+    from django.utils import timezone as _tz
+    from django.utils.text import slugify
+    from apps.panel.models import AuditLog
+    from apps.accounts.services import notify
+    from .models import Category
+    if not _require_mod(request.user):
+        return redirect('index')
+    post = Post.objects.filter(slug=slug).first()
+    if not post and str(slug).isdigit():
+        post = Post.objects.filter(pk=int(slug)).first()
+    if not post:
+        raise Http404
+    if post.status != 'PENDING_APPROVAL':
+        return redirect(post.get_absolute_url())
+    arbol = Category.tree()
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        titulo = (post.title or post.url)[:80]
+        if accion == 'rechazar':
+            motivo = request.POST.get('motivo', '').strip()[:200]
+            AuditLog.objects.create(user=request.user, action='pending_rejected',
+                                    detail=f'post {post.pk} «{titulo}»: {motivo}')
+            notify(post.author, f'Tu vídeo «{titulo}» no se ha publicado'
+                                + (f': {motivo}' if motivo else '.'), '/', kind='post_phase')
+            post.delete()
+            messages.success(request, 'Propuesta rechazada y avisado el autor.')
+            return redirect('pending_list')
+        if accion != 'aprobar':
+            return redirect('pending_review', slug=slug)
+        # datos que el moderador puede haber corregido
+        nuevo_titulo = ' '.join(request.POST.get('title', '').split())[:300]
+        if len(nuevo_titulo) >= 3:
+            post.title = nuevo_titulo
+        post.tags = request.POST.get('tags', '').strip()[:200]
+        if request.POST.get('crear') == 'on':
+            nombre = ' '.join(request.POST.get('nombre', '').split())[:40] or post.pending_category
+            padre = Category.objects.filter(slug=request.POST.get('parent', '')).first() \
+                or Category.root()
+            base = slugify(nombre)[:36] or 'categoria'
+            cand, n = base, 1
+            while Category.objects.filter(slug=cand).exists():
+                n += 1
+                cand = f'{base}-{n}'
+            cat = Category.objects.create(name=nombre, slug=cand, parent=padre)
+            detalle_cat = f'categoría NUEVA «{cat.path_label()}»'
+        else:
+            cat = Category.objects.filter(slug=request.POST.get('topic', '')) \
+                .exclude(slug=Category.ROOT_SLUG).first()
+            if not cat:
+                messages.error(request, 'Elige una categoría existente o marca «crear la nueva».')
+                return redirect('pending_review', slug=slug)
+            detalle_cat = f'encajado en «{cat.path_label()}»'
+        post.topic = cat.slug
+        post.pending_category = ''
+        post.status = 'NEW'
+        post.approved_by = request.user
+        post.approved_at = _tz.now()
+        post.save()
+        Category.objects.filter(pk=cat.pk).update(times_used=models.F('times_used') + 1)
+        AuditLog.objects.create(user=request.user, action='pending_approved',
+                                detail=f'post {post.pk} «{titulo}»: {detalle_cat}')
+        notify(post.author, f'Tu vídeo «{titulo}» ha sido aprobado en «{cat.name}» y ya se analiza',
+               post.get_absolute_url(), kind='post_phase')
+        messages.success(request, f'Aprobado ({detalle_cat}): el análisis arranca ahora.')
+        return _arrancar_post(request, post, post.voluntary_offtopic, comprobar_cupo=False)
+    from apps.embeds.adapters import build_embed
+    try:
+        embed = build_embed(post)
+    except Exception:
+        embed = ''
+    return render(request, 'analysis/pendiente.html',
+                  {'post': post, 'arbol': arbol, 'embed': embed,
+                   'pendientes': Post.objects.filter(status='PENDING_APPROVAL').count()})
 
 
 @login_required
@@ -1305,7 +1432,7 @@ def search(request):
     # categoria del post. Funcionan CON texto o SOLOS (filtrar sin escribir).
     # 5.1-D: las categorias salen de la taxonomia VIVA — el buscador se puebla
     # solo con cada categoria nueva que se añada.
-    temas_vivos = list(Category.objects.values_list('slug', 'name'))
+    temas_vivos = [(c.slug, c.name) for c in Category.elegibles()]   # 5.23-E: sin la raiz
     color = request.GET.get('color', '').strip()
     if color not in dict(COLORS):
         color = ''

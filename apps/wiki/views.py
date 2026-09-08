@@ -312,7 +312,7 @@ def wiki_search(request):
             .order_by('-updated_at')[:40])
         res['posts'] = list(Post.objects.publicos().filter(title__icontains=q)
                             .exclude(is_adult=True).order_by('-created_at')[:20])
-        res['temas'] = list(Category.objects.filter(name__icontains=q)
+        res['temas'] = list(Category.objects.exclude(slug='principal').filter(name__icontains=q)
                             .order_by('name')[:10])
     res['total'] = sum(len(res[k]) for k in ('personas', 'claims', 'posts', 'temas'))
     res['indexable'] = people_indexable()
@@ -341,7 +341,7 @@ def wiki_suggest(request):
         for post in Post.objects.publicos().filter(title__icontains=q)                               .exclude(is_adult=True).order_by('-created_at')[:3]:
             out.append({'tipo': 'video', 'label': (post.title or post.url)[:90],
                         'url': post.get_absolute_url()})
-        for cat in Category.objects.filter(name__icontains=q)[:2]:
+        for cat in Category.objects.exclude(slug='principal').filter(name__icontains=q)[:2]:
             out.append({'tipo': 'tema', 'label': cat.name,
                         'url': f'/tema/{cat.slug}/'})
     return JsonResponse({'q': q, 'sugerencias': out})

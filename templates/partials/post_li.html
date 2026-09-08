@@ -1,0 +1,9 @@
+{% load i18n istt_icons %}
+{# 5.23-D/E: una entrada de post en los listados del foro — enlace + insignias + menu ⋮ compacto. #}
+<li{% if p.pinned %} class="fijado"{% endif %}>
+  <a href="{{ p.get_absolute_url }}">{% if p.pinned %}{% icon 'bookmark' 12 %} {% endif %}{{ p.title|default:p.url|truncatechars:90 }}</a>
+  {% if p.status == 'AWAITING_BUDGET' %}<a class="badge badge-apadrina" href="{{ p.get_absolute_url }}">💛 {% trans "Apadrinable" %}</a>{% endif %}
+  {% if p.comments_closed %}<span class="badge" data-tip="{% trans 'Comentarios cerrados por moderación.' %}">{% icon 'lock' 11 %}</span>{% endif %}
+  {% if extra %}<span class="badge">{{ extra }}</span>{% endif %}
+  {% include 'partials/post_menu.html' with post=p compact=True %}
+</li>

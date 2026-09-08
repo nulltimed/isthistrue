@@ -1977,3 +1977,165 @@ msgstr "Restore"
 
 msgid "Comentario eliminado por moderación (solo lo ve el staff; se puede restaurar desde ⋮)."
 msgstr "Comment removed by moderation (only staff see it; it can be restored from ⋮)."
+
+# --- 5.23-E: subforos en arbol y aprobacion de categorias ---
+msgid "Pendientes de aprobación"
+msgstr "Awaiting approval"
+
+msgid "Vídeos cuyo autor propuso una categoría que no existe. No se ven, no se analizan y su categoría no aparece hasta que alguien de moderación los apruebe (o los rechace)."
+msgstr "Videos whose author proposed a category that does not exist. They are hidden, not analysed, and the category does not appear until someone from moderation approves (or rejects) them."
+
+msgid "Nada pendiente. Todo aprobado."
+msgstr "Nothing pending. All approved."
+
+msgid "Revisar"
+msgstr "Review"
+
+msgid "Propuesto por"
+msgstr "Proposed by"
+
+msgid "Categoría propuesta por el autor"
+msgstr "Category proposed by the author"
+
+msgid "Su comentario de apertura"
+msgstr "Their opening comment"
+
+msgid "Puedes corregir el título antes de publicarlo."
+msgstr "You can fix the title before publishing it."
+
+msgid "Título"
+msgstr "Title"
+
+msgid "Etiquetas libres"
+msgstr "Free tags"
+
+msgid "¿Dónde va?"
+msgstr "Where does it go?"
+
+msgid "Si la propuesta ya existe con otro nombre, encájala aquí y no se crea nada."
+msgstr "If the proposal already exists under another name, file it here and nothing new is created."
+
+msgid "Encajarlo en una categoría existente"
+msgstr "File it under an existing category"
+
+msgid "Crea el subforo nuevo con el nombre de abajo, colgado del padre que elijas."
+msgstr "Create the new sub-forum with the name below, under the parent you choose."
+
+msgid "…o crear la categoría nueva"
+msgstr "…or create the new category"
+
+msgid "Nombre de la categoría nueva"
+msgstr "Name of the new category"
+
+msgid "Padre en el árbol"
+msgstr "Parent in the tree"
+
+msgid "Publica el vídeo y arranca su análisis."
+msgstr "Publish the video and start its analysis."
+
+msgid "Aprobar y analizar"
+msgstr "Approve and analyse"
+
+msgid "Motivo del rechazo (se lo diremos al autor)"
+msgstr "Reason for rejection (we will tell the author)"
+
+msgid "Borra la propuesta y avisa al autor."
+msgstr "Delete the proposal and notify the author."
+
+msgid "¿Rechazar y borrar esta propuesta?"
+msgstr "Reject and delete this proposal?"
+
+msgid "El subforo donde se archivará el post. Obligatorio."
+msgstr "The sub-forum where the post will be filed. Required."
+
+msgid "Categoría (obligatoria)"
+msgstr "Category (required)"
+
+msgid "— elige una categoría —"
+msgstr "— choose a category —"
+
+msgid "¿No encaja en ninguna? Propón una categoría"
+msgstr "None fits? Propose a category"
+
+msgid "Con una propuesta, tu vídeo queda pendiente hasta que moderación la apruebe (te avisaremos). Mientras, no se publica ni se analiza."
+msgstr "With a proposal, your video waits until moderation approves it (we will let you know). Meanwhile it is neither published nor analysed."
+
+msgid "%(n)s post pendiente de aprobación"
+msgid_plural "%(n)s posts pendientes de aprobación"
+msgstr[0] "%(n)s post awaiting approval"
+msgstr[1] "%(n)s posts awaiting approval"
+
+msgid "Por categoría"
+msgstr "By category"
+
+msgid "Abrir este subforo"
+msgstr "Open this sub-forum"
+
+msgid "Ver todos"
+msgstr "See all"
+
+msgid "Aún no hay posts archivados por categoría."
+msgstr "No posts filed by category yet."
+
+msgid "Subforos"
+msgstr "Sub-forums"
+
+msgid "Aún no hay posts en esta categoría."
+msgstr "No posts in this category yet."
+
+msgid "Panel · Categorías"
+msgstr "Panel · Categories"
+
+msgid "Árbol de categorías (subforos)"
+msgstr "Category tree (sub-forums)"
+
+msgid "Todo cuelga de «Principal». Crea subforos, renómbralos, muévelos de padre o bórralos (solo si están vacíos). Las propuestas de los usuarios llegan a"
+msgstr "Everything hangs from “Main”. Create sub-forums, rename them, move them to another parent or delete them (only when empty). User proposals arrive at"
+
+msgid "Nueva categoría"
+msgstr "New category"
+
+msgid "Padre"
+msgstr "Parent"
+
+msgid "Crear"
+msgstr "Create"
+
+msgid "Categoría"
+msgstr "Category"
+
+msgid "Posts"
+msgstr "Posts"
+
+msgid "Acciones"
+msgstr "Actions"
+
+msgid "Nuevo nombre"
+msgstr "New name"
+
+msgid "Renombrar"
+msgstr "Rename"
+
+msgid "Nuevo padre"
+msgstr "New parent"
+
+msgid "¿Borrar esta categoría?"
+msgstr "Delete this category?"
+
+msgid "Tiene posts: muévelos antes."
+msgstr "It has posts: move them first."
+
+msgid "Borrar"
+msgstr "Delete"
+
+msgid "Categorías"
+msgstr "Categories"
+
+msgid "Pendientes"
+msgstr "Pending"
+
+msgid "Posts pendientes de aprobación"
+msgstr "Posts awaiting approval"
+
+msgid "Pendiente de aprobación (categoría propuesta)"
+msgstr "Awaiting approval (proposed category)"

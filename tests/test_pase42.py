@@ -4922,41 +4922,39 @@ class Parche51D_CategoriasVivas(TestCase):
         self.assertIn('value="energia"', html)
         self.assertIn('Energía', html)
 
-    def test_proponer_categoria_nueva_la_crea_via_bibliotecario(self):
+    def test_proponer_categoria_deja_el_post_pendiente_de_aprobacion(self):
+        """5.23-E (ENMIENDA de David, supersede al bibliotecario del 5.1-D): la
+        propuesta NO crea nada ni arranca nada — el post espera a moderacion."""
         from unittest import mock
         from apps.analysis.models import Category, Post
         u = self._user()
         self.client.force_login(u)
-        with mock.patch('apps.agents.client.call_json',
-                        return_value={'accion': 'crear', 'nombre': 'Energía',
-                                      'slug': 'energia'}), \
-             mock.patch('apps.embeds.adapters.probe',
+        with mock.patch('apps.embeds.adapters.probe',
                         return_value={'title': 'V', 'duration_seconds': 60,
                                       'age_limit': 0}), \
-             mock.patch('apps.analysis.views.run_cheap_phase'):
+             mock.patch('apps.analysis.views.run_cheap_phase') as rcp:
             self.client.post('/submit/', {'url': 'https://youtu.be/cat1x',
-                                          'topic': 'otros', 'topic_new': 'energia'})
-        self.assertTrue(Category.objects.filter(slug='energia').exists())
+                                          'topic': '', 'topic_new': 'energia'})
+        self.assertFalse(Category.objects.filter(slug='energia').exists())
         p = Post.objects.get(url='https://youtu.be/cat1x')
-        self.assertEqual(p.topic, 'energia')
-        self.assertEqual(p.get_topic_display(), 'Energía')
+        self.assertEqual(p.status, 'PENDING_APPROVAL')
+        self.assertEqual(p.pending_category, 'energia')
+        rcp.delay.assert_not_called()
 
-    def test_la_propuesta_sinonima_se_encaja_en_la_existente(self):
+    def test_la_categoria_elegida_del_arbol_publica_directamente(self):
         from unittest import mock
         from apps.analysis.models import Post
         u = self._user()
         self.client.force_login(u)
-        with mock.patch('apps.agents.client.call_json',
-                        return_value={'accion': 'usar', 'slug': 'economia'}), \
-             mock.patch('apps.embeds.adapters.probe',
+        with mock.patch('apps.embeds.adapters.probe',
                         return_value={'title': 'V', 'duration_seconds': 60,
                                       'age_limit': 0}), \
              mock.patch('apps.analysis.views.run_cheap_phase'):
             self.client.post('/submit/', {'url': 'https://youtu.be/cat2x',
-                                          'topic': 'otros',
-                                          'topic_new': 'dinero y finanzas'})
-        self.assertEqual(Post.objects.get(url='https://youtu.be/cat2x').topic,
-                         'economia')
+                                          'topic': 'economia'})
+        p = Post.objects.get(url='https://youtu.be/cat2x')
+        self.assertEqual(p.topic, 'economia')
+        self.assertEqual(p.status, 'NEW')
 
     def test_fusionar_claims_absorbe_los_duplicados(self):
         from io import StringIO

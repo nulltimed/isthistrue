@@ -338,3 +338,139 @@ class Parche523D_MenuTresPuntos(TestCase):
         self.assertFalse(post.comments_closed or post.pinned or post.is_adult)
         self.assertEqual(post.title, 'Menu')
         self.assertTrue(m.approved)
+
+
+class Parche523E_SubforosYAprobacion(TestCase):
+    """E (ENMIENDA de David al README): categorias en arbol bajo Principal,
+    categoria obligatoria, propuesta = post pendiente (sin analisis, invisible,
+    solo staff en /pendiente/), aprobacion que publica y lanza, panel del arbol
+    y foro agrupado por categoria."""
+
+    def _autor(self):
+        u = make_user(username='prop523', email='prop523@example.org')
+        u.email_verified = True
+        u.save()
+        return u
+
+    def _mod(self):
+        return make_user(username='modE', email='mode@example.org', is_staff=True)
+
+    def _proponer(self, autor, url='https://youtu.be/e523', etiqueta='Energía'):
+        self.client.force_login(autor)
+        with mock.patch('apps.embeds.adapters.probe',
+                        return_value={'title': 'Molinos', 'duration_seconds': 60,
+                                      'age_limit': 0}), \
+             mock.patch('apps.analysis.views.run_cheap_phase'):
+            self.client.post('/submit/', {'url': url, 'topic': '', 'topic_new': etiqueta})
+        return Post.objects.get(url=url)
+
+    def test_la_migracion_colgo_los_doce_temas_de_principal(self):
+        from apps.analysis.models import Category
+        raiz = Category.objects.get(slug='principal')
+        self.assertEqual(Category.objects.get(slug='politica').parent, raiz)
+        self.assertEqual(Category.objects.get(slug='politica').path_label(),
+                         'Principal › Política')
+        self.assertNotIn(raiz, Category.elegibles())
+
+    def test_la_categoria_es_obligatoria(self):
+        autor = self._autor()
+        self.client.force_login(autor)
+        with mock.patch('apps.embeds.adapters.probe',
+                        return_value={'title': 'V', 'duration_seconds': 60, 'age_limit': 0}):
+            r = self.client.post('/submit/', {'url': 'https://youtu.be/sin523', 'topic': ''})
+        self.assertFalse(Post.objects.filter(url='https://youtu.be/sin523').exists())
+        self.assertIn('Elige una categoría', r.content.decode())
+
+    def test_la_propuesta_queda_pendiente_invisible_y_avisa_al_staff(self):
+        from apps.accounts.models import Notification
+        mod = self._mod()
+        autor = self._autor()
+        post = self._proponer(autor)
+        self.assertEqual(post.status, 'PENDING_APPROVAL')
+        self.assertTrue(Notification.objects.filter(user=mod, text__icontains='pendiente').exists())
+        # invisible: portada, foro, buscador, y 404 para el autor
+        for url in ('/', '/foro/', '/buscar/?q=Molinos'):
+            self.assertNotIn(post.get_absolute_url(), self.client.get(url).content.decode(), url)
+        self.assertEqual(self.client.get(post.get_absolute_url()).status_code, 404)
+        self.client.logout()
+        self.assertEqual(self.client.get('/pendiente/').status_code, 302)
+        # el staff lo ve listado y en su ficha de revision
+        self.client.force_login(mod)
+        self.assertIn('Molinos', self.client.get('/pendiente/').content.decode())
+        html = self.client.get(f'/pendiente/{post.slug}/').content.decode()
+        self.assertIn('Energía', html)
+        self.assertIn('Aprobar y analizar', html)
+        # el post page del staff redirige a la revision
+        self.assertRedirects(self.client.get(post.get_absolute_url()),
+                             f'/pendiente/{post.slug}/', fetch_redirect_response=False)
+
+    def test_aprobar_crea_la_categoria_bajo_su_padre_y_lanza(self):
+        from apps.analysis.models import Category
+        from apps.accounts.models import Notification
+        mod = self._mod()
+        autor = self._autor()
+        post = self._proponer(autor)
+        self.client.force_login(mod)
+        with mock.patch('apps.analysis.views.run_cheap_phase') as rcp:
+            self.client.post(f'/pendiente/{post.slug}/', {
+                'accion': 'aprobar', 'title': 'Molinos de viento', 'tags': 'eolica',
+                'crear': 'on', 'nombre': 'Energía', 'parent': 'ciencia'})
+        post.refresh_from_db()
+        cat = Category.objects.get(slug='energia')
+        self.assertEqual(cat.parent.slug, 'ciencia')
+        self.assertEqual(post.topic, 'energia')
+        self.assertEqual(post.status, 'NEW')
+        self.assertEqual(post.title, 'Molinos de viento')
+        self.assertEqual(post.approved_by, mod)
+        rcp.delay.assert_called_once_with(post.pk)
+        self.assertTrue(Notification.objects.filter(user=autor, text__icontains='aprobado').exists())
+        # y ahora aparece en el foro, bajo su categoria
+        html = self.client.get('/foro/').content.decode()
+        self.assertIn('Principal › Ciencia › Energía', html)
+        self.assertIn('Molinos de viento', html)
+        # la pagina del subforo padre incluye a la hija
+        html = self.client.get('/foro/c/ciencia/').content.decode()
+        self.assertIn('Molinos de viento', html)
+        self.assertIn('↳ Energía', html)
+
+    def test_aprobar_encajando_en_una_existente_y_rechazar(self):
+        from apps.analysis.models import Category
+        mod = self._mod()
+        autor = self._autor()
+        p1 = self._proponer(autor, 'https://youtu.be/e523b', 'dinero')
+        p2 = self._proponer(autor, 'https://youtu.be/e523c', 'basura')
+        self.client.force_login(mod)
+        with mock.patch('apps.analysis.views.run_cheap_phase'):
+            self.client.post(f'/pendiente/{p1.slug}/', {'accion': 'aprobar', 'topic': 'economia'})
+        p1.refresh_from_db()
+        self.assertEqual(p1.topic, 'economia')
+        self.assertFalse(Category.objects.filter(name='dinero').exists())
+        self.client.post(f'/pendiente/{p2.slug}/', {'accion': 'rechazar', 'motivo': 'spam'})
+        self.assertFalse(Post.objects.filter(pk=p2.pk).exists())
+
+    def test_el_panel_cuida_el_arbol(self):
+        from apps.analysis.models import Category
+        mod = make_user(username='sup523', email='sup523@example.org',
+                        is_staff=True, is_superuser=True)
+        self.client.force_login(mod)
+        self.client.post('/panel/categorias/', {'accion': 'crear', 'nombre': 'Elecciones', 'parent': 'politica'})
+        cat = Category.objects.get(slug='elecciones')
+        self.assertEqual(cat.parent.slug, 'politica')
+        self.client.post('/panel/categorias/', {'accion': 'renombrar', 'pk': cat.pk, 'nombre': 'Comicios'})
+        self.client.post('/panel/categorias/', {'accion': 'mover', 'pk': cat.pk, 'parent': 'sociedad'})
+        cat.refresh_from_db()
+        self.assertEqual((cat.name, cat.parent.slug), ('Comicios', 'sociedad'))
+        html = self.client.get('/panel/categorias/').content.decode()
+        self.assertIn('Comicios', html)
+        self.client.post('/panel/categorias/', {'accion': 'borrar', 'pk': cat.pk})
+        self.assertFalse(Category.objects.filter(pk=cat.pk).exists())
+        # la raiz no se borra ni se cuelga de si misma
+        raiz = Category.root()
+        self.client.post('/panel/categorias/', {'accion': 'borrar', 'pk': raiz.pk})
+        self.assertTrue(Category.objects.filter(slug='principal').exists())
+
+    def test_la_tarea_no_analiza_un_pendiente(self):
+        from apps.analysis.tasks import run_cheap_phase
+        autor = self._autor()
+        post = self._proponer(autor)
+        self.assertEqual(run_cheap_phase(post.pk), 'skipped')

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Revisar" %}: {{ post.title|default:post.url|truncatechars:60 }} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.23-E (orden de David): /pendiente/<titulo>/ — solo moderadores y superusuario. #}
+{# Pueden editar lo que rellenó el usuario y encajar o crear la categoría nueva. #}
+<p class="hint"><a href="{% url 'pending_list' %}">← {% trans "Pendientes de aprobación" %}</a> ({{ pendientes }})</p>
+<h1>⏳ {{ post.title|default:post.url }}</h1>
+<p class="hint">{% trans "Propuesto por" %} <strong>{{ post.author.username }}</strong> · {{ post.created_at|date:'d/m/Y H:i' }} · <a href="{{ post.url }}" rel="noopener" target="_blank">{{ post.url|truncatechars:70 }}</a>
+  {% if post.duration_seconds %} · {{ post.duration_seconds|floatformat:0 }} s{% endif %}</p>
+{% if embed %}<div class="embed wiki-embed">{{ embed|safe }}</div>{% endif %}
+
+<div class="pendiente-caja">
+  <p><strong>{% trans "Categoría propuesta por el autor" %}:</strong> <span class="badge">{% icon 'folder' 12 %} {{ post.pending_category }}</span></p>
+  {% if post.author_opinion %}<details><summary>{% trans "Su comentario de apertura" %}</summary><blockquote class="claim-literal">{{ post.author_opinion|truncatechars:1200 }}</blockquote></details>{% endif %}
+
+  <form method="post" class="pendiente-form">{% csrf_token %}
+    <label data-tip="{% trans 'Puedes corregir el título antes de publicarlo.' %}">{% trans "Título" %}<input name="title" value="{{ post.title }}" maxlength="300"></label>
+    <label>{% trans "Etiquetas libres" %}<input name="tags" value="{{ post.tags }}" maxlength="200"></label>
+
+    <fieldset class="pendiente-categoria">
+      <legend>{% trans "¿Dónde va?" %}</legend>
+      <label data-tip="{% trans 'Si la propuesta ya existe con otro nombre, encájala aquí y no se crea nada.' %}">{% trans "Encajarlo en una categoría existente" %}
+        <select name="topic"><option value="">—</option>
+          {% for c, prof in arbol %}<option value="{{ c.slug }}">{% for _ in ''|center:prof %}&nbsp;&nbsp;&nbsp;{% endfor %}{{ c.name }}</option>{% endfor %}
+        </select></label>
+      <label class="inline" data-tip="{% trans 'Crea el subforo nuevo con el nombre de abajo, colgado del padre que elijas.' %}"><input type="checkbox" name="crear"> {% trans "…o crear la categoría nueva" %}</label>
+      <label>{% trans "Nombre de la categoría nueva" %}<input name="nombre" value="{{ post.pending_category }}" maxlength="40"></label>
+      <label>{% trans "Padre en el árbol" %}
+        <select name="parent"><option value="principal">Principal</option>
+          {% for c, prof in arbol %}<option value="{{ c.slug }}">{% for _ in ''|center:prof %}&nbsp;&nbsp;&nbsp;{% endfor %}{{ c.name }}</option>{% endfor %}
+        </select></label>
+    </fieldset>
+
+    <div class="reply-actions">
+      <button name="accion" value="aprobar" data-tip="{% trans 'Publica el vídeo y arranca su análisis.' %}">✔ {% trans "Aprobar y analizar" %}</button>
+      <input name="motivo" maxlength="200" placeholder="{% trans 'Motivo del rechazo (se lo diremos al autor)' %}" style="max-width:320px">
+      <button name="accion" value="rechazar" class="danger" data-tip="{% trans 'Borra la propuesta y avisa al autor.' %}" onclick="return confirm('{% trans '¿Rechazar y borrar esta propuesta?' %}');">✕ {% trans "Rechazar" %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

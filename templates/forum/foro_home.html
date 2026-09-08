@@ -1,7 +1,11 @@
-{% extends 'base.html' %}{% load i18n static %}
+{% extends 'base.html' %}{% load i18n static istt_icons %}
 {% block title %}{% trans "Foro" %} — esestocierto?{% endblock %}
 {% block content %}
 <h1>{% trans "Foro" %}</h1>
+
+{% if pendientes %}
+<p class="warning">⏳ <a href="{% url 'pending_list' %}">{% blocktrans count n=pendientes %}{{ n }} post pendiente de aprobación{% plural %}{{ n }} posts pendientes de aprobación{% endblocktrans %}</a></p>
+{% endif %}
 
 <form class="foro-buscador" method="get" action="/buscar/">
   <input type="search" data-sugiere autocomplete="off" name="q" placeholder="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}" aria-label="{% trans 'Buscar una afirmación, un mensaje, un vídeo…' %}">
@@ -23,19 +27,34 @@
 
   <h3>{% trans "Los más nuevos" %}</h3>
   <ul class="post-list">
-    {% for p in nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a>{% if p.status == 'AWAITING_BUDGET' %} <a class="badge badge-apadrina" href="{{ p.get_absolute_url }}">💛 {% trans "Apadrinable" %}</a>{% endif %}</li>
+    {% for p in nuevos %}{% include 'partials/post_li.html' %}
     {% empty %}<li class="hint">{% trans "Nada por aquí todavía." %}</li>{% endfor %}
   </ul>
 
   {% if comentados %}<h3>{% trans "Los más comentados" %}</h3>
   <ul class="post-list">
-    {% for f in comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url|truncatechars:90 }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}
+    {% for f in comentados %}{% include 'partials/post_li.html' with p=f.post extra='💬 '|add:f.n|stringformat:'s' %}{% endfor %}
   </ul>{% endif %}
 
   {% if profundos %}<h3>{% trans "Analizados en profundidad, por votos" %}</h3>
   <ul class="post-list">
-    {% for p in profundos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a> <span class="badge">▲ {{ p.nv }}</span></li>{% endfor %}
+    {% for p in profundos %}{% include 'partials/post_li.html' with extra='▲ '|add:p.nv|stringformat:'s' %}{% endfor %}
   </ul>{% endif %}
+
+  {# 5.23-E (ENMIENDA de David): cada post agrupado por su categoria (arbol). #}
+  <h3 id="categorias">{% trans "Por categoría" %}</h3>
+  <p class="foro-chips">
+    {% for ch in chips %}<a class="chip{% if ch.prof %} chip-sub{% endif %}" href="{% url 'foro_categoria' ch.cat.slug %}" data-tip="{% trans 'Abrir este subforo' %}">{% if ch.prof %}↳ {% endif %}{{ ch.cat.name }} <span class="hint">{{ ch.n }}</span></a> {% endfor %}
+  </p>
+  {% for s in secciones %}
+  <section class="foro-categoria prof-{{ s.prof }}">
+    <h4>{% icon 'folder' 14 %} <a href="{% url 'foro_categoria' s.cat.slug %}">{{ s.cat.path_label }}</a> <span class="badge">{{ s.n }}</span></h4>
+    <ul class="post-list">
+      {% for p in s.posts %}{% include 'partials/post_li.html' %}{% endfor %}
+    </ul>
+    {% if s.n > 8 %}<p class="hint"><a href="{% url 'foro_categoria' s.cat.slug %}">{% trans "Ver todos" %} ({{ s.n }}) →</a></p>{% endif %}
+  </section>
+  {% empty %}<p class="hint">{% trans "Aún no hay posts archivados por categoría." %}</p>{% endfor %}
 </section>
 
 <section class="foro-bloque">
@@ -44,13 +63,13 @@
 
   <h3>{% trans "Los más nuevos" %}</h3>
   <ul class="post-list">
-    {% for p in off_nuevos %}<li><a href="{{ p.get_absolute_url }}">{{ p.title|default:p.url|truncatechars:90 }}</a>{% if p.status == 'AWAITING_BUDGET' %} <a class="badge badge-apadrina" href="{{ p.get_absolute_url }}">💛 {% trans "Apadrinable" %}</a>{% endif %}</li>
+    {% for p in off_nuevos %}{% include 'partials/post_li.html' %}
     {% empty %}<li class="hint">{% trans "Vacío por ahora." %}</li>{% endfor %}
   </ul>
 
   {% if off_comentados %}<h3>{% trans "Los más comentados" %}</h3>
   <ul class="post-list">
-    {% for f in off_comentados %}<li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url|truncatechars:90 }}</a> <span class="badge">💬 {{ f.n }}</span></li>{% endfor %}
+    {% for f in off_comentados %}{% include 'partials/post_li.html' with p=f.post extra='💬 '|add:f.n|stringformat:'s' %}{% endfor %}
   </ul>{% endif %}
 </section>
 <script src="{% static 'js/sugerencias.js' %}" defer></script>

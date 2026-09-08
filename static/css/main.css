@@ -826,3 +826,26 @@ main.wide .post > h1{text-align:center}
 .post-list li .kebab{margin-left:auto}
 .msg-deleted .thread-body.msg-borrado{font-style:italic}
 .comentarios-cerrados{text-align:center;margin:.8rem 0}
+/* E: subforos en arbol — foro agrupado por categoria, pagina de categoria,
+   pendientes de aprobacion y panel del arbol. */
+.foro-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin:.4rem 0 .8rem}
+.foro-chips .chip{text-decoration:none;color:#141414;background:#fff}
+.foro-chips .chip-sub{opacity:.85}
+.foro-categoria{margin:.9rem 0 1.1rem;padding-left:.6rem;border-left:3px solid var(--line)}
+.foro-categoria.prof-1{margin-left:1rem}.foro-categoria.prof-2{margin-left:2rem}.foro-categoria.prof-3{margin-left:3rem}
+.foro-categoria h4{margin:.2rem 0 .4rem;font-size:.98rem;display:flex;align-items:center;gap:.35rem}
+.foro-categoria h4 a{text-decoration:none}
+.post-list li.fijado{border-color:#141414}
+.pendiente-caja{border:1px dashed var(--line);border-radius:8px;padding:.8rem 1rem;background:#fff;margin-top:.8rem}
+.pendiente-form input,.pendiente-form select{max-width:520px}
+.pendiente-categoria{border:1px solid var(--line);border-radius:8px;padding:.4rem .9rem .7rem;margin:.8rem 0}
+.pendiente-categoria legend{font-weight:700;padding:0 .3rem}
+.cat-nueva{display:flex;gap:.7rem;align-items:flex-end;flex-wrap:wrap;margin:.6rem 0 1rem}
+.cat-nueva label{margin:0}
+.cat-nueva button.mini{color:#fff;padding:.5rem .8rem}
+.cat-tabla td{vertical-align:middle}
+.cat-acciones{display:flex;gap:.4rem;flex-wrap:wrap}
+.cat-acciones form{display:flex;gap:.25rem;align-items:center;margin:0}
+.cat-acciones input,.cat-acciones select{margin:0;padding:.25rem .4rem;font-size:.82rem;max-width:160px}
+.cat-acciones button.mini{color:#fff}
+.cat-acciones button.mini:disabled{background:#bbb;cursor:not-allowed}

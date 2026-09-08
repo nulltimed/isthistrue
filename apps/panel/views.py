@@ -392,6 +392,65 @@ def moderators_panel(request):
 
 
 @staff_member_required
+def categories_panel(request):
+    """5.23-E (ENMIENDA de David al README): el ARBOL de subforos se cuida
+    desde aqui — crear (con padre), renombrar, mover de padre y borrar (solo
+    vacias y sin hijas). Todo con rastro en AuditLog."""
+    from django.db.models import Count
+    from django.utils.text import slugify
+    from apps.analysis.models import Category, Post
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        nombre = ' '.join(request.POST.get('nombre', '').split())[:40]
+        padre = Category.objects.filter(slug=request.POST.get('parent', '')).first()
+        cat = Category.objects.filter(pk=request.POST.get('pk') or 0).first()
+        if accion == 'crear' and nombre:
+            base = slugify(nombre)[:36] or 'categoria'
+            cand, n = base, 1
+            while Category.objects.filter(slug=cand).exists():
+                n += 1
+                cand = f'{base}-{n}'
+            nueva = Category.objects.create(name=nombre, slug=cand,
+                                            parent=padre or Category.root())
+            AuditLog.objects.create(user=request.user, action='category_created',
+                                    detail=nueva.path_label())
+            messages.success(request, f'Categoría creada: «{nueva.path_label()}».')
+        elif accion == 'renombrar' and cat and nombre and not cat.is_root:
+            antes = cat.name
+            cat.name = nombre
+            cat.save(update_fields=['name'])
+            AuditLog.objects.create(user=request.user, action='category_renamed',
+                                    detail=f'{antes} -> {nombre}')
+            messages.success(request, f'Renombrada «{antes}» → «{nombre}».')
+        elif accion == 'mover' and cat and padre and not cat.is_root:
+            if padre.pk == cat.pk or cat in padre.ancestors():
+                messages.error(request, 'Una categoría no puede colgar de sí misma.')
+            else:
+                cat.parent = padre
+                cat.save(update_fields=['parent'])
+                AuditLog.objects.create(user=request.user, action='category_moved',
+                                        detail=cat.path_label())
+                messages.success(request, f'Movida a «{cat.path_label()}».')
+        elif accion == 'borrar' and cat and not cat.is_root:
+            usos = Post.objects.filter(topic=cat.slug).count()
+            if usos or cat.children.exists():
+                messages.error(request, 'Solo se borran categorías vacías y sin subforos: '
+                                        'mueve antes sus posts.')
+            else:
+                AuditLog.objects.create(user=request.user, action='category_deleted',
+                                        detail=cat.path_label())
+                cat.delete()
+                messages.success(request, 'Categoría borrada.')
+        return redirect('panel_categories')
+    conteo = dict(Post.objects.values_list('topic').annotate(n=Count('pk'))
+                  .values_list('topic', 'n'))
+    filas = [{'cat': c, 'prof': p, 'n': conteo.get(c.slug, 0)} for c, p in Category.tree()]
+    return render(request, 'panel/categorias.html', {
+        'filas': filas, 'raiz': Category.root(),
+        'pendientes': Post.objects.filter(status='PENDING_APPROVAL').count()})
+
+
+@staff_member_required
 def moderator_settings_panel(request):
     """4.2 H7: subseccion «Moderador» del panel — el superusuario tambien es
     moderador supremo. Aloja los ajustes de moderacion independientes del resto;

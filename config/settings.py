@@ -77,6 +77,7 @@ TEMPLATES = [{
         'config.context_processors.quota_banner',  # cupos publicos + donaciones
         'config.context_processors.logo_variant',   # logo por DOMINIO (4.2 C6)
         'config.context_processors.unread_notifications',  # campana (4.2 D2)
+        'config.context_processors.pendientes_aprobacion',  # 5.23-E: staff
     ]},
 }]
 WSGI_APPLICATION = 'config.wsgi.application'

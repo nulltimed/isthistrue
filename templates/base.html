@@ -39,6 +39,7 @@
       <a href="{% url 'submit' %}" class="primary">{% icon 'search' 15 %} {% trans "Analizar un vídeo" %}</a>
       <a href="{% url 'notifications' %}" id="bell" class="bell" title="{% trans 'Notificaciones' %}">{% icon 'bell' 18 %}{% if unread_notifications %}<span class="bell-count">{{ unread_notifications }}</span>{% endif %}</a>
       <a href="{% url 'pm_inbox' %}" class="bell" title="{% trans 'Mensajes privados' %}">{% icon 'mail' 18 %}</a>
+      {% if pendientes_aprobacion %}<a href="{% url 'pending_list' %}" class="bell" data-tip="{% trans 'Posts pendientes de aprobación' %}">⏳<span class="bell-count">{{ pendientes_aprobacion }}</span></a>{% endif %}
       {% if user.is_adult %}<a href="{% url 'adult_room' %}" title="{% trans 'Análisis para mayores de edad' %}">+18</a>{% endif %}
       <a href="{% url 'account_settings' %}">{{ user.username }}</a>
       {% if user.is_staff %}<a href="{% url 'panel_settings' %}">Panel</a>{% endif %}

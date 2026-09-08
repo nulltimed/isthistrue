@@ -9,6 +9,9 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('submit/', views.submit, name='submit'),
     path('analizar/', views.submit),  # alias en español (guia 3.9 lo nombra asi)
+    # 5.23-E: posts con categoria propuesta, a la espera de moderacion (solo staff)
+    path('pendiente/', views.pending_list, name='pending_list'),
+    path('pendiente/<slug:slug>/', views.pending_review, name='pending_review'),
     path('post/<int:pk>/', views.post_detail, name='post_detail'),
     # 5.0-D: URL canonica legible SIN numero (slug unico; el duplicado lleva -2).
     # La numerica de arriba y la forma historica slug/pk del 5.0-C hacen 301.

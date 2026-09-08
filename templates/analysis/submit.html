@@ -5,18 +5,21 @@
   <p class="hint">{% trans "Pega el enlace del contenido. Plataformas soportadas: YouTube, TikTok, Twitch y Spotify (pódcast). El vídeo nunca se almacena: solo se transcribe y analiza." %}</p>
   <form method="post">{% csrf_token %}
     <label>{% trans "Enlace del vídeo (obligatorio)" %}
-      <input type="url" name="url" required placeholder="https://www.youtube.com/watch?v=...">
+      <input type="url" name="url" required placeholder="https://www.youtube.com/watch?v=..." value="{{ url_previa|default:'' }}">
     </label>
-    <label>{% trans "Tema" %}<select name="topic">
-      {% for c in categorias %}<option value="{{ c.slug }}" {% if c.slug == 'otros' %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    {# 5.23-E (ENMIENDA de David): la categoria es OBLIGATORIA y sale del arbol #}
+    {# de subforos. Si ninguna encaja, se propone una y moderacion la aprueba. #}
+    <label data-tip="{% trans 'El subforo donde se archivará el post. Obligatorio.' %}">{% trans "Categoría (obligatoria)" %}<select name="topic" id="topic-select">
+      <option value="">{% trans "— elige una categoría —" %}</option>
+      {% for c, prof in arbol %}<option value="{{ c.slug }}">{% for _ in ''|center:prof %}&nbsp;&nbsp;&nbsp;{% endfor %}{{ c.name }}</option>{% endfor %}
     </select></label>
-    <label>{% trans "¿No encaja en ninguna? Propón una categoría (opcional)" %}
+    <label>{% trans "¿No encaja en ninguna? Propón una categoría" %}
       <input name="topic_new" maxlength="40" placeholder="{% trans 'p. ej. Energía' %}">
-      <span class="hint">{% trans "Un bibliotecario automático la contrastará con las existentes: la encajará en una o la creará si de verdad falta." %}</span></label>
-    <label>{% trans "Etiquetas libres (opcional, separadas por comas)" %}<input name="tags" placeholder="vacunas, 5G"></label>
+      <span class="hint">{% trans "Con una propuesta, tu vídeo queda pendiente hasta que moderación la apruebe (te avisaremos). Mientras, no se publica ni se analiza." %}</span></label>
+    <label>{% trans "Etiquetas libres (opcional, separadas por comas)" %}<input name="tags" placeholder="vacunas, 5G" value="{{ tags_previas|default:'' }}"></label>
     <label class="inline"><input type="checkbox" name="offtopic"> {% trans "Es opinión/entretenimiento: mandarlo directamente a Off-Topic" %}</label>
     <label>{% trans "Opina (opcional): tu comentario abrirá el hilo del foro, debajo de la transcripción" %}
-      <textarea name="opinion" rows="5" data-mdtoolbar maxlength="8000" placeholder="{% trans 'Markdown: **negrita**, *cursiva*, > cita, enlaces…' %}"></textarea>
+      <textarea name="opinion" rows="5" data-mdtoolbar maxlength="8000" placeholder="{% trans 'Markdown: **negrita**, *cursiva*, > cita, enlaces…' %}">{{ opinion_previa|default:'' }}</textarea>
     </label>
     <button class="wide">{% trans "Analizar" %}</button>
   </form>

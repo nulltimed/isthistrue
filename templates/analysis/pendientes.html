@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Pendientes de aprobación" %} — esestocierto?{% endblock %}
+{% block content %}
+{# 5.23-E (orden de David): solo el staff ve los posts con categoria propuesta. #}
+<h1>⏳ {% trans "Pendientes de aprobación" %} <span class="badge">{{ posts|length }}</span></h1>
+<p class="hint">{% trans "Vídeos cuyo autor propuso una categoría que no existe. No se ven, no se analizan y su categoría no aparece hasta que alguien de moderación los apruebe (o los rechace)." %}</p>
+<ul class="post-list">
+  {% for p in posts %}
+  <li><a href="{% url 'pending_review' p.slug|default:p.pk %}">{{ p.title|default:p.url|truncatechars:90 }}</a>
+    <span class="badge">{% icon 'folder' 12 %} {{ p.pending_category }}</span>
+    <span class="hint">{{ p.author.username }} · {{ p.created_at|date:'d/m H:i' }}</span></li>
+  {% empty %}<li class="hint">{% trans "Nada pendiente. Todo aprobado." %}</li>{% endfor %}
+</ul>
+{% endblock %}

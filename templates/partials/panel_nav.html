@@ -18,6 +18,8 @@ título de la ventana del navegador.
   <a href="{% url 'panel_models' %}"{% if cur == 'panel_models' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Modelos" %}</a>
   <a href="{% url 'panel_moderators' %}"{% if cur == 'panel_moderators' %} class="active" aria-current="page"{% endif %}>{% icon 'users' 16 %} {% trans "Moderadores" %}</a>
   <a href="{% url 'panel_moderator_settings' %}"{% if cur == 'panel_moderator_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'shield' 16 %} {% trans "Moderación" %}</a>
+  <a href="{% url 'panel_categories' %}"{% if cur == 'panel_categories' %} class="active" aria-current="page"{% endif %}>{% icon 'folder' 16 %} {% trans "Categorías" %}</a>
+  <a href="{% url 'pending_list' %}"{% if cur == 'pending_list' %} class="active" aria-current="page"{% endif %}>⏳ {% trans "Pendientes" %}{% if pendientes_aprobacion %} <span class="badge">{{ pendientes_aprobacion }}</span>{% endif %}</a>
   <a href="{% url 'panel_complaints' %}"{% if cur == 'panel_complaints' %} class="active" aria-current="page"{% endif %}>{% icon 'flag' 16 %} {% trans "Reclamaciones" %}</a>
   <a href="{% url 'panel_staging' %}"{% if cur == 'panel_staging' %} class="active" aria-current="page"{% endif %}>{% icon 'eye' 16 %} {% trans "Espejo" %}</a>
 </nav>

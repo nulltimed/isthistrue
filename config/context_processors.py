@@ -14,6 +14,20 @@ def unread_notifications(request):
     return {'unread_notifications': 0}
 
 
+def pendientes_aprobacion(request):
+    """5.23-E: cuantos posts esperan aprobacion — solo para el staff (campana
+    de la cabecera y pestaña del panel)."""
+    try:
+        u = request.user
+        if u.is_authenticated and (u.is_staff or u.level == 'MOD'):
+            from apps.analysis.models import Post
+            return {'pendientes_aprobacion':
+                    Post.objects.filter(status='PENDING_APPROVAL').count()}
+    except Exception:
+        pass
+    return {'pendientes_aprobacion': 0}
+
+
 def logo_variant(request):
     """4.2 C6 (decision de David): el LOGO sigue al DOMINIO; el idioma de la
     interfaz sigue mandandolo el selector ES-EN. wikitrue y cualquier otro host
