@@ -39,11 +39,12 @@
   {# titulo; clic en un color abre su listado; clic en un claim reproduce #}
   {# el multimedia desde un segundo antes (seekTo ya resta 1). #}
   {% if semaforo_post %}
+  {# 5.23-B (orden de David): globos CENTRADOS con su leyenda, a la medida. #}
   <div class="semaforo-post">
-    <button class="sf-chip sf-verde" data-cubo="verde">🟢 {{ semaforo_post.verde|length }}</button>
-    <button class="sf-chip sf-ambar" data-cubo="ambar">🟡 {{ semaforo_post.ambar|length }}</button>
-    <button class="sf-chip sf-rojo" data-cubo="rojo">🔴 {{ semaforo_post.rojo|length }}</button>
-    <button class="sf-chip sf-sin" data-cubo="sin">⚪ {{ semaforo_post.sin|length }} {% trans "sin respuesta" %}</button>
+    <button class="sf-chip sf-verde" data-cubo="verde" data-tip="{% trans 'Afirmaciones que las fuentes confirman. Clic para verlas y saltar al momento del vídeo.' %}">🟢 {% trans "Verificado" %} <strong>{{ semaforo_post.verde|length }}</strong></button>
+    <button class="sf-chip sf-ambar" data-cubo="ambar" data-tip="{% trans 'Afirmaciones engañosas o sin el contexto necesario. Clic para verlas.' %}">🟡 {% trans "Con matices" %} <strong>{{ semaforo_post.ambar|length }}</strong></button>
+    <button class="sf-chip sf-rojo" data-cubo="rojo" data-tip="{% trans 'Afirmaciones que las fuentes desmienten. Clic para verlas.' %}">🔴 {% trans "Falso" %} <strong>{{ semaforo_post.rojo|length }}</strong></button>
+    <button class="sf-chip sf-sin" data-cubo="sin" data-tip="{% trans 'Opiniones puras o afirmaciones que el sistema no ha podido resolver. Clic para verlas.' %}">⚪ {% trans "Sin respuesta" %} <strong>{{ semaforo_post.sin|length }}</strong></button>
   </div>
   {% for nombre, filas in semaforo_post.items %}{% if nombre != 'total' %}
   <dialog class="sf-lista" id="sf-{{ nombre }}">
@@ -102,15 +103,7 @@
       <p class="hint"><a href="{% url 'login' %}">{% trans "Entra" %}</a> {% trans "para participar." %}</p>
     {% endif %}
   </section>
-  <div class="share">
-    Compartir:
-    <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>
-    <a href="https://twitter.com/intent/tweet?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">X</a>
-    <a href="https://wa.me/?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">WhatsApp</a>
-    <a href="https://t.me/share/url?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Telegram</a>
-    <a href="https://www.facebook.com/sharer/sharer.php?u=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Facebook</a>
-    <a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a>
-  </div>
+  {% include 'partials/share.html' %}
 {% if post.censored and not is_mod %}</div>{% endif %}
 </article>
 <script src="{% static 'js/transcript.js' %}" defer></script>

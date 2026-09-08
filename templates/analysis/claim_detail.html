@@ -51,11 +51,6 @@
   {% endif %}
   <p class="hint">{% blocktrans with n=claim.versions.count %}Historial: {{ n }} versión(es).{% endblocktrans %} <a href="#">{% trans "Reportar error" %}</a></p>
   {% if user.is_authenticated %}<p><a href="/wiki/claim/{{ claim.slug }}/seguir/">🔔 {% trans "Seguir esta afirmación" %}</a> ({% trans "aviso si cambia de color o reaparece" %})</p>{% endif %}
-  <div class="share">{% trans "Compartir" %}:
-    <a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a>
-    <a href="https://twitter.com/intent/tweet?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">X</a>
-    <a href="https://wa.me/?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">WhatsApp</a>
-    <a href="https://t.me/share/url?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Telegram</a>
-  </div>
+  {% include 'partials/share.html' %}
 </article>
 {% endblock %}

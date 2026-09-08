@@ -1,0 +1,18 @@
+{% load i18n istt_icons %}
+{# 5.23-B (orden de David): compartir AGRUPADO en un solo icono centrado, con #}
+{# el diseno de la casa. Los destinos son los del README (r/escierto destacado, #}
+{# X, WhatsApp, Telegram, Facebook, Bluesky — David: «dejalos») + Copiar enlace.#}
+<div class="share-wrap">
+  <details class="share-menu">
+    <summary data-tip="{% trans 'Compartir esta página' %}" aria-label="{% trans 'Compartir' %}">{% icon 'share' 20 %}<span class="share-label">{% trans "Compartir" %}</span></summary>
+    <ul class="share-list">
+      <li><a href="https://www.reddit.com/r/escierto/submit?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">r/escierto</a></li>
+      <li><a href="https://twitter.com/intent/tweet?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">X</a></li>
+      <li><a href="https://wa.me/?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">WhatsApp</a></li>
+      <li><a href="https://t.me/share/url?url=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Telegram</a></li>
+      <li><a href="https://www.facebook.com/sharer/sharer.php?u=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Facebook</a></li>
+      <li><a href="https://bsky.app/intent/compose?text=https://{{ request.get_host }}{{ request.path }}" rel="noopener" target="_blank">Bluesky</a></li>
+      <li><button type="button" class="copiar-enlace" data-url="https://{{ request.get_host }}{{ request.path }}" data-ok="{% trans 'Enlace copiado' %}">{% icon 'link' 15 %} {% trans "Copiar enlace" %}</button></li>
+    </ul>
+  </details>
+</div>

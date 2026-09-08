@@ -734,3 +734,47 @@ cursor:pointer;font-size:.82rem;line-height:1.25}
 .sf-texto{cursor:pointer}
 .sf-texto:hover{text-decoration:underline}
 .sf-cerrar{float:right}
+
+/* ==========================================================================
+   5.23 (ordenes de David, 2026-09-08)
+   ========================================================================== */
+/* B.1: la caja de transcripcion vuelve a ser DESPLAZABLE dentro del post (la
+   regla del 4.3-A.4 le quitaba el alto y el scroll: el karaoke pedia scrollTo
+   a una caja que no podia moverse). Altura atada a la pantalla; la columna ya
+   no recorta por su cuenta. */
+.transcript-col{max-height:none;overflow:visible}
+.transcript-col .transcript-box{max-height:calc(100vh - 9.5rem);overflow-y:auto;
+  overscroll-behavior:contain;border:0;padding:0 .2rem 0 0}
+/* B.2: titulo y globos del semaforo CENTRADOS; cada globo, a la medida de su
+   leyenda («Verificado», «Falso»...) y no mas. */
+main.wide .post > h1{text-align:center}
+.semaforo-post{justify-content:center;gap:.45rem}
+.sf-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.28rem .75rem;
+  font-size:.88rem;font-weight:600;white-space:nowrap;color:#141414;line-height:1.3}
+.sf-chip strong{font-variant-numeric:tabular-nums}
+/* B.3: compartir agrupado en UN icono centrado que despliega los destinos. */
+.share-wrap{display:flex;justify-content:center;margin-top:1.1rem}
+.share-menu{position:relative}
+.share-menu summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;
+  gap:.4rem;border:1px solid var(--line);border-radius:999px;padding:.32rem .85rem;
+  background:#fff;color:#141414;font-weight:600;font-size:.88rem}
+.share-menu summary::-webkit-details-marker{display:none}
+.share-menu summary:hover,.share-menu[open] summary{border-color:#141414}
+.share-list{position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + .35rem);
+  z-index:40;list-style:none;margin:0;padding:.3rem;background:#fff;border:1px solid #141414;
+  border-radius:8px;box-shadow:var(--shadow);min-width:190px}
+.share-list li a,.share-list li button{display:flex;align-items:center;gap:.4rem;width:100%;
+  text-align:left;padding:.42rem .75rem;text-decoration:none;color:#141414;background:none;
+  border:0;font:inherit;font-weight:600;font-size:.88rem;border-radius:5px;cursor:pointer}
+.share-list li a:hover,.share-list li button:hover{background:#141414;color:#fff}
+/* B.4: bocadillos explicativos de la casa — [data-tip] en cualquier control.
+   Aparecen al posar el cursor o al enfocar con teclado; sin JS. */
+[data-tip]{position:relative}
+[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 7px);
+  transform:translateX(-50%) translateY(3px);background:#141414;color:#fff;font-size:.75rem;
+  font-weight:500;line-height:1.35;padding:.4rem .6rem;border-radius:6px;width:max-content;
+  max-width:260px;white-space:normal;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.18);
+  opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:60}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translateX(-50%)}
+[data-tip].tip-abajo::after{bottom:auto;top:calc(100% + 7px)}
+@media (max-width:640px){[data-tip]::after{display:none}}

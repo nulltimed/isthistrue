@@ -79,3 +79,50 @@ class Parche523A_RunpodReintentoYContador(TestCase):
         src = open('workers/gpu/diarize/Dockerfile.slim', encoding='utf-8').read()
         self.assertNotIn('ARG HF_TOKEN', src)
         self.assertIn('--mount=type=secret,id=hf_token', src)
+
+
+class Parche523B_TranscripcionCabeceraCompartir(TestCase):
+    """B: la caja de transcripcion es desplazable DENTRO del post (el karaoke
+    tenia sobre que scrollear), titulo y globos centrados con su leyenda, y
+    compartir agrupado en un icono."""
+
+    def test_la_caja_de_transcripcion_tiene_scroll_propio(self):
+        css = open('static/css/main.css', encoding='utf-8').read()
+        regla = css.split('/* B.1:')[1]
+        self.assertIn('.transcript-col .transcript-box{max-height:calc(100vh', regla)
+        self.assertIn('overflow-y:auto', regla.split('.transcript-col .transcript-box{')[1][:120])
+        # el JS sigue scrolleando la CAJA, jamas la pagina (orden 5.10-C)
+        js = open('static/js/transcript.js', encoding='utf-8').read()
+        self.assertIn('box.scrollTo', js)
+        self.assertNotIn('window.scrollTo', js)
+
+    def test_globos_con_leyenda_y_centrados(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user()
+        post = Post.objects.create(author=u, url='https://youtu.be/b523',
+                                   platform='youtube', status='DONE', title='B')
+        seg = post.transcript_segments.create(start_seconds=5, end_seconds=9, text='x')
+        c = Claim.objects.create(text_original='x', color='RED', slug='b523')
+        ClaimAppearance.objects.create(claim=c, segment=seg, quote='x')
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('Verificado', html)
+        self.assertIn('Falso', html)
+        self.assertIn('Sin respuesta', html)
+        css = open('static/css/main.css', encoding='utf-8').read()
+        self.assertIn('main.wide .post > h1{text-align:center}', css)
+        self.assertIn('.semaforo-post{justify-content:center', css)
+
+    def test_compartir_agrupado_en_post_y_claim(self):
+        from apps.wiki.models import Claim
+        u = make_user()
+        post = Post.objects.create(author=u, url='https://youtu.be/b523s', title='S')
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertEqual(html.count('share-menu'), 1)
+        for red in ('reddit.com', 'twitter.com', 'wa.me', 't.me', 'facebook.com', 'bsky.app'):
+            self.assertIn(red, html)
+        self.assertIn('copiar-enlace', html)
+        self.assertNotIn('class="share">', html, 'la fila vieja de enlaces sueltos se fue')
+        c = Claim.objects.create(text_original='c', color='GREEN', slug='c523')
+        html = self.client.get('/wiki/claim/c523/').content.decode()
+        self.assertIn('share-menu', html)
+        self.assertIn('menus.js', html)

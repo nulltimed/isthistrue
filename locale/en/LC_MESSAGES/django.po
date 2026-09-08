@@ -1767,3 +1767,46 @@ msgstr "unanswered"
 
 msgid "ficha"
 msgstr "fact page"
+
+# --- 5.23-B: cabecera centrada, compartir agrupado, bocadillos ---
+msgid "Compartir esta página"
+msgstr "Share this page"
+
+msgid "Copiar enlace"
+msgstr "Copy link"
+
+msgid "Enlace copiado"
+msgstr "Link copied"
+
+msgid "Verificado"
+msgstr "Verified"
+
+msgid "Con matices"
+msgstr "With caveats"
+
+msgid "Falso"
+msgstr "False"
+
+msgid "Sin respuesta"
+msgstr "Unanswered"
+
+msgid "Afirmaciones que las fuentes confirman. Clic para verlas y saltar al momento del vídeo."
+msgstr "Claims the sources confirm. Click to see them and jump to that moment of the video."
+
+msgid "Afirmaciones engañosas o sin el contexto necesario. Clic para verlas."
+msgstr "Misleading claims or claims missing needed context. Click to see them."
+
+msgid "Afirmaciones que las fuentes desmienten. Clic para verlas."
+msgstr "Claims the sources refute. Click to see them."
+
+msgid "Opiniones puras o afirmaciones que el sistema no ha podido resolver. Clic para verlas."
+msgstr "Pure opinions or claims the system could not settle. Click to see them."
+
+msgid "GPU de Runpod este mes"
+msgstr "Runpod GPU this month"
+
+msgid "trabajos completados"
+msgstr "jobs completed"
+
+msgid "fallidos (cayeron a la CPU)"
+msgstr "failed (fell back to CPU)"
