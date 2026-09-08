@@ -1,29 +1,93 @@
-{% extends 'base.html' %}{% load i18n %}
+{% extends 'base.html' %}{% load i18n static istt_icons %}
 {% block title %}{% trans "Análisis" %}: {{ post.title|default:post.url|truncatechars:60 }} — esestocierto?{% endblock %}
-{% block og %}{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}{% endblock %}
+{% block main_class %}wide{% endblock %}
+{% block og %}{% if not indexable %}<meta name="robots" content="noindex, nofollow">{% endif %}
+<meta property="og:title" content="{{ post.title|default:post.url }}">{% endblock %}
 {% block content %}
-<h1>{% trans "El análisis" %} · {{ post.title|default:post.url }}</h1>
-<p class="hint"><a href="{{ post.get_absolute_url }}">{% trans "Ver el post completo (transcripción, hilo y votos)" %}</a></p>
-
-{% if embed %}<div class="embed wiki-embed">{{ embed|safe }}</div>{% endif %}
-
-<h2>{% trans "Afirmaciones y opiniones analizadas" %} <span class="badge">{{ filas|length }}</span></h2>
-{% for f in filas %}
-<article class="wiki-claim-row color-{{ f.claim.color }}">
-  <h3>{% if f.claim.kind == 'OPINION' %}💭 {% endif %}<span class="verdict verdict-{{ f.claim.color }}">{% trans f.claim.get_color_display %}</span>
-      <a href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/">{{ f.claim.title|default:f.claim.text_original|truncatechars:110 }}</a></h3>
-  <blockquote class="claim-literal">«{{ f.claim.text_original|truncatechars:300 }}»</blockquote>
-  {% if f.claim.what_evidence_says %}<p>{{ f.claim.what_evidence_says|truncatechars:400 }}</p>{% endif %}
-  {% if f.claim.sources.exists %}
-  <p class="hint">{% trans "Referencias" %}:
-    {% for s in f.claim.sources.all|slice:":5" %}<a href="{{ s.url }}" rel="noopener">[{{ forloop.counter }}]</a> {% endfor %}</p>
+{# 5.23-G (orden de David): la wiki del video ES la vista del post sin comentarios. #}
+<article class="post wiki-video">
+  <div class="post-topbar">
+    <a class="ibtn" href="{{ post.get_absolute_url }}" data-tip="{% trans 'Ir al post del foro: la conversación, los votos y las herramientas.' %}">{% icon 'chat' 18 %} {% trans "Post" %}</a>
+    <button type="button" class="ibtn viajero-btn" id="viajero-btn" aria-pressed="false" data-tip="{% trans 'Modo viajero: al bajar a leer los mensajes, los hablantes (izquierda) y la transcripción (derecha) te acompañan; el vídeo sigue sonando arriba. Clic para activar o desactivar.' %}" aria-label="{% trans 'Modo viajero' %}">{% icon 'columns' 20 %}</button>
+  </div>
+  <h1>{{ post.title|default:post.url }}</h1>
+  {% if semaforo_post %}
+  <div class="semaforo-post">
+    <button class="sf-chip sf-rojo" data-grupo="RED">🔴 {% trans "Falso" %} <strong>{{ semaforo_post.rojo|length }}</strong></button>
+    <button class="sf-chip sf-ambar" data-grupo="AMBER">🟡 {% trans "Con matices" %} <strong>{{ semaforo_post.ambar|length }}</strong></button>
+    <button class="sf-chip sf-verde" data-grupo="GREEN">🟢 {% trans "Verificado" %} <strong>{{ semaforo_post.verde|length }}</strong></button>
+    <button class="sf-chip sf-sin" data-grupo="SIN">⚪ {% trans "Sin respuesta" %} <strong>{{ semaforo_post.sin|length }}</strong></button>
+  </div>
   {% endif %}
-  <p class="wiki-claim-enlaces">
-    <a href="{{ post.get_absolute_url }}?t={{ f.t }}">▶ {% trans "Ver en el vídeo" %} ({{ f.t }}s)</a> ·
-    <a href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/">{% trans "Ficha completa con todas las fuentes" %}</a>
-  </p>
+
+  <div id="post-body">
+    {% include 'partials/media_grid.html' %}
+  </div>
+
+  <section class="wv-claims" id="afirmaciones">
+    <h2 style="text-align:center">{% trans "Afirmaciones y opiniones analizadas" %} <span class="badge">{{ total_claims }}</span></h2>
+    {% if speaker_rows %}
+    <p class="wv-hablantes">
+      <button type="button" class="chip activo" data-spk="" data-tip="{% trans 'Ver las afirmaciones de todos los hablantes' %}">{% trans "Todos" %}</button>
+      {% for row in speaker_rows %}<button type="button" class="chip" data-spk="{{ row.color }}" data-tip="{% trans 'Solo las afirmaciones de este hablante' %}">{% if row.name %}{{ row.name }}{% else %}{% trans "Hablante" %} {{ row.num }}{% endif %}</button>{% endfor %}
+    </p>
+    {% endif %}
+    {% for g in grupos %}
+    <details class="acordeon color-{{ g.clave }}" id="grupo-{{ g.clave }}" {% if g.filas %}open{% endif %}>
+      <summary>{{ g.emoji }} {% trans g.titulo %} <span class="badge">{{ g.filas|length }}</span></summary>
+      <ul class="wv-lista">
+        {% for f in g.filas %}
+        <li class="wv-fila{% if forloop.counter > 8 %} oculta-por-tope{% endif %}" data-spk="{{ f.spk }}">
+          <a class="ts" href="#" onclick="seekTo({{ f.t }});return false;" data-tip="{% trans 'Reproducir desde un segundo antes' %}">[{{ f.t }}s]</a>
+          <span class="wv-quien">{% if f.spk is not None %}<span class="speaker-tag spk-{{ f.spk }}">{{ f.quien }}</span>{% endif %}</span>
+          <span class="wv-texto" onclick="seekTo({{ f.t }})" title="{{ f.claim.what_evidence_says|truncatechars:200 }}">{% if f.claim.kind == 'OPINION' %}💭 {% endif %}{{ f.claim.title|default:f.claim.text_original|truncatechars:140 }}</span>
+          <span class="wv-enlaces"><button type="button" class="ibtn wv-toggle" data-tip="{% trans 'Ver la explicación y las referencias aquí mismo' %}" onclick="this.closest('.wv-fila').classList.toggle('abierta')">{% icon 'list' 14 %}</button>
+            <a class="verdict verdict-{{ f.claim.color }}" href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/" data-tip="{% trans 'Ficha completa: explicación, fuentes e historial' %}">{% trans "ficha" %}</a></span>
+          {# 5.4-C (se conserva): la explicacion, las referencias y los DOS enlaces, desplegables en la fila. #}
+          <div class="wv-detalle">
+            {% if f.claim.what_evidence_says %}<p>{{ f.claim.what_evidence_says|truncatechars:400 }}</p>{% endif %}
+            <p class="hint">{% if f.claim.sources.exists %}{% trans "Referencias" %}: {% for s in f.claim.sources.all|slice:":5" %}<a href="{{ s.url }}" rel="noopener" target="_blank">[{{ forloop.counter }}]</a> {% endfor %} · {% endif %}
+              <a href="{{ post.get_absolute_url }}?t={{ f.t }}">▶ {% trans "Ver en el post" %} ({{ f.t }}s)</a> ·
+              <a href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/">{% trans "Ficha completa con todas las fuentes" %}</a></p>
+          </div>
+        </li>
+        {% empty %}<li class="hint" style="padding:.4rem .3rem">—</li>{% endfor %}
+      </ul>
+      {% if g.filas|length > 8 %}<button type="button" class="wv-mas" data-grupo="{{ g.clave }}">{% blocktrans with n=g.filas|length %}Ver las {{ n }}{% endblocktrans %}</button>{% endif %}
+    </details>
+    {% endfor %}
+    {% if not total_claims %}<p class="hint" style="text-align:center">{% trans "Aún sin veredictos: el análisis está en marcha o esperando los votos de la comunidad." %}</p>{% endif %}
+  </section>
+  {% include 'partials/share.html' %}
 </article>
-{% empty %}
-<p class="hint">{% trans "Aún sin veredictos: el análisis está en marcha o esperando los votos de la comunidad." %}</p>
-{% endfor %}
+<script>
+/* 5.23-G: los globos abren su seccion; los chips filtran por hablante; «Ver las N». */
+document.querySelectorAll('.wiki-video .sf-chip').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var d = document.getElementById('grupo-' + b.dataset.grupo);
+    if (d) { d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+document.querySelectorAll('.wv-hablantes .chip').forEach(function (c) {
+  c.addEventListener('click', function () {
+    document.querySelectorAll('.wv-hablantes .chip').forEach(function (x) { x.classList.remove('activo'); });
+    c.classList.add('activo');
+    var spk = c.dataset.spk;
+    document.querySelectorAll('.wv-fila').forEach(function (f) {
+      f.classList.toggle('oculta-por-hablante', !!spk && f.dataset.spk !== spk);
+    });
+  });
+});
+document.querySelectorAll('.wv-mas').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('#grupo-' + b.dataset.grupo + ' .wv-fila').forEach(function (f) {
+      f.classList.remove('oculta-por-tope');
+    });
+    b.remove();
+  });
+});
+</script>
+<script src="{% static 'js/transcript.js' %}" defer></script>
+<script src="{% static 'js/viajero.js' %}" defer></script>
+<script src="{% static 'js/speaker-suggest.js' %}" defer></script>
 {% endblock %}

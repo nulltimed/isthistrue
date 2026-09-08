@@ -5901,7 +5901,8 @@ class Parche510_Serie(TestCase):
         self.assertIn('preconnect" href="https://www.youtube-nocookie.com', base)
 
     def test_la_wiki_desde_el_post_abre_en_pestana_nueva(self):
-        t = open('templates/partials/post_body.html').read()
+        # 5.23-G: la rejilla vive en partials/media_grid.html (post y wiki)
+        t = open('templates/partials/media_grid.html').read()
         for ancla in ('wiki_video', '/wiki/claim/'):
             trozo = t[t.index(ancla) - 300:t.index(ancla) + 300]
             self.assertIn('target="_blank"', trozo, ancla)
@@ -5958,7 +5959,7 @@ class Parche511_Serie(TestCase):
 
     def test_la_frase_incierta_entera_salta_al_segundo_anterior(self):
         # 5.11-C: clic en la frase (no solo en el [Xs]) para ayudar a atribuir.
-        t = open('templates/partials/post_body.html').read()
+        t = open('templates/partials/media_grid.html').read()   # 5.23-G: rejilla extraida
         i = t.index('uncertain-list')
         trozo = t[i:i + 700]
         self.assertIn('seek-frase', trozo)

@@ -25,6 +25,8 @@
     {% endif %}
     {# 5.23-D (orden de David): el menu de tres puntos, a la derecha de la campana. #}
     {% include 'partials/post_menu.html' %}
+    {# 5.23-F (orden de David): el modo viajero — apagado por defecto. #}
+    <button type="button" class="ibtn viajero-btn" id="viajero-btn" aria-pressed="false" data-tip="{% trans 'Modo viajero: al bajar a leer los mensajes, los hablantes (izquierda) y la transcripción (derecha) te acompañan; el vídeo sigue sonando arriba. Clic para activar o desactivar.' %}" aria-label="{% trans 'Modo viajero' %}">{% icon 'columns' 20 %}</button>
   </div>
   {# 5.23-D (precision de David): el censurado es INACCESIBLE para los usuarios #}
   {# (la vista los manda a analysis/censurado.html); el staff lo ve marcado. #}
@@ -104,6 +106,7 @@
   {% include 'partials/share.html' %}
 </article>
 <script src="{% static 'js/transcript.js' %}" defer></script>
+<script src="{% static 'js/viajero.js' %}" defer></script>
 <script src="{% static 'js/vigia_post.js' %}" defer></script>
 <script src="{% static 'js/speaker-suggest.js' %}" defer></script>
 {% endblock %}

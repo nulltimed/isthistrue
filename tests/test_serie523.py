@@ -474,3 +474,74 @@ class Parche523E_SubforosYAprobacion(TestCase):
         autor = self._autor()
         post = self._proponer(autor)
         self.assertEqual(run_cheap_phase(post.pk), 'skipped')
+
+
+class Parche523FG_ViajeroYWikiDelVideo(TestCase):
+    """F: modo viajero (boton junto a la campana y el ⋮, apagado por defecto,
+    recordado en el navegador; hablantes y transcripcion fijos a los lados, el
+    video sigue arriba). G: la wiki del video ES la vista del post sin
+    comentarios, con acordeon por color y filtro por hablante."""
+
+    def _escena(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='fg523', email='fg523@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/fg523',
+                                   platform='youtube', status='DONE', title='Wiki unificada')
+        for i, (col, txt) in enumerate([('RED', 'mentira uno'), ('GREEN', 'verdad uno'),
+                                        ('UNDECIDED', 'duda uno')]):
+            seg = post.transcript_segments.create(start_seconds=i * 20 + 3, end_seconds=i * 20 + 7,
+                                                  text=txt, speaker_label='SPEAKER_00')
+            c = Claim.objects.create(text_original=txt, color=col, slug=f'fg523-{i}')
+            ClaimAppearance.objects.create(claim=c, segment=seg, quote=txt)
+        return post
+
+    def test_el_boton_viajero_existe_en_post_y_wiki_y_esta_apagado_por_defecto(self):
+        post = self._escena()
+        html = self.client.get(post.get_absolute_url()).content.decode()
+        self.assertIn('id="viajero-btn"', html)
+        self.assertIn('aria-pressed="false"', html)
+        self.assertIn('viajero.js', html)
+        html = self.client.get(f'/wiki/video/{post.slug}/').content.decode()
+        self.assertIn('id="viajero-btn"', html)
+        js = open('static/js/viajero.js', encoding='utf-8').read()
+        self.assertIn("localStorage.getItem(KEY) === '1'", js, 'apagado salvo que el navegador recuerde lo contrario')
+        css = open('static/css/main.css', encoding='utf-8').read()
+        self.assertIn('#viajero-izq{left:', css)
+        self.assertIn('#viajero-der{right:', css)
+        self.assertIn('body.viajero main.wide .post{padding-left:', css)
+
+    def test_la_wiki_del_video_es_el_post_sin_comentarios_con_acordeon(self):
+        post = self._escena()
+        html = self.client.get(f'/wiki/video/{post.slug}/').content.decode()
+        # misma rejilla que el post (hablantes | video | transcripcion)
+        self.assertIn('transcript transcript-box', html)
+        self.assertIn('speakers-col', html)
+        self.assertIn('semaforo-post', html)
+        # sin conversacion
+        self.assertNotIn('id="hilo"', html)
+        self.assertNotIn('thread-reply', html)
+        # acordeon por color en el orden rojo, ambar, verde, sin respuesta
+        self.assertLess(html.index('id="grupo-RED"'), html.index('id="grupo-AMBER"'))
+        self.assertLess(html.index('id="grupo-AMBER"'), html.index('id="grupo-GREEN"'))
+        self.assertLess(html.index('id="grupo-GREEN"'), html.index('id="grupo-SIN"'))
+        self.assertIn('mentira uno', html)
+        self.assertIn('duda uno', html)
+        self.assertIn('seekTo(3)', html)         # la fila reproduce (seekTo resta 1)
+        self.assertIn('wv-hablantes', html)      # chips por hablante
+        self.assertIn('Hablante 1', html)
+        self.assertIn('share-menu', html)
+        # la rejilla es UNA plantilla para las dos paginas
+        self.assertTrue(open('templates/partials/post_body.html', encoding='utf-8').read()
+                        .count("include 'partials/media_grid.html'") == 1)
+        self.assertNotIn('media-grid', open('templates/partials/post_body.html', encoding='utf-8').read().split('media_grid.html')[0])
+
+    def test_ver_las_n_solo_cuando_hay_mas_de_ocho(self):
+        from apps.wiki.models import Claim, ClaimAppearance
+        post = self._escena()
+        for i in range(10):
+            seg = post.transcript_segments.create(start_seconds=100 + i, end_seconds=101 + i, text=f'v{i}')
+            c = Claim.objects.create(text_original=f'verdad {i}', color='GREEN', slug=f'fgv-{i}')
+            ClaimAppearance.objects.create(claim=c, segment=seg, quote='x')
+        html = self.client.get(f'/wiki/video/{post.slug}/').content.decode()
+        self.assertIn('Ver las 11', html)
+        self.assertIn('oculta-por-tope', html)

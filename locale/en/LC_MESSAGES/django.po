@@ -2139,3 +2139,37 @@ msgstr "Posts awaiting approval"
 
 msgid "Pendiente de aprobación (categoría propuesta)"
 msgstr "Awaiting approval (proposed category)"
+
+# --- 5.23-F/G: modo viajero y wiki del video unificada ---
+msgid "Modo viajero: al bajar a leer los mensajes, los hablantes (izquierda) y la transcripción (derecha) te acompañan; el vídeo sigue sonando arriba. Clic para activar o desactivar."
+msgstr "Travel mode: as you scroll down to read the messages, the speakers (left) and the transcript (right) come along; the video keeps playing above. Click to turn on or off."
+
+msgid "Modo viajero"
+msgstr "Travel mode"
+
+msgid "Ir al post del foro: la conversación, los votos y las herramientas."
+msgstr "Go to the forum post: the conversation, the votes and the tools."
+
+msgid "Post"
+msgstr "Post"
+
+msgid "Ver las afirmaciones de todos los hablantes"
+msgstr "Show every speaker's claims"
+
+msgid "Solo las afirmaciones de este hablante"
+msgstr "Only this speaker's claims"
+
+msgid "Reproducir desde un segundo antes"
+msgstr "Play from one second before"
+
+msgid "Ficha completa: explicación, fuentes e historial"
+msgstr "Full fact page: explanation, sources and history"
+
+msgid "Ver las %(n)s"
+msgstr "See all %(n)s"
+
+msgid "Ver la explicación y las referencias aquí mismo"
+msgstr "See the explanation and the references right here"
+
+msgid "Ver en el post"
+msgstr "See it in the post"

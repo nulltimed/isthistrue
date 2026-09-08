@@ -488,11 +488,16 @@ def co_speakers(person):
 # ------------------------- 5.4-C: la pagina wiki del video -------------------------
 
 def video_analysis(request, slug):
-    """5.4-C (orden de David): la wiki de CADA analisis — el video incluido y
-    cada afirmacion/opinion con su explicacion, sus referencias y DOS enlaces:
-    al segundo anterior del video y a su ficha completa."""
+    """5.4-C -> 5.23-G (orden de David): la wiki de CADA analisis es LA MISMA
+    VISTA DEL POST SIN COMENTARIOS — titulo y semaforo centrados, la rejilla
+    hablantes | video | transcripcion (partials/media_grid.html, con karaoke y
+    modo viajero), y debajo las afirmaciones en ACORDEON por color (🔴 🟡 🟢 y
+    sin respuesta), 8 filas visibles por seccion y «Ver las N», con chips por
+    hablante que filtran todo a la vez. Cada fila: minuto (reproduce a t-1 en
+    la misma pagina), quien lo dijo, la frase, y su ficha."""
     from django.http import Http404
     from apps.analysis.models import Post
+    from apps.analysis.views import _post_context
     from apps.wiki.models import ClaimAppearance
     post = Post.objects.filter(slug=slug).first()
     if not post and slug.isdigit():
@@ -504,7 +509,9 @@ def video_analysis(request, slug):
         request.user.is_staff or request.user.level == 'MOD')
     if (post.censored or post.status == 'PENDING_APPROVAL') and not es_staff:
         raise Http404
-    filas = []
+    ctx = _post_context(request, post)
+    por_pk = {s.pk: s for s in ctx['segments']}
+    cubos = {'RED': [], 'AMBER': [], 'GREEN': [], 'SIN': []}
     vistos = set()
     for a in (ClaimAppearance.objects.filter(segment__post=post)
               .select_related('claim', 'segment')
@@ -512,13 +519,20 @@ def video_analysis(request, slug):
         if a.claim_id in vistos:
             continue
         vistos.add(a.claim_id)
-        filas.append({'claim': a.claim, 'seg': a.segment,
-                      't': int(a.segment.start_seconds)})
-    from apps.embeds.adapters import build_embed
-    try:
-        embed = build_embed(post)
-    except Exception:
-        embed = ''
-    return render(request, 'wiki/video.html',
-                  {'post': post, 'filas': filas, 'embed': embed,
-                   'indexable': people_indexable()})
+        seg = por_pk.get(a.segment_id, a.segment)
+        color = a.claim.color if a.claim.color in cubos else 'SIN'
+        cubos[color].append({
+            'claim': a.claim, 'seg': seg, 't': int(a.segment.start_seconds or 0),
+            'spk': getattr(seg, 'spk_color', None),
+            'quien': getattr(seg, 'spk_name', '') or (
+                f'Hablante {seg.spk_idx + 1}' if getattr(seg, 'spk_idx', None) is not None else ''),
+        })
+    grupos = [
+        {'clave': 'RED', 'titulo': 'Falso', 'emoji': '🔴', 'filas': cubos['RED']},
+        {'clave': 'AMBER', 'titulo': 'Con matices', 'emoji': '🟡', 'filas': cubos['AMBER']},
+        {'clave': 'GREEN', 'titulo': 'Verificado', 'emoji': '🟢', 'filas': cubos['GREEN']},
+        {'clave': 'SIN', 'titulo': 'Sin respuesta', 'emoji': '⚪', 'filas': cubos['SIN']},
+    ]
+    ctx.update({'grupos': grupos, 'total_claims': len(vistos),
+                'indexable': people_indexable(), 'wiki_video': True})
+    return render(request, 'wiki/video.html', ctx)
