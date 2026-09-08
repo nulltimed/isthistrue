@@ -1400,8 +1400,12 @@ def spending_page(request, ym=None):
         created_at__year=year, created_at__month=month, verified=True))
     meses = sorted({e.strftime('%Y-%m') for e in
                     CostEntry.objects.dates('created_at', 'month')}, reverse=True)
+    # 5.23-A (orden de David): trabajos de GPU completados y fallidos del mes.
+    from .costs import gpu_jobs_month
+    gpu_ok, gpu_fallos = gpu_jobs_month(year, month)
     return render(request, 'analysis/gastos.html', {
         'ym': ym, 'es_actual': ym == actual,
+        'gpu_ok': gpu_ok, 'gpu_fallos': gpu_fallos,
         'filas': filas.values(), 'total': total, 'donado': donado,
         # 5.5-B: el objetivo es el presupuesto base del panel (ver banner)
         'objetivo': _base_mensual(),

@@ -48,6 +48,38 @@ def record(provider, concept, eur, post=None):
             'apunte contable perdido: %s/%s %s', provider, concept, eur)
 
 
+def record_failure(provider, concept, motivo=''):
+    """5.23-A: un apunte A CERO que deja constancia de un trabajo FALLIDO
+    (hoy: la GPU de Runpod). No suma dinero; alimenta el contador ok/fallo de
+    la pagina de gastos. El concepto lleva el sufijo ' — fallo' para poder
+    contarlos, y el motivo va al log del worker."""
+    from .models import CostEntry, Post
+    try:
+        import logging
+        logging.getLogger('apps.agents.gpu').warning(
+            'FALLO %s/%s: %s', provider, concept, motivo)
+        candidato = current_post()
+        if candidato is not None and not Post.objects.filter(
+                pk=candidato.pk).exists():
+            candidato = None
+        CostEntry.objects.create(post=candidato, provider=provider,
+                                 concept=f'{concept[:30]} — fallo',
+                                 eur=Decimal('0'))
+    except Exception:
+        pass
+
+
+def gpu_jobs_month(year=None, month=None):
+    """5.23-A: (ok, fallos) de la GPU en un mes — para la pagina de gastos."""
+    from .models import CostEntry
+    hoy = timezone.localdate()
+    qs = CostEntry.objects.filter(provider='runpod',
+                                  created_at__year=year or hoy.year,
+                                  created_at__month=month or hoy.month)
+    fallos = qs.filter(concept__endswith=' — fallo').count()
+    return qs.count() - fallos, fallos
+
+
 def month_total(provider):
     from django.db.models import Sum
     from .models import CostEntry

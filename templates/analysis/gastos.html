@@ -15,6 +15,10 @@
   </tbody>
   <tfoot><tr><th>{% trans "Total gastado" %}</th><th></th><th>{{ total|floatformat:2 }} €</th></tr></tfoot>
 </table>
+{# 5.23-A (orden de David): la GPU de Runpod, con sus fallos a la vista. #}
+{% if gpu_ok or gpu_fallos %}
+<p class="hint gpu-contador">{% trans "GPU de Runpod este mes" %}: <strong>{{ gpu_ok }}</strong> {% trans "trabajos completados" %} · <strong>{{ gpu_fallos }}</strong> {% trans "fallidos (cayeron a la CPU)" %}</p>
+{% endif %}
 
 <div class="wiki-totales">
   <div><strong>{{ donado|floatformat:2 }} €</strong> {% trans "donados este mes (confirmados)" %}</div>

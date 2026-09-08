@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Variante ADELGAZADA (operador, 2026-08-26): la p4 sobre base runpod -devel pesa
 # 21 GB y los centros de datos con enlace flojo al registro tardan >1 h en bajarla.
 # La base runtime oficial de PyTorch (torch 2.8 + CUDA 12.8 + cuDNN) pesa la mitad
@@ -10,10 +11,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
 WORKDIR /app
 RUN pip install --no-cache-dir "runpod>=1.7,<2" "pyannote.audio>=4,<5"
 
-ARG HF_TOKEN
-RUN python -c "from pyannote.audio import Pipeline; \
-Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', token='$HF_TOKEN'); \
-Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', token='$HF_TOKEN')"
+# 5.23-A (leccion del 2026-09-08): el token de Hugging Face entraba como ARG y
+# quedaba GRABADO en el historial de la imagen — publica en ghcr, legible por
+# cualquiera sin autenticarse. Un secreto de BuildKit se monta solo durante
+# esta instruccion y no deja rastro en ninguna capa. Construccion:
+#   DOCKER_BUILDKIT=1 docker build --secret id=hf_token,env=HF_TOKEN \
+#       -f Dockerfile.slim -t ghcr.io/nulltimed/istt-diarize:<tag> .
+RUN --mount=type=secret,id=hf_token \
+    HF_TOKEN="$(cat /run/secrets/hf_token)" python -c "import os; from pyannote.audio import Pipeline; \
+t=os.environ['HF_TOKEN']; \
+Pipeline.from_pretrained('pyannote/speaker-diarization-community-1', token=t); \
+Pipeline.from_pretrained('pyannote/speaker-diarization-3.1', token=t)"
 
 # Fix del operador (2026-08-26): en los hosts de Runpod (~128 nucleos) numpy/
 # OpenBLAS intenta desplegar hilos que el cgroup del contenedor no concede y

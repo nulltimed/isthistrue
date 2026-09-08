@@ -105,18 +105,42 @@ def _tope_runpod_ok(etiqueta):
     return True
 
 
-def _run_job(ep, payload, etiqueta):
+def _run_job(ep, payload, etiqueta, reintentos=1):
     """Lanza un trabajo en un endpoint y lo sondea: el patron de transcribe_gpu,
     compartido con la diarizacion (4.4-J). Devuelve `output` o None. Un timeout
-    nuestro cancela el trabajo remoto (dinero)."""
+    nuestro cancela el trabajo remoto (dinero).
+
+    5.23-A (orden de David, tras el 31 % de fallos de istt-diarize): antes de
+    caer a la CPU (una hora de voces) se REINTENTA una vez en la GPU (20 s y un
+    centimo); el campo `error` que devuelve Runpod —que hasta hoy se tiraba—
+    va al log, y cada fallo deja su apunte a cero en el libro de cuentas para
+    el contador GPU ok/fallo de la pagina de gastos."""
+    for intento in range(reintentos + 1):
+        try:
+            out, motivo = _run_job_una_vez(ep, payload, etiqueta)
+        except Exception as exc:          # red, JSON roto, Runpod caido
+            out, motivo = None, f'excepcion {exc!r}'
+        if out is not None:
+            return out
+        from apps.analysis import costs
+        costs.record_failure('runpod', etiqueta, motivo)
+        if intento < reintentos:
+            logger.warning('GPU (%s): %s — se reintenta en la GPU (%d/%d)',
+                           etiqueta, motivo, intento + 1, reintentos)
+    logger.warning('GPU (%s): agotados los intentos en la GPU; se sigue en CPU',
+                   etiqueta)
+    return None
+
+
+def _run_job_una_vez(ep, payload, etiqueta):
+    """Un intento: (output, None) si completo; (None, motivo legible) si no."""
     key = settings.RUNPOD_API_KEY
     headers = {'Authorization': f'Bearer {key}'}
     r = httpx.post(f'{RUN_BASE}/{ep}/run', headers=headers, timeout=60,
                    json={'input': payload})
     job_id = (r.json() or {}).get('id')
     if not job_id:
-        logger.warning('GPU (%s): /run sin id de trabajo (HTTP %s)', etiqueta, r.status_code)
-        return None
+        return None, f'/run sin id de trabajo (HTTP {r.status_code})'
     deadline = time.monotonic() + settings.RUNPOD_JOB_TIMEOUT
     while time.monotonic() < deadline:
         time.sleep(settings.RUNPOD_POLL_SECONDS)
@@ -126,13 +150,15 @@ def _run_job(ep, payload, etiqueta):
             logger.info('GPU (%s): completado en %s ms de GPU facturada',
                         etiqueta, st.get('executionTime'))
             _apunte_runpod(etiqueta, st.get('executionTime'))  # 4.9-A
-            return st.get('output') or {}
+            return st.get('output') or {}, None
         if estado in ('FAILED', 'CANCELLED', 'TIMED_OUT'):
-            logger.warning('GPU (%s): trabajo %s -> %s; se sigue en CPU', etiqueta, job_id, estado)
-            return None
+            # el motivo REAL de Runpod (antes se tiraba): p. ej. CUDA OOM, imagen
+            # sin arrancar, handler roto...
+            salida = st.get('output') if isinstance(st.get('output'), dict) else {}
+            detalle = st.get('error') or salida.get('error') or 'sin detalle'
+            return None, f'trabajo {job_id} -> {estado}: {str(detalle)[:300]}'
     httpx.post(f'{RUN_BASE}/{ep}/cancel/{job_id}', headers=headers, timeout=30)
-    logger.warning('GPU (%s): trabajo %s cancelado por timeout local; CPU', etiqueta, job_id)
-    return None
+    return None, f'trabajo {job_id} cancelado por timeout local ({settings.RUNPOD_JOB_TIMEOUT} s)'
 
 
 def diarize_gpu(audio_path, hint=None, second_pass_n=None):
