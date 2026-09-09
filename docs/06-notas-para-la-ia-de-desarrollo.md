@@ -1727,3 +1727,10 @@ Informe en `docs/89`. Registro técnico:
   configuración de Nginx no se toca. Al leer un reporte de «mensaje raro», mirar PRIMERO el access
   log de Nginx por hora y código: un 502 en la misma marca que el despliegue lo explica todo.
 - Propuesta pendiente de David: desplegar sin `down` para acortar el corte.
+- **5.25-B**: los botones alojados de PayPal IGNORAN `amount` en la URL (donationAmountType any);
+  `https://www.paypal.com/donate?business=<merchantId>&amount=X&currency_code=EUR` sí precarga
+  (fixed) y acepta `item_name/no_shipping/lc/return/cancel_return/notify_url/custom`. El merchantId
+  se lee de la propia página del botón (`"merchantId":"…"`, público). Ajuste `paypal_business`
+  (default el de David); `paypal_url` queda de reserva. **Ritual SIN down** (orden de David
+  02:30): `up --build -d` recrea web/worker/beat en ~13 s con ~5 s de 502 medidos con un sondeo de
+  1 Hz; CLAUDE.md y handoff actualizados.

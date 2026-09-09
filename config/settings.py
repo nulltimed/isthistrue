@@ -233,6 +233,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'budget_hard_ceiling_eur': '200',
     # 5.24-E: el boton de donacion ALOJADO en PayPal que creo David el 09-09 (publico).
     'paypal_url': 'https://www.paypal.com/donate/?hosted_button_id=US9EE4FMAKCML',
+    # 5.25-B: el ID de comerciante de David (publico en su pagina de donacion). Con el,
+    # la URL /donate?business=... PRECARGA el importe; el boton alojado lo ignora.
+    'paypal_business': '2UYPJ7XS4R6N6',
     'opus_rescan_percent': '40',
     'opus_rescan_min_users': '50',
     'donation_goal_eur': '100',

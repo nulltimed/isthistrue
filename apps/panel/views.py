@@ -65,6 +65,8 @@ SETTINGS_DEF = [
     # 5.24-E: el boton alojado de PayPal — la puerta que funciona SIN credenciales Live.
     ('paypal_url', 'Enlace del botón de donación alojado en PayPal',
      'La página de donación que creaste en PayPal (hosted_button_id). Se usa cuando las credenciales REST no valen (o como enlace clásico). Las donaciones hechas ahí entran en el libro por el aviso IPN (notify_url).', 'text'),
+    ('paypal_business', 'ID de comerciante de PayPal (Merchant ID)',
+     'Con él, la página de donación de PayPal se abre con la cantidad YA PUESTA (el botón alojado la ignora). Es público: sale en tu propia página de donación. Vacío = se usa el enlace del botón alojado.', 'text'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
     ('opinion_ratio_percent', 'Umbral de opinión (%)',

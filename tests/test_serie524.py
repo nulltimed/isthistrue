@@ -77,6 +77,7 @@ class Parche524A_PayPalPorElServidor(TestCase):
     def test_sin_credenciales_va_al_enlace_clasico(self):
         from apps.panel.models import SystemSetting
         SystemSetting.objects.update_or_create(key='paypal_url', defaults={'value': 'https://paypal.me/x'})
+        SystemSetting.objects.update_or_create(key='paypal_business', defaults={'value': ' '})  # 5.25-B: sin ID → alojado
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             r = self.client.post('/donaciones/iniciar/', {'amount': '5'})
         self.assertTrue(r['Location'].startswith('https://paypal.me/x?amount=5.00'), r['Location'])
@@ -363,15 +364,26 @@ class Parche524E_BotonAlojado(TestCase):
              mock.patch('apps.analysis.paypal_check.comprobar', return_value='sandbox'):
             r = self.client.post('/donaciones/iniciar/', {'amount': '7'})
         self.assertEqual(r.status_code, 302)
-        self.assertTrue(r['Location'].startswith(self.HOSTED + '&amount=7.00'), r['Location'])
-        self.assertIn('currency_code=EUR', r['Location'])
+        # 5.25-B: por ID de comerciante (precarga el importe); el alojado lo ignoraba
+        self.assertTrue(r['Location'].startswith('https://www.paypal.com/donate?'), r['Location'])
+        for trozo in ('business=2UYPJ7XS4R6N6', 'amount=7.00', 'currency_code=EUR', 'no_shipping=1',
+                      'notify_url=http', 'donaciones%2Fipn', 'gracias%3D1', 'lc=es_ES'):
+            self.assertIn(trozo, r['Location'], trozo)
         u = make_user()
         post = Post.objects.create(author=u, url='https://youtu.be/h524', status='AWAITING_BUDGET')
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             r = self.client.post('/donaciones/iniciar/', {'amount': '9.5', 'post': post.pk})
         self.assertIn(f'custom=post%3A{post.pk}', r['Location'])
+        self.assertIn('amount=9.50', r['Location'])
+        self.assertIn('Apadrinar', r['Location'].replace('+', ' ').replace('%20', ' ') or '')
         from apps.panel.models import AuditLog
         self.assertEqual(AuditLog.objects.filter(action='donation_started_hosted').count(), 2)
+        # sin ID de comerciante, cae al boton alojado
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='paypal_business', defaults={'value': ' '})
+        with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
+            r = self.client.post('/donaciones/iniciar/', {'amount': '3'})
+        self.assertTrue(r['Location'].startswith(self.HOSTED + '&amount=3.00'), r['Location'])
 
     def test_el_ipn_verificado_anota_y_lanza_el_apadrinamiento(self):
         from apps.panel.models import Donation

@@ -1763,19 +1763,38 @@ def donation_start(request):
     # puesta; el aviso IPN la anotara. Asi se puede donar aunque falten las Live.
     from .paypal_check import comprobar
     if not credenciales_ok() or comprobar() != 'ok':
+        from urllib.parse import urlencode
+        from django.urls import reverse as _rev
+        from apps.panel.models import AuditLog
+        business = SystemSetting.get_str('paypal_business', '').strip()
         url = SystemSetting.get_str('paypal_url', '')
-        if url:
-            from urllib.parse import urlencode
-            extra = {'amount': f'{cantidad:.2f}', 'currency_code': 'EUR'}
-            if post_ap:
-                extra['custom'] = f'post:{post_ap.pk}'
-            from apps.panel.models import AuditLog
-            AuditLog.objects.create(user=request.user if request.user.is_authenticated else None,
-                                    action='donation_started_hosted',
-                                    detail=f'{cantidad} EUR' + (f' post {post_ap.pk}' if post_ap else ''))
-            return redirect(url + ('&' if '?' in url else '?') + urlencode(extra))
-        messages.error(request, 'PayPal no está configurado todavía.')
-        return redirect('donations')
+        extra = {'amount': f'{cantidad:.2f}', 'currency_code': 'EUR'}
+        if post_ap:
+            extra['custom'] = f'post:{post_ap.pk}'
+        if business:
+            # 5.25-B (reporte de David: el alojado abria a 0 €): la URL de donacion
+            # por ID de comerciante PRECARGA el importe (medido: donationAmount=7.00,
+            # type=fixed) y admite las variables clasicas (retorno, IPN, custom).
+            extra.update({
+                'business': business,
+                'item_name': ('Apadrinar el análisis de un vídeo en esestocierto?' if post_ap
+                              else 'Donación a esestocierto? (fact-checking comunitario)'),
+                'no_shipping': '1',
+                'lc': 'en_US' if getattr(request, 'LANGUAGE_CODE', 'es') == 'en' else 'es_ES',
+                'return': request.build_absolute_uri(_rev('donations')) + '?gracias=1',
+                'cancel_return': request.build_absolute_uri(_rev('donations')) + '?cancelado=1',
+                'notify_url': request.build_absolute_uri(_rev('donation_ipn')),
+            })
+            destino = 'https://www.paypal.com/donate?' + urlencode(extra)
+        elif url:
+            destino = url + ('&' if '?' in url else '?') + urlencode(extra)
+        else:
+            messages.error(request, 'PayPal no está configurado todavía.')
+            return redirect('donations')
+        AuditLog.objects.create(user=request.user if request.user.is_authenticated else None,
+                                action='donation_started_hosted',
+                                detail=f'{cantidad} EUR' + (f' post {post_ap.pk}' if post_ap else ''))
+        return redirect(destino)
     locale = 'en-US' if getattr(request, 'LANGUAGE_CODE', 'es') == 'en' else 'es-ES'
     order_id, approve = create_order(
         cantidad, return_url=request.build_absolute_uri(reverse('donation_return')),
