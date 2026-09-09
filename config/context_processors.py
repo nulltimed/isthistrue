@@ -29,14 +29,10 @@ def pendientes_aprobacion(request):
 
 
 def logo_variant(request):
-    """4.2 C6 (decision de David): el LOGO sigue al DOMINIO; el idioma de la
-    interfaz sigue mandandolo el selector ES-EN. wikitrue y cualquier otro host
-    -> isthistrue (documentado en README de operador)."""
-    host = request.get_host().split(':')[0].lower()
-    # 5.0-A (dominio nuevo de David): esestocierto.com es la casa — marca en
-    # espanol; los hosts historicos conservan su variante para las redirecciones.
-    es = host.startswith('escierto') or 'esestocierto' in host
-    return {'logo_variant': 'escierto' if es else 'isthistrue'}
+    """4.2 C6 decia: el logo sigue al dominio. 5.25-C (orden de David, 2026-09-09):
+    el proyecto se llama esestocierto y el logo es UNO en todos los hosts (los
+    historicos ya redirigen a esestocierto.com)."""
+    return {'logo_variant': 'escierto'}
 
 
 def quota_banner(request):

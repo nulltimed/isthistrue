@@ -49,7 +49,7 @@ def check_models():
             lista = '\n'.join(f'  · {catalog.label(m)} → suplente: '
                                f'{catalog.label(catalog.substitute(m)) or "(ninguno)"}'
                                for m in caidos)
-            send_mail('[isthistrue] Modelos que no responden',
+            send_mail('[esestocierto] Modelos que no responden',
                       'La comprobación diaria ha encontrado modelos caídos:\n\n'
                       + lista +
                       '\n\nLa web sigue funcionando con los suplentes. Los veredictos '

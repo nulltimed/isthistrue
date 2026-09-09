@@ -1734,3 +1734,8 @@ Informe en `docs/89`. Registro técnico:
   (default el de David); `paypal_url` queda de reserva. **Ritual SIN down** (orden de David
   02:30): `up --build -d` recrea web/worker/beat en ~13 s con ~5 s de 502 medidos con un sondeo de
   1 Hz; CLAUDE.md y handoff actualizados.
+- **5.25-C**: marca única «esestocierto?» de cara al usuario (plantillas, .po, correos, feeds,
+  cards.py, notify.js, admin); `logo_variant` devuelve siempre 'escierto' (test de C6 reescrito);
+  test guardián en `tests/test_serie525.py` (regex `isthistrue\.|escierto\.(?!com)` sobre
+  templates/ sin las URLs del repo ni los hosts históricos). Internos sin tocar (compose, BD, /opt,
+  repo). Ritual sin down medido otra vez: 5 s.

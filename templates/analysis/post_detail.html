@@ -1,9 +1,9 @@
 {% extends 'base.html' %}{% load i18n static istt_icons %}
 {% block main_class %}wide{% endblock %}
 {% block og %}
-<meta property="og:site_name" content="isthistrue.">
+<meta property="og:site_name" content="esestocierto?">
 <meta property="og:title" content="{{ post.title|default:post.url }}">
-<meta property="og:description" content="{% if post.category == 'OFFTOPIC' %}Off-Topic (opinión){% else %}Análisis con fuentes en isthistrue.{% endif %}">
+<meta property="og:description" content="{% if post.category == 'OFFTOPIC' %}Off-Topic (opinión){% else %}Análisis con fuentes en esestocierto?{% endif %}">
 <meta property="og:url" content="https://{{ request.get_host }}{{ request.path }}">
 <meta name="twitter:card" content="summary">
 {% endblock %}

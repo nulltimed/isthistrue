@@ -83,9 +83,10 @@ class LogoPorDominio(TestCase):
 
     def test_variantes(self):
         rf = RequestFactory()
+        # 5.25-C (orden de David): un solo nombre, esestocierto — el logo es uno
         for host, expected in [('escierto.xyztserver.com', 'escierto'),
-                               ('isthistrue.xyztserver.com', 'isthistrue'),
-                               ('wikitrue.xyztserver.com', 'isthistrue')]:
+                               ('isthistrue.xyztserver.com', 'escierto'),
+                               ('wikitrue.xyztserver.com', 'escierto')]:
             req = rf.get('/', HTTP_HOST=host)
             self.assertEqual(logo_variant(req)['logo_variant'], expected, host)
 

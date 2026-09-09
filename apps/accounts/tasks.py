@@ -39,5 +39,5 @@ def send_daily_digests():
         pending = user.notifications.filter(read=False)[:20]
         if pending:
             body = '\n'.join(f'- {n.text}' for n in pending)
-            send_mail('isthistrue: resumen diario', body,
+            send_mail('esestocierto: resumen diario', body,
                       settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)

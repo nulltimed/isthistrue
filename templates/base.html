@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{% block title %}esestocierto?{% endblock %}</title>
 {% block og %}
-<meta property="og:site_name" content="isthistrue.">
-<meta property="og:title" content="isthistrue. / escierto.">
+<meta property="og:site_name" content="esestocierto?">
+<meta property="og:title" content="esestocierto? — verificación con fuentes">
 <meta property="og:description" content="{% trans 'Verificación comunitaria con fuentes reproducibles.' %}">
 <meta name="twitter:card" content="summary">
 {% endblock %}
@@ -27,7 +27,7 @@
     <button name="language" value="es" class="{% if request.LANGUAGE_CODE != 'en' %}active{% endif %}">ES</button><span>·</span><button name="language" value="en" class="{% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
   </form>
   <div class="masthead">
-    <a class="logo" href="/">{% if logo_variant == 'escierto' %}<img src="{% static 'img/logo-es.svg' %}" alt="esestocierto?">{% else %}<img src="{% static 'img/logo-en.svg' %}" alt="isthistrue.">{% endif %}</a>
+    <a class="logo" href="/"><img src="{% static 'img/logo-es.svg' %}" alt="esestocierto?"></a>
 
   </div>
   <nav>

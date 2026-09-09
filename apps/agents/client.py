@@ -272,7 +272,7 @@ def _avisar_suplente(caido, suplente):
     try:
         from django.core.mail import send_mail
         send_mail(
-            f'[isthistrue] {label(caido)} no responde',
+            f'[esestocierto] {label(caido)} no responde',
             f'El modelo {label(caido)} no ha respondido y el sistema está usando '
             f'{label(suplente)} en su lugar.\n\n'
             f'La web NO se ha parado. Los veredictos emitidos por el suplente quedan '

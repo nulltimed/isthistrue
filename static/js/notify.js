@@ -27,7 +27,7 @@
           after = Math.max(after, n.id);
           if (window.isttToast) window.isttToast(n.text, n.url || '');
           if ('Notification' in window && Notification.permission === 'granted') {
-            var note = new Notification('isthistrue. / escierto.', { body: n.text });
+            var note = new Notification('esestocierto?', { body: n.text });
             note.onclick = function () { window.focus(); if (n.url) location.href = n.url; };
           }
         });

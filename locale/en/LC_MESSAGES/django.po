@@ -1,4 +1,4 @@
-# Catalogo ingles de la interfaz de isthistrue. / escierto.
+# Catalogo ingles de la interfaz de esestocierto? (antes isthistrue. / escierto.)
 # Pase 4.4-A. Traducciones escritas a mano, no generadas por maquina.
 # Se compila con:  python manage.py compilemessages
 msgid ""
@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: isthistrue 4.4-A\n"
 "Report-Msgid-Bugs-To: contact@xyztserver.com\n"
 "PO-Revision-Date: 2026-08-18 00:00+0000\n"
-"Last-Translator: proyecto isthistrue. / escierto.\n"
+"Last-Translator: proyecto esestocierto?\n"
 "Language-Team: English\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -311,8 +311,8 @@ msgstr "Log in"
 msgid "Entrar"
 msgstr "Log in"
 
-msgid "Entrar en escierto."
-msgstr "Go to escierto."
+msgid "Entrar en esestocierto?"
+msgstr "Go to esestocierto?"
 
 msgid "Enviados"
 msgstr "Sent"
@@ -893,8 +893,8 @@ msgstr "Several people share this name"
 msgid "Ventana de edición: 15 minutos desde la publicación."
 msgstr "Editing window: 15 minutes after posting."
 
-msgid "Verifica tu cuenta — escierto. / isthistrue."
-msgstr "Verify your account — escierto. / isthistrue."
+msgid "Verifica tu cuenta — esestocierto?"
+msgstr "Verify your account — esestocierto?"
 
 msgid "Verificación comunitaria con fuentes reproducibles."
 msgstr "Community verification with reproducible sources."
@@ -938,14 +938,14 @@ msgstr "in"
 msgid "en la wiki: te avisamos si cambian de color."
 msgstr "in the wiki: we will tell you if they change colour."
 
-msgid "escierto. / isthistrue. — verificación con fuentes, sin ánimo de lucro"
-msgstr "escierto. / isthistrue. — verification with sources, non-profit"
+msgid "esestocierto? — verificación con fuentes, sin ánimo de lucro"
+msgstr "esestocierto? — verification with sources, non-profit"
 
 msgid "ir al primero sin leer"
 msgstr "go to the first unread"
 
-msgid "isthistrue./escierto. es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito."
-msgstr "isthistrue./escierto. is a non-profit open source project (AGPL). Donations go straight into the analysis budget: every euro donated this month is added to the pot."
+msgid "esestocierto? es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito."
+msgstr "esestocierto? is a non-profit open source project (AGPL). Donations go straight into the analysis budget: every euro donated this month is added to the pot."
 
 msgid "marcado por la plataforma"
 msgstr "flagged by the platform"

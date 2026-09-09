@@ -43,7 +43,7 @@ def send_verification_email(user):
                  'El enlace caduca en 72 horas. Si no creaste esta cuenta, ignora '
                  'este mensaje.') % {'username': user.username, 'url': url}
         msg = EmailMultiAlternatives(
-            _('Verifica tu cuenta — escierto. / isthistrue.'),
+            _('Verifica tu cuenta — esestocierto?'),
             text, settings.DEFAULT_FROM_EMAIL, [user.email])
         msg.attach_alternative(render_to_string('emails/verify.html', ctx), 'text/html')
     msg.send(fail_silently=not settings.DEBUG)

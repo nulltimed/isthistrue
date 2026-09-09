@@ -27,7 +27,7 @@ def notify(user, text, url='', kind=None):
             'Tope mensual de emails alcanzado (%d): solo campana', tope_emails)
     if con_cupo and user.notify_mode == 'INSTANT' and user.email and not paused and not night:
         try:
-            send_mail(f'isthistrue: {text[:60]}', f'{text}\n\n{url}',
+            send_mail(f'esestocierto: {text[:60]}', f'{text}\n\n{url}',
                       settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
             costs.record('brevo', 'email',
                          float(SystemSetting.get_str('brevo_eur_per_email',

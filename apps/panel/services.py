@@ -31,5 +31,5 @@ def alert_admin(subject, body):
     if cache.get(key):
         return
     cache.set(key, 1, 6 * 3600)
-    send_mail(f'[isthistrue ALERTA] {subject}', body,
+    send_mail(f'[esestocierto ALERTA] {subject}', body,
               settings.DEFAULT_FROM_EMAIL, [settings.ADMIN_ALERT_EMAIL], fail_silently=True)

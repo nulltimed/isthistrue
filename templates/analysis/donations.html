@@ -1,7 +1,7 @@
 {% extends 'base.html' %}{% load i18n %}
 {% block content %}
 <h1>{% trans "Donaciones" %}</h1>
-<p>{% trans "isthistrue./escierto. es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito." %}</p>
+<p>{% trans "esestocierto? es un proyecto open source (AGPL) sin ánimo de lucro. Las donaciones amplían directamente el presupuesto de análisis: cada euro donado este mes se suma al depósito." %}</p>
 <p><strong>{% trans "Este mes" %}:</strong> {{ donated|floatformat:2 }} € {% trans "donados de un objetivo de" %} {{ goal }} € · {% trans "Depósito vivo" %}: {{ cap|floatformat:0 }} €</p>
 <div class="progress"><div style="width:{% widthratio donated goal 100 %}%"></div></div>
 

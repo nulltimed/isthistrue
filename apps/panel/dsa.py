@@ -14,7 +14,7 @@ def complaint_form(request):
             reason=request.POST.get('reason', 'OTHER'),
             body=request.POST.get('body', ''))
         if c.email:
-            send_mail('isthistrue: reclamación recibida',
+            send_mail('esestocierto: reclamación recibida',
                       f'Hemos recibido tu reclamación (ref. #{c.pk}). '
                       'La revisaremos y te responderemos a este correo.',
                       settings.DEFAULT_FROM_EMAIL, [c.email], fail_silently=True)

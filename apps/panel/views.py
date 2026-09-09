@@ -290,7 +290,7 @@ def staging_invites(request):
             if existing:
                 existing.staging_invited = True
                 existing.save(update_fields=['staging_invited'])
-            send_mail('Invitación al espejo de pruebas de isthistrue',
+            send_mail('Invitación al espejo de pruebas de esestocierto',
                       'Has sido invitado al entorno de pruebas: '
                       'https://stagings.xyztserver.com\n'
                       'Entra con tu cuenta (o créala) usando este mismo email.',

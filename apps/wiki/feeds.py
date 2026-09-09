@@ -4,7 +4,7 @@ from .models import Claim, ClaimVersion
 
 
 class RecentVerdictsFeed(Feed):
-    title = 'isthistrue. — nuevos veredictos'
+    title = 'esestocierto? — nuevos veredictos'
     link = '/'
     description = 'Afirmaciones verificadas recientemente'
 
@@ -22,7 +22,7 @@ class RecentVerdictsFeed(Feed):
 
 
 class RecentChangesFeed(Feed):
-    title = 'isthistrue. — cambios recientes'
+    title = 'esestocierto? — cambios recientes'
     link = '/wiki/cambios/'
     description = 'Re-verificaciones y cambios de color (transparencia total)'
 

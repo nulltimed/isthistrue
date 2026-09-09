@@ -41,7 +41,7 @@ def claim_card(request, slug):
     for line in _wrap(claim.what_evidence_says or '', 70)[:4]:
         d.text((60, y), line, fill=(85, 85, 85))
         y += 32
-    d.text((60, 560), 'isthistrue. / escierto. — verificación con fuentes',
+    d.text((60, 560), 'esestocierto? — verificación con fuentes',
            fill=(102, 102, 102))
     buf = io.BytesIO()
     img.save(buf, format='PNG')

@@ -18,7 +18,7 @@ from django.core.cache import cache
 
 logger = logging.getLogger('agents.wikidata')
 
-_UA = {'User-Agent': 'isthistrue/1.0 (contact@xyztserver.com)'}
+_UA = {'User-Agent': 'esestocierto/1.0 (webmaster@esestocierto.com)'}
 _TIMEOUT = 6          # la caja de sugerencias no puede colgar la pagina
 _CACHE_SECONDS = 86400  # 24 h: los famosos no cambian de nombre a diario
 
