@@ -1611,13 +1611,19 @@ def message_vote(request, mpost_id, direction):
 def donations_page(request):
     """Pagina publica de donaciones: objetivo, progreso, PayPal (Bizum ONG llegara con la asociacion)."""
     from apps.panel.models import Donation, SystemSetting
+    # 5.24-E: vuelta desde el boton alojado (return / cancel_return)
+    if request.GET.get('gracias'):
+        messages.success(request, '¡Gracias por tu donación! PayPal nos la confirma en unos '
+                                  'segundos y se suma al depósito del mes.')
+    elif request.GET.get('cancelado'):
+        messages.info(request, 'Donación cancelada. Aquí sigues teniendo todas las opciones.')
     from apps.panel.services import live_monthly_cap
     cap, donated, base = live_monthly_cap()
     goal = SystemSetting.get_int('donation_goal_eur', 60)
-    paypal = SystemSetting.objects.filter(key='paypal_url').first()
+    paypal_url = SystemSetting.get_str('paypal_url', '')
     return render(request, 'analysis/donations.html', {
         'donated': donated, 'goal': goal, 'base': base, 'cap': cap,
-        'paypal_url': paypal.value if paypal else '',
+        'paypal_url': paypal_url,
         'count': Donation.objects.count()})
 
 
@@ -1752,10 +1758,22 @@ def donation_start(request):
         post_ap = Post.objects.filter(pk=pk_ap).first() if pk_ap else None
     except (TypeError, ValueError):
         post_ap = None
-    if not credenciales_ok():
+    # 5.24-E: si las credenciales REST no valen (no hay, son de Sandbox o son
+    # invalidas), la donacion va al BOTON ALOJADO de PayPal con la cantidad
+    # puesta; el aviso IPN la anotara. Asi se puede donar aunque falten las Live.
+    from .paypal_check import comprobar
+    if not credenciales_ok() or comprobar() != 'ok':
         url = SystemSetting.get_str('paypal_url', '')
         if url:
-            return redirect(url)
+            from urllib.parse import urlencode
+            extra = {'amount': f'{cantidad:.2f}', 'currency_code': 'EUR'}
+            if post_ap:
+                extra['custom'] = f'post:{post_ap.pk}'
+            from apps.panel.models import AuditLog
+            AuditLog.objects.create(user=request.user if request.user.is_authenticated else None,
+                                    action='donation_started_hosted',
+                                    detail=f'{cantidad} EUR' + (f' post {post_ap.pk}' if post_ap else ''))
+            return redirect(url + ('&' if '?' in url else '?') + urlencode(extra))
         messages.error(request, 'PayPal no está configurado todavía.')
         return redirect('donations')
     locale = 'en-US' if getattr(request, 'LANGUAGE_CODE', 'es') == 'en' else 'es-ES'
@@ -1831,6 +1849,63 @@ def donation_return(request):
     messages.success(request, f'¡Gracias! Donación de {cantidad} € recibida y sumada al '
                               f'depósito del mes.')
     return redirect(post_ap.get_absolute_url() if post_ap else 'donations')
+
+
+@csrf_exempt
+def donation_ipn(request):
+    """5.24-E: notify_url del boton ALOJADO de PayPal. PayPal manda un POST por
+    cada pago; se le devuelve el cuerpo para que lo VERIFIQUE (VERIFIED) y solo
+    entonces se anota la donacion (verificada, idempotente por txn_id, en EUR y
+    Completed). Si `custom` trae post:<pk> y ese post espera en cola, se lanza
+    su analisis (5.14-A). Siempre 200: PayPal reintenta lo que no sea 200."""
+    from decimal import Decimal, InvalidOperation
+    from django.http import HttpResponse
+    from apps.panel.models import AuditLog, Donation
+    from .paypal_check import verificar_ipn
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    cuerpo = request.body          # ANTES de tocar request.POST (si no, RawPostDataException)
+    datos = request.POST
+    txn = (datos.get('txn_id') or '')[:60]
+    if not txn:
+        return HttpResponse('sin txn', status=200)
+    nota = f'paypal-ipn:{txn}'
+    if Donation.objects.filter(note=nota).exists():
+        return HttpResponse('dup', status=200)
+    if not verificar_ipn(cuerpo):
+        AuditLog.objects.create(user=None, action='donation_reject',
+                                detail=f'IPN no verificado: {txn}')
+        return HttpResponse('invalid', status=200)
+    if datos.get('payment_status') != 'Completed' or datos.get('mc_currency') != 'EUR':
+        return HttpResponse('ignorado', status=200)
+    try:
+        cantidad = Decimal(str(datos.get('mc_gross', ''))).quantize(Decimal('0.01'))
+    except (InvalidOperation, ValueError):
+        return HttpResponse('importe', status=200)
+    if cantidad < Decimal('0.01'):
+        return HttpResponse('importe', status=200)
+    post_ap = None
+    custom = datos.get('custom') or ''
+    if custom.startswith('post:'):
+        try:
+            post_ap = Post.objects.filter(pk=int(custom.split(':', 1)[1])).first()
+        except ValueError:
+            post_ap = None
+    Donation.objects.create(amount_eur=cantidad, method='PAYPAL', note=nota,
+                            verified=True, post=post_ap)
+    AuditLog.objects.create(user=None, action='donation_captured',
+                            detail=f'{cantidad} EUR IPN {txn}' + (f' post {post_ap.pk}' if post_ap else ''))
+    if post_ap and post_ap.status == 'AWAITING_BUDGET':
+        from django.db.models import Sum
+        from .services import needs_sponsorship
+        _, coste, _ = needs_sponsorship(post_ap)
+        atado = float(Donation.objects.filter(post=post_ap).aggregate(s=Sum('amount_eur'))['s'] or 0)
+        if atado >= float(coste):
+            from .tasks import run_cheap_phase
+            post_ap.status = 'PENDING'
+            post_ap.save(update_fields=['status'])
+            run_cheap_phase.delay(post_ap.pk)
+    return HttpResponse('ok', status=200)
 
 
 def _base_mensual():

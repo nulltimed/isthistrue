@@ -170,3 +170,19 @@ def comprobar():
         estado = 'invalidas'
     cache.set('paypal_estado', estado, 600)
     return estado
+
+
+def verificar_ipn(cuerpo_bytes):
+    """5.24-E: el aviso IPN del boton ALOJADO. PayPal exige devolverle el cuerpo
+    tal cual con cmd=_notify-validate; responde VERIFIED o INVALID. Devuelve
+    True/False; nunca lanza. Host segun PAYPAL_MODE."""
+    host = ('https://ipnpb.sandbox.paypal.com' if getattr(settings, 'PAYPAL_MODE', 'live') == 'sandbox'
+            else 'https://ipnpb.paypal.com')
+    try:
+        r = requests.post(f'{host}/cgi-bin/webscr', data=b'cmd=_notify-validate&' + cuerpo_bytes,
+                          headers={'Content-Type': 'application/x-www-form-urlencoded',
+                                   'User-Agent': 'esestocierto-IPN/1.0'}, timeout=20)
+        return r.status_code == 200 and r.text.strip() == 'VERIFIED'
+    except Exception as exc:
+        logger.warning('PayPal IPN: verificacion fallo (%r)', exc)
+        return False

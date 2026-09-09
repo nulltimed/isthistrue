@@ -1708,3 +1708,11 @@ Informe en `docs/89`. Registro técnico:
   de donaciones lo pinta con `reg-gate`. **Lección**: una integración de pago se prueba con un pedido
   REAL antes de darla por buena — el 5.15 se verificó solo con mocks y un curl inventado (400 esperado),
   nunca con un 200 real.
+- **5.24-E (02:15)**: botón alojado `hosted_button_id=US9EE4FMAKCML` como default de `paypal_url`
+  (SETTING_DEFAULTS + editable en SETTINGS_DEF como 'text'); `donation_start` → si
+  `comprobar() != 'ok'` redirige al alojado con `amount/currency_code/custom`; `donation_ipn`
+  (csrf_exempt, `request.body` ANTES de `request.POST` o salta RawPostDataException;
+  `verificar_ipn` devuelve el cuerpo a ipnpb.paypal.com con `cmd=_notify-validate`; solo VERIFIED +
+  Completed + EUR; idempotente `paypal-ipn:<txn>`; siempre 200 porque PayPal reintenta los no-200);
+  `donations_page` da las gracias con `?gracias=1`. Panel: `paypal_hosted` → 🟢 aunque las REST sean
+  Sandbox (opcionales).

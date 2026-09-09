@@ -68,6 +68,7 @@ urlpatterns = [
     # 5.24-A: el pago por el servidor — sin ventana emergente
     path('donaciones/iniciar/', views.donation_start, name='donation_start'),
     path('donaciones/retorno/', views.donation_return, name='donation_return'),
+    path('donaciones/ipn/', views.donation_ipn, name='donation_ipn'),  # 5.24-E: boton alojado
     path('gastos/', views.spending_page, name='spending'),
     path('gastos/<str:ym>/', views.spending_page, name='spending_month'),
     path('reclamaciones/', complaint_form, name='complaint_form'),

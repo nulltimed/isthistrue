@@ -231,7 +231,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'name_confirm_points': '5',
     'budget_base_eur': '100',
     'budget_hard_ceiling_eur': '200',
-    'paypal_url': '',
+    # 5.24-E: el boton de donacion ALOJADO en PayPal que creo David el 09-09 (publico).
+    'paypal_url': 'https://www.paypal.com/donate/?hosted_button_id=US9EE4FMAKCML',
     'opus_rescan_percent': '40',
     'opus_rescan_min_users': '50',
     'donation_goal_eur': '100',

@@ -2388,3 +2388,16 @@ msgstr "PayPal: the .env credentials are NOT valid (401). Nobody can donate unti
 
 msgid "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)."
 msgstr "PayPal: no credentials in the .env; the button goes to the classic PayPal link (if any)."
+
+# --- 5.24-E: boton alojado ---
+msgid "PayPal: las donaciones van por tu botón alojado de PayPal (con la cantidad puesta) y entran en el libro por el aviso IPN. Funciona con dinero real."
+msgstr "PayPal: donations go through your hosted PayPal button (amount pre-filled) and enter the ledger via the IPN notice. Works with real money."
+
+msgid "Las credenciales REST del .env son de la app Sandbox: solo hacen falta para el pago por servidor, que es opcional."
+msgstr "The REST credentials in the .env belong to the Sandbox app: they are only needed for the server-side payment, which is optional."
+
+msgid "Las credenciales REST del .env no valen: solo hacen falta para el pago por servidor, que es opcional."
+msgstr "The REST credentials in the .env are not valid: they are only needed for the server-side payment, which is optional."
+
+msgid "Sin credenciales REST: el pago por servidor es opcional."
+msgstr "No REST credentials: the server-side payment is optional."

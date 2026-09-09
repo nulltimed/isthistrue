@@ -79,7 +79,7 @@ class Parche524A_PayPalPorElServidor(TestCase):
         SystemSetting.objects.update_or_create(key='paypal_url', defaults={'value': 'https://paypal.me/x'})
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             r = self.client.post('/donaciones/iniciar/', {'amount': '5'})
-        self.assertEqual(r['Location'], 'https://paypal.me/x')
+        self.assertTrue(r['Location'].startswith('https://paypal.me/x?amount=5.00'), r['Location'])
 
     def test_el_retorno_captura_anota_verificada_y_es_idempotente(self):
         from apps.panel.models import Donation
@@ -332,8 +332,10 @@ class Parche524D_EstadoPayPal(TestCase):
             sup = make_user(username='pp524', email='pp524@example.org', is_staff=True, is_superuser=True)
             self.client.force_login(sup)
             html = self.client.get('/panel/donaciones/').content.decode()
-        self.assertIn('SANDBOX', html)
-        self.assertIn('reg-closed', html)
+        # 5.24-E: con el boton alojado configurado, verde + la nota de que las REST son Sandbox
+        self.assertIn('botón alojado', html)
+        self.assertIn('Sandbox', html)
+        self.assertIn('reg-open', html)
         cache.clear()
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             self.assertEqual(paypal_check.comprobar(), 'sin')
@@ -345,3 +347,70 @@ class Parche524D_EstadoPayPal(TestCase):
         src = open('apps/analysis/paypal_check.py', encoding='utf-8').read()
         self.assertIn("PAYPAL_MODE', 'live') == 'sandbox'", src)
         self.assertIn('PAYPAL_MODE', open('.env.example', encoding='utf-8').read())
+
+
+class Parche524E_BotonAlojado(TestCase):
+    """E (enlace de David): el boton ALOJADO de PayPal es la puerta que funciona
+    sin credenciales Live — con la cantidad puesta — y su aviso IPN anota la
+    donacion verificada (idempotente) y lanza el apadrinamiento."""
+
+    HOSTED = 'https://www.paypal.com/donate/?hosted_button_id=US9EE4FMAKCML'
+
+    def test_sin_credenciales_live_va_al_boton_alojado_con_la_cantidad(self):
+        from django.core.cache import cache
+        cache.clear()
+        with override_settings(PAYPAL_CLIENT_ID='c', PAYPAL_CLIENT_SECRET='s'), \
+             mock.patch('apps.analysis.paypal_check.comprobar', return_value='sandbox'):
+            r = self.client.post('/donaciones/iniciar/', {'amount': '7'})
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r['Location'].startswith(self.HOSTED + '&amount=7.00'), r['Location'])
+        self.assertIn('currency_code=EUR', r['Location'])
+        u = make_user()
+        post = Post.objects.create(author=u, url='https://youtu.be/h524', status='AWAITING_BUDGET')
+        with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
+            r = self.client.post('/donaciones/iniciar/', {'amount': '9.5', 'post': post.pk})
+        self.assertIn(f'custom=post%3A{post.pk}', r['Location'])
+        from apps.panel.models import AuditLog
+        self.assertEqual(AuditLog.objects.filter(action='donation_started_hosted').count(), 2)
+
+    def test_el_ipn_verificado_anota_y_lanza_el_apadrinamiento(self):
+        from apps.panel.models import Donation
+        u = make_user(username='ipn524', email='ipn524@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/ipn524', status='AWAITING_BUDGET',
+                                   duration_seconds=600)
+        datos = {'txn_id': 'TX524', 'payment_status': 'Completed', 'mc_currency': 'EUR',
+                 'mc_gross': '99.00', 'custom': f'post:{post.pk}'}
+        with mock.patch('apps.analysis.paypal_check.requests.post', return_value=_R(200, {}, 'VERIFIED')), \
+             mock.patch('apps.analysis.tasks.run_cheap_phase.delay') as lanza:
+            r1 = self.client.post('/donaciones/ipn/', datos)
+            r2 = self.client.post('/donaciones/ipn/', datos)
+        self.assertEqual((r1.status_code, r2.status_code), (200, 200))
+        self.assertEqual(Donation.objects.filter(note='paypal-ipn:TX524').count(), 1)
+        d = Donation.objects.get(note='paypal-ipn:TX524')
+        self.assertTrue(d.verified)
+        self.assertEqual(d.post_id, post.pk)
+        post.refresh_from_db()
+        self.assertEqual(post.status, 'PENDING')
+        lanza.assert_called_once_with(post.pk)
+
+    def test_el_ipn_no_verificado_o_incompleto_no_anota(self):
+        from apps.panel.models import AuditLog, Donation
+        with mock.patch('apps.analysis.paypal_check.requests.post', return_value=_R(200, {}, 'INVALID')):
+            r = self.client.post('/donaciones/ipn/', {'txn_id': 'FAKE', 'payment_status': 'Completed',
+                                                    'mc_currency': 'EUR', 'mc_gross': '50.00'})
+        self.assertEqual(r.status_code, 200, 'PayPal reintenta lo que no sea 200')
+        self.assertFalse(Donation.objects.exists())
+        self.assertTrue(AuditLog.objects.filter(action='donation_reject').exists())
+        with mock.patch('apps.analysis.paypal_check.requests.post', return_value=_R(200, {}, 'VERIFIED')):
+            self.client.post('/donaciones/ipn/', {'txn_id': 'PEND', 'payment_status': 'Pending',
+                                                'mc_currency': 'EUR', 'mc_gross': '5.00'})
+            self.client.post('/donaciones/ipn/', {'txn_id': 'USD', 'payment_status': 'Completed',
+                                                'mc_currency': 'USD', 'mc_gross': '5.00'})
+        self.assertFalse(Donation.objects.exists())
+
+    def test_la_vuelta_del_boton_da_las_gracias_y_el_panel_edita_el_enlace(self):
+        html = self.client.get('/donaciones/?gracias=1').content.decode()
+        self.assertIn('Gracias por tu donación', html)
+        self.assertIn('hosted_button_id=US9EE4FMAKCML', html)
+        from apps.panel.views import SETTINGS_DEF
+        self.assertIn('paypal_url', {k for k, *_ in SETTINGS_DEF})

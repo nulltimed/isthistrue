@@ -62,6 +62,9 @@ SETTINGS_DEF = [
      'Máximo de emails al mes. Al llegar, los avisos siguen llegando por la campana de la web pero dejan de enviarse por email hasta el mes siguiente. Ajústalo al límite de tu plan de pago.', 'num'),
     ('brevo_eur_per_email', 'Coste por email (€)',
      'Si tu plan incluye los emails, déjalo en 0: el contador sirve igual para el tope. Si pagas por email extra, pon aquí el precio unitario.', 'num'),
+    # 5.24-E: el boton alojado de PayPal — la puerta que funciona SIN credenciales Live.
+    ('paypal_url', 'Enlace del botón de donación alojado en PayPal',
+     'La página de donación que creaste en PayPal (hosted_button_id). Se usa cuando las credenciales REST no valen (o como enlace clásico). Las donaciones hechas ahí entran en el libro por el aviso IPN (notify_url).', 'text'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
     ('opinion_ratio_percent', 'Umbral de opinión (%)',
@@ -365,7 +368,8 @@ def donations_panel(request):
     return render(request, 'panel/donations.html',
                   {
         'paypal_estado': __import__('apps.analysis.paypal_check', fromlist=['comprobar']).comprobar(),
-        'paypal_modo': __import__('django.conf', fromlist=['settings']).settings.PAYPAL_MODE,'items': items, 'pendientes': pendientes})
+        'paypal_modo': __import__('django.conf', fromlist=['settings']).settings.PAYPAL_MODE,
+        'paypal_hosted': bool(SystemSetting.get_str('paypal_url', '')),'items': items, 'pendientes': pendientes})
 
 
 @staff_member_required
