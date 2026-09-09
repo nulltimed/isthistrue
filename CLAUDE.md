@@ -38,7 +38,11 @@ ejecutar sus pasos directamente.
 3. CI en verde: actualizar y encender el ESPEJO, migrar, pasar el checklist
    (docs/04-checklist-verificacion.md + Parte D del install.md).
 4. Solo si el espejo pasa: apagar espejo y desplegar a producción
-   (down → .bak con fecha → git pull → up --build → migrate → collectstatic).
+   (.bak con fecha → git pull → `up --build -d` SIN `down` → migrate → collectstatic).
+   **Orden de David (2026-09-09): NO se apagan los contenedores antes de desplegar** — `up --build -d`
+   recrea en su sitio solo lo que cambia y el corte pasa de ~40 s a unos segundos por contenedor.
+   (El 502 de esa ventana servía la página de emergencia del host y David la vio al donar.) La
+   comprobación de análisis en vuelo sigue siendo obligatoria: recrear el worker mata la tarea.
 
 ## Líneas rojas (NUNCA)
 - NUNCA commitear ni imprimir `.env` (contiene secretos). Verificar `.gitignore` antes de todo push.

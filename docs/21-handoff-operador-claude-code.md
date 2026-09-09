@@ -108,8 +108,11 @@ tus reglas por número). Ese circuito es EL activo del proyecto: no lo rompas.
    && sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d
    → migrate → seeds si toca → tests --settings=tests.settings_test --noinput
    → checklist del pase → DOWN del espejo al terminar.
-4. PRODUCCIÓN: down → cp -r a /opt/isthistrue.bak-$(date +%F) (borra el .bak del día si
-   existe) → git pull → up --build -d → migrate → verificación externa por HTTPS.
+4. PRODUCCIÓN (orden de David 2026-09-09: SIN `down`): comprobar análisis en vuelo → .tgz de
+   respaldo (`tar czf /opt/isthistrue-bak-<fecha>.tgz --exclude=media`) → git pull →
+   `up --build -d` (recrea en su sitio solo lo que cambia: corte de segundos, no de 40 s) →
+   migrate → collectstatic → verificación externa por HTTPS. Si el compose cambia de forma que
+   exija recrear la red (raro), avisar a David antes.
 5. SMOKE-TEST DE ESTÁTICOS (candado, en CADA dominio, adjuntar al informe):
    CSS=200 con >5 KB + `grep -c masthead` ≥1. Si falla: collectstatic + restart web.
 6. Informe en Markdown (ver §8) + addendum en docs/06 + sync de los 3 árboles + memoria.
