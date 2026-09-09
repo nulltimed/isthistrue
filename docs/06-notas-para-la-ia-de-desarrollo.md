@@ -1716,3 +1716,14 @@ Informe en `docs/89`. Registro técnico:
   Completed + EUR; idempotente `paypal-ipn:<txn>`; siempre 200 porque PayPal reintenta los no-200);
   `donations_page` da las gracias con `?gracias=1`. Panel: `paypal_hosted` → 🟢 aunque las REST sean
   Sandbox (opcionales).
+
+## 87. Serie 5.25: vídeos al principio de la ficha y la página de emergencia (2026-09-09)
+- `person_detail.html`: la sección «Vídeos donde aparece» se mueve bajo `person-legal`
+  (test de orden en `tests/test_serie525.py`).
+- **Trampa cazada**: el «Servicio pausado por el administrador. Trabajando en ello...» que vio
+  David era la `error_page 502 503 /panic.html` del Nginx del host
+  (`/var/www/isthistrue-panic/panic.html`, del 05-08), servida durante la ventana `down → up` del
+  despliegue. El HTML se reescribe (bilingüe, auto-refresh 15 s, copia en `nginx/panic.html`); la
+  configuración de Nginx no se toca. Al leer un reporte de «mensaje raro», mirar PRIMERO el access
+  log de Nginx por hora y código: un 502 en la misma marca que el despliegue lo explica todo.
+- Propuesta pendiente de David: desplegar sin `down` para acortar el corte.

@@ -21,6 +21,19 @@
 
   <p class="hint person-legal">{% trans "Recuento estrictamente factual de afirmaciones atribuidas a esta figura pública mediante identificación participativa con Wikidata. El semáforo califica afirmaciones concretas, nunca a la persona. Toda atribución es reclamable en el" %} <a href="{% url 'complaint_form' %}">{% trans "canal de reclamaciones" %}</a>.</p>
 
+  {# 5.25-A (orden de David): los vídeos donde aparece, AL PRINCIPIO de la ficha. #}
+  {% if stats.videos %}
+  <section class="claim-group person-videos">
+    <h2>{% trans "Vídeos donde aparece" %} <span class="badge">{{ stats.videos|length }}</span></h2>
+    <ul class="post-list">
+      {% for f in stats.videos %}
+      <li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url|truncatechars:90 }}</a>
+        <span class="hint">{{ f.post.created_at|date:'d/m/Y' }} · {% blocktrans count n=f.n %}{{ n }} afirmación suya{% plural %}{{ n }} afirmaciones suyas{% endblocktrans %}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   {% if stats.total %}
   <section class="person-stats">
     <h2>{% trans "Análisis de sus intervenciones" %}</h2>
@@ -89,17 +102,6 @@
     </section>
   {% endif %}
 
-  {% if stats.videos %}
-  <section class="claim-group">
-    <h2>{% trans "Vídeos donde aparece" %} <span class="badge">{{ stats.videos|length }}</span></h2>
-    <ul class="post-list">
-      {% for f in stats.videos %}
-      <li><a href="{{ f.post.get_absolute_url }}">{{ f.post.title|default:f.post.url|truncatechars:90 }}</a>
-        <span class="hint">{{ f.post.created_at|date:'d/m/Y' }} · {% blocktrans count n=f.n %}{{ n }} afirmación suya{% plural %}{{ n }} afirmaciones suyas{% endblocktrans %}</span></li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
 </article>
 <script src="/static/js/persona.js" defer></script>
 {% endblock %}
