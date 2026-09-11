@@ -2929,3 +2929,21 @@ msgstr "Reason for rejection: it is sent to the author."
 
 msgid "Abrir o cerrar el registro de cuentas nuevas."
 msgstr "Open or close new account registration."
+
+msgid "Silencio nocturno: nada de correos entre las 23:00 y las 8:00."
+msgstr "Night silence: no emails between 23:00 and 8:00."
+
+msgid "Cuántas voces hay, si lo sabes: guía a la separación de voces."
+msgstr "How many voices there are, if you know: it guides the voice separation."
+
+msgid "Elige cuánto donar."
+msgstr "Choose how much to donate."
+
+msgid "Dirección de la página con el contenido que reclamas."
+msgstr "Address of the page with the content you are complaining about."
+
+msgid "Enviar la transcripción entera con cada veredicto: más contexto y más coste."
+msgstr "Send the whole transcript with each verdict: more context and more cost."
+
+msgid "Nota interna: solo la ve moderación."
+msgstr "Internal note: only moderation sees it."

@@ -37,6 +37,44 @@ class Parche529A_MapaDeBocadillos(TestCase):
         self.assertIn("htmx:afterSwap", js)
         self.assertIn("closest('label')", js)
 
+    def test_todo_campo_de_formulario_tiene_bocadillo(self):
+        """CANDADO (orden de David, 2026-09-11: «los bocadillos de todo lo que se vaya
+        creando deben ser creados»): cada input/select/textarea con name de las
+        plantillas tiene bocadillo, en la propia plantilla (data-tip en la linea o
+        la anterior) o en el mapa (selector por name o por id). Si añades un campo,
+        añade su bocadillo: este test se pone rojo si no."""
+        import glob
+        js = open('static/js/tips.js', encoding='utf-8').read()
+        sels = re.findall(r'^    b\d{3}: "([^"]+)"', js, re.M)
+
+        def cubierto(name, ident):
+            for s in sels:
+                if f"name='{name}'" in s or (ident and f'#{ident}' in s):
+                    return True
+                m = re.search(r"name\^='([^']+)'", s)
+                if m and name.startswith(m.group(1)):
+                    return True
+            return False
+        faltan = []
+        for f in sorted(glob.glob('templates/**/*.html', recursive=True)):
+            if '/legal/' in f or '/admin/' in f or '/emails/' in f:
+                continue
+            lines = open(f, encoding='utf-8').read().split('\n')
+            for i, l in enumerate(lines):
+                for m in re.finditer(r'<(input|select|textarea)\b([^>]*)>', l):
+                    a = m.group(2)
+                    if 'type="hidden"' in a or 'type="submit"' in a or 'data-tip' in a:
+                        continue
+                    nm = re.search(r'name="([^"{}]+)"', a)
+                    if not nm:
+                        continue
+                    idm = re.search(r'id="([^"{}]+)"', a)
+                    ctx = '\n'.join(lines[max(0, i - 1):i + 1])
+                    if 'data-tip' in ctx or cubierto(nm.group(1), idm.group(1) if idm else ''):
+                        continue
+                    faltan.append(f'{f}:{i + 1} {m.group(1)} name={nm.group(1)}')
+        self.assertEqual(faltan, [], 'campos sin bocadillo: añádelos al mapa (tips_map.html + tips.js)')
+
     def test_la_portada_lleva_el_mapa_renderizado(self):
         html = self.client.get('/').content.decode()
         self.assertIn('<template id="tips-map">', html)

@@ -174,7 +174,13 @@
     b147: "input[name='title']",
     b148: "input[name='crear']",
     b149: "input[name='motivo']",
-    b150: "#s-registration_open"
+    b150: "#s-registration_open",
+    b151: "#t-qn",
+    b152: "input[name='speakers']",
+    b153: "input[name='donate-amount']",
+    b154: "input[name='content_url']",
+    b155: "#ft",
+    b156: "input[name='text']"
   };
   /* 5.29-A: el mapa central — clave -> texto (plantilla) y clave -> selector (arriba).
    * Los controles de formulario no pintan ::after: el bocadillo va a su <label>. */

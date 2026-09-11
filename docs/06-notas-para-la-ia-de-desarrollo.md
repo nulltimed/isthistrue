@@ -1810,4 +1810,8 @@ Informe en `docs/89`. Registro técnico:
   post (`maybe_trigger_opus_rescan`: `if post.opus_rescanned: return False`; `opus_rescan.delay` sin
   `forced`) y una vez por frase (`segment_vote`: aviso «usa la llave inglesa»). La llave inglesa
   (`post_relaunch` etapa deep) conserva `forced=True`. Lección 4.4-D de CLAUDE.md enmendada.
+- **Candado de cobertura** (`test_todo_campo_de_formulario_tiene_bocadillo`): cada input/select/textarea
+  con `name` en templates/ (salvo legal/admin/emails) debe tener `data-tip` en su línea o la anterior,
+  o un selector en tips.js por `name='X'`, prefijo `name^=` o `#id`. Regla en CLAUDE.md: todo control
+  nuevo nace con bocadillo (orden de David). 156 entradas en el mapa.
 

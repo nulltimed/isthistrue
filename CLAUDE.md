@@ -294,6 +294,15 @@ NO repetir esos pendientes (donación de prueba 1 €, token GitHub con todos lo
 **Trampa (2026-09-11)**: `/home/claude/CLAUDE.md` es una COPIA del del repo y se queda vieja;
 el canónico es el del repo. Nunca copiar en sentido copia→repo.
 
+## Bocadillos: TODO control nuevo nace con el suyo (orden de David, 2026-09-11)
+David, literal: «los bocadillos de todo lo que se vaya creando (nuevos posts, funcionalidades) deben
+ser creados». Un bocadillo = una frase sencilla que explica qué hace lo que hay bajo el cursor, en
+castellano y en el `.po`. Dos vías: `data-tip` en la plantilla, o el MAPA central (texto en
+`templates/partials/tips_map.html` con clave `bNNN` + selector en `static/js/tips.js` SELECTORES).
+Los posts nuevos los heredan solos (el mapa va por tipo de control). Candado: el test
+`test_todo_campo_de_formulario_tiene_bocadillo` pone el CI rojo si un campo con `name` se queda sin
+bocadillo; botones y enlaces nuevos se revisan a mano en cada parche.
+
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.
 **Y al finalizar la implementación de CADA PARCHE de Fable web, sube a GitHub /docs junto al
