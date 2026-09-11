@@ -1,29 +1,102 @@
-/* 5.28-A (reporte de David): los bocadillos [data-tip] cerca del borde de la
- * ventana se salian de ella (p. ej. el modo viajero, arriba a la derecha).
- * Aqui se decide, en el momento de mostrarlo, hacia donde cabe: si el centro
- * del control esta demasiado a la izquierda o a la derecha, el bocadillo se
- * ancla a ese lado; si no hay sitio arriba, sale por debajo. Sin dependencias;
- * el CSS de [data-tip] hace el resto. Se mide el propio ::after (opacidad 0,
- * pero ya maquetado), asi que el calculo usa el tamano real del texto. */
+/* Bocadillos de la casa — tips.js
+ * 5.28-A: no se salen de la ventana. 5.29-A: mapa central selector → texto.
+ * 5.30-C (reporte de David: «hay bocadillos que quedan tapados» y «los iconos no
+ * crecen»): el bocadillo YA NO es un ::after del control (cualquier caja con
+ * scroll propio —transcripcion, listas del semaforo, mensajes— lo recortaba).
+ * Ahora es UN solo globo flotante (#tip-globo, position:fixed, fuera de toda
+ * caja) que se coloca junto al control a los 500 ms de posar el cursor, y en
+ * ese mismo instante el icono del control crece (clase icon-crece). Sin JS,
+ * el CSS de [data-tip]::after sigue funcionando como antes (respaldo). */
 (function () {
-  var MARGEN = 8;
-  function colocar(el) {
-    if (!el || !el.hasAttribute || !el.hasAttribute('data-tip')) return;
-    el.classList.remove('tip-izq', 'tip-der', 'tip-abajo-auto');
-    var cs = window.getComputedStyle(el, '::after');
-    var w = parseFloat(cs.width) || 0, h = parseFloat(cs.height) || 0;
-    if (!w) return;
-    var r = el.getBoundingClientRect();
-    var cx = r.left + r.width / 2;
-    if (cx - w / 2 < MARGEN) el.classList.add('tip-izq');
-    else if (cx + w / 2 > window.innerWidth - MARGEN) el.classList.add('tip-der');
-    if (!el.classList.contains('tip-abajo') && r.top - h - 10 < 0) el.classList.add('tip-abajo-auto');
-  }
+  var MARGEN = 8, RETARDO = 500, globo = null, actual = null, temporizador = null;
+  document.documentElement.classList.add('tips-js');   // apaga el ::after de respaldo
+
   function objetivo(ev) {
     var t = ev.target;
     return t && t.closest ? t.closest('[data-tip]') : null;
   }
-  /* 5.29-A: clave -> selector CSS (los textos, traducibles, en partials/tips_map.html). */
+  function elGlobo(contenedor) {
+    if (!globo) {
+      globo = document.createElement('div');
+      globo.id = 'tip-globo';
+      globo.setAttribute('role', 'tooltip');
+    }
+    /* Un <dialog> modal vive en la capa superior: el globo debe colgar de el. */
+    if (globo.parentElement !== contenedor) contenedor.appendChild(globo);
+    return globo;
+  }
+  function iconoDe(el) {
+    var svg = el.querySelector(':scope > svg.icon');
+    if (svg) return svg;
+    /* boton de emoji (⚑, ＋, ✕…): crece el propio boton, que es inline-block */
+    if (/^(BUTTON|SUMMARY)$/.test(el.tagName) && Array.from(el.textContent.trim()).length <= 2) return el;
+    return null;
+  }
+  function mostrar(el) {
+    var texto = el.getAttribute('data-tip');
+    if (!texto) return;
+    var g = elGlobo(el.closest('dialog[open]') || document.body);
+    g.textContent = texto;
+    g.className = 'visible';
+    var r = el.getBoundingClientRect(), w = g.offsetWidth, h = g.offsetHeight;
+    var x = r.left + r.width / 2 - w / 2;
+    x = Math.max(MARGEN, Math.min(x, window.innerWidth - w - MARGEN));
+    var y = r.top - h - 7, abajo = false;
+    if (y < MARGEN) { y = r.bottom + 7; abajo = true; }
+    if (y + h > window.innerHeight - MARGEN) y = Math.max(MARGEN, window.innerHeight - h - MARGEN);
+    g.style.left = Math.round(x) + 'px';
+    g.style.top = Math.round(y) + 'px';
+    g.classList.add(abajo ? 'abajo' : 'arriba');
+    var ic = iconoDe(el);
+    if (ic) ic.classList.add('icon-crece');
+    el._tipIcono = ic;
+    actual = el;
+  }
+  function ocultar(soloVisible) {
+    /* soloVisible: al hacer scroll se retira el globo (su sitio ya no vale)
+     * pero se respeta el temporizador de un control recien posado. */
+    if (soloVisible && !actual) return;
+    clearTimeout(temporizador); temporizador = null;
+    if (globo) globo.className = '';
+    if (actual) {
+      if (actual._tipIcono) actual._tipIcono.classList.remove('icon-crece');
+      actual._tipIcono = null;
+    }
+    actual = null;
+  }
+  function armar(el, retardo) {
+    if (!el) return;
+    if (el === actual) return;
+    ocultar();
+    temporizador = setTimeout(function () { mostrar(el); }, retardo);
+  }
+  document.addEventListener('mouseover', function (ev) {
+    var el = objetivo(ev);
+    if (el) armar(el, RETARDO);
+    else if (actual || temporizador) ocultar();
+  }, true);
+  document.addEventListener('mouseout', function (ev) {
+    var el = objetivo(ev);
+    if (!el) return;
+    var a = ev.relatedTarget;
+    if (a && el.contains(a)) return;          // sigue dentro del mismo control
+    ocultar();
+  }, true);
+  document.addEventListener('focusin', function (ev) { armar(objetivo(ev), 0); }, true);
+  document.addEventListener('focusout', ocultar, true);
+  document.addEventListener('mousedown', ocultar, true);
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') ocultar(); }, true);
+  window.addEventListener('scroll', function () { ocultar(true); }, true);
+  window.addEventListener('resize', function () { ocultar(true); });
+  /* Pantalla tactil: al tocar se ensena 2,5 s (no hay cursor que posar). */
+  document.addEventListener('touchstart', function (ev) {
+    var el = objetivo(ev);
+    if (!el) return;
+    ocultar();
+    mostrar(el);
+    temporizador = setTimeout(ocultar, 2500);
+  }, { passive: true, capture: true });
+
   var SELECTORES = {
     b001: ".lang-switch-top button[value='es']",
     b002: ".lang-switch-top button[value='en']",
@@ -206,15 +279,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aplicarMapa);
   else aplicarMapa();
   document.addEventListener('htmx:afterSwap', aplicarMapa);
-
-  document.addEventListener('mouseover', function (ev) { colocar(objetivo(ev)); }, true);
-  document.addEventListener('focusin', function (ev) { colocar(objetivo(ev)); }, true);
-  /* Al tocar en pantalla tactil no hay hover: el bocadillo se ensena un momento. */
-  document.addEventListener('touchstart', function (ev) {
-    var el = objetivo(ev);
-    if (!el) return;
-    colocar(el);
-    el.classList.add('tip-visible');
-    setTimeout(function () { el.classList.remove('tip-visible'); }, 2500);
-  }, { passive: true, capture: true });
 })();

@@ -4,15 +4,19 @@ from django.test import TestCase
 
 
 class Parche528A_BocadillosDentroDeLaVentana(TestCase):
-    def test_tips_js_se_carga_y_el_css_tiene_los_anclajes(self):
+    def test_tips_js_se_carga_y_el_globo_no_se_sale_de_la_ventana(self):
         base = open('templates/base.html', encoding='utf-8').read()
         self.assertIn("js/tips.js", base)
         css = open('static/css/main.css', encoding='utf-8').read()
-        for sel in ('.tip-izq::after', '.tip-der::after', '.tip-abajo-auto::after', '.tip-visible::after'):
-            self.assertIn(sel, css, sel)
+        # 5.30-C: un globo flotante (fixed, fuera de toda caja con scroll); el
+        # ::after queda de respaldo sin JS
+        self.assertIn('#tip-globo{position:fixed;z-index:9999', css)
+        self.assertIn('html.tips-js [data-tip]::after{display:none!important}', css)
         js = open('static/js/tips.js', encoding='utf-8').read()
-        self.assertIn("getComputedStyle(el, '::after')", js)
-        self.assertIn('window.innerWidth', js)
+        self.assertIn("globo.id = 'tip-globo'", js)
+        self.assertIn('window.innerWidth - w - MARGEN', js)     # no se sale por los lados
+        self.assertIn('y = r.bottom + 7', js)                   # abajo si no cabe arriba
+        self.assertIn("closest('dialog[open]')", js)            # dentro de un dialog modal
         self.assertIn('touchstart', js)
 
 

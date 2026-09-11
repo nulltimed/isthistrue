@@ -69,8 +69,10 @@ class Parche530A_ContadorYTrending(TestCase):
 
 
 class Parche530B_IconosQueCrecen(TestCase):
-    def test_el_css_agranda_el_icono_y_retrasa_el_bocadillo_medio_segundo(self):
+    def test_el_icono_crece_a_los_500_ms_con_el_bocadillo(self):
         css = open('static/css/main.css', encoding='utf-8').read()
-        self.assertIn('button:hover>svg.icon', css)
-        self.assertIn('transform:scale(1.18);transition-delay:.5s', css)
-        self.assertIn('[data-tip]:hover::after,[data-tip]:focus-visible::after{transition-delay:.5s}', css)
+        self.assertIn('.icon-crece{transform:scale(1.25)}', css)
+        js = open('static/js/tips.js', encoding='utf-8').read()
+        self.assertIn('RETARDO = 500', js)
+        self.assertIn("ic.classList.add('icon-crece')", js)      # mismo instante que el globo
+        self.assertIn(":scope > svg.icon", js)

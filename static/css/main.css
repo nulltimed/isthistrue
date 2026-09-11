@@ -957,10 +957,18 @@ body.viajero main.wide .post > #hilo{max-width:none}
 /* 5.30-A: el contador ▲/▼ en la esquina superior izquierda de la caja del post. */
 .votos-esquina{float:left;margin:.05rem .7rem .4rem 0}
 .votos-esquina .votos{gap:.2rem}
-/* 5.30-B (orden de David): al dejar el cursor 500 ms sobre un icono, el icono
-   se agranda un poco (solo el dibujo, no el boton: no pisa a los vecinos) y
-   sale el bocadillo. Sin retardo al quitarlo. */
-svg.icon{transition:transform .15s}
-a:hover>svg.icon,button:hover>svg.icon,summary:hover>svg.icon,label:hover>svg.icon{transform:scale(1.18);transition-delay:.5s}
-[data-tip]:hover::after,[data-tip]:focus-visible::after{transition-delay:.5s}
+/* 5.30-B/C (ordenes de David): a los 500 ms de posar el cursor, el icono crece
+   un poco (solo el dibujo: no pisa a los vecinos) y sale el bocadillo. Lo
+   gobierna tips.js con un unico temporizador; esto es solo la pintura. */
+svg.icon,.icon-crece{transition:transform .15s}
+.icon-crece{transform:scale(1.25)}
+/* 5.30-C: el globo flotante — UNO para toda la pagina, fuera de cualquier caja
+   con scroll, asi nada lo recorta. Con JS, el ::after de respaldo se apaga. */
+html.tips-js [data-tip]::after{display:none!important}
+#tip-globo{position:fixed;z-index:9999;left:0;top:0;background:#141414;color:#fff;font-size:.75rem;
+  font-weight:500;line-height:1.35;padding:.4rem .6rem;border-radius:6px;width:max-content;
+  max-width:min(320px,94vw);white-space:normal;text-align:left;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .12s}
+#tip-globo.visible{opacity:1}
+dialog #tip-globo{z-index:9999}
 

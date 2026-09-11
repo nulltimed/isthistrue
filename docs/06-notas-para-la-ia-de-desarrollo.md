@@ -1828,4 +1828,14 @@ Informe en `docs/89`. Registro técnico:
   hace que se oculte al instante). Se escala el SVG, no el control, para no pisar vecinos ni escalar el
   bocadillo (el ::after es hijo del control).
 - Tests de `SuscripcionYTrending` y 5.23-C adaptados (los ▼ ya son actividad); `tests/test_serie530.py`.
+- **5.30-C (reportes de David)**: el bocadillo deja de ser `::after` del control — cualquier
+  ancestro con `overflow` distinto de visible lo recortaba (`.transcript`, `.sf-lista ul`, `.fmsg`,
+  `table{overflow:hidden}` del panel). Ahora `tips.js` mantiene UN `#tip-globo` (position:fixed,
+  z-index 9999) colgado de `body` o del `dialog[open]` (capa superior), lo coloca a los 500 ms
+  (`RETARDO`) centrado/anclado dentro del viewport y abajo si no cabe arriba, y en ese instante añade
+  `icon-crece` (scale 1.25) al `:scope > svg.icon` o al propio botón si es de emoji (`Array.from`
+  para contar puntos de código: `length` de un emoji puede ser 2-3). `html.tips-js` apaga el
+  `::after` de respaldo. Scroll/resize retiran el globo visible pero NO cancelan el temporizador (el
+  evento scroll de un `scrollIntoView` llega después del mouseover y lo mataba). `elementFromPoint`
+  no sirve para comprobar el globo: tiene `pointer-events:none`.
 
