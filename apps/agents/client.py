@@ -40,10 +40,11 @@ def _apunte_claude(model, usage, busquedas=0):
         eur = (getattr(usage, 'input_tokens', 0) * pin
                + getattr(usage, 'output_tokens', 0) * pout) / 1_000_000 * USD_EUR
         if eur > 0:
-            costs.record('anthropic', 'analisis', round(eur, 6))
+            costs.record('anthropic', 'analisis', round(eur, 6), model=model)
         if busquedas:
             costs.record('anthropic', 'busqueda',
-                         round(busquedas * USD_PER_SEARCH * USD_EUR, 6))
+                         round(busquedas * USD_PER_SEARCH * USD_EUR, 6),
+                         model=model)
     except Exception:
         logger.warning('Apunte claude fallido (no bloquea)', exc_info=True)
 

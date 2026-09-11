@@ -300,7 +300,7 @@ class Parche524C_PanelGastos(TestCase):
         r = self.client.get('/panel/gastos/?atajo=todo&csv=1')
         self.assertEqual(r['Content-Type'].split(';')[0], 'text/csv')
         cuerpo = r.content.decode()
-        self.assertIn('fecha;hora;servicio;concepto;post;titulo;eur', cuerpo)
+        self.assertIn('fecha;hora;servicio;concepto;modelo;post;titulo;eur', cuerpo)   # 5.26-A: columna modelo
         self.assertEqual(cuerpo.count('\n'), 5, '4 apuntes + cabecera')
         self.assertIn('1,5000', cuerpo)
 

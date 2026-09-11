@@ -584,6 +584,7 @@ def gastos_panel(request):
     if servicio not in SERVICIOS:
         servicio = ''
     concepto = request.GET.get('concepto', '').strip()[:60]
+    modelo = request.GET.get('modelo', '').strip()[:60]   # 5.26-A
     post_pk = request.GET.get('post', '').strip()
     qs = CostEntry.objects.select_related('post').order_by('-created_at')
     if desde:
@@ -594,16 +595,18 @@ def gastos_panel(request):
         qs = qs.filter(provider=servicio)
     if concepto:
         qs = qs.filter(concept__icontains=concepto)
+    if modelo:
+        qs = qs.filter(model__icontains=modelo)
     if post_pk.isdigit():
         qs = qs.filter(post_id=int(post_pk))
     if request.GET.get('csv'):
         resp = HttpResponse(content_type='text/csv; charset=utf-8')
         resp['Content-Disposition'] = 'attachment; filename="gastos-esestocierto.csv"'
         w = csv.writer(resp, delimiter=';')
-        w.writerow(['fecha', 'hora', 'servicio', 'concepto', 'post', 'titulo', 'eur'])
+        w.writerow(['fecha', 'hora', 'servicio', 'concepto', 'modelo', 'post', 'titulo', 'eur'])
         for e in qs.iterator():
             t = timezone.localtime(e.created_at)
-            w.writerow([t.date().isoformat(), t.strftime('%H:%M:%S'), e.provider, e.concept,
+            w.writerow([t.date().isoformat(), t.strftime('%H:%M:%S'), e.provider, e.concept, e.model,
                         e.post_id or '', (e.post.title if e.post else '')[:80],
                         f'{float(e.eur):.4f}'.replace('.', ',')])
         return resp
@@ -613,6 +616,10 @@ def gastos_panel(request):
                      'eur': float(r['s']), 'n': r['n'],
                      'pct': (float(r['s']) / total * 100) if total else 0}
                     for r in qs.values('provider').annotate(s=Sum('eur'), n=Count('pk')).order_by('-s')]
+    # 5.26-A: cuanto se lleva cada modelo (Max frente a Plus o Flash).
+    por_modelo = [{'modelo': r['model'] or '—', 'eur': float(r['s']), 'n': r['n'],
+                   'pct': (float(r['s']) / total * 100) if total else 0}
+                  for r in qs.values('model').annotate(s=Sum('eur'), n=Count('pk')).order_by('-s')[:20]]
     por_dia = [{'dia': r['d'], 'eur': float(r['s']), 'n': r['n']}
                for r in qs.annotate(d=TruncDate('created_at')).values('d')
                .annotate(s=Sum('eur'), n=Count('pk')).order_by('-d')[:62]]
@@ -637,12 +644,14 @@ def gastos_panel(request):
     page = Paginator(qs, 300).get_page(request.GET.get('pagina', 1))
     texto = '\n'.join(
         f"{timezone.localtime(e.created_at):%Y-%m-%d %H:%M:%S} {e.provider:<10} {e.concept:<24} "
-        f"post {e.post_id or '-':<5} {float(e.eur):.4f} €" for e in page)
+        f"{e.model or '-':<28} post {e.post_id or '-':<5} {float(e.eur):.4f} €" for e in page)
     return render(request, 'panel/gastos.html', {
         'filas': page, 'page_obj': page, 'texto': texto, 'total': total, 'n': n,
         'por_servicio': por_servicio, 'por_dia': por_dia, 'por_post': por_post,
+        'por_modelo': por_modelo,
         'n_posts': n_posts, 'media_post': media_post, 'resumen': resumen,
         'servicios': SERVICIOS, 'servicio': servicio, 'concepto': concepto, 'post_pk': post_pk,
+        'modelo': modelo,
         'desde': desde.isoformat() if desde else '', 'hasta': hasta.isoformat() if hasta else '',
         'atajo': atajo, 'saldo_runpod': saldo_runpod(),
         'query': request.GET.urlencode(),

@@ -19,6 +19,7 @@
 <form method="get" class="logs-filtros gastos-filtros">
   <label>{% trans "Servicio" %}<select name="servicio"><option value="">{% trans "Todos" %}</option>{% for k, v in servicios.items %}<option value="{{ k }}" {% if k == servicio %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
   <label>{% trans "Concepto contiene" %}<input name="concepto" value="{{ concepto }}" maxlength="60" placeholder="{% trans 'busqueda, analisis, voces…' %}"></label>
+  <label>{% trans "Modelo contiene" %}<input name="modelo" value="{{ modelo }}" maxlength="60" placeholder="qwen3.8-max, sonnet…"></label>
   <label>{% trans "Post nº" %}<input name="post" value="{{ post_pk }}" inputmode="numeric" style="max-width:90px"></label>
   <label>{% trans "Desde" %}<input type="date" name="desde" value="{{ desde }}"></label>
   <label>{% trans "Hasta" %}<input type="date" name="hasta" value="{{ hasta }}"></label>
@@ -49,6 +50,14 @@
     </tbody></table>
   </section>
   <section>
+    {# 5.26-A (orden de David): cuanto se lleva cada modelo. #}
+    <h3>{% trans "Por modelo" %}</h3>
+    <table class="tabla-gastos"><tbody>
+      {% for m in por_modelo %}<tr><td><a href="?{{ query }}{% if query %}&{% endif %}modelo={{ m.modelo|urlencode }}">{{ m.modelo }}</a></td><td>{{ m.n }}</td><td>{{ m.eur|floatformat:4 }} €</td><td class="hint">{{ m.pct|floatformat:1 }} %</td></tr>
+      {% empty %}<tr><td colspan="4" class="hint">—</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+  <section>
     <h3>{% trans "Por día" %}</h3>
     <table class="tabla-gastos"><tbody>
       {% for d in por_dia %}<tr><td>{{ d.dia|date:'d/m/Y' }}</td><td>{{ d.n }}</td><td>{{ d.eur|floatformat:4 }} €</td></tr>
@@ -72,17 +81,18 @@
 <textarea id="logs-texto" class="sr-only" readonly aria-hidden="true">{{ texto }}</textarea>
 <div class="logs-tabla-wrap">
 <table class="logs-tabla gastos-tabla">
-  <thead><tr><th>{% trans "Cuándo" %}</th><th>{% trans "Servicio" %}</th><th>{% trans "Concepto" %}</th><th>{% trans "Post" %}</th><th>€</th></tr></thead>
+  <thead><tr><th>{% trans "Cuándo" %}</th><th>{% trans "Servicio" %}</th><th>{% trans "Concepto" %}</th><th>{% trans "Modelo" %}</th><th>{% trans "Post" %}</th><th>€</th></tr></thead>
   <tbody>
   {% for e in filas %}
   <tr>
     <td class="logs-cuando">{{ e.created_at|date:'d/m/Y H:i:s' }}</td>
     <td>{{ e.provider }}</td>
     <td>{{ e.concept }}</td>
+    <td class="hint">{{ e.model|default:"—" }}</td>
     <td>{% if e.post_id %}<a href="/post/{{ e.post_id }}/" data-tip="{{ e.post.title|default:''|truncatechars:80 }}">#{{ e.post_id }}</a>{% else %}<span class="hint">—</span>{% endif %}</td>
     <td class="gastos-eur">{{ e.eur|floatformat:4 }}</td>
   </tr>
-  {% empty %}<tr><td colspan="5" class="hint">{% trans "Sin gastos con estos filtros." %}</td></tr>{% endfor %}
+  {% empty %}<tr><td colspan="6" class="hint">{% trans "Sin gastos con estos filtros." %}</td></tr>{% endfor %}
   </tbody>
 </table>
 </div>

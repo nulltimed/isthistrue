@@ -53,10 +53,11 @@ def _apunte(model, usage, busquedas=0):
                + (usage.get('output_tokens', 0) or usage.get('completion_tokens', 0)) * pout
                ) / 1_000_000 * USD_EUR
         if eur > 0:
-            costs.record('qwen', 'analisis', round(eur, 6))
+            costs.record('qwen', 'analisis', round(eur, 6), model=model)
         if busquedas:
             costs.record('qwen', 'busqueda',
-                         round(busquedas * USD_PER_SEARCH * USD_EUR, 6))
+                         round(busquedas * USD_PER_SEARCH * USD_EUR, 6),
+                         model=model)
     except Exception:
         logger.warning('Apunte qwen fallido (no bloquea)', exc_info=True)
 

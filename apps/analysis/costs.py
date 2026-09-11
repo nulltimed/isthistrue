@@ -26,8 +26,9 @@ def current_post():
     return getattr(_local, 'post', None)
 
 
-def record(provider, concept, eur, post=None):
-    """Un apunte. Jamas rompe el analisis por un fallo contable (regla 5.7)."""
+def record(provider, concept, eur, post=None, model=''):
+    """Un apunte. Jamas rompe el analisis por un fallo contable (regla 5.7).
+    5.26-A: `model` = id del modelo que origino el gasto (vacio si no aplica)."""
     from .models import CostEntry, Post
     try:
         if eur is None or float(eur) <= 0:
@@ -41,6 +42,7 @@ def record(provider, concept, eur, post=None):
             candidato = None
         CostEntry.objects.create(post=candidato,
                                  provider=provider, concept=concept,
+                                 model=(model or '')[:60],
                                  eur=Decimal(str(round(float(eur), 4))))
     except Exception:
         import logging

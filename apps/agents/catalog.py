@@ -38,12 +38,16 @@ daño que un vídeo que espera; un suplente bueno no hace daño ninguno.
 #
 # id                       nombre visible        tier  in$/M  out$/M  web
 CATALOG = [
-    ('qwen3.8-flash',             'Qwen3.8 Flash',  1,  0.11,   0.80, True),
+    # 5.26-A: precios REALES de la ficha de Alibaba (region Singapur, la de
+    # dashscope-intl, leida el 2026-09-11): Flash 0,15/0,47; Plus 0,40/1,60
+    # (hasta 256k de contexto). Antes: 0,11/0,80 y 0,39/2,34 (estimados), es
+    # decir, el libro sobreestimaba la salida de Plus un 45 %.
+    ('qwen3.8-flash',             'Qwen3.8 Flash',  1,  0.15,   0.47, True),
     # 5.6-D (reporte de David: «faltan modelos de Qwen»): la familia de texto
     # completa segun el listado REAL de /compatible-mode/v1/models de su cuenta
     # (2026-09-07). Precios estimados por escalon; ajustar con la consola.
     ('qwen3.7-flash',             'Qwen3.7 Flash',  1,  0.10,   0.68, True),
-    ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.39,   2.34, True),
+    ('qwen3.7-plus',              'Qwen3.7 Plus',   2,  0.40,   1.60, True),
     ('qwen3.7-max',               'Qwen3.7 Max',    3,  0.62,   3.10, True),
     # 5.10-F: precios REALES del extracto de Alibaba de septiembre (linea a
     # linea, 2026-09-07): input 2 $/M, output 6 $/M (cache-in 0,25 $/M). La
@@ -163,7 +167,8 @@ TASKS = [
                   'solo si el separador inventa voces'),
     # 5.1-D (orden de David): al proponer una categoria nueva, Sonnet la
     # contrasta con las existentes para mantener la taxonomia ordenada.
-    ('categories', 'Orden de categorías', 'qwen3.7-plus',
+    # 5.26-A (decision de David): rara y sencilla -> Flash.
+    ('categories', 'Orden de categorías', 'qwen3.8-flash',
                    'solo al proponer una categoría nueva'),
     # 5.4-D (orden de David): el detector de temas sobre China. Por naturaleza
     # NO puede ser un modelo chino (el zorro no vigila el gallinero).
@@ -224,7 +229,7 @@ FALLBACK_DEFAULTS = {
     'moderation': 'claude-haiku-4-5-20251001',
     'deep': 'claude-opus-4-8',
     'innocuous': 'claude-sonnet-4-6',
-    'categories': 'claude-sonnet-4-6',
+    'categories': 'claude-haiku-4-5-20251001',   # 5.26-A
     'china_guard': 'claude-haiku-4-5-20251001',
     'vision': 'claude-sonnet-4-6',   # Claude tambien ve
 }

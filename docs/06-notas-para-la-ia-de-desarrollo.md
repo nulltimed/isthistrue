@@ -1739,3 +1739,19 @@ Informe en `docs/89`. Registro técnico:
   test guardián en `tests/test_serie525.py` (regex `isthistrue\.|escierto\.(?!com)` sobre
   templates/ sin las URLs del repo ni los hosts históricos). Internos sin tocar (compose, BD, /opt,
   repo). Ritual sin down medido otra vez: 5 s.
+
+## 88. Serie 5.26: precios reales de Qwen y el libro con modelo (2026-09-11)
+- David preguntó por Solheim Coder (Qwen3.8-27B alojado, 15 €/mes, 1 petición concurrente, sin
+  búsqueda): NO sustituye nada — el motor principal es Qwen en Alibaba con búsqueda (Responses API,
+  `tools: web_search`), verificada EN VIVO para `qwen3.8-flash` y `qwen3.7-plus` (fuentes devueltas).
+- Precios reales de la ficha de Alibaba (Singapur): Flash 0,15/0,47, Plus 0,40/1,60 (≤256k). El
+  catálogo llevaba estimaciones (0,11/0,80 y 0,39/2,34); corregido. Max 2/6 ya era el de factura.
+- `CostEntry.model` (analysis/0023, indexado) rellenado por `qwen._apunte` y `client._apunte_claude`
+  vía `costs.record(..., model=)`. `/panel/gastos/`: filtro `?modelo=`, columna, CSV y resumen
+  «Por modelo». Regla: **una recomendación de coste por modelo sin esta columna es una estimación**;
+  el día 6 (19,57 €) no se puede desglosar por modelo porque no se guardaba.
+- Ruedas de David cambiadas con su ok: `model_classify` Max→Plus, `model_categories` Plus→Flash,
+  `model_fb_categories` Sonnet→Haiku (SystemSetting en producción; defaults del código alineados:
+  `TASKS`, `FALLBACK_DEFAULTS`, `SETTING_DEFAULTS`). Test `tests/test_serie526.py` (8) + cabecera
+  CSV del 5.24-C actualizada.
+

@@ -267,7 +267,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'model_moderation': 'qwen3.8-flash',
     'model_deep': 'qwen3.8-max',
     'model_innocuous': 'qwen3.7-plus',
-    'model_categories': 'qwen3.7-plus',
+    'model_categories': 'qwen3.8-flash',   # 5.26-A
     'model_china_guard': 'claude-haiku-4-5-20251001',
     'delivery_sweep': 'direct', 'delivery_classify': 'direct',
     'delivery_dating': 'direct', 'delivery_verdict': 'direct', 'delivery_attribution': 'direct',

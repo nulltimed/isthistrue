@@ -2401,3 +2401,9 @@ msgstr "The REST credentials in the .env are not valid: they are only needed for
 
 msgid "Sin credenciales REST: el pago por servidor es opcional."
 msgstr "No REST credentials: the server-side payment is optional."
+
+msgid "Modelo contiene"
+msgstr "Model contains"
+
+msgid "Por modelo"
+msgstr "By model"

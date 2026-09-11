@@ -363,8 +363,12 @@ class CostEntry(models.Model):
     las donaciones) y los topes mensuales por proveedor."""
     post = models.ForeignKey('Post', null=True, blank=True,
                              on_delete=models.SET_NULL, related_name='costs')
-    provider = models.CharField(max_length=20)   # anthropic|assemblyai|runpod|brevo
+    provider = models.CharField(max_length=20)   # anthropic|qwen|assemblyai|runpod|brevo
     concept = models.CharField(max_length=40)
+    # 5.26-A (orden de David): QUE MODELO hizo la llamada — sin esto no se
+    # puede saber cuanto se lleva Max frente a Plus o Flash. Vacio en los
+    # apuntes que no son de un modelo (GPU, correo, audio).
+    model = models.CharField(max_length=60, blank=True, default='', db_index=True)
     eur = models.DecimalField(max_digits=8, decimal_places=4)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
