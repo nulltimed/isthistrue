@@ -136,6 +136,23 @@
     if (seg._kw) seg._kw.forEach(function (sp) { sp.classList.remove('dicho'); });
   }
 
+  /* 5.28-B (orden de David): al elegir una entrada del semaforo, la
+   * transcripcion se coloca EN EL INSTANTE con esa frase lo mas arriba
+   * posible de la caja (scroll solo de la caja, jamas de la pagina). */
+  window.irAFrase = function (s) {
+    var segs = document.querySelectorAll('.transcript .segment[data-start]');
+    var mejor = null, mejorIni = -1;
+    for (var i = 0; i < segs.length; i++) {
+      var ini = parseFloat(segs[i].getAttribute('data-start'));
+      if (isFinite(ini) && ini <= s + 0.01 && ini > mejorIni) { mejor = segs[i]; mejorIni = ini; }
+    }
+    if (!mejor) return;
+    var r = mejor.getBoundingClientRect(), rb = box.getBoundingClientRect();
+    box.scrollTo({ top: box.scrollTop + (r.top - rb.top) - 4, behavior: 'auto' });
+    mejor.classList.add('sf-destino');
+    setTimeout(function () { mejor.classList.remove('sf-destino'); }, 1800);
+  };
+
   // seekTo global: los timestamps [12s] ya la invocan desde la plantilla.
   window.seekTo = function (s) {
     var t = target(s);

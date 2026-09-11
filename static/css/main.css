@@ -772,9 +772,15 @@ main.wide .post > h1{text-align:center}
   font-weight:500;line-height:1.35;padding:.4rem .6rem;border-radius:6px;width:max-content;
   max-width:260px;white-space:normal;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.18);
   opacity:0;pointer-events:none;transition:opacity .12s,transform .12s;z-index:60}
-[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translateX(-50%)}
-[data-tip].tip-abajo::after{bottom:auto;top:calc(100% + 7px)}
-@media (max-width:640px){[data-tip]::after{display:none}}
+[data-tip]:hover::after,[data-tip]:focus-visible::after,[data-tip].tip-visible::after{opacity:1;transform:translateX(-50%)}
+[data-tip].tip-abajo::after,[data-tip].tip-abajo-auto::after{bottom:auto;top:calc(100% + 7px)}
+/* 5.28-A: anclado al borde cuando no cabe centrado (lo decide tips.js). */
+[data-tip].tip-izq::after{left:0;transform:translateY(3px)}
+[data-tip].tip-izq:hover::after,[data-tip].tip-izq:focus-visible::after,[data-tip].tip-izq.tip-visible::after{transform:none}
+[data-tip].tip-der::after{left:auto;right:0;transform:translateY(3px)}
+[data-tip].tip-der:hover::after,[data-tip].tip-der:focus-visible::after,[data-tip].tip-der.tip-visible::after{transform:none}
+/* 5.28-A: en pantalla estrecha se ensena al tocar (tip-visible), no al posar. */
+@media (max-width:640px){[data-tip]::after{display:none}[data-tip].tip-visible::after{display:block;max-width:min(260px,80vw)}}
 /* C: el karma con flechas — ▲ n ▼ n en post y comentarios; difuminado y
    plegado por puntuacion negativa (umbrales del panel). */
 .votos{display:inline-flex;align-items:center;gap:.15rem;vertical-align:middle}
@@ -946,4 +952,6 @@ body.viajero main.wide .post > #hilo{max-width:none}
 .analisis-guia li{margin:.3rem 0}
 .analisis-grupo{margin:1rem 0 1.4rem}
 .setting-row[data-tip]::after{max-width:340px}
+/* 5.28-B: la frase a la que salta el semaforo se marca un instante. */
+.segment.sf-destino{outline:2px solid #141414;outline-offset:2px;border-radius:6px}
 

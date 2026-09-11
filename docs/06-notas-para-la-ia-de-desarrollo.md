@@ -1784,3 +1784,17 @@ Informe en `docs/89`. Registro técnico:
 - Tests: `tests/test_serie527.py` (13) + reescritos en test_pase42/test_criticos/test_serie526 los que
   fijaban el piloto, el tope diario, la caducidad, el rechazo del voto y la segunda opinión.
 
+## 90. Serie 5.28: bocadillos dentro de la ventana y el semáforo lleva a la frase (2026-09-11)
+- `static/js/tips.js` (cargado en base.html tras menus.js): en `mouseover`/`focusin` (captura) mide el
+  `::after` del `[data-tip]` con `getComputedStyle(el,'::after')` (está maquetado aunque opacidad 0) y
+  añade `tip-izq`/`tip-der` si el centro no deja sitio, y `tip-abajo-auto` si no cabe arriba. En
+  `touchstart` añade `tip-visible` 2,5 s (en <640 px el CSS solo enseña `.tip-visible`). Sin JS los
+  bocadillos siguen funcionando como antes.
+- `window.irAFrase(s)` en transcript.js: busca el `.segment[data-start]` con mayor inicio ≤ s, hace
+  `box.scrollTo` para dejarlo arriba de la caja (solo la caja, orden 5.10-C) y marca `.sf-destino` 1,8 s.
+  Lo llaman los `onclick` del semáforo del post y de la wiki del vídeo.
+- **Trampa cazada**: `/home/claude/CLAUDE.md` era una copia VIEJA del CLAUDE.md del repo; un `cp` en
+  sentido copia→repo borró 31 líneas (ritual sin down, enmienda de fotogramas, lecciones 5.23). Se
+  restauró con `git checkout` y se anotó en CLAUDE.md: el canónico es el del repo.
+- ghcr verificado anónimamente tras la limpieza de David: solo `5.23-slim` (las 4.4-J → 404).
+

@@ -48,8 +48,9 @@
     <form method="dialog"><button class="mini sf-cerrar">✕</button></form>
     <ul>
       {% for f in filas %}
-      <li><a href="#" onclick="seekTo({{ f.s }});document.getElementById('sf-{{ nombre }}').close();return false;">[{{ f.s }}s]</a>
-        <span class="sf-texto" onclick="seekTo({{ f.s }});document.getElementById('sf-{{ nombre }}').close();">{{ f.texto }}</span>
+      {# 5.28-B (orden de David): ademas de reproducir, la transcripcion salta a la frase. #}
+      <li><a href="#" onclick="seekTo({{ f.s }});irAFrase({{ f.s }});document.getElementById('sf-{{ nombre }}').close();return false;">[{{ f.s }}s]</a>
+        <span class="sf-texto" onclick="seekTo({{ f.s }});irAFrase({{ f.s }});document.getElementById('sf-{{ nombre }}').close();">{{ f.texto }}</span>
         <a class="hint" href="/wiki/claim/{{ f.slug }}/" target="_blank" rel="noopener">{% trans "ficha" %}</a></li>
       {% empty %}<li class="hint">—</li>{% endfor %}
     </ul>

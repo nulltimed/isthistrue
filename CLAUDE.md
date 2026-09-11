@@ -284,6 +284,15 @@ Un despliegue "funcional pero feo" es un despliegue ROTO a ojos del usuario.
 `docs/32` mapa de TODO lo implementado · `docs/33` decisiones pendientes de David ·
 `docs/34` registro tecnico de las intervenciones del operador (causa raiz + regla de cada fix).
 
+## La bandeja de David: solo «al abrir al público» (orden 2026-09-11)
+David, literal: «lo de la donación, revocar el token de github y lo de google recuérdamelo sólo
+cuando te diga que el proyecto está listo para abrirse al público». Hasta que pronuncie esa frase,
+NO repetir esos pendientes (donación de prueba 1 €, token GitHub con todos los permisos,
+`wiki_index_people`/Google) en informes ni respuestas. La lista completa vive en la memoria
+`feedback_isthistrue_pendientes.md` y en docs/21 §10.
+**Trampa (2026-09-11)**: `/home/claude/CLAUDE.md` es una COPIA del del repo y se queda vieja;
+el canónico es el del repo. Nunca copiar en sentido copia→repo.
+
 ## Al terminar cualquier tarea
 Informa a David de qué se hizo, qué falló (logs literales) y el estado del CI/espejo/producción.
 **Y al finalizar la implementación de CADA PARCHE de Fable web, sube a GitHub /docs junto al

@@ -38,9 +38,9 @@
       <ul class="wv-lista">
         {% for f in g.filas %}
         <li class="wv-fila{% if forloop.counter > 8 %} oculta-por-tope{% endif %}" data-spk="{{ f.spk }}">
-          <a class="ts" href="#" onclick="seekTo({{ f.t }});return false;" data-tip="{% trans 'Reproducir desde un segundo antes' %}">[{{ f.t }}s]</a>
+          <a class="ts" href="#" onclick="seekTo({{ f.t }});if(window.irAFrase)irAFrase({{ f.t }});return false;" data-tip="{% trans 'Reproducir desde un segundo antes' %}">[{{ f.t }}s]</a>
           <span class="wv-quien">{% if f.spk is not None %}<span class="speaker-tag spk-{{ f.spk }}">{{ f.quien }}</span>{% endif %}</span>
-          <span class="wv-texto" onclick="seekTo({{ f.t }})" title="{{ f.claim.what_evidence_says|truncatechars:200 }}">{% if f.claim.kind == 'OPINION' %}💭 {% endif %}{{ f.claim.title|default:f.claim.text_original|truncatechars:140 }}</span>
+          <span class="wv-texto" onclick="seekTo({{ f.t }});if(window.irAFrase)irAFrase({{ f.t }})" title="{{ f.claim.what_evidence_says|truncatechars:200 }}">{% if f.claim.kind == 'OPINION' %}💭 {% endif %}{{ f.claim.title|default:f.claim.text_original|truncatechars:140 }}</span>
           <span class="wv-enlaces"><button type="button" class="ibtn wv-toggle" data-tip="{% trans 'Ver la explicación y las referencias aquí mismo' %}" onclick="this.closest('.wv-fila').classList.toggle('abierta')">{% icon 'list' 14 %}</button>
             <a class="verdict verdict-{{ f.claim.color }}" href="/wiki/claim/{{ f.claim.slug|default:f.claim.pk }}/" data-tip="{% trans 'Ficha completa: explicación, fuentes e historial' %}">{% trans "ficha" %}</a></span>
           {# 5.4-C (se conserva): la explicacion, las referencias y los DOS enlaces, desplegables en la fila. #}
