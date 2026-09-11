@@ -1300,9 +1300,15 @@ def segment_vote(request, pk, direction):
     # Es la misma solucion que ya rige en la validacion de videos y en la
     # confirmacion de nombres: el voto de moderador confirma en solitario.
     es_admin = request.user.is_superuser or request.user.effective_level() == 'MOD'
-    if value == -1 and es_admin:
+    # 5.29-B (decision de David, 2026-09-11): el voto de moderacion sigue
+    # relanzando en solitario, pero UNA sola vez por frase. Para repetirlo
+    # esta la llave inglesa del post (con coste y confirmacion).
+    if value == -1 and es_admin and seg.opus_rescanned:
+        messages.info(request, 'Esta frase ya tuvo su reanálisis profundo. Para repetirlo, '
+                               'usa la llave inglesa del post.')
+    elif value == -1 and es_admin:
         from .tasks import opus_rescan_segment
-        opus_rescan_segment.delay(seg.pk, forced=True)
+        opus_rescan_segment.delay(seg.pk)
         from apps.panel.models import AuditLog
         AuditLog.objects.create(user=request.user, action='force_deep_scan',
                                 detail=f'segmento {seg.pk} del post {seg.post_id}')

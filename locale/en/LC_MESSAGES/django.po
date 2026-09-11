@@ -2479,3 +2479,453 @@ msgstr "Each sentence is checked against internet sources and gets its colour: g
 
 msgid "Los modelos que hacen cada paso se eligen en la pestaña Modelos; el dinero, en Ajustes."
 msgstr "The models for each step are chosen in the Models tab; the money, in Settings."
+
+msgid "Ver la web en español."
+msgstr "Show the site in Spanish."
+
+msgid "Ver la web en inglés. Solo se traduce la interfaz: vídeos, transcripciones y veredictos siguen en su idioma."
+msgstr "Show the site in English. Only the interface is translated: videos, transcripts and verdicts keep their language."
+
+msgid "Volver a la portada."
+msgstr "Back to the front page."
+
+msgid "Portada: los últimos análisis."
+msgstr "Front page: the latest analyses."
+
+msgid "Foro: los vídeos por subforos, con sus conversaciones."
+msgstr "Forum: the videos by subforum, with their conversations."
+
+msgid "Wiki: personas, afirmaciones y temas con sus fuentes."
+msgstr "Wiki: people, claims and topics with their sources."
+
+msgid "Buscar en análisis, conversaciones, transcripciones y wiki."
+msgstr "Search analyses, conversations, transcripts and the wiki."
+
+msgid "Pega un enlace de vídeo o pódcast: la web lo transcribe y la comunidad pide la verificación."
+msgstr "Paste a video or podcast link: the site transcribes it and the community requests the verification."
+
+msgid "Tus avisos."
+msgstr "Your notifications."
+
+msgid "Mensajes privados."
+msgstr "Private messages."
+
+msgid "Sala +18: análisis con contenido sensible."
+msgstr "18+ room: analyses with sensitive content."
+
+msgid "Tu cuenta: perfil, avisos y privacidad."
+msgstr "Your account: profile, notifications and privacy."
+
+msgid "Panel de administración."
+msgstr "Admin panel."
+
+msgid "Cerrar sesión."
+msgstr "Log out."
+
+msgid "Entrar con tu cuenta."
+msgstr "Log in to your account."
+
+msgid "Crear una cuenta nueva."
+msgstr "Create a new account."
+
+msgid "Ver en qué se gasta el dinero, céntimo a céntimo."
+msgstr "See where the money goes, cent by cent."
+
+msgid "Elige cuánto donar. Las donaciones suben el cupo diario de análisis."
+msgstr "Choose how much to donate. Donations raise the daily analysis quota."
+
+msgid "Otras formas de donar y qué se hace con el dinero."
+msgstr "Other ways to donate and what the money is used for."
+
+msgid "Cómo se verifica cada afirmación, paso a paso."
+msgstr "How each claim is verified, step by step."
+
+msgid "Formulario para reclamar sobre un contenido, con acuse de recibo."
+msgstr "Form to complain about a piece of content, with acknowledgement."
+
+msgid "Quién está detrás de la web y sus responsabilidades."
+msgstr "Who is behind the site and their responsibilities."
+
+msgid "Qué datos se guardan y para qué."
+msgstr "What data is stored and why."
+
+msgid "Qué cookies usa la web."
+msgstr "Which cookies the site uses."
+
+msgid "Las normas de uso."
+msgstr "The terms of use."
+
+msgid "Donar y ver el estado de las donaciones."
+msgstr "Donate and see the donation status."
+
+msgid "Escribir al equipo."
+msgstr "Write to the team."
+
+msgid "Las afirmaciones verificadas, en JSON, para otros programas."
+msgstr "The verified claims, in JSON, for other programs."
+
+msgid "Suscribirte a los veredictos nuevos por RSS."
+msgstr "Subscribe to new verdicts by RSS."
+
+msgid "Código fuente abierto, licencia AGPL."
+msgstr "Open source code, AGPL licence."
+
+msgid "Pega un enlace y empieza un análisis."
+msgstr "Paste a link and start an analysis."
+
+msgid "Este análisis espera presupuesto: puedes apadrinarlo con una donación."
+msgstr "This analysis is waiting for budget: you can sponsor it with a donation."
+
+msgid "Pega la dirección del vídeo o pódcast: YouTube, TikTok, Twitch, audio…"
+msgstr "Paste the video or podcast address: YouTube, TikTok, Twitch, audio…"
+
+msgid "El subforo donde se archivará."
+msgstr "The subforum where it will be filed."
+
+msgid "Propón una categoría nueva: el post quedará pendiente hasta que moderación la apruebe."
+msgstr "Propose a new category: the post stays pending until moderation approves it."
+
+msgid "Etiquetas libres separadas por comas, para encontrarlo después."
+msgstr "Free tags separated by commas, to find it later."
+
+msgid "Márcalo si es opinión o entretenimiento: irá a Off-Topic sin gastar en análisis."
+msgstr "Tick it if it is opinion or entertainment: it goes to Off-Topic without spending on analysis."
+
+msgid "Tu comentario abre la conversación del post."
+msgstr "Your comment opens the conversation of the post."
+
+msgid "Elige la versión que se analizará."
+msgstr "Choose the version that will be analysed."
+
+msgid "Volver a empezar con otro enlace."
+msgstr "Start again with another link."
+
+msgid "Avisarte cuando cambie el análisis."
+msgstr "Notify you when the analysis changes."
+
+msgid "Avisarte de mensajes nuevos en el hilo."
+msgstr "Notify you of new messages in the thread."
+
+msgid "Avisarte si el post entra en Trending."
+msgstr "Notify you if the post enters Trending."
+
+msgid "Guardar tus avisos de este post."
+msgstr "Save your notifications for this post."
+
+msgid "Cerrar la lista."
+msgstr "Close the list."
+
+msgid "Reproducir desde un segundo antes y llevar la transcripción a la frase."
+msgstr "Play from one second earlier and take the transcript to the sentence."
+
+msgid "Abrir la ficha de esta afirmación en la wiki."
+msgstr "Open this claim’s page in the wiki."
+
+msgid "Ir al cuadro de respuesta."
+msgstr "Go to the reply box."
+
+msgid "Escribe tu respuesta en Markdown. Hay botones de formato arriba."
+msgstr "Write your reply in Markdown. Formatting buttons above."
+
+msgid "Publicar tu respuesta."
+msgstr "Post your reply."
+
+msgid "Reproducir desde un segundo antes."
+msgstr "Play from one second earlier."
+
+msgid "Ver la verificación completa con sus fuentes."
+msgstr "See the full verification with its sources."
+
+msgid "¿No estás de acuerdo? Con 5 votos la frase se vuelve a verificar con el modelo profundo."
+msgstr "Disagree? With 5 votes the sentence is verified again with the deep model."
+
+msgid "Votar este nombre para el hablante."
+msgstr "Vote this name for the speaker."
+
+msgid "Escribe el nombre de una persona pública para proponerlo."
+msgstr "Type the name of a public figure to propose it."
+
+msgid "Ver este análisis en la wiki, ordenado por colores."
+msgstr "See this analysis in the wiki, sorted by colour."
+
+msgid "Moderación: lanzar el análisis ahora, sin esperar el turno."
+msgstr "Moderation: launch the analysis now, without waiting."
+
+msgid "Con 10 votos el post vuelve a Principal y se analiza."
+msgstr "With 10 votes the post returns to Main and gets analysed."
+
+msgid "Motivo, opcional: lo verá quien lo publicó."
+msgstr "Reason, optional: the author will see it."
+
+msgid "Mover el post a Off-Topic."
+msgstr "Move the post to Off-Topic."
+
+msgid "Devolver el post a Principal."
+msgstr "Return the post to Main."
+
+msgid "Caja de moderación: notas, censura, eliminar."
+msgstr "Moderation box: notes, censorship, delete."
+
+msgid "Repetir esta etapa del análisis. Cuesta lo que indica."
+msgstr "Repeat this stage of the analysis. It costs what it says."
+
+msgid "Elige el subforo de destino."
+msgstr "Choose the destination subforum."
+
+msgid "El título nuevo."
+msgstr "The new title."
+
+msgid "Motivo, opcional."
+msgstr "Reason, optional."
+
+msgid "Escribe el texto que se pide para confirmar."
+msgstr "Type the requested text to confirm."
+
+msgid "Copiar la dirección de este post."
+msgstr "Copy this post’s address."
+
+msgid "Enlace directo a este mensaje."
+msgstr "Direct link to this message."
+
+msgid "Mostrar el comentario plegado."
+msgstr "Show the folded comment."
+
+msgid "Mostrar el contenido tapado."
+msgstr "Show the covered content."
+
+msgid "Busca por título o texto."
+msgstr "Search by title or text."
+
+msgid "Filtrar por color del semáforo."
+msgstr "Filter by traffic-light colour."
+
+msgid "Filtrar por subforo o tema."
+msgstr "Filter by subforum or topic."
+
+msgid "Dónde buscar."
+msgstr "Where to search."
+
+msgid "Abrir este subforo."
+msgstr "Open this subforum."
+
+msgid "Posts que esperan la aprobación de moderación."
+msgstr "Posts waiting for moderation approval."
+
+msgid "Ficha de esta persona: sus afirmaciones y sus colores."
+msgstr "This person’s page: their claims and colours."
+
+msgid "Ficha de la afirmación, con fuentes e historial."
+msgstr "The claim’s page, with sources and history."
+
+msgid "Todo lo dicho sobre este tema."
+msgstr "Everything said about this topic."
+
+msgid "Índice de personas con ficha."
+msgstr "Index of people with a page."
+
+msgid "Últimos cambios de la wiki."
+msgstr "Latest wiki changes."
+
+msgid "Cómo ha cambiado esta verificación con el tiempo."
+msgstr "How this verification has changed over time."
+
+msgid "Avisarte si cambia este veredicto."
+msgstr "Notify you if this verdict changes."
+
+msgid "Ver el resto."
+msgstr "See the rest."
+
+msgid "Filtra sus afirmaciones por texto."
+msgstr "Filter their claims by text."
+
+msgid "Tu correo."
+msgstr "Your email."
+
+msgid "Tu contraseña."
+msgstr "Your password."
+
+msgid "¿La olvidaste? Te mandamos un enlace para cambiarla."
+msgstr "Forgot it? We send you a link to change it."
+
+msgid "Crear la cuenta. Te llegará un correo para verificarla."
+msgstr "Create the account. You will get an email to verify it."
+
+msgid "Tu imagen. Moderación puede retirarla."
+msgstr "Your picture. Moderation can remove it."
+
+msgid "Firma que va bajo tus mensajes."
+msgstr "Signature shown under your messages."
+
+msgid "Idioma de la interfaz."
+msgstr "Interface language."
+
+msgid "Ver contenido +18."
+msgstr "See 18+ content."
+
+msgid "Difuminar las opiniones en las transcripciones."
+msgstr "Blur opinions in transcripts."
+
+msgid "Sonido al recibir un aviso."
+msgstr "Sound when a notification arrives."
+
+msgid "Hora del resumen diario por correo."
+msgstr "Time of the daily email digest."
+
+msgid "Cómo quieres recibir los avisos."
+msgstr "How you want to receive notifications."
+
+msgid "Permitir mensajes privados de otros usuarios."
+msgstr "Allow private messages from other users."
+
+msgid "Permitir solicitudes de amistad."
+msgstr "Allow friend requests."
+
+msgid "Nuevo correo. Te llegará un código para confirmarlo."
+msgstr "New email. You will get a code to confirm it."
+
+msgid "Canjear un código de nivel."
+msgstr "Redeem a level code."
+
+msgid "Cambiar la contraseña."
+msgstr "Change the password."
+
+msgid "Verificación en dos pasos."
+msgstr "Two-step verification."
+
+msgid "Descargar todos tus datos."
+msgstr "Download all your data."
+
+msgid "Borrar la cuenta para siempre."
+msgstr "Delete the account for good."
+
+msgid "Marcar todos los avisos como leídos."
+msgstr "Mark all notifications as read."
+
+msgid "Pausar los avisos de este post."
+msgstr "Pause notifications for this post."
+
+msgid "Reanudar los avisos."
+msgstr "Resume notifications."
+
+msgid "Tu mensaje."
+msgstr "Your message."
+
+msgid "Nombre de usuario de la persona a invitar."
+msgstr "Username of the person to invite."
+
+msgid "El código, tal cual te llegó."
+msgstr "The code, exactly as you received it."
+
+msgid "Dinero, PayPal, registro, karma, Trending y logs."
+msgstr "Money, PayPal, registration, karma, Trending and logs."
+
+msgid "Códigos de nivel para repartir."
+msgstr "Level codes to hand out."
+
+msgid "Donaciones recibidas y estado de PayPal."
+msgstr "Donations received and PayPal status."
+
+msgid "Qué modelo hace cada tarea, con su coste."
+msgstr "Which model does each task, with its cost."
+
+msgid "Nombrar o quitar moderadores."
+msgstr "Appoint or remove moderators."
+
+msgid "Umbrales de moderación."
+msgstr "Moderation thresholds."
+
+msgid "El árbol de subforos."
+msgstr "The subforum tree."
+
+msgid "Posts con categoría propuesta que esperan tu decisión."
+msgstr "Posts with a proposed category waiting for your decision."
+
+msgid "Reclamaciones recibidas por el formulario."
+msgstr "Complaints received through the form."
+
+msgid "Invitados al espejo de pruebas."
+msgstr "Guests of the test mirror."
+
+msgid "Lo que escriben web, worker y beat."
+msgstr "What web, worker and beat write."
+
+msgid "Cada céntimo gastado, por servicio, modelo y análisis."
+msgstr "Every cent spent, by service, model and analysis."
+
+msgid "Nivel que dará el código."
+msgstr "Level the code will grant."
+
+msgid "Cuántos códigos generar."
+msgstr "How many codes to generate."
+
+msgid "Cambiar el estado de la reclamación."
+msgstr "Change the complaint’s status."
+
+msgid "Importe en euros."
+msgstr "Amount in euros."
+
+msgid "Por dónde llegó el dinero."
+msgstr "How the money arrived."
+
+msgid "Nota interna, opcional."
+msgstr "Internal note, optional."
+
+msgid "Texto que contiene el concepto."
+msgstr "Text contained in the concept."
+
+msgid "Texto que contiene el nombre del modelo."
+msgstr "Text contained in the model name."
+
+msgid "Número del post."
+msgstr "Post number."
+
+msgid "Desde esta fecha."
+msgstr "From this date."
+
+msgid "Hasta esta fecha."
+msgstr "Up to this date."
+
+msgid "Atajo de fechas."
+msgstr "Date shortcut."
+
+msgid "Filtrar por origen del log."
+msgstr "Filter by log source."
+
+msgid "Solo mensajes de este nivel o más graves."
+msgstr "Only messages of this level or worse."
+
+msgid "Filtrar por servicio."
+msgstr "Filter by service."
+
+msgid "Respaldo: el modelo de Anthropic que entra si el principal falla."
+msgstr "Fallback: the Anthropic model used if the main one fails."
+
+msgid "Modelo principal de esta tarea."
+msgstr "Main model for this task."
+
+msgid "Directo, o por lotes: más barato y más lento."
+msgstr "Direct, or in batches: cheaper and slower."
+
+msgid "Usuario o correo de la persona."
+msgstr "Username or email of the person."
+
+msgid "Con acceso al panel del espejo."
+msgstr "With access to the mirror’s panel."
+
+msgid "Nombre de la categoría."
+msgstr "Category name."
+
+msgid "De qué categoría cuelga."
+msgstr "Which category it hangs from."
+
+msgid "Título con el que se publicará."
+msgstr "Title it will be published with."
+
+msgid "Crear la categoría propuesta y aprobar el post."
+msgstr "Create the proposed category and approve the post."
+
+msgid "Motivo del rechazo: se le envía al autor."
+msgstr "Reason for rejection: it is sent to the author."
+
+msgid "Abrir o cerrar el registro de cuentas nuevas."
+msgstr "Open or close new account registration."

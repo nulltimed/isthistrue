@@ -1798,3 +1798,16 @@ Informe en `docs/89`. Registro técnico:
   restauró con `git checkout` y se anotó en CLAUDE.md: el canónico es el del repo.
 - ghcr verificado anónimamente tras la limpieza de David: solo `5.23-slim` (las 4.4-J → 404).
 
+## 91. Serie 5.29: el mapa de bocadillos y el voto de moderación una vez (2026-09-11)
+- **Mapa central de bocadillos**: `templates/partials/tips_map.html` (solo TEXTOS, `<template
+  id="tips-map">` con `<span data-k="bNNN">{% trans %}</span>`, incluido en base.html) +
+  `SELECTORES` en `static/js/tips.js` (clave → selector CSS). `aplicarMapa()` en DOMContentLoaded y
+  `htmx:afterSwap`; INPUT/SELECT/TEXTAREA → el `data-tip` va al `closest('label')`. Regla: los
+  selectores NO van en el HTML — la primera versión los renderizaba y dos tests de «X no debe verse»
+  (`/relanzar/`, `thread-reply`) se rompieron porque el selector contenía ese texto. Test guardián:
+  claves iguales en JS y plantilla, sin selectores repetidos, sin `data-sel` en la plantilla.
+- **5.29-B (decisión de David)**: el voto de moderación del reanálisis profundo relanza UNA vez por
+  post (`maybe_trigger_opus_rescan`: `if post.opus_rescanned: return False`; `opus_rescan.delay` sin
+  `forced`) y una vez por frase (`segment_vote`: aviso «usa la llave inglesa»). La llave inglesa
+  (`post_relaunch` etapa deep) conserva `forced=True`. Lección 4.4-D de CLAUDE.md enmendada.
+

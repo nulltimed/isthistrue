@@ -1107,12 +1107,15 @@ def maybe_trigger_opus_rescan(post, user=None):
     if post.status != 'DONE':
         return False
     # 4.4-D (orden de David): el voto de un moderador o del superusuario relanza
-    # el analisis SIEMPRE — sin esperar al 40% de los votantes, sin el minimo de
-    # 50 usuarios verificados y aunque el post ya se hubiera reescaneado antes.
-    # Quien manda paga: sigue pasando por el fusible del presupuesto.
+    # el analisis en solitario — sin esperar al 40% de los votantes ni al minimo
+    # de 50 usuarios verificados. 5.29-B (decision de David, 2026-09-11): pero
+    # UNA sola vez por post; repetirlo es cosa de la llave inglesa (coste y
+    # confirmacion). Quien manda paga: sigue pasando por el fusible.
     if user is not None and getattr(user, 'is_authenticated', False) and (
             user.is_superuser or user.effective_level() == 'MOD'):
-        opus_rescan.delay(post.pk, forced=True)
+        if post.opus_rescanned:
+            return False
+        opus_rescan.delay(post.pk)
         from apps.panel.models import AuditLog
         AuditLog.objects.create(user=user, action='force_deep_scan',
                                 detail=f'post {post.pk} completo')

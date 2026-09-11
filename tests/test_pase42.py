@@ -2545,7 +2545,7 @@ class Pase44D(TestCase):
         with patch('apps.analysis.tasks.opus_rescan_segment.delay') as tarea:
             self.client.post(f'/oracion/{seg.pk}/votar/down/')
         tarea.assert_called_once()
-        self.assertTrue(tarea.call_args.kwargs.get('forced'))
+        self.assertFalse(tarea.call_args.kwargs.get('forced'))   # 5.29-B: respeta el candado
 
     def test_un_usuario_normal_sigue_necesitando_cinco_votos(self):
         from unittest.mock import patch
@@ -2556,8 +2556,8 @@ class Pase44D(TestCase):
             self.client.post(f'/oracion/{seg.pk}/votar/down/')
         tarea.assert_not_called()
 
-    def test_el_admin_relanza_aunque_ya_se_hubiera_reanalizado(self):
-        """«Siempre» es siempre: el candado de una-vez-por-frase no le aplica."""
+    def test_el_admin_ya_no_relanza_una_frase_que_ya_se_reanalizo(self):
+        """5.29-B (David): una sola vez por frase; repetir = llave inglesa."""
         from unittest.mock import patch
         post, seg = self._post_analizado()
         seg.opus_rescanned = True
@@ -2566,8 +2566,9 @@ class Pase44D(TestCase):
                          is_superuser=True, is_staff=True)
         self.client.force_login(root)
         with patch('apps.analysis.tasks.opus_rescan_segment.delay') as tarea:
-            self.client.post(f'/oracion/{seg.pk}/votar/down/')
-        tarea.assert_called_once()
+            r = self.client.post(f'/oracion/{seg.pk}/votar/down/', follow=True)
+        tarea.assert_not_called()
+        self.assertIn('llave inglesa', r.content.decode())
 
     def test_la_tarea_forzada_ignora_el_candado(self):
         from unittest.mock import patch
