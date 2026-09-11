@@ -1817,3 +1817,15 @@ Informe en `docs/89`. Registro técnico:
 - **5.29-D (corrección de David)**: `maybe_trigger_opus_rescan` cuenta `value=-1` (antes +1 desde la
   Fase 3) y `post_vote_karma` solo la llama en el voto ▼ (antes en el ▲). README y panel enmendados.
 
+## 92. Serie 5.30: contador en la esquina, Trending por votos/hora, iconos que crecen (2026-09-11)
+- `votos-esquina` (float:left) en post_detail.html antes de `.post-topbar`; el bloque `.votos-post` de
+  post_body.html se retira. `Post.trending_votes()` = votos de AMBOS signos en las últimas
+  `trending_window_hours` (6); `is_trending()` = votos ≥ `trending_votes_per_hour` (1) × horas. Claves
+  viejas `trending_votes_threshold`/`trending_window_days` retiradas (SETTINGS_DEF, SETTING_DEFAULTS,
+  moderator_settings KEYS). «Más votados» (index y foro `profundos`) = `Count(▲) − Count(▼)` con `F()`.
+- Iconos: `a/button/summary/label:hover>svg.icon{transform:scale(1.18);transition-delay:.5s}` y
+  `[data-tip]:hover::after{transition-delay:.5s}` — el retardo solo al ENTRAR (la regla base sin delay
+  hace que se oculte al instante). Se escala el SVG, no el control, para no pisar vecinos ni escalar el
+  bocadillo (el ::after es hijo del control).
+- Tests de `SuscripcionYTrending` y 5.23-C adaptados (los ▼ ya son actividad); `tests/test_serie530.py`.
+

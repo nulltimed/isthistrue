@@ -200,8 +200,8 @@ class Parche523C_KarmaConFlechas(TestCase):
         for i in range(5):
             u = make_user(username=f'neg{i}', email=f'neg{i}@example.org')
             Vote.objects.create(post=post, user=u, value=-1)
-        self.assertEqual(post.trending_votes(), 0)
-        self.assertFalse(post.is_trending())
+        self.assertEqual(post.trending_votes(), 5)   # 5.30-A: los ▼ tambien son actividad
+        self.assertFalse(post.is_trending())         # 5 < 1/h x 6 h
 
     def test_los_umbrales_estan_en_el_panel(self):
         from apps.panel.views import SETTINGS_DEF

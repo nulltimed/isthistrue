@@ -141,6 +141,10 @@ class SuscripcionYTrending(TestCase):
     def test_trending_umbral_y_aviso_unico(self):
         from apps.forum.models import Vote
         from apps.accounts.models import Notification
+        from apps.panel.models import SystemSetting
+        # 5.30-A: Trending va por votos/hora — 5 votos/hora en una ventana de 1 h
+        SystemSetting.objects.update_or_create(key='trending_votes_per_hour', defaults={'value': '5'})
+        SystemSetting.objects.update_or_create(key='trending_window_hours', defaults={'value': '1'})
         author = make_user()
         post = Post.objects.create(author=author, url='https://youtu.be/abc128x')
         voters = [make_user(username=f'v{i}', email=f'v{i}@example.org') for i in range(5)]
@@ -894,7 +898,7 @@ class Pase43A7(TestCase):
         self.assertNotIn('DEFAULTS = {', seed)          # la lista ya no está aquí
         self.assertIn('SETTING_DEFAULTS', seed)
         for clave in ('segment_opus_downvotes', 'verdict_context_before',
-                      'verdict_context_after', 'trending_votes_threshold'):
+                      'verdict_context_after', 'trending_votes_per_hour'):
             self.assertIn(clave, s.SETTING_DEFAULTS)
         env = open('.env.example').read()
         for var in ('SEGMENT_OPUS_DOWNVOTES', 'VERDICT_CONTEXT_BEFORE',

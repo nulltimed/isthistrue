@@ -296,19 +296,22 @@ class Post(models.Model):
                 'fase_completa_s': dur(self.full_started_at, self.full_finished_at)}
 
     def trending_votes(self):
-        """Votos dentro de la ventana viva (SystemSetting trending_window_days)."""
+        """5.30-A (orden de David): votos —positivos Y negativos— dentro de las
+        ultimas `trending_window_hours` horas (panel). Trending mide ACTIVIDAD."""
         from datetime import timedelta
         from django.utils import timezone
         from apps.panel.models import SystemSetting
-        days = SystemSetting.get_int('trending_window_days', 7)
-        # 5.23-C: Trending cuenta SOLO los positivos (decision no reabierta)
-        return self.votes.filter(value=1, created_at__gte=timezone.now() - timedelta(days=days)).count()
+        horas = max(1, SystemSetting.get_int('trending_window_hours', 6))
+        return self.votes.filter(created_at__gte=timezone.now() - timedelta(hours=horas)).count()
 
     def is_trending(self):
-        """4.2 D4: Trending mientras los votos de la ventana alcanzan el umbral
-        (SystemSetting trending_votes_threshold; los dos ajustables desde BD/panel)."""
+        """4.2 D4 → 5.30-A (orden de David): Trending «va por votos/hora». Es
+        Trending si la media de votos por hora de la ventana llega al umbral
+        `trending_votes_per_hour` (panel): votos_en_ventana >= umbral * horas."""
         from apps.panel.models import SystemSetting
-        return self.trending_votes() >= SystemSetting.get_int('trending_votes_threshold', 5)
+        horas = max(1, SystemSetting.get_int('trending_window_hours', 6))
+        por_hora = max(1, SystemSetting.get_int('trending_votes_per_hour', 1))
+        return self.trending_votes() >= por_hora * horas
 
     def distinct_validation_votes(self, kind):
         return self.validation_votes.filter(kind=kind).values('user').distinct().count()

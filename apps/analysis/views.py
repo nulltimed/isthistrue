@@ -32,10 +32,12 @@ def index(request):
     base = Post.objects.publicos().filter(category='MAIN').exclude(is_adult=True)
     nuevos = base.fijados_primero()[:15]   # 5.23-D: los fijados, arriba
     window = tz.now() - tz.timedelta(days=7)
-    # 5.23-C: «mas votados» = SOLO positivos (decision no reabierta)
-    top = base.annotate(n=Count('votes', filter=Q(votes__created_at__gte=window,
-                                                  votes__value=1))) \
-              .filter(n__gt=0).order_by('-n')[:10]
+    # 5.30-A (orden de David): «mas votados» = ▲ menos ▼ de los ultimos 7 dias
+    # (antes, 5.23-C, solo positivos).
+    from django.db.models import F
+    top = base.annotate(ups=Count('votes', filter=Q(votes__created_at__gte=window, votes__value=1)),
+                        downs=Count('votes', filter=Q(votes__created_at__gte=window, votes__value=-1))) \
+              .annotate(n=F('ups') - F('downs')).filter(n__gt=0).order_by('-n')[:10]
     comentados = _mas_comentados(base)
     seguidos = _novedades_en_seguidos(request.user) \
         if request.user.is_authenticated else []

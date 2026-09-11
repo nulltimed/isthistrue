@@ -242,8 +242,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'clarify_pass': '1',          # 5.6-A: clarificador de 🔍 encendido
     'verdict_parallel': '4',      # 5.21: afirmaciones a la vez (paraleliza siempre)
     'vision_lag_seconds': '4',    # 5.5-G: retardo humano pantalla↔voz
-    'trending_votes_threshold': '5',
-    'trending_window_days': '7',
+    'trending_votes_per_hour': '1',   # 5.30-A (David): Trending va por votos/hora
+    'trending_window_hours': '6',
     # 5.23-C (David): karma con flechas — difuminar y plegar comentarios.
     'karma_fade_threshold': '5',
     'karma_fold_threshold': '10',

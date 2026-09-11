@@ -2947,3 +2947,6 @@ msgstr "Send the whole transcript with each verdict: more context and more cost.
 
 msgid "Nota interna: solo la ve moderación."
 msgstr "Internal note: only moderation sees it."
+
+msgid "Trending: este post recibe muchos votos por hora en las últimas horas (umbral en el panel)."
+msgstr "Trending: this post is getting many votes per hour in the last hours (threshold in the panel)."

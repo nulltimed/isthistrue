@@ -111,10 +111,11 @@ SETTINGS_DEF = [
      'Cuántas frases anteriores del mismo hablante se leen para decidir el semáforo.', 'num'),
     ('verdict_context_after', 'Frases de contexto DESPUÉS',
      'Cuántas frases posteriores del mismo hablante se leen para decidir el semáforo.', 'num'),
-    ('trending_votes_threshold', 'Votos para Trending',
-     'Votos que meten un post en Trending dentro de la ventana.', 'num'),
-    ('trending_window_days', 'Ventana de Trending (días)',
-     'Días que se miran hacia atrás para contar esos votos.', 'num'),
+    # 5.30-A (orden de David): Trending «va por votos/hora».
+    ('trending_votes_per_hour', 'Trending: votos por hora',
+     'Un post es Trending cuando, en las últimas horas de la ventana, recibe de media al menos estos votos por hora (▲ y ▼ cuentan los dos: Trending mide actividad). 1 de fábrica.', 'num'),
+    ('trending_window_hours', 'Trending: ventana (horas)',
+     'Cuántas horas hacia atrás se miran para calcular esa media. 6 de fábrica: con 1 voto/hora, hacen falta 6 votos en las últimas 6 horas.', 'num'),
     # 5.23-C (decisión de David): el karma con flechas.
     ('karma_fade_threshold', 'Votos negativos para difuminar un comentario',
      'Cuando los ▼ superan a los ▲ en esta cantidad, el comentario se ve difuminado. 5 de fábrica.', 'num'),
@@ -780,8 +781,8 @@ def moderator_settings_panel(request):
     from apps.panel.models import SystemSetting
     KEYS = [('segment_opus_downvotes', 'Votos ▼ por oración para re-análisis Opus'),
             ('message_sensitive_reports', 'Reportes para difuminar un mensaje'),
-            ('trending_votes_threshold', 'Votos para Trending'),
-            ('trending_window_days', 'Ventana de Trending (días)')]
+            ('trending_votes_per_hour', 'Trending: votos por hora'),
+            ('trending_window_hours', 'Trending: ventana (horas)')]
     if request.method == 'POST':
         for key, _label in KEYS:
             raw = request.POST.get(key, '').strip()

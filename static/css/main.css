@@ -954,4 +954,13 @@ body.viajero main.wide .post > #hilo{max-width:none}
 .setting-row[data-tip]::after{max-width:340px}
 /* 5.28-B: la frase a la que salta el semaforo se marca un instante. */
 .segment.sf-destino{outline:2px solid #141414;outline-offset:2px;border-radius:6px}
+/* 5.30-A: el contador ▲/▼ en la esquina superior izquierda de la caja del post. */
+.votos-esquina{float:left;margin:.05rem .7rem .4rem 0}
+.votos-esquina .votos{gap:.2rem}
+/* 5.30-B (orden de David): al dejar el cursor 500 ms sobre un icono, el icono
+   se agranda un poco (solo el dibujo, no el boton: no pisa a los vecinos) y
+   sale el bocadillo. Sin retardo al quitarlo. */
+svg.icon{transition:transform .15s}
+a:hover>svg.icon,button:hover>svg.icon,summary:hover>svg.icon,label:hover>svg.icon{transform:scale(1.18);transition-delay:.5s}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{transition-delay:.5s}
 

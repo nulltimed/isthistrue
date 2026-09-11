@@ -130,12 +130,8 @@
   {% endif %}
 
   {% comment %} La transcripción vive ahora en la columna derecha de la rejilla (arriba). {% endcomment %}
-  {# 5.23-C (orden de David): ▲/▼ con karma; positivos y negativos en numero. #}
-  <div class="votos-post">
-    {% url 'post_vote_karma' post.pk 'up' as vu %}{% url 'post_vote_karma' post.pk 'down' as vd %}
-    {% include 'partials/votos.html' with url_up=vu url_down=vd ups=votos_post.ups downs=votos_post.downs mine=votos_post.mine own=votos_post.own %}
-    <span class="hint">{% trans "Vota el post: cada flecha suma o resta karma a quien lo publicó." %}</span>
-  </div>
+  {# 5.23-C: ▲/▼ con karma. 5.30-A (orden de David): el contador vive en la #}
+  {# esquina superior izquierda de la caja del post (post_detail.html). #}
 
 {% if costes_total is not None %}
 {# 4.9-A: el libro de cuentas del analisis — solo staff. Cada centimo, a la vista. #}

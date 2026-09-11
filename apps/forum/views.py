@@ -52,8 +52,12 @@ def foro_home(request):
     from apps.wiki.models import COLORS
     main = Post.objects.publicos().filter(category='MAIN').exclude(is_adult=True)
     off = Post.objects.publicos().filter(category='OFFTOPIC').exclude(is_adult=True)
+    # 5.30-A (orden de David): ▲ menos ▼ (antes solo positivos).
+    from django.db.models import F
     profundos = (main.filter(status='DONE')
-                 .annotate(nv=Count('votes', filter=Q(votes__value=1)))
+                 .annotate(ups=Count('votes', filter=Q(votes__value=1)),
+                           downs=Count('votes', filter=Q(votes__value=-1)))
+                 .annotate(nv=F('ups') - F('downs'))
                  .order_by('-nv', '-created_at')[:10])
     arbol = Category.tree()
     conteo = dict(main.values_list('topic').annotate(n=Count('pk')).values_list('topic', 'n'))

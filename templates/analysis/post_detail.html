@@ -9,8 +9,14 @@
 {% endblock %}
 {% block content %}
 <article class="post">
+  {# 5.30-A (orden de David): el contador ▲/▼ en la esquina superior IZQUIERDA #}
+  {# de la caja del post; las flechas votan. Los totales no se reinician nunca. #}
+  <div class="votos-esquina">
+    {% url 'post_vote_karma' post.pk 'up' as vu %}{% url 'post_vote_karma' post.pk 'down' as vd %}
+    {% include 'partials/votos.html' with url_up=vu url_down=vd ups=votos_post.ups downs=votos_post.downs mine=votos_post.mine own=votos_post.own %}
+  </div>
   <div class="post-topbar">
-    {% if is_trending %}<span class="trending-badge">{% icon 'flame' 14 %} Trending</span>{% endif %}
+    {% if is_trending %}<span class="trending-badge" data-tip="{% trans 'Trending: este post recibe muchos votos por hora en las últimas horas (umbral en el panel).' %}">{% icon 'flame' 14 %} Trending</span>{% endif %}
     {% if post.pinned %}<span class="trending-badge" data-tip="{% trans 'Fijado arriba por moderación' %}">{% icon 'bookmark' 14 %}</span>{% endif %}
     {% if user.is_authenticated %}
     <details class="subscribe-box">
