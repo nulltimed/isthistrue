@@ -182,7 +182,8 @@ Los ZIP se aplican SOBRE el árbol git, nunca como sustitución ciega:
 - **El voto de moderador/superusuario relanza el reanalisis profundo** en solitario (orden de
   David) — **ENMIENDA 5.29-B (David, 2026-09-11): UNA sola vez por post y por frase**; para
   repetirlo, la llave inglesa (coste y confirmacion). Los usuarios normales conservan sus 5 votos
-  por frase. Cada clic **gasta dinero real** con el modelo de «Reanalisis profundo».
+  ▼ por frase, y el post entero lo relanzan sus votos ▼ (5.29-D, David: «tiene que ser con votos
+  abajo»; el % y el minimo de usuarios estan en Panel → Analisis → Reanalisis profundo). Cada clic **gasta dinero real** con el modelo de «Reanalisis profundo».
 - 🔴 **LOS BUSCADORES BLOQUEAN AL SERVIDOR.** SearXNG declara `brave: Suspended`,
   `duckduckgo: CAPTCHA`, `google cse: Suspended`, `startpage: CAPTCHA`; solo responde Wikipedia.
   Causa: 3-5 busquedas POR AFIRMACION x 84 frases = ~300 consultas en minutos desde una IP.

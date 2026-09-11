@@ -108,3 +108,35 @@ class Parche529B_VotoDeModeracionUnaVez(TestCase):
                 mock.patch('apps.analysis.tasks._submit_batch', return_value=False), \
                 mock.patch('apps.panel.services.alert_admin'):
             self.assertEqual(opus_rescan(post.pk, forced=True, skip_charge=True), 'rescanned')
+
+    def test_el_reanalisis_del_post_lo_piden_los_votos_en_contra(self):
+        """5.29-D (corrección de David): «tiene que ser con votos abajo»."""
+        from apps.analysis.tasks import maybe_trigger_opus_rescan
+        from apps.forum.models import Vote
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='opus_rescan_min_users', defaults={'value': '1'})
+        SystemSetting.objects.update_or_create(key='opus_rescan_percent', defaults={'value': '40'})
+        autor = make_user(username='a529d', email='a529d@example.org', email_verified=True)
+        post = Post.objects.create(author=autor, url='https://youtu.be/d529', status='DONE')
+        votantes = [make_user(username=f'v529d{i}', email=f'v529d{i}@example.org', email_verified=True)
+                    for i in range(3)]
+        with mock.patch('apps.analysis.tasks.opus_rescan.delay') as tarea:
+            for u in votantes:
+                Vote.objects.create(post=post, user=u, value=1)      # ▲ de sobra
+            self.assertFalse(maybe_trigger_opus_rescan(post))       # ...y no pasa nada
+            Vote.objects.filter(post=post).update(value=-1)         # ahora son ▼
+            self.assertTrue(maybe_trigger_opus_rescan(post))
+        tarea.assert_called_once()
+
+    def test_en_la_web_solo_el_voto_abajo_de_moderacion_relanza(self):
+        root = make_user(username='root529d', email='root529d@example.org',
+                         is_superuser=True, is_staff=True)
+        post = Post.objects.create(author=make_user(username='b529d', email='b529d@example.org'),
+                                   url='https://youtu.be/e529', status='DONE')
+        self.client.force_login(root)
+        with mock.patch('apps.analysis.tasks.opus_rescan.delay') as tarea:
+            self.client.post(f'/post/{post.pk}/votar/up/')
+            tarea.assert_not_called()
+            self.client.post(f'/post/{post.pk}/votar/down/')
+            tarea.assert_called_once()
+

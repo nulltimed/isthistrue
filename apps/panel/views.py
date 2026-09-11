@@ -103,8 +103,8 @@ SETTINGS_DEF = [
     # misma idea (deep_scan_votes, que no leía nadie) y esta, que sí manda.
     ('segment_opus_downvotes', 'Votos ▼ para el reanálisis profundo de una frase',
      'Cuántas personas distintas tienen que votar en contra la misma frase para que se vuelva a verificar con el modelo de «Reanálisis profundo». Una sola vez por frase. 5 de fábrica.', 'num'),
-    ('opus_rescan_percent', 'Votos ▲ para el reanálisis profundo del post (%)',
-     'Si los votos positivos del post superan este porcentaje de los usuarios verificados, todo el post se vuelve a verificar con el modelo de «Reanálisis profundo». Una sola vez por post. 40 de fábrica.', 'num'),
+    ('opus_rescan_percent', 'Votos ▼ para el reanálisis profundo del post (%)',
+     'Si los votos EN CONTRA del post superan este porcentaje de los usuarios verificados, todo el post se vuelve a verificar con el modelo de «Reanálisis profundo». Una sola vez por post (también con un voto ▼ de moderación). 40 de fábrica.', 'num'),
     ('opus_rescan_min_users', 'Usuarios mínimos para ese reanálisis',
      'El reanálisis del post entero por votos solo se activa cuando la web tiene al menos estos usuarios verificados. 50 de fábrica.', 'num'),
     ('verdict_context_before', 'Frases de contexto ANTES',

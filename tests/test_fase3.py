@@ -118,10 +118,10 @@ class OpusRescan(TestCase):
             voters.append(u)
         with mock.patch.object(tasks.opus_rescan, 'delay'):
             for u in voters[:3]:
-                Vote.objects.create(post=post, user=u)
+                Vote.objects.create(post=post, user=u, value=-1)   # 5.29-D: los ▼ piden
             self.assertFalse(tasks.maybe_trigger_opus_rescan(post))  # 3/13 < 40%
             for u in voters[3:8]:
-                Vote.objects.create(post=post, user=u)
+                Vote.objects.create(post=post, user=u, value=-1)
             self.assertTrue(tasks.maybe_trigger_opus_rescan(post))   # 8/13 > 40%
             post.opus_rescanned = True
             post.save()

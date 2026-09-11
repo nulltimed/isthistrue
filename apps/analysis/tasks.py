@@ -1073,7 +1073,7 @@ def opus_rescan_segment(segment_id, forced=False):
 
 @shared_task
 def opus_rescan(post_id, forced=False, skip_charge=False):
-    """Reescaneo premium (decidido por David): si los votos ▲ superan el
+    """Reescaneo premium (decidido por David): si los votos ▼ (5.29-D; antes ▲) superan el
     opus_rescan_percent (40%) de los usuarios del foro, el post se re-verifica con
     MODEL_PREMIUM (Opus). Candados: minimo opus_rescan_min_users (50), UNA vez por
     post, y presupuesto. Los claims ganan nueva version en su historial."""
@@ -1125,7 +1125,10 @@ def maybe_trigger_opus_rescan(post, user=None):
     total = User.objects.filter(is_active=True, email_verified=True).count()
     if total < min_users or post.opus_rescanned:
         return False
-    votes = post.votes.filter(value=1).count()   # 5.23-C: solo positivos
+    # 5.29-D (corrección de David, 2026-09-11): el reanálisis lo piden los votos
+    # EN CONTRA (▼), no los ▲ — «tiene que ser con votos abajo». Trending y «más
+    # votados» siguen contando solo los ▲.
+    votes = post.votes.filter(value=-1).count()
     if votes * 100 > total * percent:
         opus_rescan.delay(post.pk)
         return True

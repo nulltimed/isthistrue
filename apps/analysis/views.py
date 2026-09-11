@@ -1604,9 +1604,12 @@ def post_vote_karma(request, pk, direction):
             post.save(update_fields=['trending_notified'])
             from .tasks import notify_post_event
             notify_post_event(post, 'trending', '🔥 El post está en Trending')
+    if value == -1:
+        # 5.29-D (corrección de David): el reanálisis profundo del post lo piden
+        # los votos EN CONTRA — de la comunidad (umbral del panel) o de moderación.
         from .tasks import maybe_trigger_opus_rescan
         if maybe_trigger_opus_rescan(post, request.user):  # unica puerta (Fase 3.4 §6)
-            messages.info(request, 'Este contenido ha alcanzado gran interés: '
+            messages.info(request, 'Muchos usuarios discuten este contenido: '
                                    're-verificación con el modelo mayor en marcha.')
     return redirect('post_detail', pk=pk)
 

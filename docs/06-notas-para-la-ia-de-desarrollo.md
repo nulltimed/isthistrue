@@ -1814,4 +1814,6 @@ Informe en `docs/89`. Registro técnico:
   con `name` en templates/ (salvo legal/admin/emails) debe tener `data-tip` en su línea o la anterior,
   o un selector en tips.js por `name='X'`, prefijo `name^=` o `#id`. Regla en CLAUDE.md: todo control
   nuevo nace con bocadillo (orden de David). 156 entradas en el mapa.
+- **5.29-D (corrección de David)**: `maybe_trigger_opus_rescan` cuenta `value=-1` (antes +1 desde la
+  Fase 3) y `post_vote_karma` solo la llama en el voto ▼ (antes en el ▲). README y panel enmendados.
 
