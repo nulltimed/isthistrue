@@ -2407,3 +2407,75 @@ msgstr "Model contains"
 
 msgid "Por modelo"
 msgstr "By model"
+
+msgid "Pendiente del análisis con fuentes:"
+msgstr "Awaiting the sourced analysis:"
+
+msgid "Cuando se alcanzan los votos y los hablantes están identificados, el sistema busca fuentes y pone los colores."
+msgstr "Once the votes are reached and the speakers are identified, the system looks for sources and assigns the colours."
+
+msgid "van %(n)s de %(x)s votos"
+msgstr "%(n)s of %(x)s votes so far"
+
+msgid "Votan los usuarios Contribuidor o superiores. No caduca."
+msgstr "Contributor-level users and above can vote. It never expires."
+
+msgid "Tu voto cuenta para lanzar la búsqueda de fuentes y el semáforo."
+msgstr "Your vote counts towards launching the source search and the traffic light."
+
+msgid "Tu voto se guarda; el análisis arrancará cuando además se identifique a los hablantes."
+msgstr "Your vote is saved; the analysis will start once the speakers are identified too."
+
+msgid "Pedir el análisis con fuentes"
+msgstr "Request the sourced analysis"
+
+msgid "Tu voto de moderación vale por todos mientras la web esté en modo arranque."
+msgstr "Your moderator vote counts for all while the site is in start-up mode."
+
+msgid "El bibliotecario ha leído las afirmaciones del vídeo y cree que este subforo no es el suyo. Nada se mueve sin tu clic."
+msgstr "The librarian has read the claims in the video and thinks this is not its subforum. Nothing moves without your click."
+
+msgid "El bibliotecario cree que este vídeo encaja mejor en «%(c)s»"
+msgstr "The librarian thinks this video fits better in “%(c)s”"
+
+msgid "Mover ahí"
+msgstr "Move there"
+
+msgid "El bibliotecario sugiere otro subforo para este vídeo. Un clic lo mueve."
+msgstr "The librarian suggests another subforum for this video. One click moves it."
+
+msgid "Mover al subforo sugerido"
+msgstr "Move to the suggested subforum"
+
+msgid "Todo el proceso de análisis, paso a paso, con sus ajustes."
+msgstr "The whole analysis process, step by step, with its settings."
+
+msgid "Panel · Análisis"
+msgstr "Panel · Analysis"
+
+msgid "El proceso de análisis, paso a paso"
+msgstr "The analysis process, step by step"
+
+msgid "Cuando alguien pega un vídeo pasan dos trabajos seguidos."
+msgstr "When someone pastes a video, two jobs run one after the other."
+
+msgid "Trabajo 1, el barato."
+msgstr "Job 1, the cheap one."
+
+msgid "La máquina escucha el vídeo, lo transcribe, separa las voces y saca la lista de frases que dice cada uno, marcando cada una como hecho u opinión. Pasa siempre y con todos los vídeos."
+msgstr "The machine listens to the video, transcribes it, separates the voices and lists what each person says, marking each sentence as fact or opinion. It always runs, for every video."
+
+msgid "La sala de espera."
+msgstr "The waiting room."
+
+msgid "El vídeo se publica en su subforo con la transcripción. Para que arranque el trabajo 2 hacen falta dos cosas: los votos «Pedir el análisis con fuentes» y que los hablantes estén identificados. No hay reloj."
+msgstr "The video is published in its subforum with the transcript. Job 2 needs two things: the “Request the sourced analysis” votes and the speakers identified. There is no clock."
+
+msgid "Trabajo 2, el caro."
+msgstr "Job 2, the expensive one."
+
+msgid "Cada frase se contrasta con fuentes de internet y recibe su color: verde, ámbar, rojo o blanco. Es el semáforo, y es lo que cuesta dinero."
+msgstr "Each sentence is checked against internet sources and gets its colour: green, amber, red or white. That is the traffic light, and it is what costs money."
+
+msgid "Los modelos que hacen cada paso se eligen en la pestaña Modelos; el dinero, en Ajustes."
+msgstr "The models for each step are chosen in the Models tab; the money, in Settings."

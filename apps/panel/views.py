@@ -69,18 +69,16 @@ SETTINGS_DEF = [
      'Con él, la página de donación de PayPal se abre con la cantidad YA PUESTA (el botón alojado la ignora). Es público: sale en tu propia página de donación. Vacío = se usa el enlace del botón alojado.', 'text'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
-    ('opinion_ratio_percent', 'Umbral de opinión (%)',
-     'Porcentaje de frases de opinión a partir del cual el clasificador sugiere Off-Topic.', 'num'),
-    ('minutes_per_factual_claim', 'Minutos por claim factual',
-     'Densidad mínima: un claim verificable por cada X minutos de vídeo.', 'num'),
-    ('votes_to_validate', 'Votos para validar',
-     'Votos de la comunidad que sacan un post de la cuarentena.', 'num'),
+    ('opinion_ratio_percent', 'Aviso «parece opinión» a partir del (%) de frases de opinión',
+     'Si este porcentaje de las frases del vídeo son opinión, moderación ve el aviso «parece opinión». Solo avisa: no cambia el flujo ni mueve nada (5.27-A).', 'num'),
+    ('minutes_per_factual_claim', 'Aviso «parece opinión» si hay menos de un hecho cada X minutos',
+     'Densidad mínima de afirmaciones comprobables. Por debajo, el mismo aviso a moderación.', 'num'),
+    ('votes_to_validate', 'Votos para pedir el análisis con fuentes',
+     'Cuántos usuarios (Contribuidor o superior) tienen que pulsar «Pedir el análisis con fuentes» para que arranque el trabajo 2: buscar fuentes y poner el semáforo. Es la ÚNICA puerta junto con los hablantes identificados (5.27-A). 5 de fábrica.', 'num'),
     ('votes_to_rescue', 'Votos para rescatar',
      'Votos que devuelven un post de Off-Topic a Principal.', 'num'),
-    ('validation_window_days', 'Ventana de validación (días)',
-     'Días de plazo antes de que la validación caduque.', 'num'),
     ('startup_mode_min_users', 'Modo arranque hasta N usuarios',
-     'Con menos usuarios que esto, un solo voto de moderador valida.', 'num'),
+     'Mientras la web tenga menos usuarios verificados que esto, un solo voto de moderador o del superusuario vale por todos los votos necesarios.', 'num'),
     ('donation_goal_eur', 'Meta de donaciones (€)',
      'Histórica: el banner sigue ya al presupuesto base (5.5-B).', 'num'),
     ('vision_pass', 'La vista (imagen vs. audio)',
@@ -101,8 +99,14 @@ SETTINGS_DEF = [
      'instante. 4 de fábrica.', 'num'),
     # 4.3-A.7 (decisión de David): los umbrales de re-verificación y de contexto
     # también se tocan aquí. Su valor de fábrica se fija en el .env.
-    ('segment_opus_downvotes', 'Usuarios para re-verificar una frase',
-     'Personas que pulsan «Discuto» en la misma frase antes de que entre el modelo premium.', 'num'),
+    # 5.27-E (orden de David): UNA sola rueda para esto. Antes había dos con la
+    # misma idea (deep_scan_votes, que no leía nadie) y esta, que sí manda.
+    ('segment_opus_downvotes', 'Votos ▼ para el reanálisis profundo de una frase',
+     'Cuántas personas distintas tienen que votar en contra la misma frase para que se vuelva a verificar con el modelo de «Reanálisis profundo». Una sola vez por frase. 5 de fábrica.', 'num'),
+    ('opus_rescan_percent', 'Votos ▲ para el reanálisis profundo del post (%)',
+     'Si los votos positivos del post superan este porcentaje de los usuarios verificados, todo el post se vuelve a verificar con el modelo de «Reanálisis profundo». Una sola vez por post. 40 de fábrica.', 'num'),
+    ('opus_rescan_min_users', 'Usuarios mínimos para ese reanálisis',
+     'El reanálisis del post entero por votos solo se activa cuando la web tiene al menos estos usuarios verificados. 50 de fábrica.', 'num'),
     ('verdict_context_before', 'Frases de contexto ANTES',
      'Cuántas frases anteriores del mismo hablante se leen para decidir el semáforo.', 'num'),
     ('verdict_context_after', 'Frases de contexto DESPUÉS',
@@ -130,14 +134,10 @@ SETTINGS_DEF = [
      'Tras separar las voces, el modelo de la tarea «Pasada de sentido» lee la conversación y corrige o marca como inciertas las frases que no cuadran con su hablante. Céntimos por vídeo. 0 lo desactiva.', 'num'),
     ('diarize_second_pass_skew_percent', 'Segunda pasada de voces si la minoritaria baja de (%)',
      'Si tras separar voces la voz minoritaria queda por debajo de este porcentaje del tiempo, el sistema repite la separación indicándole el número de voces (cuesta CPU, no dinero). 0 lo desactiva.', 'num'),
-    ('min_identified_speakers_percent', 'Hablantes identificados para validar (%)',
-     'Porcentaje mínimo de hablantes con nombre confirmado antes de que un vídeo pase a la verificación con fuentes: frena el voto Y el piloto automático, y se reanuda solo al confirmar nombres. 0 lo desactiva.', 'num'),
-    # 4.4-B (decisión de David): el semáforo.
-    ('auto_verify_daily_cap', 'Vídeos verificados solos al día',
-     'Cuántos vídeos pasan solos a la verificación con fuentes cada día. Es el freno que '
-     'sustituye al voto manual: por encima de esta cifra, esperan a mañana. 0 lo desactiva.', 'num'),
-    ('deep_scan_votes', 'Votos para el reanálisis profundo',
-     'Votos que hacen falta para volver a mirar una afirmación indecisa con el modelo premium.', 'num'),
+    ('min_identified_speakers_percent', 'Hablantes identificados para el análisis con fuentes (%)',
+     'Porcentaje mínimo de hablantes con nombre confirmado antes de que arranque el trabajo 2. Los votos se guardan igual y el análisis arranca solo en cuanto se confirman los nombres. 66 de fábrica (5.27-A). 0 lo desactiva.', 'num'),
+    # (5.27-A: auto_verify_daily_cap RETIRADO con el piloto automático.
+    #  5.27-E: deep_scan_votes RETIRADO — era una rueda sin cable.)
     ('web_searches_per_claim', 'Búsquedas web por afirmación',
      'Cuántas búsquedas puede hacer el modelo para verificar cada afirmación (10 $ por cada '
      '1.000). Más búsquedas = mejores fuentes y más coste.', 'num'),
@@ -243,28 +243,83 @@ def _gasto_mes():
     ]
 
 
+# 5.27-F (orden de David): TODO el proceso de analisis, ordenado por pasos, en
+# su propia pestaña. Las claves salen de SETTINGS_DEF (misma fila, misma
+# validacion); aqui solo se agrupan y se explican en sencillo.
+ANALYSIS_GROUPS = [
+    ('Al pegar el enlace',
+     'Lo primero que pasa con un vídeo nuevo: cuánto se avisa de donación y cuándo espera turno por dinero.',
+     ['analysis_free_minutes', 'cents_per_video_minute', 'queue_threshold_percent']),
+    ('Trabajo 1 · escuchar y separar voces',
+     'Transcripción y separación de voces. Corre para todos los vídeos; es la parte barata.',
+     ['diarize_second_pass_skew_percent', 'attribution_sense_pass']),
+    ('Trabajo 1 · la lista de afirmaciones',
+     'El barrido marca cada frase como hecho u opinión. Estos dos avisos son solo para moderación.',
+     ['opinion_ratio_percent', 'minutes_per_factual_claim']),
+    ('La sala de espera',
+     'Un vídeo pasa al trabajo 2 cuando la comunidad lo pide con votos Y los hablantes están identificados. No hay reloj: espera lo que haga falta.',
+     ['votes_to_validate', 'min_identified_speakers_percent', 'startup_mode_min_users', 'votes_to_rescue']),
+    ('Trabajo 2 · buscar fuentes y poner el semáforo',
+     'La parte que cuesta dinero: cada afirmación se contrasta con fuentes y recibe su color.',
+     ['web_searches_per_claim', 'official_sources', 'verdict_context_before', 'verdict_context_after',
+      'verdict_parallel', 'clarify_pass', 'search_retries', 'search_retry_seconds']),
+    ('La vista',
+     'Los ojos: comparar lo que se ve en pantalla con lo que se dice.',
+     ['vision_pass', 'vision_lag_seconds']),
+    ('Reanálisis profundo',
+     'Segunda mirada con el modelo más caro, pedida por votos. Una sola vez por frase y por post; el voto de moderación siempre relanza.',
+     ['segment_opus_downvotes', 'opus_rescan_percent', 'opus_rescan_min_users']),
+]
+ANALYSIS_KEYS = [k for _t, _d, ks in ANALYSIS_GROUPS for k in ks]
+
+
+def _guardar_ajustes(request, claves):
+    """Guarda las claves de SETTINGS_DEF que vengan en el POST (bool: on/off)."""
+    defs = {k: kind for k, _l, _h, kind in SETTINGS_DEF}
+    for key in claves:
+        kind = defs.get(key)
+        if kind is None:
+            continue
+        if kind == 'bool':
+            value = '1' if request.POST.get(key) == 'on' else '0'
+        elif key in request.POST and request.POST[key].strip():
+            value = request.POST[key].strip()
+        else:
+            continue
+        SystemSetting.objects.update_or_create(key=key, defaults={'value': value})
+    AuditLog.objects.create(user=request.user, action='update_settings')
+
+
+def _fila(key):
+    label, hint, kind = next((l, h, k) for kk, l, h, k in SETTINGS_DEF if kk == key)
+    obj = SystemSetting.objects.filter(key=key).first()
+    return {'key': key, 'label': label, 'hint': hint, 'kind': kind,
+            'value': obj.value if obj else ''}
+
+
+@staff_member_required
+def analysis_panel(request):
+    """5.27-F: la pestaña «Análisis» — el proceso entero, paso a paso."""
+    if request.method == 'POST':
+        _guardar_ajustes(request, ANALYSIS_KEYS)
+        messages.success(request, 'Ajustes del análisis guardados.')
+        return redirect('panel_analysis')
+    grupos = [{'titulo': t, 'descripcion': d, 'rows': [_fila(k) for k in ks]}
+              for t, d, ks in ANALYSIS_GROUPS]
+    return render(request, 'panel/analisis.html', {'grupos': grupos})
+
+
 @staff_member_required
 def settings_panel(request):
     """Umbrales vivos: algoritmo, votaciones, modo arranque, puerta del registro.
     4.3-F: tambien el dinero. El limite diario NO se escribe: se deriva del mensual
     entre los dias del mes, asi que se muestra calculado para que no haya sorpresas."""
     if request.method == 'POST':
-        for key, _label, _hint, kind in SETTINGS_DEF:
-            if kind == 'bool':
-                value = '1' if request.POST.get(key) == 'on' else '0'
-            elif key in request.POST and request.POST[key].strip():
-                value = request.POST[key].strip()
-            else:
-                continue
-            SystemSetting.objects.update_or_create(key=key, defaults={'value': value})
-        AuditLog.objects.create(user=request.user, action='update_settings')
+        _guardar_ajustes(request, [k for k, *_ in SETTINGS_DEF if k not in ANALYSIS_KEYS])
         messages.success(request, 'Ajustes guardados.')
         return redirect('panel_settings')
-    rows = []
-    for key, label, hint, kind in SETTINGS_DEF:
-        obj = SystemSetting.objects.filter(key=key).first()
-        rows.append({'key': key, 'label': label, 'hint': hint, 'kind': kind,
-                     'value': obj.value if obj else ''})
+    # 5.27-F: los ajustes del proceso de analisis viven en su propia pestaña.
+    rows = [_fila(key) for key, *_ in SETTINGS_DEF if key not in ANALYSIS_KEYS]
     # 4.3-A.5 O4 (petición imperativa de David): el toggle de registro se saca a una
     # sección DESTACADA arriba del panel, aparte de los umbrales técnicos.
     reg = next((r for r in rows if r['key'] == 'registration_open'), None)

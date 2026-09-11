@@ -577,7 +577,7 @@ def _post_context(request, post):
     # 4.2 C4: el analisis y su hilo del foro son UNA sola pagina.
     from apps.forum.machina_glue import get_topic_for_post
     from .services import (identification_gate, needs_sponsorship, speaker_identification,
-                           waiting_for_identification, min_identified_percent)
+                           waiting_for_identification, min_identified_percent, votes_needed)
     topic_obj = get_topic_for_post(post)
     is_mod = bool(u and (u.is_staff or u.level == 'MOD'))
     # 4.4-G: aviso visible cuando la identificacion frena la verificacion, y las
@@ -616,6 +616,9 @@ def _post_context(request, post):
         'post': post, 'segments': segments, 'embed': build_embed(post),
         'hide_opinions': hide_opinions,
         'votes_validate': post.distinct_validation_votes('VALIDATE'),
+        'votes_needed': votes_needed(post),          # 5.27-A
+        'suggested_cat': (Category.objects.filter(slug=post.suggested_topic).first()
+                          if post.suggested_topic else None),   # 5.27-D
         'votes_rescue': post.distinct_validation_votes('RESCUE'),
         # 4.3-A.1 K3 (decision de David): SOLO propuestas de usuarios o confirmadas.
         # Los candidatos automaticos (OCR/rotulos) producian basura tipo creditos
@@ -1139,10 +1142,29 @@ def post_move_category(request, pk):
         Category.objects.filter(slug=antes).update(times_used=models.F('times_used') - 1)
         Category.objects.filter(slug=cat.slug).update(times_used=models.F('times_used') + 1)
         post.topic = cat.slug
-        post.save(update_fields=['topic'])
+    # 5.27-D: mover (a donde sea) cierra la sugerencia del bibliotecario.
+    post.suggested_topic = ''
+    post.suggested_topic_note = ''
+    post.save(update_fields=['topic', 'suggested_topic', 'suggested_topic_note'])
     AuditLog.objects.create(user=request.user, action='post_moved',
                             detail=f'post {post.pk}: {antes} -> {cat.slug}')
     messages.success(request, f'Post movido a «{cat.path_label()}».')
+    return _volver(request, post)
+
+
+@login_required
+def post_topic_suggestion_dismiss(request, pk):
+    """5.27-D: moderacion descarta la sugerencia de subforo del bibliotecario."""
+    from apps.panel.models import AuditLog
+    post, salida = _accion_staff(request, pk)
+    if salida:
+        return salida
+    AuditLog.objects.create(user=request.user, action='topic_suggestion_dismissed',
+                            detail=f'post {post.pk}: {post.suggested_topic}')
+    post.suggested_topic = ''
+    post.suggested_topic_note = ''
+    post.save(update_fields=['suggested_topic', 'suggested_topic_note'])
+    messages.success(request, 'Sugerencia descartada.')
     return _volver(request, post)
 
 
@@ -1513,7 +1535,7 @@ def resolve_attribution(request, segment_id):
     frase quien la resolvio, y se vuelve a probar el piloto automatico porque
     la puerta del 65 % puede haberse abierto."""
     from .models import TranscriptSegment
-    from .services import try_autopilot
+    from .services import try_launch_full
     seg = get_object_or_404(TranscriptSegment, pk=segment_id)
     voz = request.POST.get('speaker', '')
     etiquetas = set(seg.post.transcript_segments.exclude(speaker_label='')
@@ -1524,7 +1546,7 @@ def resolve_attribution(request, segment_id):
     seg.attribution_uncertain = False
     seg.attribution_note = f'resuelta por {request.user.username}'
     seg.save(update_fields=['speaker_label', 'attribution_uncertain', 'attribution_note'])
-    try_autopilot(seg.post)
+    try_launch_full(seg.post)
     messages.success(request, 'Frase atribuida. Gracias.')
     return redirect('post_detail', pk=seg.post_id)
 

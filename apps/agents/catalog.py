@@ -153,8 +153,6 @@ def substitute(model_id, need_web=False):
 # clave        etiqueta                         por defecto            veces por vídeo
 TASKS = [
     ('sweep',     'Barrido de afirmaciones', 'qwen3.8-flash', 'decenas'),
-    ('classify',  'Clasificador factual/opinión (segunda opinión)', 'qwen3.7-plus',
-                  'solo si la regla dice opinión'),
     ('dating',    'Fecha del suceso',        'qwen3.8-flash', 'una'),
     ('attribution', 'Pasada de sentido (quién dijo cada frase)', 'qwen3.8-flash',
                   'una por cada 120 frases'),
@@ -167,9 +165,11 @@ TASKS = [
                   'solo si el separador inventa voces'),
     # 5.1-D (orden de David): al proponer una categoria nueva, Sonnet la
     # contrasta con las existentes para mantener la taxonomia ordenada.
-    # 5.26-A (decision de David): rara y sencilla -> Flash.
-    ('categories', 'Orden de categorías', 'qwen3.8-flash',
-                   'solo al proponer una categoría nueva'),
+    # 5.26-A (decision de David): rara y sencilla -> Flash. 5.27-D: ademas de
+    # ordenar las propuestas nuevas, COMPRUEBA en cada video que el subforo
+    # elegido cuadra (hereda la rueda del clasificador retirado).
+    ('categories', 'Bibliotecario de categorías (subforo adecuado y propuestas nuevas)',
+                   'qwen3.8-flash', 'una por vídeo + al proponer una categoría'),
     # 5.4-D (orden de David): el detector de temas sobre China. Por naturaleza
     # NO puede ser un modelo chino (el zorro no vigila el gallinero).
     ('china_guard', 'Detector de temas sobre China', 'claude-haiku-4-5-20251001',
@@ -222,7 +222,6 @@ TASK_DEFAULTS = {t[0]: t[2] for t in TASKS}
 # tarea tenia ANTES del cambio; David lo ajusta en su panel (model_fb_<tarea>).
 FALLBACK_DEFAULTS = {
     'sweep': 'claude-haiku-4-5-20251001',
-    'classify': 'claude-sonnet-4-6',
     'dating': 'claude-haiku-4-5-20251001',
     'attribution': 'claude-haiku-4-5-20251001',
     'verdict': 'claude-sonnet-4-6',
@@ -339,10 +338,9 @@ def cost_per_hour_eur(task=None, full_transcript=True):
             # 4.4-I: la transcripcion entera etiquetada (x1,3 por los numeros y
             # etiquetas) y una lista corta de correcciones de vuelta.
             total += (TOKENS_TRANSCRIPT_HOUR * 1.3 / 1e6) * pin + (1500 / 1e6) * pout
-        elif clave == 'classify':
-            # 4.4-G: la segunda opinion SOLO se pide cuando la regla local dice
-            # opinion. Se estima como una llamada por video (techo, no media).
-            total += (TOKENS_TRANSCRIPT_HOUR / 1e6) * pin + (300 / 1e6) * pout
+        elif clave == 'categories':
+            # 5.27-D: el bibliotecario lee las afirmaciones del video una vez.
+            total += (4000 / 1e6) * pin + (150 / 1e6) * pout
     return round(total * USD_EUR, 2)
 
 

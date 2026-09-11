@@ -22,25 +22,21 @@ def cast_vote(post, user, kind):
     if not (user.is_contrib_plus() or is_mod):
         return False, 'Necesitas nivel Contribuidor o superior para votar.'
 
+    if kind == 'VALIDATE' and post.status != 'PENDING_VALIDATION':
+        return False, 'Este vídeo ya no está pendiente.'
     ValidationVote.objects.get_or_create(post=post, user=user, kind=kind)
 
-    if kind == 'VALIDATE' and post.status == 'PENDING_VALIDATION':
-        # 4.3-E: la puerta del 50% se comprueba ANTES de registrar nada, para que
-        # el usuario vea el motivo y no un voto que no sirve de nada.
+    if kind == 'VALIDATE':
+        # 5.27-A (orden de David): el voto se registra SIEMPRE (antes se
+        # rechazaba con la puerta de los hablantes cerrada). La puerta unica
+        # —votos + hablantes— la comprueba try_launch_full.
+        if try_launch_full(post):
+            return True, 'Análisis con fuentes lanzado.'
+        van, faltan = post.distinct_validation_votes('VALIDATE'), votes_needed(post)
         puede, motivo = identification_gate(post)
-        if not puede:
-            ValidationVote.objects.filter(post=post, user=user, kind=kind).delete()
-            return False, motivo
-        needed = 1 if (startup_mode_active() and is_mod) \
-            else SystemSetting.get_int('votes_to_validate', 5)
-        if post.distinct_validation_votes('VALIDATE') >= needed:
-            post.status = 'FULL_QUEUED'
-            post.save(update_fields=['status'])
-            launch_full_analysis(post)
-            warn_unnamed_speakers(post)   # 4.3-C
-            warn_long_video(post)         # 4.3-D
-            return True, 'Validado: análisis completo lanzado.'
-        return True, 'Voto registrado.'
+        if van >= faltan and not puede:
+            return True, f'Voto registrado ({van} de {faltan}). {motivo}'
+        return True, f'Voto registrado: van {van} de {faltan}.'
 
     if kind == 'RESCUE' and post.category == 'OFFTOPIC':
         needed = 1 if (startup_mode_active() and is_mod) \
@@ -91,7 +87,7 @@ def identification_gate(post):
     hacen_falta = -(-total * minimo // 100)     # techo, sin float
     if identificados >= hacen_falta:
         return True, ''
-    return False, (f'Antes de marcarlo como factual hay que identificar al menos al '
+    return False, (f'El análisis con fuentes espera a que se identifique al menos al '
                    f'{minimo}% de los hablantes: van {identificados} de {total} '
                    f'(hacen falta {hacen_falta}). Propón o vota un nombre en '
                    f'«¿Quién habla?» — sin nombre no hay página en la wiki.')
@@ -100,48 +96,56 @@ def identification_gate(post):
 def min_identified_percent():
     """4.4-G (nota de David, 2026-08-24): la puerta sube del 50 al 65 %."""
     from apps.panel.models import SystemSetting
-    return max(0, min(100, SystemSetting.get_int('min_identified_speakers_percent', 65)))
+    # 5.27-A (David): 66 %.
+    return max(0, min(100, SystemSetting.get_int('min_identified_speakers_percent', 66)))
 
 
-def try_autopilot(post, factual=None):
-    """4.4-G (nota de David: la puerta del 65 % «frena TODO», el voto Y el piloto
-    automatico). Aqui vive el piloto automatico del 4.4-B con la puerta delante:
-    un video factual pasa solo a la verificacion con fuentes si (1) sigue
-    pendiente de validacion, (2) hay cupo diario y (3) los hablantes
-    identificados llegan al minimo.
+def votes_needed(post):
+    """5.27-A (orden de David): cuantos votos «Pedir el analisis con fuentes»
+    hacen falta. En modo arranque, UN voto de moderador o del superusuario vale
+    por todos (README §5, sin cambios); fuera de el, la rueda «Votos para pedir
+    el analisis» del panel."""
+    if startup_mode_active():
+        for v in post.validation_votes.filter(kind='VALIDATE').select_related('user'):
+            if v.user.is_superuser or v.user.effective_level() == 'MOD':
+                return 1
+    return max(1, SystemSetting.get_int('votes_to_validate', 5))
 
-    Y lo que hace que la puerta sea una ESPERA y no un muro: se vuelve a llamar
-    cada vez que se CONFIRMA un nombre (naming._confirm). Sin esta segunda
-    llamada, ningun video con dos voces se verificaria solo jamas — la puerta
-    siempre esta cerrada al terminar la fase barata, porque nadie ha tenido
-    tiempo de nombrar a nadie. Es el patron «mecanismo montado y puerta tapiada».
 
-    `factual`: lo dice la fase barata al terminar; en las llamadas posteriores
-    se deduce de la sugerencia del clasificador (Off-Topic sugerido = opinion).
-    Devuelve True si lanzo la fase cara.
-    """
-    from .tasks import auto_verify_slot_free, launch_full_analysis, notify_post_event
+def try_launch_full(post):
+    """5.27-A (orden de David, 2026-09-11): la UNICA puerta al trabajo 2 (los
+    veredictos con fuentes). Se abre cuando se cumplen LAS DOS condiciones:
+    (1) los votos «Pedir el analisis con fuentes» llegan a los necesarios y
+    (2) los hablantes identificados llegan al minimo del panel (66 %).
+
+    Sustituye al piloto automatico del 4.4-B (los videos factuales ya NO pasan
+    solos) y a su tope diario. Se llama con cada voto, con cada nombre confirmado
+    y con cada frase incierta resuelta: la puerta de los hablantes es una ESPERA,
+    no un muro (leccion del 4.4-G). Devuelve True si lanzo la fase cara."""
+    from .tasks import launch_full_analysis, notify_post_event
     if post.status != 'PENDING_VALIDATION' or post.censored:   # 5.23-D: sin analisis
         return False
-    if factual is None:
-        factual = not post.offtopic_suggested
-    if not factual or not identification_gate(post)[0] or not auto_verify_slot_free():
+    if post.distinct_validation_votes('VALIDATE') < votes_needed(post):
+        return False
+    if not identification_gate(post)[0]:
         return False
     post.status = 'FULL_QUEUED'
     post.save(update_fields=['status'])
     launch_full_analysis(post)
-    notify_post_event(post, 'analysis', 'Analizado: verificando con fuentes')
+    warn_unnamed_speakers(post)   # 4.3-C
+    warn_long_video(post)         # 4.3-D
+    notify_post_event(post, 'analysis', 'La comunidad pidió el análisis con fuentes: verificando')
     return True
 
 
 def waiting_for_identification(post):
     """4.4-G (nota de David): AVISO visible cuando es la identificacion lo que
     frena la verificacion con fuentes. Devuelve (espera, identificados, total,
-    minimo) — espera=True solo si el video es factual, sigue pendiente y la
-    puerta esta cerrada."""
+    minimo) — espera=True solo si el video sigue pendiente y la puerta esta
+    cerrada (5.27-A: ya no distingue opinion de hecho: la puerta es la misma)."""
     identificados, total = speaker_identification(post)
     minimo = min_identified_percent()
-    espera = (post.status == 'PENDING_VALIDATION' and not post.offtopic_suggested
+    espera = (post.status == 'PENDING_VALIDATION'
               and total > 0 and not identification_gate(post)[0])
     return espera, identificados, total, minimo
 
@@ -212,9 +216,11 @@ def warn_long_video(post):
 
 
 def open_validation_window(post):
-    days = SystemSetting.get_int('validation_window_days', 3)
+    """5.27-B (orden de David): SIN reloj. El video espera en «pendiente» lo que
+    haga falta hasta reunir los votos; ya no caduca ni se sugiere Off-Topic por
+    tiempo. El nombre se conserva (lo llaman la fase barata y «Devolver a Principal»)."""
     post.status = 'PENDING_VALIDATION'
-    post.validation_deadline = timezone.now() + timezone.timedelta(days=days)
+    post.validation_deadline = None
     post.save(update_fields=['status', 'validation_deadline'])
 
 

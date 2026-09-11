@@ -1755,3 +1755,32 @@ Informe en `docs/89`. Registro técnico:
   `TASKS`, `FALLBACK_DEFAULTS`, `SETTING_DEFAULTS`). Test `tests/test_serie526.py` (8) + cabecera
   CSV del 5.24-C actualizada.
 
+## 89. Serie 5.27: la puerta única al trabajo 2, sin reloj, y el bibliotecario (2026-09-11)
+- **Orden de David** (literal en README §5, enmienda 2026-09-11): «el trabajo 2 sólo entra si hay X
+  votos de los usuarios … y están identificados el 66% de los hablantes» + «Quita la ventana de
+  validación». Implementado como `services.try_launch_full(post)`: la ÚNICA puerta (votos
+  `votes_needed(post)` ≥ y `identification_gate` abierta). Se prueba en cada voto (`cast_vote`, que ya
+  NO rechaza el voto con la puerta cerrada), en cada nombre confirmado (`naming._confirm`) y en cada
+  frase incierta resuelta. `try_autopilot`, `auto_verify_slot_free` y `auto_verify_daily_cap` RETIRADOS.
+- `open_validation_window` deja `validation_deadline=None`; `relegate_expired_validations` es un no-op
+  y sale del `beat_schedule` (→ restart beat, lección 4.3). El estado `VALIDATION_EXPIRED` queda en
+  choices por si hay filas viejas (hoy ninguna).
+- **Clasificador**: `algorithm.classify` sigue (regla local, gratis) pero solo alimenta
+  `offtopic_suggested` (aviso a moderación); `second_opinion_rescues` y la tarea `classify` del catálogo
+  se retiran (TASKS, FALLBACK_DEFAULTS, SETTING_DEFAULTS, estimación de coste). La rueda `categories`
+  pasa a llamarse «Bibliotecario de categorías (subforo adecuado y propuestas nuevas)».
+- **Bibliotecario** (`apps/agents/librarian.py`, `prompts.CATEGORY_CHECK_SYSTEM`): tras el barrido,
+  `check_category(post, result)` → `Post.suggested_topic/suggested_topic_note` (analysis/0024). Nunca
+  mueve. UI: caja de moderación del post (Mover ahí / Descartar → `post_topic_suggestion_dismiss`) y
+  menú ⋮ («Mover al subforo sugerido»). `post_move_category` limpia la sugerencia. Conservador por
+  prompt: solo si la elegida es «claramente equivocada» y la buena existe.
+- **Panel**: `ANALYSIS_GROUPS`/`ANALYSIS_KEYS` + `analysis_panel` (`/panel/analisis/`), fila de ajuste
+  compartida `panel/_setting_row.html` (con `data-tip` = hint), `_guardar_ajustes(request, claves)`
+  común. `settings_panel` excluye las claves del análisis. Nuevas filas editables: `opus_rescan_percent`,
+  `opus_rescan_min_users`. Retiradas: `validation_window_days`, `auto_verify_daily_cap`,
+  `deep_scan_votes` (sin cable desde el 4.4-B: nadie la leía; la real es `segment_opus_downvotes`).
+- **Umbral de calidad alineado** (regla del 4.4-G): `min_identified_speakers_percent` 65→66 en
+  SETTING_DEFAULTS y en la fila del panel de producción y espejo. Revertir: editarlo en Panel → Análisis.
+- Tests: `tests/test_serie527.py` (13) + reescritos en test_pase42/test_criticos/test_serie526 los que
+  fijaban el piloto, el tope diario, la caducidad, el rechazo del voto y la segunda opinión.
+

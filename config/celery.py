@@ -7,11 +7,8 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    # Relegar a Off-Topic los posts cuya validacion (5 votos / 3 dias) caduco:
-    'relegar-validaciones-caducadas': {
-        'task': 'apps.analysis.tasks.relegate_expired_validations',
-        'schedule': 3600.0,
-    },
+    # (5.27-B: 'relegar-validaciones-caducadas' RETIRADA — la validacion ya no
+    #  caduca, orden de David 2026-09-11.)
     'advertencias-48h': {
         'task': 'apps.forum.moderation.resolve_expired_warnings',
         'schedule': 3600.0,

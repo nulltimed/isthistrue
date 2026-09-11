@@ -110,10 +110,10 @@ def _confirm(proposal):
     if cambios:
         person.save(update_fields=cambios)
     _notify_person_page(proposal, person)
-    # 4.4-G: la puerta del 65 % es una ESPERA, no un muro: cada nombre confirmado
-    # vuelve a probar el piloto automatico de la verificacion con fuentes.
-    from apps.analysis.services import try_autopilot
-    try_autopilot(proposal.post)
+    # 4.4-G: la puerta de los hablantes es una ESPERA, no un muro: cada nombre
+    # confirmado vuelve a probar la puerta unica (5.27-A: votos + hablantes).
+    from apps.analysis.services import try_launch_full
+    try_launch_full(proposal.post)
     return person
 
 

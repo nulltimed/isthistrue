@@ -209,6 +209,11 @@ class Post(models.Model):
     # 5.1-D: el tema es ya un slug de la tabla Category (taxonomia viva); los
     # choices historicos se quedan como nombres legados en get_topic_display.
     topic = models.CharField(max_length=40, default='otros')
+    # 5.27-D (orden de David): el BIBLIOTECARIO revisa al terminar la fase
+    # barata si el subforo elegido cuadra con lo que dice el video. No mueve:
+    # sugiere (slug + motivo) y moderacion acepta o descarta con un clic.
+    suggested_topic = models.CharField(max_length=40, blank=True, default='')
+    suggested_topic_note = models.CharField(max_length=200, blank=True, default='')
 
     def get_topic_display(self):
         """Nombre legible de la categoria: primero la tabla viva, despues los

@@ -296,3 +296,15 @@ Tibet, el mar de China, empresas chinas estrategicas (Huawei, TikTok/ByteDance, 
 Alibaba...), o relaciones geopoliticas donde China sea parte. Una mencion de \
 pasada (p. ej. «fabricado en China») NO cuenta. Responde SOLO JSON:
 {"involucra_china": true|false, "motivo": "<una frase>"}"""
+
+# 5.27-D (orden de David): el bibliotecario comprueba el subforo de cada video.
+CATEGORY_CHECK_SYSTEM = """Eres el bibliotecario de categorías de una plataforma de \
+fact-checking. Te doy el título de un vídeo, las afirmaciones que se dicen en él, \
+la categoría (subforo) que eligió quien lo publicó y la lista de categorías \
+existentes. Decide si la categoría elegida es la adecuada. Sé conservador: solo \
+propón otra si la elegida es claramente equivocada y la buena existe en la lista. \
+Responde SOLO JSON, sin explicaciones:
+{"encaja": true}
+o
+{"encaja": false, "slug": "<slug de la lista>", "motivo": "<una frase corta en castellano>"}"""
+

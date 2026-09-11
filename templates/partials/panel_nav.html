@@ -13,6 +13,7 @@ título de la ventana del navegador.
 <h1 class="panel-head">{% icon 'sliders' 22 %} {% trans "Panel" %}</h1>
 <nav class="panel-tabs" aria-label="{% trans 'Secciones del panel' %}">
   <a href="{% url 'panel_settings' %}"{% if cur == 'panel_settings' %} class="active" aria-current="page"{% endif %}>{% icon 'sliders' 16 %} {% trans "Ajustes" %}</a>
+  <a href="{% url 'panel_analysis' %}"{% if cur == 'panel_analysis' %} class="active" aria-current="page"{% endif %} data-tip="{% trans 'Todo el proceso de análisis, paso a paso, con sus ajustes.' %}">{% icon 'search' 16 %} {% trans "Análisis" %}</a>
   <a href="{% url 'panel_codes' %}"{% if cur == 'panel_codes' %} class="active" aria-current="page"{% endif %}>{% icon 'ticket' 16 %} {% trans "Códigos" %}</a>
   <a href="{% url 'panel_donations' %}"{% if cur == 'panel_donations' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Donaciones" %}</a>
   <a href="{% url 'panel_models' %}"{% if cur == 'panel_models' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Modelos" %}</a>

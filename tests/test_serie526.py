@@ -27,9 +27,9 @@ class Parche526A_PreciosReales(TestCase):
         self.assertEqual(settings.SETTING_DEFAULTS['model_categories'], 'qwen3.8-flash')
         self.assertEqual(FALLBACK_DEFAULTS['categories'], 'claude-haiku-4-5-20251001')
         self.assertEqual(fallback_for('categories'), 'claude-haiku-4-5-20251001')
-        # el clasificador NO se toca en codigo (ya era Plus de fabrica; en el
-        # panel de David se bajo de Max a Plus el 2026-09-11)
-        self.assertEqual(TASK_DEFAULTS['classify'], 'qwen3.7-plus')
+        # (5.27-D: la rueda del clasificador se retiro; su sitio lo ocupa el
+        # bibliotecario, que ya existia como 'categories'.)
+        self.assertNotIn('classify', TASK_DEFAULTS)
 
 
 class Parche526A_LibroConModelo(TestCase):

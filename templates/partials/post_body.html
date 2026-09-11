@@ -27,18 +27,20 @@
     </div>
   {% endif %}
   {% if post.status == 'PENDING_VALIDATION' %}
+    {# 5.27-A/B/C (orden de David): la UNICA puerta al analisis con fuentes son #}
+    {# los votos + los hablantes identificados; sin reloj; contador a la vista. #}
     <div class="validation">
-      <p><strong>{% trans "Pendiente de validación:" %}</strong> {{ votes_validate }} {% trans "voto(s). Se necesitan votos de usuarios Contribuidor+ antes de" %} {{ post.validation_deadline|date:'d/m H:i' }}.</p>
-      {# 4.3-E (David): sin identificar a los hablantes no se valida. 4.4-G: el #}
-      {# minimo sube al 65% y frena TAMBIEN el piloto automatico; se dice aqui. #}
+      <p><strong>{% trans "Pendiente del análisis con fuentes:" %}</strong>
+        <span class="votos-pedir" data-tip="{% trans 'Cuando se alcanzan los votos y los hablantes están identificados, el sistema busca fuentes y pone los colores.' %}">{% blocktrans with n=votes_validate x=votes_needed %}van {{ n }} de {{ x }} votos{% endblocktrans %}</span>.
+        <span class="hint">{% trans "Votan los usuarios Contribuidor o superiores. No caduca." %}</span></p>
       {% if identification.1 %}
         <p class="hint">{% blocktrans with n=identification.0 total=identification.1 %}Hablantes identificados: {{ n }} de {{ total }}.{% endblocktrans %}
-          {% if waiting_ident %}<strong class="waiting-ident">{% blocktrans with n=identification.0 total=identification.1 m=ident_min %}La verificación con fuentes espera: identifica a quienes hablan ({{ n }} de {{ total }}, hace falta el {{ m }}%).{% endblocktrans %}</strong>
-          {% elif not can_validate %}<strong>{% blocktrans with m=ident_min %}Identifica al menos al {{ m }}% en «¿Quién habla?» para poder marcarlo como factual.{% endblocktrans %}</strong>{% endif %}</p>
+          {% if waiting_ident %}<strong class="waiting-ident">{% blocktrans with n=identification.0 total=identification.1 m=ident_min %}La verificación con fuentes espera: identifica a quienes hablan ({{ n }} de {{ total }}, hace falta el {{ m }}%).{% endblocktrans %}</strong>{% endif %}</p>
       {% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'post_vote' post.pk 'validate' %}">{% csrf_token %}
-        <button {% if not can_validate %}title="{% trans 'Faltan hablantes por identificar' %}"{% endif %}>✔ {% trans "Es factual" %}</button></form>
+        <button data-tip="{% if can_validate %}{% trans 'Tu voto cuenta para lanzar la búsqueda de fuentes y el semáforo.' %}{% else %}{% trans 'Tu voto se guarda; el análisis arrancará cuando además se identifique a los hablantes.' %}{% endif %}">🔎 {% trans "Pedir el análisis con fuentes" %}</button>
+        {% if is_mod %}<span class="hint">{% trans "Tu voto de moderación vale por todos mientras la web esté en modo arranque." %}</span>{% endif %}</form>
       {% endif %}
     </div>
   {% endif %}
@@ -68,6 +70,14 @@
     <div class="mod-actions">
       {% if post.offtopic_suggested and post.category != 'OFFTOPIC' %}
         <p class="hint">🛈 {% trans "El clasificador sugiere Off-Topic (mayoría de opinión). La decisión es tuya." %}</p>
+      {% endif %}
+      {# 5.27-D: la sugerencia del bibliotecario — aceptar o descartar con un clic. #}
+      {% if suggested_cat %}
+        <div class="sugerencia-subforo" data-tip="{% trans 'El bibliotecario ha leído las afirmaciones del vídeo y cree que este subforo no es el suyo. Nada se mueve sin tu clic.' %}">
+          <p class="hint">📚 {% blocktrans with c=suggested_cat.path_label %}El bibliotecario cree que este vídeo encaja mejor en «{{ c }}»{% endblocktrans %}{% if post.suggested_topic_note %}: {{ post.suggested_topic_note }}{% endif %}</p>
+          <form method="post" action="{% url 'post_move_category' post.pk %}" style="display:inline">{% csrf_token %}<input type="hidden" name="topic" value="{{ suggested_cat.slug }}"><button class="mini">{% icon 'folder' 14 %} {% trans "Mover ahí" %}</button></form>
+          <form method="post" action="{% url 'post_topic_suggestion_dismiss' post.pk %}" style="display:inline">{% csrf_token %}<button class="mini linklike">{% trans "Descartar" %}</button></form>
+        </div>
       {% endif %}
       {% if post.category != 'OFFTOPIC' %}
         <form method="post" action="{% url 'post_relegate' post.pk %}">{% csrf_token %}

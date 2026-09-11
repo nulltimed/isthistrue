@@ -31,6 +31,8 @@ urlpatterns = [
     path('post/<int:pk>/fijar/', views.post_toggle_pin, name='post_toggle_pin'),
     path('post/<int:pk>/sensible/', views.post_toggle_adult, name='post_toggle_adult'),
     path('post/<int:pk>/mover/', views.post_move_category, name='post_move_category'),
+    path('post/<int:pk>/sugerencia/descartar/', views.post_topic_suggestion_dismiss,
+         name='post_topic_suggestion_dismiss'),  # 5.27-D
     path('post/<int:pk>/titulo/', views.post_edit_title, name='post_edit_title'),
     path('mensaje/<int:mpost_id>/eliminar/', views.message_delete_toggle, name='message_delete'),
     path('post/<int:pk>/vote/<str:kind>/', views.vote, name='post_vote'),

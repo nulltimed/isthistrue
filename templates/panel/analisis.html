@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% load i18n istt_icons %}
+{% block title %}{% trans "Panel · Análisis" %}{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
+{# 5.27-F (orden de David): todo el proceso de analisis, paso a paso. #}
+<h2 class="panel-sub">{% icon 'search' 18 %} {% trans "El proceso de análisis, paso a paso" %}</h2>
+<div class="analisis-guia">
+  <p>{% trans "Cuando alguien pega un vídeo pasan dos trabajos seguidos." %}</p>
+  <ol>
+    <li><strong>{% trans "Trabajo 1, el barato." %}</strong> {% trans "La máquina escucha el vídeo, lo transcribe, separa las voces y saca la lista de frases que dice cada uno, marcando cada una como hecho u opinión. Pasa siempre y con todos los vídeos." %}</li>
+    <li><strong>{% trans "La sala de espera." %}</strong> {% trans "El vídeo se publica en su subforo con la transcripción. Para que arranque el trabajo 2 hacen falta dos cosas: los votos «Pedir el análisis con fuentes» y que los hablantes estén identificados. No hay reloj." %}</li>
+    <li><strong>{% trans "Trabajo 2, el caro." %}</strong> {% trans "Cada frase se contrasta con fuentes de internet y recibe su color: verde, ámbar, rojo o blanco. Es el semáforo, y es lo que cuesta dinero." %}</li>
+  </ol>
+  <p class="hint">{% trans "Los modelos que hacen cada paso se eligen en la pestaña Modelos; el dinero, en Ajustes." %}</p>
+</div>
+<form method="post" class="settings-form">{% csrf_token %}
+  {% for g in grupos %}
+  <section class="analisis-grupo">
+    <h3 class="settings-sub">{{ g.titulo }}</h3>
+    <p class="hint">{{ g.descripcion }}</p>
+    {% for r in g.rows %}{% include 'panel/_setting_row.html' %}{% endfor %}
+  </section>
+  {% endfor %}
+  <button class="wide">{% trans "Guardar" %}</button>
+</form>
+{% endblock %}

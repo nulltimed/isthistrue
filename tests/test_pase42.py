@@ -23,16 +23,16 @@ def make_user(**kw):
 class RelegacionSoloManual(TestCase):
     """A2: ni el clasificador ni el beat mueven nada a Off-Topic."""
 
-    def test_expirados_se_marcan_pero_no_se_relegan(self):
+    def test_expirados_ya_no_existen(self):
+        # 5.27-B (orden de David): sin reloj. La tarea no toca nada.
         post = Post.objects.create(author=make_user(), url='https://youtu.be/abc123x',
                                    status='PENDING_VALIDATION',
                                    validation_deadline=timezone.now() - timedelta(hours=1))
         n = relegate_expired_validations()
         post.refresh_from_db()
-        self.assertEqual(n, 1)
-        self.assertEqual(post.category, 'MAIN')            # NO se movio
-        self.assertEqual(post.status, 'VALIDATION_EXPIRED')
-        self.assertTrue(post.offtopic_suggested)           # solo sugiere
+        self.assertEqual(n, 0)
+        self.assertEqual((post.category, post.status), ('MAIN', 'PENDING_VALIDATION'))
+        self.assertFalse(post.offtopic_suggested)
 
     def test_relegar_exige_moderador(self):
         author = make_user()
@@ -1538,14 +1538,16 @@ class Pase43E(TestCase):
         post = self._post(4, ('',))
         self.assertTrue(identification_gate(post)[0])
 
-    def test_el_voto_se_rechaza_con_el_motivo_y_no_queda_registrado(self):
+    def test_el_voto_se_guarda_aunque_falten_hablantes_y_no_arranca_nada(self):
+        # 5.27-A (orden de David): el voto ya no se rechaza; se guarda y el
+        # analisis arranca solo cuando ADEMAS se identifica a los hablantes.
         from apps.analysis.services import cast_vote
         post = self._post(5)
         votante = make_user(username='votE', email='vote@example.org', karma=100)
         ok, msg = cast_vote(post, votante, 'VALIDATE')
-        self.assertFalse(ok)
-        self.assertIn('identificar', msg)
-        self.assertEqual(post.distinct_validation_votes('VALIDATE'), 0)
+        self.assertTrue(ok)
+        self.assertIn('1 de', msg)
+        self.assertEqual(post.distinct_validation_votes('VALIDATE'), 1)
         post.refresh_from_db()
         self.assertEqual(post.status, 'PENDING_VALIDATION')   # no arrancó nada
 
@@ -1565,7 +1567,7 @@ class Pase43E(TestCase):
         self.assertIn('min_identified_speakers_percent',
                       [k for k, _l, _h, _t in SETTINGS_DEF])
         # 4.4-G (David, 2026-08-24): del 50 al 65 %.
-        self.assertEqual(s.SETTING_DEFAULTS['min_identified_speakers_percent'], '65')
+        self.assertEqual(s.SETTING_DEFAULTS['min_identified_speakers_percent'], '66')   # 5.27-A
         self.assertIn('MIN_IDENTIFIED_SPEAKERS_PERCENT', open('.env.example').read())
 
     # --- el nombre confirmado manda ---
@@ -2332,25 +2334,7 @@ class Pase44B(TestCase):
         ap = ClaimAppearance.objects.get(claim__text_original='Segunda frase.')
         self.assertEqual(ap.segment_id, seg2.pk)
 
-    # ---------- 6. el tope diario ----------
-    def test_el_tope_diario_frena_la_verificacion_automatica(self):
-        from apps.analysis.tasks import auto_verify_slot_free
-        from apps.panel.models import SystemSetting
-        SystemSetting.objects.update_or_create(key='auto_verify_daily_cap',
-                                               defaults={'value': '2'})
-        autor = make_user(username='cap', email='cap@example.org')
-        self.assertTrue(auto_verify_slot_free())
-        for i in range(2):
-            Post.objects.create(author=autor, url=f'https://youtu.be/c{i}',
-                                full_started_at=timezone.now())
-        self.assertFalse(auto_verify_slot_free(), 'el tope diario no está frenando')
-
-    def test_el_tope_a_cero_devuelve_el_control_a_los_votos(self):
-        from apps.analysis.tasks import auto_verify_slot_free
-        from apps.panel.models import SystemSetting
-        SystemSetting.objects.update_or_create(key='auto_verify_daily_cap',
-                                               defaults={'value': '0'})
-        self.assertFalse(auto_verify_slot_free())
+    # ---------- 6. (el tope diario se retiro en el 5.27-A con el piloto automatico) ----------
 
     # ---------- 7. la fecha del suceso ----------
     def test_la_fecha_del_suceso_se_normaliza_aunque_venga_incompleta(self):
@@ -2913,34 +2897,20 @@ class Pase44G(TestCase):
         html = self.client.get('/panel/modelos/').content.decode()
         self.assertIn('name="delivery_verdict"', html)
         self.assertIn('name="delivery_deep"', html)
-        for clave in ('sweep', 'dating', 'moderation', 'classify'):
+        for clave in ('sweep', 'dating', 'moderation', 'categories'):
             self.assertNotIn(f'name="delivery_{clave}"', html, clave)
 
-    # ---------- el clasificador existe de verdad ----------
-    def _sweep_de_opinion(self):
-        return {'claims': [{'text': 'Es horrible.', 'kind': 'OPINION'}] * 8
-                          + [{'text': 'Hay 750.000 ocupados.', 'kind': 'FACTUAL'}],
-                'manipulation': False, 'is_adult': False}
-
-    def test_la_segunda_opinion_del_clasificador_rescata_con_confianza_alta(self):
-        from apps.agents import algorithm, catalog
-        post = self._post(3)
-        with mock.patch('apps.agents.client.call_json',
-                        return_value={'verdict': 'FACTUAL', 'confidence': 'high'}) as llamada:
-            self.assertEqual(algorithm.classify(post, self._sweep_de_opinion()), 'FACTUAL')
-        self.assertEqual(llamada.call_args.args[0], catalog.model_for('classify'))
-
-    def test_la_segunda_opinion_dudosa_no_rescata_y_la_regla_factual_no_pregunta(self):
+    # ---------- (la segunda opinion del clasificador se retiro en el 5.27-D) ----------
+    def test_la_regla_local_ya_no_pregunta_a_ningun_modelo(self):
         from apps.agents import algorithm
-        post = self._post(4)
-        with mock.patch('apps.agents.client.call_json',
-                        return_value={'verdict': 'FACTUAL', 'confidence': 'low'}):
-            self.assertEqual(algorithm.classify(post, self._sweep_de_opinion()), 'OPINION')
-        factual = {'claims': [{'text': f'Dato {i}.', 'kind': 'FACTUAL'} for i in range(10)],
+        post = self._post(3)
+        opinion = {'claims': [{'text': 'Es horrible.', 'kind': 'OPINION'}] * 8
+                             + [{'text': 'Hay 750.000 ocupados.', 'kind': 'FACTUAL'}],
                    'manipulation': False, 'is_adult': False}
         with mock.patch('apps.agents.client.call_json') as llamada:
-            self.assertEqual(algorithm.classify(post, factual), 'FACTUAL')
-        llamada.assert_not_called()   # solo rescata; jamás relega
+            self.assertEqual(algorithm.classify(post, opinion), 'OPINION')
+        llamada.assert_not_called()
+        self.assertFalse(hasattr(algorithm, 'second_opinion_rescues'))
 
     # ---------- B.1 · el lote busca con el modelo ----------
     def _anthropic_falso(self):
@@ -3052,7 +3022,7 @@ class Pase44G(TestCase):
 
     def test_la_datacion_ocurre_antes_de_separar_voces(self):
         src = open('apps/analysis/tasks.py', encoding='utf-8').read()
-        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        cuerpo = src[src.index('def run_cheap_phase'):src.index('def _date_and_hint')]
         # 4.4-J: el oido vive en diarize_turns (GPU o CPU); la datacion sigue antes.
         self.assertLess(cuerpo.index('_date_and_hint('), cuerpo.index('diarize_turns(post, audio_path'))
         self.assertIn('diarization_hint(post)', cuerpo)
@@ -3116,48 +3086,56 @@ class Pase44G(TestCase):
         self.assertTrue(all(m['speaker_label'] == 'SPEAKER_00' for m in out))
         self.assertTrue(all(len(m['text'].split()) > 1 for m in out))   # «Bien.» pegada
 
-    # ---------- la puerta del 65 % ----------
-    def test_la_puerta_frena_el_piloto_automatico_y_se_reanuda_al_nombrar(self):
-        from apps.analysis.services import try_autopilot
+    # ---------- la puerta de los hablantes (5.27-A: parte de la puerta unica) ----------
+    def _votar(self, post, n=1):
+        from apps.analysis.models import ValidationVote
+        for i in range(n):
+            ValidationVote.objects.create(post=post, kind='VALIDATE', user=make_user(
+                username=f'vg{post.pk}_{i}', email=f'vg{post.pk}_{i}@example.org', karma=100))
+
+    def test_la_puerta_de_hablantes_frena_aunque_haya_votos_y_se_reanuda_al_nombrar(self):
+        from apps.analysis.services import try_launch_full
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(key='votes_to_validate', defaults={'value': '1'})
         post = self._post(11)
+        self._votar(post)
         with mock.patch('apps.analysis.tasks.launch_full_analysis') as lanzar:
-            self.assertFalse(try_autopilot(post, factual=True))
+            self.assertFalse(try_launch_full(post))
             lanzar.assert_not_called()
             post.refresh_from_db()
             self.assertEqual(post.status, 'PENDING_VALIDATION')
             self._confirmar(post, 'SPEAKER_00', 'Ana Pública')
             self._confirmar(post, 'SPEAKER_01', 'Bea Pública')
-            self.assertTrue(try_autopilot(post))
+            self.assertTrue(try_launch_full(post))
             lanzar.assert_called_once()
         post.refresh_from_db()
         self.assertEqual(post.status, 'FULL_QUEUED')
 
-    def test_confirmar_un_nombre_vuelve_a_probar_el_piloto(self):
+    def test_confirmar_un_nombre_vuelve_a_probar_la_puerta(self):
         from apps.wiki import naming
         from apps.wiki.models import SpeakerNameProposal
         post = self._post(12)
         prop = SpeakerNameProposal.objects.create(post=post, speaker_label='SPEAKER_00',
                                                   candidate_name='Ana Pública', source='user')
-        with mock.patch('apps.analysis.services.try_autopilot') as piloto:
+        with mock.patch('apps.analysis.services.try_launch_full') as puerta:
             naming._confirm(prop)
-        piloto.assert_called_once_with(post)
+        puerta.assert_called_once_with(post)
 
-    def test_un_video_de_opinion_no_pasa_solo_aunque_esten_todos_nombrados(self):
-        from apps.analysis.services import try_autopilot
+    def test_sin_votos_no_pasa_aunque_esten_todos_nombrados(self):
+        # 5.27-A: el piloto automatico se fue — ni el video mas factual pasa solo.
+        from apps.analysis.services import try_launch_full
         post = self._post(13)
-        post.offtopic_suggested = True
-        post.save(update_fields=['offtopic_suggested'])
         self._confirmar(post, 'SPEAKER_00', 'Ana')
         self._confirmar(post, 'SPEAKER_01', 'Bea')
         with mock.patch('apps.analysis.tasks.launch_full_analysis') as lanzar:
-            self.assertFalse(try_autopilot(post))
+            self.assertFalse(try_launch_full(post))
         lanzar.assert_not_called()
 
     def test_el_aviso_de_espera_se_ve_en_el_post(self):
         post = self._post(14)
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('La verificación con fuentes espera', html)
-        self.assertIn('0 de 2, hace falta el 65%', html)
+        self.assertIn('0 de 2, hace falta el 66%', html)
 
     # ---------- Intro envía ----------
     def test_intro_envia_y_elegir_una_sugerencia_agrega(self):
@@ -3430,7 +3408,7 @@ class Pase44I(TestCase):
 
     def test_la_pasada_ocurre_antes_del_barrido_en_la_fase_barata(self):
         src = open('apps/analysis/tasks.py', encoding='utf-8').read()
-        cuerpo = src[src.index('def run_cheap_phase'):src.index('def auto_verify_slot_free')]
+        cuerpo = src[src.index('def run_cheap_phase'):src.index('def _date_and_hint')]
         self.assertLess(cuerpo.index('attribution.run(post)'), cuerpo.index('sweep.run(post)'))
 
     def test_las_inciertas_no_cuentan_para_el_65_por_ciento(self):
@@ -3470,7 +3448,7 @@ class Pase44I(TestCase):
         self.client.force_login(u)
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn(f'/frase/{seg.pk}/atribuir/', html)
-        with mock.patch('apps.analysis.services.try_autopilot') as piloto:
+        with mock.patch('apps.analysis.services.try_launch_full') as piloto:
             r = self.client.post(f'/frase/{seg.pk}/atribuir/', {'speaker': 'SPEAKER_00'})
         self.assertEqual(r.status_code, 302)
         piloto.assert_called_once()

@@ -225,7 +225,6 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'minutes_per_factual_claim': '5',
     'votes_to_validate': '5',
     'votes_to_rescue': '10',
-    'validation_window_days': '3',
     'startup_mode_min_users': '50',
     'mod_vote_weight': '5',
     'name_confirm_points': '5',
@@ -260,7 +259,6 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # habia fila del panel. Alineada con la orden de David: Qwen para todo;
     # el detector de China es Claude POR DISEÑO.
     'model_sweep': 'qwen3.8-flash',
-    'model_classify': 'qwen3.7-plus',
     'model_dating': 'qwen3.8-flash',
     'model_attribution': 'qwen3.8-flash',   # 4.4-I
     'model_verdict': 'qwen3.7-plus',
@@ -275,10 +273,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'full_transcript_verdict': '1',     # decision de David: transcripcion entera
     'web_searches_per_claim': '3',      # 4.4-E: tope de busquedas del modelo por afirmacion
     # 4.4-B: el semaforo.
-    'auto_verify_daily_cap': '5',       # videos que se verifican solos al dia
     'search_retries': '2',              # reintentos cuando los motores se suspenden
     'search_retry_seconds': '20',       # espera entre reintentos
-    'deep_scan_votes': '5',             # votos para el reanalisis profundo
     'official_sources': ('ine.es,europa.eu,boe.es,bde.es,aemet.es,seg-social.es,'
                          'sepe.es,who.int,un.org,oecd.org'),
     # 4.3-A.7: ventana de contexto del semaforo (frases del mismo hablante).
@@ -294,7 +290,7 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 4.3-C: las fichas de persona nacen con el freno de indexacion puesto.
     'wiki_index_people': '0',
     # 4.3-E: minimo de hablantes identificados para poder validar como factual.
-    'min_identified_speakers_percent': '65',   # 4.4-G (David): del 50 al 65, y frena TODO
+    'min_identified_speakers_percent': '66',   # 4.4-G: 50→65 · 5.27-A (David): 66
     'diarize_second_pass_skew_percent': '20',
     'attribution_sense_pass': '1',             # 4.4-I: Haiku revisa quien dijo cada frase (0 apaga)  # 4.4-H: voz minoritaria por debajo -> segunda pasada (0 apaga)
     # 4.3-F: porcentaje del deposito diario a partir del cual un video espera en

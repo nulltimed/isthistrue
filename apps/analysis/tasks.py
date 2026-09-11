@@ -216,8 +216,18 @@ def _after_segments(post):
     # el post nace SIEMPRE en Principal y relegar es accion manual de moderador.
     # 4.3-A.7: si el barrido volvio ilegible, "sin afirmaciones extraibles" es
     # MENTIRA (no las leimos, no es que no existan): no se sugiere Off-Topic.
+    # 5.27-A: la etiqueta ya NO decide nada del flujo (la puerta al trabajo 2 es
+    # la misma para todos: votos + hablantes); queda como pista para moderacion.
     if verdict == 'OPINION' and not result.get('sweep_failed'):
         post.offtopic_suggested = True
+    # 5.27-D (orden de David): el BIBLIOTECARIO comprueba que el subforo elegido
+    # cuadra con lo que dice el video. No mueve nada: deja una sugerencia que
+    # moderacion acepta con un clic. Fail-soft (regla 5.7).
+    try:
+        from apps.agents import librarian
+        librarian.check_category(post, result)
+    except Exception:
+        logger.warning('El bibliotecario fallo en el post %s', post.pk, exc_info=True)
 
     # (La datacion del 4.4-B vive ahora arriba, junto a la diarizacion: 4.4-G.)
     post.save()
@@ -228,16 +238,13 @@ def _after_segments(post):
     archive_wayback.delay(post.pk)  # preservacion: TODO post (decidido)
     post.cheap_finished_at = timezone.now()
     post.save(update_fields=['cheap_finished_at'])
-    # 4.4-B (decision de David, opcion c): los videos factuales pasan SOLOS a la
-    # verificacion con fuentes, hasta un tope diario que el fija en el panel. Ese
-    # tope SUSTITUYE a su voto: es el freno. Sin el, la web pasaba de "no verifica
-    # nada sin David" a "puede vaciarse el deposito una mañana sin que se entere".
-    # 4.4-G: con la puerta del 65 % delante (services.try_autopilot), que «frena
-    # todo» y se reabre sola cuando la comunidad nombra a los hablantes.
-    from .services import try_autopilot
-    if try_autopilot(post, factual=(verdict == 'FACTUAL')):
-        return 'auto_verifying'
-    notify_post_event(post, 'analysis', 'Transcripción y señales listas (pendiente de validación)')
+    # 5.27-A (orden de David, 2026-09-11): el piloto automatico del 4.4-B SE VA.
+    # Ningun video pasa solo al trabajo 2: hacen falta los votos «Pedir el
+    # analisis con fuentes» Y el minimo de hablantes identificados
+    # (services.try_launch_full, la unica puerta). El tope diario que lo frenaba
+    # (auto_verify_daily_cap) desaparece con el.
+    notify_post_event(post, 'analysis',
+                      'Transcripción y señales listas: la comunidad puede pedir el análisis con fuentes')
     return 'pending_validation'
 
 def _date_and_hint(post, transcript_text):
@@ -419,23 +426,6 @@ def reset_for_cheap_phase(post):
     # aviso del analisis viejo seguia en pantalla la hora entera del reanalisis.
     post.manipulation_detected = False
     post.save(update_fields=['status', 'opus_rescanned', 'manipulation_detected'])
-
-
-def auto_verify_slot_free():
-    """4.4-B: ¿queda cupo de verificacion automatica para hoy?
-
-    Cuenta los videos que ARRANCARON la fase cara hoy (`full_started_at`), no los
-    que la terminaron: un video largo que empezo ayer y acaba hoy no debe robarle
-    el sitio a uno nuevo.
-    """
-    from .models import Post
-    from apps.panel.models import SystemSetting
-    tope = SystemSetting.get_int('auto_verify_daily_cap', 5)
-    if tope <= 0:
-        return False                      # 0 = desactivado: vuelve el voto manual
-    hoy = timezone.localdate()
-    usados = Post.objects.filter(full_started_at__date=hoy).count()
-    return usados < tope
 
 
 def notify_post_event(post, kind, text):
@@ -631,18 +621,10 @@ def relaunch_stuck_analyses():
 
 @shared_task
 def relegate_expired_validations():
-    """Beat horario. 4.2 A2: YA NO relega — marca la sugerencia para moderadores
-    (relegar es siempre accion humana). El nombre se conserva: beat lo referencia."""
-    from .models import Post
-    expired = Post.objects.filter(status='PENDING_VALIDATION',
-                                  validation_deadline__lt=timezone.now())
-    n = expired.count()
-    for post in expired:
-        post.status = 'VALIDATION_EXPIRED'
-        post.offtopic_suggested = True
-        post.relegation_reason = 'Sin validación comunitaria en plazo'
-        post.save(update_fields=['status', 'offtopic_suggested', 'relegation_reason'])
-    return n
+    """5.27-B (orden de David): la validacion YA NO CADUCA. La tarea queda como
+    no-op (por si un beat viejo la sigue nombrando) y sale del beat_schedule.
+    Historia: 4.2 A2 la dejo en «solo sugerir»; hoy ni eso."""
+    return 0
 
 
 _VTT_TIME = re.compile(r'(\d+):(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(\d+):(\d{2}):(\d{2})[.,](\d{3})')
