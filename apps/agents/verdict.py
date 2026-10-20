@@ -1,6 +1,10 @@
 """Fase cara: Sonnet + busquedas adaptativas -> claims wiki con semaforo (README v2 §3)."""
+import logging
+
 from django.conf import settings
 from apps.agents import client, prompts, search, sweep
+
+logger = logging.getLogger('agents.verdict')
 
 # 4.4-E: el mock trae fuentes para que el circuito simulado se parezca al real.
 MOCK_VERDICT = {
@@ -91,8 +95,20 @@ def _verificar_uno(c, post, fecha, tope, expediente, model, en_hilo=True):
                                 f"del instante, {hallazgo['modelo']}): la "
                                 f"pantalla {hallazgo['veredicto_visual'].upper()} "
                                 f"lo dicho — {hallazgo['detalle'][:400]}")
+                # 5.32 (orden de David): si la frase alude a algo DEL PROPIO
+                # VIDEO, la vista va tambien al momento referido y el video
+                # entra como fuente (solo si la vista aporto).
+                from apps.agents import selfref
+                ref = selfref.detect(c['text']) if selfref.activo() else None
+                if ref and seg_idx is not None and 0 <= seg_idx < len(segs):
+                    c['_selfref'] = selfref.evidencia(post, c['text'], segs, seg_idx, ref)
+                    payload += '\n\n' + selfref.bloque(post, c['_selfref'])
+                    mejor = c['_selfref'].get('mejor')
+                    if mejor and mejor.get('veredicto_visual') in ('sostiene', 'contradice') and (
+                            not hallazgo or hallazgo.get('veredicto_visual') == 'no_aporta'):
+                        hallazgo = mejor
         except Exception:
-            pass
+            logger.warning('5.32: la referencia al video fallo en el post %s', post.pk, exc_info=True)
         _m, _fb = models_for_post('verdict', post)
         # 5.22-c: 1500 tokens truncaban el JSON con el contexto 2+2 y el
         # modelo exprimido (la MISMA leccion del clarificador) — mas aire.
@@ -153,6 +169,10 @@ def run(post, model=None):
             continue
         v['model_used'] = usado
         v['kind'] = 'OPINION' if es_opinion else 'FACTUAL'
+        # 5.32: el video como fuente — solo cuenta si la vista aporto.
+        if c.get('_selfref'):
+            from apps.agents import selfref
+            selfref.ajustar_fuentes(v, post, c['_selfref'])
         tiene_fuentes = bool(v.get('sources'))
         # 4.4-B: SIN FUENTES NO HAY COLOR (GREY de opinion pura, legitimo 5.3-C).
         if not tiene_fuentes:

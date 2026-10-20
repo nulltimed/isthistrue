@@ -28,7 +28,8 @@ def _tope():
     return max(8, 2 * web_searches_per_claim())
 
 
-def _payload(claim, ap, tope):
+def _payload(claim, ap, tope, ev=None):
+    from apps.agents import selfref
     post = ap.segment.post
     fecha = post.event_date.isoformat() if post.event_date else None
     confirmadas = dict(post.name_proposals.filter(confirmed=True)
@@ -59,7 +60,8 @@ def _payload(claim, ap, tope):
           # — el modelo, exprimido, se explaya y el JSON llegaba TRUNCADO por
           # max_tokens. Mas aire (3000) y el recordatorio explicito.
           "IMPORTANTE: responde ÚNICAMENTE con el objeto JSON del contrato, "
-          "sin ningún texto antes ni después.")
+          "sin ningún texto antes ni después."
+        + (('\n\n' + selfref.bloque(post, ev)) if ev else ''))
 
 
 def _aplicar(claim, v, sources_ok):
@@ -103,20 +105,41 @@ def clarify_claim(claim):
     sistema = prompts.OPINION_VERDICT_SYSTEM if es_op else prompts.VERDICT_SYSTEM
     tope = _tope()
     _m, _fb = models_for_post('deep', post)
+    # 5.32: si la afirmacion alude al propio video, la vista mira el momento
+    # referido y el video puede ser fuente (solo si la vista aporto).
+    ev = None
+    try:
+        from apps.agents import selfref
+        ref = selfref.detect(claim.text_original) if selfref.activo() else None
+        if ref:
+            segs = list(post.transcript_segments.order_by('start_seconds', 'pk'))
+            idx = next((k for k, s in enumerate(segs) if s.pk == ap.segment_id), None)
+            if idx is not None:
+                ev = selfref.evidencia(post, claim.text_original, segs, idx, ref)
+    except Exception:
+        logger.warning('5.32: la referencia al video fallo en el claim %s', claim.pk, exc_info=True)
     v, usado = client.call_search_json(
-        _m, sistema, _payload(claim, ap, tope), max_tokens=3000,
+        _m, sistema, _payload(claim, ap, tope, ev), max_tokens=3000,
         mock_payload=verdict_agent.MOCK_VERDICT, max_searches=tope, fallback=_fb)
     if 'error' in v:
         logger.warning('Clarificador: el modelo fallo con el claim %s (%s)',
                        claim.pk, v.get('error'))
         return None
     v['model_used'] = usado
+    if ev:
+        from apps.agents import selfref, vision
+        selfref.ajustar_fuentes(v, post, ev)
     tiene = bool(v.get('sources'))
     # La misma garantia del 4.4-B: sin fuentes no hay color (GREY de opinion
     # pura es la unica excepcion legitima, 5.3-C).
     if not tiene and not (es_op and v.get('color') == 'GREY'):
         v['color'] = 'UNDECIDED'
     _aplicar(claim, v, tiene or (es_op and v.get('color') == 'GREY'))
+    if ev and ev.get('mejor'):
+        try:
+            vision.registrar(claim, ev['mejor'])   # 5.8: el fotograma a la wiki
+        except Exception:
+            pass
     return claim.color
 
 

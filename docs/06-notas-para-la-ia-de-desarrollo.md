@@ -1860,3 +1860,22 @@ Informe en `docs/89`. Registro técnico:
   `django_otp.oath.totp(unhexlify(dev.key))`. El hook de AssemblyAI responde 403 por su propia firma:
   el test comprueba que NO llega al modal, no el código.
 
+## 94. Serie 5.32: el vídeo como fuente (2026-10-20)
+- Motivo: claim 107 (post 4, Abascal 2:56 «Usted trae aquí una foto…») quedó UNDECIDED: la vista miró
+  el 2:56, no el 2:37 donde Díaz enseña la foto; sin saber qué foto era, la búsqueda externa no halló
+  nada, y el candado 4.4-B no admite el vídeo como fuente.
+- `apps/agents/selfref.py`: `detect(texto)` (regex: frases clave o deíctico+objeto+verbo de mostrar),
+  `momentos(segs, i, objeto)` (mención más cercana del objeto ±ventana + arranque del turno anterior
+  de OTRO hablante; sin repetir el instante propio; máx. 2), `evidencia()` (vision.mirar en esos
+  segundos con pregunta dirigida + líneas de transcripción ±12 s), `bloque()` (texto para el
+  expediente; autoriza citar el vídeo SOLO si `mejor` sostiene/contradice), `ajustar_fuentes(v, post,
+  ev)` (añade la fuente-vídeo si aportó y el modelo la olvidó; la RETIRA si no aportó). Interruptor
+  `video_as_source` (1) en SETTING_DEFAULTS/SETTINGS_DEF/ANALYSIS_GROUPS «La vista».
+- Cableado: `verdict._verificar_uno` (tras el contraste visual; `c['_selfref']` viaja al `run`, que
+  llama a `ajustar_fuentes` antes del candado y registra el fotograma del momento referido si aportó y
+  el del instante no); `clarify.clarify_claim` (misma lógica, `_payload(..., ev)`). `VERDICT_SYSTEM`:
+  párrafo «REFERENCIA AL PROPIO VIDEO».
+- **Trampa cazada**: `verdict.py` no tenía `logger` y el candado AST del 4.3-D puso rojo el primer
+  intento; añadido `logging.getLogger('agents.verdict')`. `vision.mirar` se mockea con `side_effect`
+  por segundo para probar que va al 157 y al 176.
+

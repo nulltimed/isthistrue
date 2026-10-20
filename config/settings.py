@@ -256,6 +256,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 5.31 (orden de David, 2026-10-20): la web nace PRIVADA — solo el superusuario
     # entra hasta que el lo abra desde Panel → Ajustes.
     'site_private': '1',
+    # 5.32 (orden de David): el video como fuente cuando la frase alude a algo del propio video.
+    'video_as_source': '1',
     'lang_es': '1', 'lang_en': '1',
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
     # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa

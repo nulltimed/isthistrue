@@ -84,6 +84,9 @@ SETTINGS_DEF = [
      'Mientras la web tenga menos usuarios verificados que esto, un solo voto de moderador o del superusuario vale por todos los votos necesarios.', 'num'),
     ('donation_goal_eur', 'Meta de donaciones (€)',
      'Histórica: el banner sigue ya al presupuesto base (5.5-B).', 'num'),
+    # 5.32 (orden de David): el video como fuente.
+    ('video_as_source', 'El vídeo como fuente (1/0)',
+     'Si una frase habla de algo que pasa en el propio vídeo («esta foto», «usted trae aquí», «lo que acaba de decir»), la vista mira el momento al que se refiere y, si ve algo, el vídeo cuenta como fuente (enlace al segundo + fotograma) y con lo visto se busca el hecho de fondo fuera. Unos céntimos por frase. 0 lo apaga.', 'num'),
     ('vision_pass', 'La vista (imagen vs. audio)',
      'Los ojos (rueda «La vista» de modelos) miran fotogramas de CADA frase '
      'analizada y su hallazgo entra en el veredicto (5.5-G: análisis completo, '
@@ -269,7 +272,7 @@ ANALYSIS_GROUPS = [
       'verdict_parallel', 'clarify_pass', 'search_retries', 'search_retry_seconds']),
     ('La vista',
      'Los ojos: comparar lo que se ve en pantalla con lo que se dice.',
-     ['vision_pass', 'vision_lag_seconds']),
+     ['vision_pass', 'vision_lag_seconds', 'video_as_source']),
     ('Reanálisis profundo',
      'Segunda mirada con el modelo más caro, pedida por votos. Una sola vez por frase y por post; el voto de moderación siempre relanza.',
      ['segment_opus_downvotes', 'opus_rescan_percent', 'opus_rescan_min_users']),

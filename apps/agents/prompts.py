@@ -37,6 +37,12 @@ el veredicto es sobre el CLAIM. Si el contexto cambia el sentido de la frase sue
 dilo en "the_difference".
 Cita literal solo desde la transcripcion aportada. Si sensitive != null, NO cambies
 el tono: el sistema añadira avisos y recursos oficiales.
+Si viene un bloque REFERENCIA AL PROPIO VIDEO, la frase habla de algo que pasa en el
+video analizado (una foto que se enseña, algo que otro acaba de decir). Lo que ocurre
+DENTRO del video se comprueba con el propio video (transcripcion + lo que la vista vio)
+y, si el bloque lo autoriza, el video se cita en "sources" con su enlace al segundo. El
+hecho de fondo (quienes son, cuando paso, contexto real) se busca FUERA partiendo de la
+descripcion de la pantalla. Nunca cites el video si la vista no vio nada.
 
 --- 4.4-B: LOS SEIS ESTADOS (no hay mas, y no son intercambiables) ---
 GREEN / AMBER / RED: hay fuentes y permiten decidir.
