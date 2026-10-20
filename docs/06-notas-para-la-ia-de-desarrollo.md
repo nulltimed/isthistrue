@@ -1851,4 +1851,12 @@ Informe en `docs/89`. Registro técnico:
   default lee `config.settings` por importlib. Los tests del candado lo encienden a propósito.
 - Producción estuvo PARADA (`docker compose stop`, orden «baja la web» 2026-10-20) y se relevantó
   con el 5.31 detrás del candado.
+- **2ª versión (corrección de David, misma tarde)**: nada de redirigir a /accounts/login/ — la
+  direccion pedida carga VACÍA (`templates/privada.html`, standalone sin base.html, 403 + noindex +
+  no-store) con un MODAL que el propio middleware valida en POST (`privada_login=1`): CSRF a mano con
+  `CsrfViewMiddleware(...).process_view`, `authenticate()` (usuario o correo), solo `is_superuser`,
+  y segundo paso TOTP (`paso=codigo`, sesión `otp_user_pk`) si la cuenta tiene 2FA; éxito = `login()` y
+  302 a la misma ruta. `/accounts/login` deja de estar exento (se vería la web). Test del TOTP con
+  `django_otp.oath.totp(unhexlify(dev.key))`. El hook de AssemblyAI responde 403 por su propia firma:
+  el test comprueba que NO llega al modal, no el código.
 

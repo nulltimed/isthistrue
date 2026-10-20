@@ -2965,3 +2965,15 @@ msgstr "Right now the site is OPEN: anyone can see it."
 
 msgid "Ahora mismo la web está PRIVADA: solo tú la ves; el resto llega a la página de entrada."
 msgstr "Right now the site is PRIVATE: only you can see it; everyone else lands on the login page."
+
+msgid "Segundo paso: el código de tu aplicación de verificación."
+msgstr "Second step: the code from your authenticator app."
+
+msgid "Web privada: entra con la cuenta de administrador."
+msgstr "Private site: sign in with the administrator account."
+
+msgid "Usuario o correo"
+msgstr "Username or email"
+
+msgid "Contraseña"
+msgstr "Password"

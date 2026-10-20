@@ -1,10 +1,45 @@
-{% extends 'base.html' %}{% load i18n %}
-{% block title %}{% trans "En construcción" %} · esestocierto?{% endblock %}
-{% block content %}
-{# 5.31: la web esta PRIVADA y quien llega tiene sesion pero no es el superusuario. #}
-<div class="auth-card">
-  <h1>{% trans "En construcción" %}</h1>
-  <p>{% trans "esestocierto? todavía no está abierta al público. De momento solo puede entrar el administrador." %}</p>
-  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="wide">{% trans "Salir" %}</button></form>
+{% load i18n static %}<!doctype html>
+<html lang="{{ request.LANGUAGE_CODE|default:'es' }}">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>esestocierto?</title>
+<link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+{# 5.31 (orden de David): la web carga VACIA y un modal espera las credenciales #}
+{# del superusuario. Sin cabecera, sin banner, sin pie: nada de la web se ve.   #}
+<style>
+html,body{height:100%;margin:0;background:#f7f6f2;font-family:system-ui,-apple-system,'Segoe UI',Inter,Roboto,sans-serif;color:#141414}
+.fondo{position:fixed;inset:0;background:rgba(20,20,20,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:#fff;border:1px solid #141414;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:1.6rem 1.8rem;width:100%;max-width:380px}
+.modal img{display:block;height:34px;margin:0 auto .9rem}
+.modal p{margin:.2rem 0 .9rem;font-size:.9rem;color:#555;text-align:center}
+.modal label{display:block;font-size:.85rem;font-weight:600;margin:.6rem 0 .25rem}
+.modal input{width:100%;box-sizing:border-box;font:inherit;padding:.5rem .6rem;border:1px solid #bbb;border-radius:7px}
+.modal input:focus{outline:2px solid #141414;border-color:#141414}
+.modal button{width:100%;margin-top:1rem;background:#141414;color:#fff;border:0;border-radius:999px;padding:.6rem 1rem;font:inherit;font-weight:600;cursor:pointer}
+.error{background:#fdf4f4;border:1px solid #b23b3b;color:#8a1111;border-radius:7px;padding:.45rem .6rem;font-size:.85rem;margin-top:.8rem}
+</style>
+</head>
+<body>
+<div class="fondo">
+  <form class="modal" method="post" action="{{ request.get_full_path }}" role="dialog" aria-modal="true" aria-labelledby="t">
+    {% csrf_token %}
+    <input type="hidden" name="privada_login" value="1">
+    <img src="{% static 'img/logo-es.svg' %}" alt="esestocierto?">
+    {% if paso == 'codigo' %}
+      <input type="hidden" name="paso" value="codigo">
+      <p id="t">{% trans "Segundo paso: el código de tu aplicación de verificación." %}</p>
+      <label for="code">{% trans "Código" %}</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" autofocus required>
+    {% else %}
+      <p id="t">{% trans "Web privada: entra con la cuenta de administrador." %}</p>
+      <label for="username">{% trans "Usuario o correo" %}</label>
+      <input id="username" name="username" autocomplete="username" autofocus required>
+      <label for="password">{% trans "Contraseña" %}</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    {% endif %}
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <button>{% trans "Entrar" %}</button>
+  </form>
 </div>
-{% endblock %}
+</body></html>
