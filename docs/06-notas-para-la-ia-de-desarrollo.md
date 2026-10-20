@@ -1883,4 +1883,7 @@ Informe en `docs/89`. Registro técnico:
   mock con `return_value` devolvía el mismo objeto y `segundo` se pisaba). qwen3.8-max en Responses
   con búsquedas: 400 y luego ReadTimeout 300 s → timeout a 540; el respaldo Opus 4.8 respondió AMBER
   con 12 fuentes pero truncado a 3000 tokens → clarificador a 6000 + instrucción de concisión.
+- **Resultado real**: claim 107 UNDECIDED → AMBER, 8 fuentes (la 1ª el propio vídeo ?t=154),
+  `frame_image` en el 154 («sostiene»). `momentos()` en el post real: [141, 154]. qwen3.8-max respondió
+  esta vez (la flaqueza del 400/timeout es intermitente: vigilar en el panel de modelos).
 
