@@ -76,10 +76,13 @@ def detect(text):
     return {'objeto': objeto, 'motivo': (clave or obj).group(0)}
 
 
-def momentos(segments, i, objeto='', atras=20, adelante=4):
-    """Segundos a los que mandar la vista, ademas del de la frase: la mencion
-    mas cercana del objeto (hacia atras y un poco hacia delante) y el ARRANQUE
-    del turno anterior de otro hablante. Sin repetir el instante de la frase."""
+def momentos(segments, i, objeto='', atras=20, adelante=4, maximo=4):
+    """Segundos a los que mandar la vista, ademas del de la frase:
+      1. la mencion mas cercana del objeto (hacia atras y un poco hacia delante);
+      2. el turno anterior de OTRO hablante, muestreado en tres puntos (arranque,
+         mitad y final): la cosa se enseña en algun momento de ese turno y la
+         transcripcion rara vez lo nombra («¿Ve como se rien?» — post 4, 2:31).
+    Sin repetir el instante de la frase ni momentos a menos de 8 s entre si."""
     rx = re.compile(r'\b(?:' + (OBJETOS.get(objeto) or '|'.join(OBJETOS.values())) + r')\b', re.I)
     out = []
     propio = int(segments[i].start_seconds or 0)
@@ -96,13 +99,14 @@ def momentos(segments, i, objeto='', atras=20, adelante=4):
         k = j
         while k - 1 >= 0 and segments[k - 1].speaker_label == otro and (i - (k - 1)) <= atras:
             k -= 1
-        out.append(int(segments[k].start_seconds or 0))
-    vistos, res = {propio}, []
+        turno = segments[k:j + 1]
+        for idx in sorted({0, len(turno) // 2, len(turno) - 1}):
+            out.append(int(turno[idx].start_seconds or 0))
+    res = []
     for s in out:
-        if s not in vistos:
-            vistos.add(s)
+        if abs(s - propio) >= 8 and all(abs(s - r) >= 8 for r in res):
             res.append(s)
-    return res[:2]
+    return res[:maximo]
 
 
 def _mmss(s):
@@ -126,6 +130,7 @@ def evidencia(post, texto, segments, i, ref):
             logger.warning('5.32: la vista fallo en el post %s s%s (%r)', post.pk, seg, exc)
             h = None
         if h:
+            h = dict(h)            # copia: la vista puede devolver el mismo objeto dos veces
             h['segundo'] = seg
             hallazgos.append(h)
         for s in segments:

@@ -1878,4 +1878,9 @@ Informe en `docs/89`. Registro técnico:
 - **Trampa cazada**: `verdict.py` no tenía `logger` y el candado AST del 4.3-D puso rojo el primer
   intento; añadido `logging.getLogger('agents.verdict')`. `vision.mirar` se mockea con `side_effect`
   por segundo para probar que va al 157 y al 176.
+- **5.32-b (prueba real, claim 107)**: `momentos()` muestrea el turno del otro hablante en 3 puntos
+  (la foto se enseña a mitad del turno, no al arranque); `evidencia()` COPIA el dict de la vista (un
+  mock con `return_value` devolvía el mismo objeto y `segundo` se pisaba). qwen3.8-max en Responses
+  con búsquedas: 400 y luego ReadTimeout 300 s → timeout a 540; el respaldo Opus 4.8 respondió AMBER
+  con 12 fuentes pero truncado a 3000 tokens → clarificador a 6000 + instrucción de concisión.
 

@@ -60,7 +60,8 @@ def _payload(claim, ap, tope, ev=None):
           # — el modelo, exprimido, se explaya y el JSON llegaba TRUNCADO por
           # max_tokens. Mas aire (3000) y el recordatorio explicito.
           "IMPORTANTE: responde ÚNICAMENTE con el objeto JSON del contrato, "
-          "sin ningún texto antes ni después."
+          "sin ningún texto antes ni después. Sé conciso: cada campo de texto "
+          "en menos de 700 caracteres y como máximo 8 fuentes (las mejores)."
         + (('\n\n' + selfref.bloque(post, ev)) if ev else ''))
 
 
@@ -119,7 +120,8 @@ def clarify_claim(claim):
     except Exception:
         logger.warning('5.32: la referencia al video fallo en el claim %s', claim.pk, exc_info=True)
     v, usado = client.call_search_json(
-        _m, sistema, _payload(claim, ap, tope, ev), max_tokens=3000,
+        # 5.32: 3000 tokens truncaban el JSON del respaldo (Opus, 12 fuentes).
+        _m, sistema, _payload(claim, ap, tope, ev), max_tokens=6000,
         mock_payload=verdict_agent.MOCK_VERDICT, max_searches=tope, fallback=_fb)
     if 'error' in v:
         logger.warning('Clarificador: el modelo fallo con el claim %s (%s)',

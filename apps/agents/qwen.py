@@ -93,7 +93,7 @@ def call_with_search(model, system, user_content, max_tokens=2000,
                    'input': texto,
                    'max_output_tokens': max_tokens,
                    'tools': [{'type': 'web_search'}]},
-                  timeout=300)
+                  timeout=540)   # 5.32: con 8+ busquedas, 300 s se quedaban cortos
     salida, fuentes, n_busquedas = '', [], 0
     vistos = set()
     for item in datos.get('output', []):

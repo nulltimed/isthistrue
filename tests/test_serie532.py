@@ -49,7 +49,8 @@ class Parche532_Deteccion(TestCase):
         p = post_abascal(2)
         segs = list(p.transcript_segments.order_by('start_seconds', 'pk'))
         i = next(k for k, s in enumerate(segs) if int(s.start_seconds) == 176)
-        self.assertEqual(selfref.momentos(segs, i, 'foto'), [157])
+        # el turno de Diaz (157-171) muestreado: arranque, mitad y final
+        self.assertEqual(selfref.momentos(segs, i, 'foto'), [157, 166])
 
 
 class Parche532_ElVideoComoFuente(TestCase):
@@ -78,7 +79,7 @@ class Parche532_ElVideoComoFuente(TestCase):
         p, payloads, ojo, reg = self._run(
             {'color': 'RED', 'what_is_claimed': 'x', 'what_evidence_says': 'y', 'sources': []}, vista)
         segundos = sorted(int(c.args[2]) for c in ojo.call_args_list)
-        self.assertEqual(segundos, [157, 176])
+        self.assertEqual(segundos, [157, 166, 176])
         self.assertIn('REFERENCIA AL PROPIO VÍDEO', payloads[0])
         self.assertIn('minuto 02:37', payloads[0])
         self.assertIn('levanta una fotografía', payloads[0])
