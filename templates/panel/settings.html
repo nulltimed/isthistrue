@@ -16,6 +16,19 @@
 
 <form method="post">{% csrf_token %}
 
+  {% if priv %}
+  {% comment %} 5.31 (orden de David): el candado de la web privada, el primero de todos. {% endcomment %}
+  <div class="reg-gate {% if priv.value == '0' %}reg-open{% else %}reg-closed{% endif %}">
+    <div class="setting-row" data-tip="{{ priv.hint }}">
+      <span class="setting-control"><input type="checkbox" class="toggle" id="s-{{ priv.key }}" name="{{ priv.key }}" {% if priv.value != '0' %}checked{% endif %}><label class="toggle-track" for="s-{{ priv.key }}" aria-hidden="true"></label></span>
+      <div class="setting-text"><label for="s-{{ priv.key }}"><strong>{{ priv.label }}</strong></label>
+        <p class="hint">{{ priv.hint }}</p>
+        <p class="reg-state">{% if priv.value == '0' %}🟢 {% trans "Ahora mismo la web está ABIERTA: cualquiera puede verla." %}{% else %}🔴 {% trans "Ahora mismo la web está PRIVADA: solo tú la ves; el resto llega a la página de entrada." %}{% endif %}</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   {% if reg %}
   {% comment %} 4.3-A.5 O4: el registro de nuevos usuarios, destacado y a mano. {% endcomment %}
   <div class="reg-gate {% if reg.value == '0' %}reg-closed{% else %}reg-open{% endif %}">

@@ -2950,3 +2950,18 @@ msgstr "Internal note: only moderation sees it."
 
 msgid "Trending: este post recibe muchos votos por hora en las últimas horas (umbral en el panel)."
 msgstr "Trending: this post is getting many votes per hour in the last hours (threshold in the panel)."
+
+msgid "En construcción"
+msgstr "Under construction"
+
+msgid "esestocierto? todavía no está abierta al público. De momento solo puede entrar el administrador."
+msgstr "esestocierto? is not open to the public yet. For now only the administrator can enter."
+
+msgid "esestocierto? todavía no está abierta al público: de momento solo entra el administrador."
+msgstr "esestocierto? is not open to the public yet: for now only the administrator can enter."
+
+msgid "Ahora mismo la web está ABIERTA: cualquiera puede verla."
+msgstr "Right now the site is OPEN: anyone can see it."
+
+msgid "Ahora mismo la web está PRIVADA: solo tú la ves; el resto llega a la página de entrada."
+msgstr "Right now the site is PRIVATE: only you can see it; everyone else lands on the login page."

@@ -71,3 +71,13 @@ def quota_banner(request):
         }}
     except Exception:
         return {'quota_banner': None}
+
+
+def web_privada(request):
+    """5.31: la pagina de entrada avisa de que la web esta privada."""
+    try:
+        from config.middleware import PrivateSiteMiddleware
+        return {'web_privada': PrivateSiteMiddleware.activa()}
+    except Exception:
+        return {'web_privada': False}
+

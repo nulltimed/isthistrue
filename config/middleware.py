@@ -44,3 +44,48 @@ class StagingAccessMiddleware:
                     from django.shortcuts import redirect
                     return redirect('/accounts/login/?next=' + path)
         return self.get_response(request)
+
+
+class PrivateSiteMiddleware:
+    """5.31 (orden de David, 2026-10-20): la WEB PRIVADA. Mientras el ajuste del
+    panel `site_private` este encendido, la web entera sigue en su URL de
+    siempre pero solo entra el SUPERUSUARIO: cualquier otro visitante va a la
+    pagina de entrada. Pasan sin candado: la propia entrada (y recuperar la
+    contrasena), los estaticos, y los avisos que llegan de fuera (IPN de PayPal
+    y timbre de AssemblyAI), que si no romperian donaciones y analisis. Mientras
+    este privada, toda respuesta lleva X-Robots-Tag: noindex. Abrir la web =
+    apagar el interruptor en Panel → Ajustes, sin despliegue."""
+    EXEMPT = ('/accounts/login', '/accounts/logout', '/accounts/password/',
+              '/accounts/otp/', '/accounts/idioma/',
+              '/static/', '/healthz', '/donaciones/ipn/', '/aai-hook/',
+              '/metrics')
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    @staticmethod
+    def activa():
+        try:
+            from apps.panel.models import SystemSetting
+            return SystemSetting.get_str('site_private', '0') != '0'
+        except Exception:
+            return False
+
+    def __call__(self, request):
+        if not self.activa():
+            return self.get_response(request)
+        path = request.path
+        u = getattr(request, 'user', None)
+        es_super = bool(u and u.is_authenticated and u.is_superuser)
+        if not es_super and not any(path.startswith(p) for p in self.EXEMPT):
+            from django.shortcuts import redirect, render
+            if u is not None and u.is_authenticated:
+                resp = render(request, 'privada.html', status=403)
+            else:
+                resp = redirect('/accounts/login/?next=' + path)
+            resp['X-Robots-Tag'] = 'noindex, nofollow'
+            return resp
+        resp = self.get_response(request)
+        resp['X-Robots-Tag'] = 'noindex, nofollow'
+        return resp
+

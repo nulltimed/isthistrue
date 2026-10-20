@@ -1839,3 +1839,16 @@ Informe en `docs/89`. Registro técnico:
   evento scroll de un `scrollIntoView` llega después del mouseover y lo mataba). `elementFromPoint`
   no sirve para comprobar el globo: tiene `pointer-events:none`.
 
+## 93. Serie 5.31: la web privada (2026-10-20)
+- `config.middleware.PrivateSiteMiddleware` (tras StagingAccessMiddleware): si `site_private` (panel,
+  default '1') → anónimo = 302 a `/accounts/login/?next=`, usuario con sesión no superusuario = 403
+  `privada.html`; superusuario pasa. EXEMPT: login/logout/password/otp/idioma, /static/, /healthz,
+  /donaciones/ipn/, /aai-hook/, /metrics. `X-Robots-Tag: noindex, nofollow` en TODA respuesta mientras
+  esté privada. Context processor `web_privada` → aviso en login.html. Panel: bloque destacado `priv`
+  encima del de registro (misma pinta `reg-gate`).
+- **Trampa**: el default '1' manda a la entrada a los ~500 GET anónimos de la suite →
+  `tests/settings_test.py` lo apaga (`SETTING_DEFAULTS = {**…, 'site_private': '0'}`) y el test del
+  default lee `config.settings` por importlib. Los tests del candado lo encienden a propósito.
+- Producción estuvo PARADA (`docker compose stop`, orden «baja la web» 2026-10-20) y se relevantó
+  con el 5.31 detrás del candado.
+

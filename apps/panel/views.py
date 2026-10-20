@@ -67,6 +67,9 @@ SETTINGS_DEF = [
      'La página de donación que creaste en PayPal (hosted_button_id). Se usa cuando las credenciales REST no valen (o como enlace clásico). Las donaciones hechas ahí entran en el libro por el aviso IPN (notify_url).', 'text'),
     ('paypal_business', 'ID de comerciante de PayPal (Merchant ID)',
      'Con él, la página de donación de PayPal se abre con la cantidad YA PUESTA (el botón alojado la ignora). Es público: sale en tu propia página de donación. Vacío = se usa el enlace del botón alojado.', 'text'),
+    # 5.31 (orden de David): el candado de la web privada, destacado arriba.
+    ('site_private', 'Web PRIVADA: solo entra el superusuario',
+     'Encendido, cualquier visitante va a la página de entrada y solo tu cuenta de superusuario pasa; los buscadores reciben «no indexar». Los avisos de PayPal y AssemblyAI siguen llegando. Apágalo el día que quieras abrir la web al público: no hace falta desplegar nada.', 'bool'),
     ('registration_open', 'Permitir registro de nuevos usuarios',
      'Apagado: nadie nuevo puede crear cuenta; la página de registro avisa y vuelve a portada.', 'bool'),
     ('opinion_ratio_percent', 'Aviso «parece opinión» a partir del (%) de frases de opinión',
@@ -324,9 +327,10 @@ def settings_panel(request):
     # 4.3-A.5 O4 (petición imperativa de David): el toggle de registro se saca a una
     # sección DESTACADA arriba del panel, aparte de los umbrales técnicos.
     reg = next((r for r in rows if r['key'] == 'registration_open'), None)
-    others = [r for r in rows if r['key'] != 'registration_open']
+    priv = next((r for r in rows if r['key'] == 'site_private'), None)   # 5.31
+    others = [r for r in rows if r['key'] not in ('registration_open', 'site_private')]
     return render(request, 'panel/settings.html', {
-        'gasto_mes': _gasto_mes(),'rows': others, 'reg': reg})
+        'gasto_mes': _gasto_mes(), 'rows': others, 'reg': reg, 'priv': priv})
 
 
 @staff_member_required

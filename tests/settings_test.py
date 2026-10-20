@@ -18,3 +18,9 @@ ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ['testserver', 'escierto.xyztserver.com',
 SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'search_retry_seconds': '0',
                     # 5.21: sin hilos en tests (TestCase = transaccion aislada)
                     'verdict_parallel': '1'}
+
+# 5.31: la web nace PRIVADA de fabrica (solo entra el superusuario). La suite
+# la prueba ABIERTA salvo en los tests que encienden el candado a proposito;
+# si no, cada GET anonimo de 500 tests acabaria en la pagina de entrada.
+SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'site_private': '0'}
+

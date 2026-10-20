@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "En construcción" %} · esestocierto?{% endblock %}
+{% block content %}
+{# 5.31: la web esta PRIVADA y quien llega tiene sesion pero no es el superusuario. #}
+<div class="auth-card">
+  <h1>{% trans "En construcción" %}</h1>
+  <p>{% trans "esestocierto? todavía no está abierta al público. De momento solo puede entrar el administrador." %}</p>
+  <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="wide">{% trans "Salir" %}</button></form>
+</div>
+{% endblock %}

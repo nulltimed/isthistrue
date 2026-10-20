@@ -61,6 +61,7 @@ MIDDLEWARE = [
     # Accept-Language del navegador → 'es' (LocaleMiddleware, ya arriba en la cadena).
     'config.middleware.UserLanguageMiddleware',   # 4.4-A: el idioma del perfil manda
     'config.middleware.StagingAccessMiddleware',  # espejo: solo invitados
+    'config.middleware.PrivateSiteMiddleware',    # 5.31: web privada (interruptor del panel)
     'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
@@ -75,7 +76,8 @@ TEMPLATES = [{
         'django.contrib.messages.context_processors.messages',
         'machina.core.context_processors.metadata',
         'config.context_processors.quota_banner',  # cupos publicos + donaciones
-        'config.context_processors.logo_variant',   # logo por DOMINIO (4.2 C6)
+        'config.context_processors.logo_variant',
+                'config.context_processors.web_privada',   # 5.31   # logo por DOMINIO (4.2 C6)
         'config.context_processors.unread_notifications',  # campana (4.2 D2)
         'config.context_processors.pendientes_aprobacion',  # 5.23-E: staff
     ]},
@@ -251,6 +253,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'segment_opus_downvotes': '5',
     'message_sensitive_reports': '5',
     'registration_open': '1',
+    # 5.31 (orden de David, 2026-10-20): la web nace PRIVADA — solo el superusuario
+    # entra hasta que el lo abra desde Panel → Ajustes.
+    'site_private': '1',
     'lang_es': '1', 'lang_en': '1',
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
     # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa

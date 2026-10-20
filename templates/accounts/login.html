@@ -2,6 +2,7 @@
 {% block content %}
 <div class="auth-card">
   <h1>{% trans "Entrar" %}</h1>
+  {% if web_privada %}<p class="hint">🔒 {% trans "esestocierto? todavía no está abierta al público: de momento solo entra el administrador." %}</p>{% endif %}
   {% if form.errors %}
   <div class="form-errors"><strong>{% trans "No se pudo iniciar sesión:" %}</strong>
     <ul>{% for e in form.non_field_errors %}<li>{{ e }}</li>{% empty %}<li>{% trans "Usuario o contraseña incorrectos." %}</li>{% endfor %}</ul>
