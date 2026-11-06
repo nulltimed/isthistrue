@@ -68,6 +68,7 @@ urlpatterns = [
     # /donaciones/ redirige a /creditos/ (compra apagada hasta que exista la SL).
     path('creditos/', views.credits_page, name='creditos'),
     path('post/<int:pk>/adelantar-creditos/', views.credits_advance, name='credits_advance'),
+    path('frase/<int:pk>/reanalisis-creditos/', views.credits_deep, name='credits_deep'),
     path('donaciones/', views.donations_page, name='donations'),
     # 5.3-A: registro de la captura PayPal del banner + transparencia de gastos
     path('donaciones/registrar/', views.donation_capture, name='donation_capture'),

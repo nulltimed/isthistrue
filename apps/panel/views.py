@@ -95,6 +95,12 @@ SETTINGS_DEF = [
      'Tras los veredictos, los claims falsos y engañosos reciben su cadena de difusión hasta el origen más antiguo documentado. Usa la rueda del reanálisis profundo y unos céntimos por claim. 0 lo apaga.', 'bool'),
     ('origin_trace_credits', 'Créditos del rastreo bajo demanda',
      'Lo que cuesta pedir la cadena de origen de un claim verde o gris. Los rojos/ámbar la traen de serie.', 'num'),
+    ('deep_paid_credits', 'Créditos del reanálisis profundo (por frase)',
+     'Lo que paga un usuario por relanzar YA una frase con el modelo premium, sin esperar los 5 votos. Una sola vez por frase; pagan la revisión, nunca el resultado.', 'num'),
+    ('api_free_daily', 'API: peticiones/día de la clave gratuita',
+     'Límite diario de cada clave API de nivel gratuito (con atribución obligatoria).', 'num'),
+    ('api_pro_daily', 'API: peticiones/día de la clave de pago',
+     'Límite diario de cada clave API de nivel profesional.', 'num'),
     # 5.32 (orden de David): el video como fuente.
     ('video_as_source', 'El vídeo como fuente (1/0)',
      'Si una frase habla de algo que pasa en el propio vídeo («esta foto», «usted trae aquí», «lo que acaba de decir»), la vista mira el momento al que se refiere y, si ve algo, el vídeo cuenta como fuente (enlace al segundo + fotograma) y con lo visto se busca el hecho de fondo fuera. Unos céntimos por frase. 0 lo apaga.', 'num'),

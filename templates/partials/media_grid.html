@@ -93,6 +93,14 @@
           <span class="seg-votes" id="seg-{{ s.pk }}">
             <form method="post" action="{% url 'segment_vote' s.pk 'down' %}">{% csrf_token %}<button class="ibtn dispute" title="{% if is_mod %}{% trans 'Tu voto de moderación relanza el análisis al instante' %}{% else %}{% trans 'Pide una re-verificación con el modelo premium' %}{% endif %}">⚑ {% if is_mod %}{% trans "Relanzar análisis" %}{% elif s.claim and s.claim.color == 'UNDECIDED' %}{% trans "Vota reanálisis profundo" %}{% else %}{% trans "Discuto" %}{% endif %}{% if s.downs %} · {{ s.downs }}{% endif %}</button></form>
             {% if s.opus_rescanned %}<span class="badge" title="{% trans 'Re-verificada con el modelo premium' %}">★</span>{% endif %}
+            {# 6.1-f (orden de David): reanalisis profundo YA pagando creditos, sin #}
+            {# esperar los 5 votos. Una vez por frase; se paga la revision, no el resultado. #}
+            {% if s.claim and not s.opus_rescanned and not is_mod %}
+            <form method="post" action="{% url 'credits_deep' s.pk %}" class="deep-pago"
+                  onsubmit="return confirm('{% blocktrans with n=deep_credits %}Vas a gastar {{ n }} crédito(s) en revisar esta frase con el mejor modelo. Pagas la revisión, no el resultado: puede confirmar el veredicto actual.{% endblocktrans %}')">{% csrf_token %}
+              <button class="ibtn" data-tip="{% trans 'Relanza esta frase con el modelo premium sin esperar los votos. Cuesta créditos y puede confirmar el veredicto.' %}">⚡ {% blocktrans with n=deep_credits %}Profundo ya · {{ n }} cr.{% endblocktrans %}</button>
+            </form>
+            {% endif %}
           </span>
           {% endif %}
           {% if hide_opinions and s.signal == 'OPINION' %}

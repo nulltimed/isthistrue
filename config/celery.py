@@ -17,6 +17,11 @@ app.conf.beat_schedule = {
         'task': 'apps.accounts.tasks.send_daily_digests',
         'schedule': 86400.0,
     },
+    # 6.1-f: los creditos de un adelanto que acabo FAILED vuelven solos.
+    'reembolso-adelantos-fallidos': {
+        'task': 'apps.accounts.tasks.refund_failed_credit_advances',
+        'schedule': 86400.0,
+    },
     # 4.3-E: rescate de analisis colgados (worker muerto a mitad).
     # 4.4-C: el vigía nocturno de los modelos (una llamada mínima a cada uno).
     'comprobar-modelos': {

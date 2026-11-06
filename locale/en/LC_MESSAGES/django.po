@@ -3123,3 +3123,23 @@ msgid "%(n)s afirmación de este vídeo tiene su origen rastreado: búscala por 
 msgid_plural "%(n)s afirmaciones de este vídeo tienen su origen rastreado: búscalas por la brújula en la transcripción."
 msgstr[0] "%(n)s claim in this video has its origin traced: look for the compass in the transcript."
 msgstr[1] "%(n)s claims in this video have their origin traced: look for the compass in the transcript."
+
+# --- 6.1-f (2026-11-06): aviso previo al gasto y reanalisis profundo de pago ---
+
+msgid "Vas a gastar %(n)s crédito(s) de tus %(s)s. El análisis saldrá de la cola al instante."
+msgstr "You are about to spend %(n)s credit(s) of your %(s)s. The analysis will leave the queue instantly."
+
+msgid "Vas a gastar %(n)s crédito(s) de tus %(s)s. La verificación con fuentes arrancará al instante."
+msgstr "You are about to spend %(n)s credit(s) of your %(s)s. Source-checking will start instantly."
+
+msgid "Vas a gastar %(n)s crédito(s) en rastrear el origen. Si no se documenta nada, se te devuelven."
+msgstr "You are about to spend %(n)s credit(s) tracing the origin. If nothing is documented, they are refunded."
+
+msgid "Vas a gastar %(n)s crédito(s) en revisar esta frase con el mejor modelo. Pagas la revisión, no el resultado: puede confirmar el veredicto actual."
+msgstr "You are about to spend %(n)s credit(s) reviewing this sentence with the premium model. You pay for the review, not the outcome: it may confirm the current verdict."
+
+msgid "Relanza esta frase con el modelo premium sin esperar los votos. Cuesta créditos y puede confirmar el veredicto."
+msgstr "Relaunch this sentence with the premium model without waiting for votes. It costs credits and may confirm the verdict."
+
+msgid "Profundo ya · %(n)s cr."
+msgstr "Deep now · %(n)s cr."

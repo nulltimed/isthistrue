@@ -599,6 +599,9 @@ def _post_context(request, post):
     origin_traced = (Claim.objects.filter(appearances__segment__post=post,
                                           origin_status='DONE')
                      .distinct().count())
+    # 6.1-f: precio del reanalisis profundo de pago (por frase).
+    from apps.panel.models import SystemSetting as _SS
+    deep_credits = _SS.get_int('deep_paid_credits', 2)
     thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(
         topic_obj, u, request, incluir_borrados=is_mod)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
@@ -643,6 +646,7 @@ def _post_context(request, post):
         'queue_cost': queue_cost, 'queue_sponsor': queue_sponsor,
         'credits_cost': credits_cost, 'my_credits': my_credits,   # 6.1
         'origin_traced': origin_traced,                           # 6.1-e
+        'deep_credits': deep_credits,                             # 6.1-f
         'speaker_names': speaker_names, 'speaker_rows': speaker_rows,
         'identification': speaker_identification(post),
         'can_validate': identification_gate(post)[0],
@@ -1720,6 +1724,43 @@ def credits_advance(request, pk):
                        f'{credits_for_post(post)} y tienes {e.balance}. '
                        f'Consíguelos en la página de créditos.')
     return redirect('post_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def credits_deep(request, pk):
+    """6.1-f (orden de David, 2026-11-06): reanalisis profundo YA de UNA frase
+    pagando creditos, sin esperar los 5 votos. Candados: una sola vez por frase
+    (misma regla que el voto de moderacion, 5.29-B), y el aviso previo deja
+    claro que se paga la REVISION, jamas el resultado. Superusuario: sin gasto."""
+    from .models import TranscriptSegment
+    from apps.panel.models import AuditLog, SystemSetting
+    seg = get_object_or_404(TranscriptSegment, pk=pk)
+    if seg.post.status != 'DONE':
+        messages.info(request, 'El análisis de este vídeo aún no está cerrado.')
+        return redirect('post_detail', pk=seg.post_id)
+    if seg.opus_rescanned:
+        messages.info(request, 'Esta frase ya tuvo su reanálisis profundo: no se repite '
+                               '(ni pagando). Así nadie insiste hasta torcer un veredicto.')
+        return redirect(f'/post/{seg.post_id}/#seg-{seg.pk}')
+    n = SystemSetting.get_int('deep_paid_credits', 2)
+    if not request.user.is_superuser:
+        from apps.accounts import credits as cred
+        from apps.accounts.credits import InsufficientCredits
+        try:
+            cred.spend(request.user, n, 'DEEP', post=seg.post,
+                       note=f'reanálisis profundo de la frase {seg.pk}')
+        except InsufficientCredits as e:
+            messages.error(request, f'No tienes créditos suficientes: hacen falta '
+                           f'{n} y tienes {e.balance}.')
+            return redirect(f'/post/{seg.post_id}/#seg-{seg.pk}')
+    from .tasks import opus_rescan_segment
+    opus_rescan_segment.delay(seg.pk)
+    AuditLog.objects.create(user=request.user, action='paid_deep_scan',
+                            detail=f'segmento {seg.pk} del post {seg.post_id} ({n} créditos)')
+    messages.success(request, 'Reanálisis profundo lanzado con el modelo premium. '
+                              'Recuerda: puede confirmar el veredicto actual.')
+    return redirect(f'/post/{seg.post_id}/#seg-{seg.pk}')
 
 
 @csrf_exempt

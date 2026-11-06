@@ -248,7 +248,8 @@ class CreditWallet(models.Model):
 class CreditLedger(models.Model):
     """Libro de creditos: cada alta y cada gasto, con su motivo y su objeto."""
     REASONS = [('PACK', 'Compra de pack'), ('ADVANCE', 'Adelantar análisis'),
-               ('ORIGIN', 'Rastreo de origen'), ('ADMIN', 'Ajuste del administrador')]
+               ('ORIGIN', 'Rastreo de origen'), ('DEEP', 'Reanálisis profundo'),
+               ('ADMIN', 'Ajuste del administrador')]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_moves')
     delta = models.IntegerField()
     reason = models.CharField(max_length=8, choices=REASONS)

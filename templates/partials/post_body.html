@@ -13,7 +13,8 @@
       {# donacion se RETIRA — ahora la cola se adelanta con CREDITOS. #}
       <p>{% blocktrans with n=credits_cost %}¿Tienes prisa? Adelántalo con {{ n }} crédito(s): saldrá de la cola AL INSTANTE.{% endblocktrans %}</p>
       {% if user.is_authenticated %}
-      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form">{% csrf_token %}
+      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form"
+            onsubmit="return confirm('{% blocktrans with n=credits_cost s=my_credits %}Vas a gastar {{ n }} crédito(s) de tus {{ s }}. El análisis saldrá de la cola al instante.{% endblocktrans %}')">{% csrf_token %}
         <button class="apadrinar-btn" data-tip="{% trans 'Gasta créditos de tu monedero para que este análisis salga ya, sin esperar al depósito de mañana.' %}">⚡ {% blocktrans with n=credits_cost %}Adelantar con {{ n }} crédito(s){% endblocktrans %}</button>
         <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %} <a href="{% url 'creditos' %}">{% trans "Conseguir créditos" %}</a></span>
       </form>
@@ -45,7 +46,8 @@
       {# 6.1 (orden de David): los creditos compran la INMEDIATEZ — lanzar sin #}
       {# esperar los votos. La puerta de identificacion NO se salta (calidad). #}
       {% if not waiting_ident %}
-      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form">{% csrf_token %}
+      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form"
+            onsubmit="return confirm('{% blocktrans with n=credits_cost s=my_credits %}Vas a gastar {{ n }} crédito(s) de tus {{ s }}. La verificación con fuentes arrancará al instante.{% endblocktrans %}')">{% csrf_token %}
         <button class="mini" data-tip="{% trans 'Sin esperar los votos de la comunidad: tus créditos lanzan ya la búsqueda de fuentes de este vídeo.' %}">⚡ {% blocktrans with n=credits_cost %}Lanzarlo ya con {{ n }} crédito(s){% endblocktrans %}</button>
         <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %}</span>
       </form>

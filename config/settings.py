@@ -275,6 +275,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'credit_tramo_eur': '1',        # David: «1 EUR tramo adicional»
     'origin_trace_auto': '1',       # rastreo de origen automatico en ROJOS/AMBAR
     'origin_trace_credits': '1',    # coste en creditos del rastreo bajo demanda
+    'deep_paid_credits': '2',       # 6.1-f (David): reanalisis profundo YA, por frase
+    'api_free_daily': '500',        # 6.2: peticiones/dia de una clave API gratuita
+    'api_pro_daily': '10000',       # 6.2: peticiones/dia de una clave API de pago
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
     # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa
     # intermedia de la cascada (panel > .env > catalogo) seguia sembrando los

@@ -41,3 +41,27 @@ def send_daily_digests():
             body = '\n'.join(f'- {n.text}' for n in pending)
             send_mail('esestocierto: resumen diario', body,
                       settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+
+
+@shared_task
+def refund_failed_credit_advances():
+    """6.1-f (orden de David, 2026-11-06): si un analisis adelantado o lanzado
+    con creditos acaba FAILED, los creditos vuelven solos. Idempotente: corre a
+    diario y no reembolsa dos veces (busca el apunte de devolucion por nota)."""
+    from apps.accounts.models import CreditLedger
+    from apps.accounts import credits as cred
+    from apps.accounts.services import notify
+    hechos = 0
+    gastos = (CreditLedger.objects.filter(reason='ADVANCE', delta__lt=0,
+                                          post__status='FAILED')
+              .select_related('post', 'user'))
+    for g in gastos:
+        marca = f'reembolso-adv-{g.pk}'
+        if CreditLedger.objects.filter(note=marca).exists():
+            continue
+        cred.grant(g.user, -g.delta, reason='ADMIN', note=marca)
+        notify(g.user, f'El análisis que adelantaste («{(g.post.title or g.post.url)[:80]}») '
+               f'falló: tus {-g.delta} crédito(s) se han devuelto.',
+               url='/creditos/', kind='credit_refund')
+        hechos += 1
+    return hechos

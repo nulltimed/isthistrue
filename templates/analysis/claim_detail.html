@@ -59,7 +59,8 @@
   {% elif claim.origin_status == 'DONE' %}
   <p class="hint">{% trans "Rastreo de origen hecho: no se documentó difusión anterior al vídeo." %}</p>
   {% elif user.is_authenticated and claim.slug and claim.color != 'RED' and claim.color != 'AMBER' %}
-  <form method="post" action="{% url 'trace_origin' claim.slug %}" class="origen-pedir">{% csrf_token %}
+  <form method="post" action="{% url 'trace_origin' claim.slug %}" class="origen-pedir"
+        onsubmit="return confirm('{% blocktrans with n=origin_credits %}Vas a gastar {{ n }} crédito(s) en rastrear el origen. Si no se documenta nada, se te devuelven.{% endblocktrans %}')">{% csrf_token %}
     <button class="mini" data-tip="{% trans 'Un agente persigue la afirmación hacia atrás (red social ← prensa ← nota ← estudio) y publica aquí la cadena con sus enlaces.' %}">🧭 {% blocktrans with n=origin_credits %}Rastrear el origen ({{ n }} crédito){% endblocktrans %}</button>
     <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %} <a href="{% url 'creditos' %}">{% trans "Créditos" %}</a></span>
   </form>

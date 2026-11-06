@@ -246,3 +246,79 @@ class MigaDePanEnElForo(TestCase):
         claim.save(update_fields=['origin_status'])
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertNotIn('origen-mini', html)
+
+
+class ReanalisisProfundoDePago(TestCase):
+    """6.1-f (David, 2026-11-06): 2 creditos relanzan UNA frase con el premium."""
+
+    def _frase(self, u, rescanned=False):
+        from apps.wiki.models import Claim, ClaimAppearance
+        post = Post.objects.create(author=u, url='https://youtu.be/s61f',
+                                   title='Deep', status='DONE')
+        seg = post.transcript_segments.create(start_seconds=1, end_seconds=3,
+                                              text='frase discutida',
+                                              opus_rescanned=rescanned)
+        claim = Claim.objects.create(text_original='frase discutida',
+                                     slug='deep-61', color='AMBER')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='frase discutida')
+        return seg
+
+    def test_pagar_relanza_y_deja_libro_y_financiacion(self):
+        from unittest import mock
+        from apps.accounts import credits as cred
+        from apps.panel.models import Donation
+        u = make_user(username='u61l', email='u61l@example.org')
+        seg = self._frase(u)
+        cred.grant(u, 2)
+        self.client.force_login(u)
+        with mock.patch('apps.analysis.tasks.opus_rescan_segment.delay') as lanza:
+            self.client.post(f'/frase/{seg.pk}/reanalisis-creditos/')
+        lanza.assert_called_once_with(seg.pk)
+        self.assertEqual(cred.wallet(u).balance, 0)
+        self.assertTrue(u.credit_moves.filter(reason='DEEP').exists())
+        self.assertTrue(Donation.objects.filter(method='CREDIT', amount_eur=2).exists())
+
+    def test_una_sola_vez_por_frase_ni_pagando(self):
+        from unittest import mock
+        from apps.accounts import credits as cred
+        u = make_user(username='u61m', email='u61m@example.org')
+        seg = self._frase(u, rescanned=True)
+        cred.grant(u, 2)
+        self.client.force_login(u)
+        with mock.patch('apps.analysis.tasks.opus_rescan_segment.delay') as lanza:
+            self.client.post(f'/frase/{seg.pk}/reanalisis-creditos/')
+        lanza.assert_not_called()
+        self.assertEqual(cred.wallet(u).balance, 2)   # ni un centimo gastado
+
+
+class Reembolsos(TestCase):
+    def test_el_adelanto_de_un_analisis_fallido_se_devuelve_una_vez(self):
+        from apps.accounts import credits as cred
+        from apps.accounts.tasks import refund_failed_credit_advances
+        u = make_user(username='u61n', email='u61n@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/s61r',
+                                   title='Fallido', status='FAILED')
+        cred.grant(u, 3)
+        cred.spend(u, 3, 'ADVANCE', post=post)
+        self.assertEqual(cred.wallet(u).balance, 0)
+        self.assertEqual(refund_failed_credit_advances(), 1)
+        self.assertEqual(cred.wallet(u).balance, 3)
+        # idempotente: la segunda pasada no duplica
+        self.assertEqual(refund_failed_credit_advances(), 0)
+        self.assertEqual(cred.wallet(u).balance, 3)
+
+    def test_el_rastreo_sin_resultado_devuelve_el_credito(self):
+        from unittest import mock
+        from apps.accounts import credits as cred
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='u61o', email='u61o@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/s61t', title='T')
+        seg = post.transcript_segments.create(start_seconds=1, end_seconds=2, text='x')
+        claim = Claim.objects.create(text_original='x', slug='sin-origen-61',
+                                     color='GREEN')
+        ClaimAppearance.objects.create(claim=claim, segment=seg, quote='x')
+        cred.grant(u, 1)
+        self.client.force_login(u)
+        with mock.patch('apps.agents.origin.trace_claim', return_value=False):
+            self.client.post(f'/wiki/claim/{claim.slug}/rastrear/')
+        self.assertEqual(cred.wallet(u).balance, 1)   # gastado y devuelto

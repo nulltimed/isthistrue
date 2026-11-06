@@ -224,8 +224,18 @@ def trace_origin(request, slug):
             return redirect(f'/wiki/claim/{slug}/')
     from apps.agents import origin
     ok = origin.trace_claim(claim)
-    messages.success(request, 'Cadena de origen publicada.') if ok else \
-        messages.info(request, 'No se pudo documentar un origen anterior al vídeo.')
+    if ok:
+        messages.success(request, 'Cadena de origen publicada.')
+    else:
+        # 6.1-f: si el rastreo no deja cadena, los creditos SE DEVUELVEN.
+        if not request.user.is_superuser:
+            from apps.accounts import credits as cred
+            cred.grant(request.user, n, reason='ADMIN',
+                       note=f'reembolso: rastreo sin resultado del claim {claim.pk}')
+            messages.info(request, 'No se pudo documentar un origen anterior al vídeo: '
+                                   'tus créditos se han devuelto.')
+        else:
+            messages.info(request, 'No se pudo documentar un origen anterior al vídeo.')
     return redirect(f'/wiki/claim/{slug}/')
 
 
