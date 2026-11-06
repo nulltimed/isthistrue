@@ -1,67 +1,56 @@
-# SERIE 6.1 — README del operador (que esta vez es David en persona)
+# SERIES 6.1 → 6.3 — Guía CONSOLIDADA del operador (David en persona)
 
-**De:** Fable web (canal reactivado por David esta noche) · **Fecha:** 2026-11-06
-**Un solo parche** (orden literal de David: «Aplica todos los cambios absolutamente en un
-solo parche»). Si algo sale mal: `git revert` del commit de la serie y redesplegar.
+**De:** Fable web · **Fecha:** 2026-11-06 · **Commit de despliegue:** `0616a74` (CI verde)
+**Todo se despliega DE UNA VEZ** (orden de David). Marcha atrás: `git revert` de la serie que moleste.
 
-## Qué trae
-1. **Donaciones y apadrinamiento RETIRADOS del producto** (Lectura A): fuera el banner de
-   donar, la página /donaciones/ (redirige a /creditos/) y el botón de apadrinar. El
-   backend PayPal (IPN/retorno) queda vivo por los enlaces antiguos; el modelo Donation
-   queda como libro interno de financiación.
-2. **Créditos de la SL**: monedero + libro (`accounts.CreditWallet/CreditLedger`), página
-   /creditos/, adelantar análisis (cola o votos) a 1 crédito por 20 min, compra APAGADA
-   (`sl_checkout_enabled=0`) hasta que la SL exista. El superusuario no gasta.
-3. **Rastreo de origen**: cadena de difusión del claim hasta el origen más antiguo
-   documentado; automático en rojos/ámbar, 1 crédito bajo demanda en verdes/grises;
-   visual en la ficha del claim.
-4. Ajustes nuevos en Panel → Ajustes (grupo 6.1) · 3 migraciones (accounts/0007,
-   wiki/0011, panel/0006) · tests `tests/test_serie61.py` · README y CLAUDE.md enmendados.
+## Qué trae el paquete
 
-## Comandos EXACTOS para aplicar en el VPS (en este orden)
+| Serie | Qué |
+|---|---|
+| 6.1 a-e | Donaciones RETIRADAS (Lectura A) · créditos (1=1 €) con página /creditos/ y compra APAGADA · adelantar análisis por tramos de 20 min · rastreo de origen (auto en rojos/ámbar, 1 crédito bajo demanda) con eslabón torcido resaltado · brújula 🧭 en el foro · segundo superusuario (socio) por `.env` |
+| 6.1-f | Aviso previo con cifra y saldo en TODO gasto · reanálisis profundo de pago (2 créditos/frase, una vez por frase, se paga la revisión y no el resultado) · reembolsos automáticos (rastreo sin resultado al momento; adelantos FAILED a diario por beat) |
+| 6.2 | API de lectura con clave X-API-Key (claims/ficha/análisis/transcripción/canales/stats, sobre {data, meta, attribution} CC-BY-SA) · solicitud pública con escrutinio por IA (exclusiones: partidos y organismos contra la esencia) · reclamación → bandeja · pestaña API del panel · la API keyless antigua queda retirada |
+| 6.3 | Registro en DOS CARRILES (físicas sin investigar; jurídicas con escrutinio; denegación reclamable → bandeja) · elección Gratuita/Pro (Pro «Próximamente» hasta la SL) · badge «Verificado» embebible (iframe de una línea) · dossieres B2B con enlace secreto, exentos del candado privado · huecos de la SL sembrados vacíos |
+
+## Despliegue (en orden; espejo primero si quieres el ritual completo)
 
 ```bash
-# 0) Entrar y comprobar que el CI del commit está EN VERDE en
-#    https://github.com/nulltimed/isthistrue/actions — CI rojo = NO desplegar.
+# 0) CI en VERDE confirmado para 0616a74 (ya verificado por Fable web).
 
-# 1) ¿Hay análisis en vuelo? (si devuelve algo, espera a que terminen)
+# 1) ¿Análisis en vuelo?
 cd /opt/isthistrue && sudo -u i docker compose exec web python manage.py shell -c \
 "from apps.analysis.models import Post; print(list(Post.objects.filter(status__in=['CHEAP_RUNNING','FULL_RUNNING']).values_list('pk', flat=True)))"
 
-# 2) ESPEJO primero (MOCK, no gasta): probar la serie entera
-cd /opt/isthistrue-staging && sudo -u i git pull
-sudo -u i docker compose -f docker-compose.staging.yml -p staging up --build -d
-sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py migrate
-sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py seed_settings
-sudo -u i docker compose -f docker-compose.staging.yml -p staging exec web python manage.py test tests --settings=tests.settings_test
-# Mirar con el navegador en el espejo: /creditos/, un post en cola, una ficha de claim.
-sudo -u i docker compose -f docker-compose.staging.yml -p staging down
+# 2) .env de producción: añade (con tus valores) ANTES de levantar
+#    ADMIN2_USERNAME=  ADMIN2_EMAIL=  ADMIN2_PASSWORD=     (la cuenta del socio)
+#    SITE_URL=https://esestocierto.com                      (enlaces de los correos)
 
-# 3) PRODUCCIÓN (ritual sin down, orden tuya del 2026-09-09)
-cd /opt/isthistrue
-sudo -u i cp .env /home/d/env-backup-$(date +%Y%m%d).bak   # por costumbre; el parche no toca .env
+# 3) Producción (ritual sin down)
 sudo -u i git pull
 sudo -u i docker compose up --build -d
 sudo -u i docker compose exec web python manage.py migrate
+#   -> aplicará: accounts/0007, 0008, 0009 · wiki/0011 · panel/0006, 0007 · api/0001
 sudo -u i docker compose exec web python manage.py seed_settings
 sudo -u i docker compose exec web python manage.py collectstatic --noinput
-sudo -u i docker compose restart beat   # costumbre tras cada serie; esta no toca celery.py
+sudo -u i docker compose restart beat      # ¡OBLIGATORIO!: 6.1-f añadió tarea a beat
 
-# 4) CANDADO DE ESTÁTICOS (obligatorio, en cada dominio)
+# 4) Candado de estáticos
 for d in isthistrue.xyztserver.com escierto.xyztserver.com wikitrue.xyztserver.com; do
   curl -s -o /dev/null -w "$d CSS: %{http_code} %{size_download} bytes\n" https://$d/static/css/main.css
 done
-
-# 5) Humo de la serie (con la web privada, entra como d y comprueba):
-#    /creditos/ carga con packs en «Próximamente» · /donaciones/ redirige ·
-#    el banner ya no dice «Faltan» ni «Donar» · un claim ROJO nuevo trae
-#    «¿De dónde viene?» tras su próximo análisis.
 ```
 
+## Humo (entrando como d; la web sigue privada)
+- `/creditos/` con packs 5/10/20 en «Próximamente» · `/donaciones/` redirige · banner sin «Faltan» ni «Donar».
+- `/api/` carga SIN pasar el candado privado (documentación + solicitud); `/api/v1/claims/` sin cabecera → 401 JSON.
+- `/panel/api/`: tres bandejas (registros, claves, dossieres) vacías + formulario de dossier.
+- `/accounts/register/`: selector física/jurídica + elección Gratuita/Pro («Próximamente»).
+- Una ficha de claim: caja «📋 Insertar en tu web» y su `/embed/` sirviendo el badge.
+- Crear un dossier de prueba con un post: su enlace abre la página profesional aunque la web esté privada; revocar → 404.
+- Los botones que gastan créditos piden confirmación con la cifra.
+
 ## Avisos
-- `seed_settings` siembra las claves nuevas SIN pisar tu panel (sin --force).
-- Presupuesto y panel de modelos: NI TOCADOS (tus ruedas mandan, como siempre).
-- El rastreo automático añade ~0,04 €/claim rojo/ámbar al gasto de cada análisis
-  (fusible incluido). Se apaga en Panel → Ajustes → «Rastreo de origen automático».
-- Pendiente para encender cobros: SL constituida + pasarela (Stripe recomendado) +
-  contrato David↔SL. Hasta entonces `sl_checkout_enabled` sigue en 0 y la web privada.
+- Presupuesto y panel de modelos: NI TOCADOS.
+- Correos (clave API, denegaciones, dossieres): salen por el email del `.env` (Brevo); sin credenciales quedan en el log — los enlaces también se muestran en pantalla, nada bloquea.
+- El rastreo automático añade ~0,04 €/claim rojo/ámbar (fusible y apagable en Panel → Ajustes).
+- Pendiente del paquete «constitución» (cuando David dé los datos de la SL): Stripe (packs + Pro), aviso legal y privacidad con la SL, encender sl_checkout_enabled.
