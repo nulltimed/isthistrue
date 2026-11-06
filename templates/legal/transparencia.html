@@ -1,0 +1,38 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/transparencia.html' %}{% else %}
+{# 6.4 (orden de David, 2026-11-06): quien cobra que, a la vista de todos. En un #}
+{# verificador, la coherencia radical es ensenar el propio dinero. #}
+<h1>Transparencia: quién es quién y quién cobra qué</h1>
+
+<h2>Quién es quién</h2>
+<table>
+  <tr><th></th><th>El titular</th><th>La operadora</th></tr>
+  <tr><td>Quién</td>
+      <td>La persona que creó la plataforma</td>
+      <td><strong>{{ sl_name|default:"[sociedad pendiente de constitución]" }}</strong>{% if sl_cif %} · CIF {{ sl_cif }}{% endif %}</td></tr>
+  <tr><td>Qué posee</td>
+      <td>Los dominios, el servidor y el copyright del software (AGPL-3.0 + licencia comercial)</td>
+      <td>La operación de la web y sus ingresos</td></tr>
+  <tr><td>Qué cobra</td>
+      <td><strong>Nada de los usuarios.</strong> De la operadora: una licencia de software [contrato pendiente] y el reembolso AL COSTE de la infraestructura, sin ganancia</td>
+      <td>Créditos, API profesional, dossieres B2B e informes</td></tr>
+  <tr><td>Qué paga</td>
+      <td>—</td>
+      <td>La inteligencia artificial de los análisis, la pasarela de pagos y los costes de operar</td></tr>
+</table>
+
+<h2>Las reglas del dinero, por escrito</h2>
+<ul>
+  <li><strong>Ningún pago compra un veredicto</strong>: los créditos compran rapidez, jamás resultados. Está en las <a href="{% url 'credit_terms' %}">condiciones de compra</a> y en el código, que es público.</li>
+  <li><strong>El gasto es público</strong>, apunte a apunte, en el <a href="{% url 'spending' %}">libro de gastos</a>.</li>
+  <li><strong>El código es abierto</strong> (AGPL-3.0): <a href="https://github.com/nulltimed/isthistrue" rel="noopener">github.com/nulltimed/isthistrue</a>. Cualquiera puede auditar cómo se decide cada color.</li>
+  <li><strong>Los datos son de todos</strong> (CC-BY-SA): wiki y <a href="/api/">API</a> con atribución.</li>
+  <li><strong>La metodología es pública</strong>: <a href="{% url 'methodology' %}">cómo se verifica</a>, con derecho de réplica de los aludidos.</li>
+</ul>
+
+<h2>Pendiente, y a la vista</h2>
+<p>La sociedad operadora está <strong>en constitución</strong>. Hasta que exista con su
+CIF y sus contratos firmados, aquí lo decimos y <strong>ningún cobro está activo</strong>.
+Esta página se actualizará con el nombre, el CIF y el resumen de los contratos en cuanto
+se firmen.</p>
+{% endif %}{% endblock %}

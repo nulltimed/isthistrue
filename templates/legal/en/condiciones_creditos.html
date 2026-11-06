@@ -1,0 +1,30 @@
+<h1>Credit purchase terms</h1>
+<h2>What a credit is</h2>
+<p>One credit equals <strong>€1</strong> and is bought in prepaid packs. Credits
+<strong>buy immediacy, never outcomes</strong>: fast-tracking a queued analysis,
+launching source-checking without waiting for community votes, requesting a claim's
+origin chain, or relaunching a sentence with the premium model. Regular analysis is
+and will remain <strong>free</strong>: votes request it and the project budget pays for it.</p>
+<h2>What a credit does not buy</h2>
+<p>No payment alters a verdict. A paid re-analysis may <strong>confirm</strong> the
+existing verdict: you pay for the review, not the result. The quality gate (speaker
+identification) cannot be bought either.</p>
+<h2>Seller and payments</h2>
+<p>Credits are sold by <strong>{{ sl_name|default:"[operating company pending incorporation]" }}</strong>
+{% if sl_cif %}(tax ID {{ sl_cif }}){% endif %}, through the Stripe payment gateway. The
+platform owner neither receives nor handles any user payment. <em>Purchases stay
+disabled until the company is incorporated.</em></p>
+<h2>Right of withdrawal</h2>
+<p>As immediately-executed digital content, <strong>by purchasing you expressly consent
+to credits being available instantly and accept that once a credit is SPENT you lose the
+right of withdrawal over it</strong> (art. 103.m of the Spanish Consumer Protection Act).
+<strong>Unspent</strong> credits are refundable: you may withdraw within 14 calendar days
+and recover the amount of any credits you have not used, by writing to the contact address.</p>
+<h2>Automatic refunds</h2>
+<p>Beyond withdrawal, the system refunds credits on its own whenever what you paid for is
+not delivered: if a fast-tracked analysis ends up failing, or an origin trace documents
+nothing, the credits return to your wallet with an entry in your history.</p>
+<h2>Prices and quotas</h2>
+<p>Current packs and prices are always shown on the <a href="{% url 'creditos' %}">credits
+page</a> before buying, and every button that spends credits shows the cost and your balance
+and asks for confirmation. Prices may change; purchased credits do not expire.</p>

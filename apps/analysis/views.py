@@ -2114,3 +2114,19 @@ def spending_page(request, ym=None):
         # 5.5-B: el objetivo es el presupuesto base del panel (ver banner)
         'objetivo': _base_mensual(),
         'meses': meses})
+
+
+def credit_terms(request):
+    """6.4: condiciones de compra de creditos (huecos de la SL sembrados)."""
+    from apps.panel.models import SystemSetting
+    return render(request, 'legal/condiciones_creditos.html', {
+        'sl_name': SystemSetting.get_str('sl_legal_name', ''),
+        'sl_cif': SystemSetting.get_str('sl_cif', '')})
+
+
+def transparency(request):
+    """6.4 (orden de David): quien cobra que, a la vista de todos."""
+    from apps.panel.models import SystemSetting
+    return render(request, 'legal/transparencia.html', {
+        'sl_name': SystemSetting.get_str('sl_legal_name', ''),
+        'sl_cif': SystemSetting.get_str('sl_cif', '')})

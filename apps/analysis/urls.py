@@ -84,4 +84,7 @@ urlpatterns = [
     path('legal/privacidad/', TemplateView.as_view(template_name='legal/privacidad.html'), name='privacy'),
     path('legal/cookies/', TemplateView.as_view(template_name='legal/cookies.html'), name='cookies'),
     path('legal/condiciones/', TemplateView.as_view(template_name='legal/condiciones.html'), name='terms'),
+    # 6.4 (orden de David, 2026-11-06): compra de creditos y transparencia
+    path('legal/creditos/', views.credit_terms, name='credit_terms'),
+    path('transparencia/', views.transparency, name='transparency'),
 ]

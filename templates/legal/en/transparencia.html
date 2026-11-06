@@ -1,0 +1,28 @@
+<h1>Transparency: who is who and who gets paid what</h1>
+<h2>Who is who</h2>
+<table>
+  <tr><th></th><th>The owner</th><th>The operator</th></tr>
+  <tr><td>Who</td><td>The person who created the platform</td>
+      <td><strong>{{ sl_name|default:"[company pending incorporation]" }}</strong>{% if sl_cif %} · tax ID {{ sl_cif }}{% endif %}</td></tr>
+  <tr><td>What they own</td>
+      <td>The domains, the server and the software copyright (AGPL-3.0 + commercial licence)</td>
+      <td>The site's operation and its revenue</td></tr>
+  <tr><td>What they charge</td>
+      <td><strong>Nothing from users.</strong> From the operator: a software licence [contract pending] and AT-COST reimbursement of infrastructure, with no profit</td>
+      <td>Credits, professional API, B2B dossiers and reports</td></tr>
+  <tr><td>What they pay</td><td>—</td>
+      <td>The AI behind the analyses, the payment gateway and operating costs</td></tr>
+</table>
+<h2>The money rules, in writing</h2>
+<ul>
+  <li><strong>No payment buys a verdict</strong>: credits buy speed, never outcomes. It is in the <a href="{% url 'credit_terms' %}">purchase terms</a> and in the code, which is public.</li>
+  <li><strong>Spending is public</strong>, entry by entry, in the <a href="{% url 'spending' %}">ledger</a>.</li>
+  <li><strong>The code is open</strong> (AGPL-3.0): <a href="https://github.com/nulltimed/isthistrue" rel="noopener">github.com/nulltimed/isthistrue</a>. Anyone can audit how each colour is decided.</li>
+  <li><strong>The data belongs to everyone</strong> (CC-BY-SA): wiki and <a href="/api/">API</a> with attribution.</li>
+  <li><strong>The methodology is public</strong>: <a href="{% url 'methodology' %}">how we verify</a>, with the right of reply for those mentioned.</li>
+</ul>
+<h2>Pending, and in plain sight</h2>
+<p>The operating company is <strong>being incorporated</strong>. Until it exists with its
+tax ID and signed contracts, we say so here and <strong>no payment is active</strong>.
+This page will be updated with the name, tax ID and a summary of the contracts as soon
+as they are signed.</p>

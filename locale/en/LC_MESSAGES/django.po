@@ -3396,3 +3396,17 @@ msgstr "Verified by"
 
 msgid "El escrutinio denegó el registro de «%(n)s». Una persona revisará tu reclamación y tendrá la última palabra."
 msgstr "Vetting denied the signup of “%(n)s”. A person will review your appeal and have the final say."
+
+# --- 6.4 (2026-11-06): condiciones de creditos y transparencia ---
+
+msgid "Transparencia"
+msgstr "Transparency"
+
+msgid "Al comprar aceptarás las"
+msgstr "When buying you will accept the"
+
+msgid "condiciones de compra de créditos"
+msgstr "credit purchase terms"
+
+msgid "con el desistimiento explicado en claro"
+msgstr "with the right of withdrawal explained plainly"

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/condiciones_creditos.html' %}{% else %}
+{# 6.4 (orden de David, 2026-11-06): condiciones de compra de creditos, con el #}
+{# desistimiento resuelto. Vendedor: la SL (huecos hasta su constitucion). #}
+<h1>Condiciones de compra de créditos</h1>
+
+<h2>Qué es un crédito</h2>
+<p>Un crédito equivale a <strong>1 €</strong> y se compra en paquetes prepagados.
+Los créditos <strong>compran inmediatez, nunca resultados</strong>: adelantar un
+análisis en cola, lanzar la verificación con fuentes sin esperar los votos de la
+comunidad, pedir la cadena de origen de una afirmación o relanzar una frase con el
+modelo premium. El análisis normal es y seguirá siendo <strong>gratuito</strong>:
+lo piden los votos y lo paga el presupuesto del proyecto.</p>
+
+<h2>Lo que un crédito no compra</h2>
+<p>Ningún pago altera un veredicto. El reanálisis pagado puede <strong>confirmar</strong>
+el veredicto existente: se paga la revisión, no el resultado. La puerta de calidad
+(identificación de quienes hablan) tampoco se puede comprar.</p>
+
+<h2>Vendedor y pagos</h2>
+<p>Los créditos los vende <strong>{{ sl_name|default:"[sociedad operadora pendiente de constitución]" }}</strong>
+{% if sl_cif %}(CIF {{ sl_cif }}){% endif %}, a través de la pasarela de pago Stripe.
+El titular de la plataforma no recibe ni gestiona ningún pago de usuarios.
+<em>La compra permanecerá desactivada hasta que la sociedad esté constituida.</em></p>
+
+<h2>Derecho de desistimiento</h2>
+<p>Al tratarse de contenido digital de ejecución inmediata, <strong>al comprar
+consientes expresamente que los créditos queden disponibles al instante y aceptas
+que, una vez GASTADO un crédito, pierdes el derecho de desistimiento sobre él</strong>
+(art. 103.m del texto refundido de la Ley General para la Defensa de los Consumidores
+y Usuarios). Los créditos <strong>no gastados</strong> sí se devuelven: puedes desistir
+de la compra en los 14 días naturales siguientes y recuperar el importe de los créditos
+que no hayas usado, escribiendo al correo de contacto.</p>
+
+<h2>Devoluciones automáticas</h2>
+<p>Además del desistimiento, el sistema devuelve créditos por sí solo cuando lo pagado
+no se entrega: si un análisis adelantado acaba fallando, o si un rastreo de origen no
+logra documentar nada, los créditos vuelven a tu monedero con su apunte en el historial.</p>
+
+<h2>Precios y cupos</h2>
+<p>Los paquetes y precios vigentes se muestran siempre en la <a href="{% url 'creditos' %}">página
+de créditos</a> antes de comprar, y cada botón que gasta créditos te enseña el coste y tu
+saldo y te pide confirmación. Los precios pueden cambiar; los créditos ya comprados no caducan.</p>
+{% endif %}{% endblock %}
