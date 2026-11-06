@@ -3113,3 +3113,13 @@ msgstr "This is where it got twisted"
 
 msgid "En este eslabón el mensaje cambió de significado respecto a su fuente."
 msgstr "At this link the message changed meaning compared to its source."
+
+# --- 6.1-e (2026-11-06): miga de pan al rastreo en el foro ---
+
+msgid "Esta afirmación tiene su origen rastreado: mira dónde nació y dónde se torció el mensaje."
+msgstr "This claim's origin has been traced: see where it was born and where it got twisted."
+
+msgid "%(n)s afirmación de este vídeo tiene su origen rastreado: búscala por la brújula en la transcripción."
+msgid_plural "%(n)s afirmaciones de este vídeo tienen su origen rastreado: búscalas por la brújula en la transcripción."
+msgstr[0] "%(n)s claim in this video has its origin traced: look for the compass in the transcript."
+msgstr[1] "%(n)s claims in this video have their origin traced: look for the compass in the transcript."

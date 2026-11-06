@@ -594,6 +594,11 @@ def _post_context(request, post):
     if u:
         from apps.accounts import credits as _cred
         my_credits = _cred.wallet(u).balance
+    # 6.1-e: cuantas afirmaciones del post tienen ya su cadena de origen.
+    from apps.wiki.models import Claim
+    origin_traced = (Claim.objects.filter(appearances__segment__post=post,
+                                          origin_status='DONE')
+                     .distinct().count())
     thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(
         topic_obj, u, request, incluir_borrados=is_mod)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
@@ -637,6 +642,7 @@ def _post_context(request, post):
                               .order_by('speaker_label', '-confirmed'),
         'queue_cost': queue_cost, 'queue_sponsor': queue_sponsor,
         'credits_cost': credits_cost, 'my_credits': my_credits,   # 6.1
+        'origin_traced': origin_traced,                           # 6.1-e
         'speaker_names': speaker_names, 'speaker_rows': speaker_rows,
         'identification': speaker_identification(post),
         'can_validate': identification_gate(post)[0],

@@ -49,6 +49,10 @@
     <button class="sf-chip sf-rojo" data-cubo="rojo" data-tip="{% trans 'Afirmaciones que las fuentes desmienten. Clic para verlas.' %}">🔴 {% trans "Falso" %} <strong>{{ semaforo_post.rojo|length }}</strong></button>
     <button class="sf-chip sf-sin" data-cubo="sin" data-tip="{% trans 'Opiniones puras o afirmaciones que el sistema no ha podido resolver. Clic para verlas.' %}">⚪ {% trans "Sin respuesta" %} <strong>{{ semaforo_post.sin|length }}</strong></button>
   </div>
+  {# 6.1-e (orden de David): la cabecera avisa de cuantas cadenas de origen hay. #}
+  {% if origin_traced %}
+  <p class="hint origen-aviso">🧭 {% blocktrans count n=origin_traced %}{{ n }} afirmación de este vídeo tiene su origen rastreado: búscala por la brújula en la transcripción.{% plural %}{{ n }} afirmaciones de este vídeo tienen su origen rastreado: búscalas por la brújula en la transcripción.{% endblocktrans %}</p>
+  {% endif %}
   {% for nombre, filas in semaforo_post.items %}{% if nombre != 'total' %}
   <dialog class="sf-lista" id="sf-{{ nombre }}">
     <form method="dialog"><button class="mini sf-cerrar">✕</button></form>

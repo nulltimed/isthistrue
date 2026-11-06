@@ -217,3 +217,32 @@ class SegundoSuperusuario(TestCase):
                                ADMIN2_USERNAME='', ADMIN2_EMAIL='', ADMIN2_PASSWORD=''):
             call_command('ensure_superuser')
         self.assertFalse(User.objects.filter(username='socio').exists())
+
+
+class MigaDePanEnElForo(TestCase):
+    def test_la_brujula_sale_solo_con_cadena(self):
+        # 6.1-e (David, 2026-11-06): el foro no duplica la cadena — enseña una
+        # brujula 🧭 junto al semaforo de la frase que YA la tiene, con enlace
+        # al ancla #origen de su ficha. Sin cadena, sin icono.
+        from apps.wiki.models import Claim, ClaimAppearance
+        u = make_user(username='u61k', email='u61k@example.org')
+        post = Post.objects.create(author=u, url='https://youtu.be/s61e',
+                                   title='Brújula', status='DONE')
+        seg = post.transcript_segments.create(start_seconds=5, end_seconds=8,
+                                              text='frase rastreada')
+        claim = Claim.objects.create(text_original='frase rastreada',
+                                     slug='brujula-61', color='RED',
+                                     origin_status='DONE',
+                                     origin_chain=[{'kind': 'press', 'date': '2020',
+                                                    'title': 'x', 'url': 'https://e.org',
+                                                    'note': '', 'twisted': True}])
+        ClaimAppearance.objects.create(claim=claim, segment=seg,
+                                       quote='frase rastreada')
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertIn('origen-mini', html)
+        self.assertIn(f'/wiki/claim/{claim.slug}/#origen', html)
+        self.assertIn('origen rastreado', html)   # el aviso de cabecera
+        claim.origin_status = ''
+        claim.save(update_fields=['origin_status'])
+        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        self.assertNotIn('origen-mini', html)
