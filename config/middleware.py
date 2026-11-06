@@ -27,9 +27,7 @@ class UserLanguageMiddleware:
 class StagingAccessMiddleware:
     """Espejo de pruebas: solo entran invitados logueados (gestion desde el panel).
     En produccion (STAGING_MODE=false) no hace nada."""
-    # 6.2: /api/ queda fuera del candado de web privada — sus endpoints v1 ya
-    # exigen clave propia, y la solicitud/reclamacion deben ser alcanzables.
-    EXEMPT = ('/accounts/login', '/accounts/logout', '/static/', '/healthz', '/api/')
+    EXEMPT = ('/accounts/login', '/accounts/logout', '/static/', '/healthz')
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -59,8 +57,11 @@ class PrivateSiteMiddleware:
     contraseña, y los avisos de fuera (IPN de PayPal, timbre de AssemblyAI).
     Toda respuesta lleva X-Robots-Tag: noindex. Abrir la web = apagar el
     interruptor en Panel → Ajustes."""
+    # 6.2 (orden de David, 2026-11-06): /api/ queda exenta — la documentacion y
+    # la solicitud deben ser alcanzables, y los endpoints v1 exigen clave propia.
     EXEMPT = ('/accounts/logout', '/accounts/password/', '/accounts/idioma/',
-              '/static/', '/healthz', '/donaciones/ipn/', '/aai-hook/', '/metrics')
+              '/static/', '/healthz', '/donaciones/ipn/', '/aai-hook/', '/metrics',
+              '/api/')
     CAMPO = 'privada_login'
 
     def __init__(self, get_response):
