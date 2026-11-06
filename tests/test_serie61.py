@@ -158,6 +158,34 @@ class RastreoDeOrigen(TestCase):
         self.assertIn('El titular que lo torció', html)
         self.assertIn('origen-cadena', html)
 
+    def test_el_eslabon_torcido_se_resalta(self):
+        # 6.1-c (David, 2026-11-06): el eslabon que cambio el significado va
+        # marcado en ambar con su etiqueta — la cadena cuenta una historia.
+        u = make_user(username='u61i', email='u61i@example.org')
+        claim = self._claim(u, color='RED')
+        claim.origin_chain = [
+            {'kind': 'study', 'date': '2013-02-25', 'title': 'El estudio real',
+             'url': 'https://example.org/e', 'note': '', 'twisted': False},
+            {'kind': 'press', 'date': '2013-03-01', 'title': 'El titular',
+             'url': 'https://example.org/t', 'note': 'cambió el sentido', 'twisted': True},
+        ]
+        claim.origin_status = 'DONE'
+        claim.save()
+        html = self.client.get(f'/wiki/claim/{claim.slug}/').content.decode()
+        self.assertIn('eslabon-torcido', html)
+        self.assertIn('Aquí se torció', html)
+        self.assertEqual(html.count('eslabon-torcido'), 2)  # clase + etiqueta, SOLO en el torcido
+
+    def test_el_mock_marca_el_eslabon_torcido(self):
+        from apps.agents import origin
+        u = make_user(username='u61j', email='u61j@example.org')
+        claim = self._claim(u, color='RED')
+        origin.trace_claim(claim)
+        claim.refresh_from_db()
+        twisted = [e for e in claim.origin_chain if e.get('twisted')]
+        self.assertEqual(len(twisted), 1)
+        self.assertEqual(twisted[0]['kind'], 'press')
+
 
 class AjustesNuevos(TestCase):
     def test_las_claves_61_existen_con_sus_defaults(self):

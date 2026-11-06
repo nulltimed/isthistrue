@@ -41,14 +41,15 @@
   {# 6.1 (orden de David, 2026-11-06): la CADENA DE ORIGEN — de dónde viene la #}
   {# afirmación, eslabón a eslabón, hasta el origen más antiguo DOCUMENTADO. #}
   {% if claim.origin_chain %}
-  <section class="origen">
+  <section class="origen" id="origen">
     <h2>{% trans "¿De dónde viene? La cadena de difusión" %}</h2>
     <ol class="origen-cadena">
       {% for e in claim.origin_chain %}
-      <li class="eslabon eslabon-{{ e.kind }}">
+      <li class="eslabon eslabon-{{ e.kind }}{% if e.twisted %} eslabon-torcido{% endif %}">
         <span class="eslabon-icono">{% if e.kind == 'study' %}🔬{% elif e.kind == 'official' %}🏛️{% elif e.kind == 'press' %}📰{% elif e.kind == 'social' %}💬{% elif e.kind == 'video' %}🎬{% else %}🧩{% endif %}</span>
         <a href="{{ e.url }}" rel="noopener">{{ e.title|default:e.url|truncatechars:70 }}</a>
         <span class="eslabon-fecha">{{ e.date }}</span>
+        {% if e.twisted %}<span class="eslabon-torcido-tag" data-tip="{% trans 'En este eslabón el mensaje cambió de significado respecto a su fuente.' %}">⚠ {% trans "Aquí se torció" %}</span>{% endif %}
         {% if e.note %}<span class="eslabon-nota">{{ e.note }}</span>{% endif %}
       </li>
       {% endfor %}

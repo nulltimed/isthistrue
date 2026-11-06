@@ -37,7 +37,9 @@ ORIGIN_SYSTEM = (
     'Responde ÚNICAMENTE con un objeto JSON: {"chain": [{"kind": '
     '"study|official|press|social|video|other", "date": "YYYY-MM-DD o aprox.", '
     '"title": "...", "url": "https://...", "note": "qué aportó o torció este '
-    'eslabón (<=300 caracteres)"}], "summary": "una frase: dónde nació y '
+    'eslabón (<=300 caracteres)", "twisted": true SOLO si en ESTE eslabón el '
+    'mensaje cambió de significado respecto al anterior (omitir en el resto)}], '
+    '"summary": "una frase: dónde nació y '
     'dónde se torció (<=300 caracteres)"}. La cadena va del ORIGEN (primero) '
     'al vídeo analizado (último, kind "video", url del post). Máximo 6 '
     'eslabones. Si no encuentras nada anterior al vídeo: {"chain": [], '
@@ -49,7 +51,8 @@ MOCK_ORIGIN = {
         {'kind': 'study', 'date': '2013-02-25', 'title': 'Estudio PREDIMED',
          'url': 'https://example.org/predimed', 'note': 'El estudio real: reduce riesgo, no cura.'},
         {'kind': 'press', 'date': '2013-03-01', 'title': 'Titular de prensa',
-         'url': 'https://example.org/prensa', 'note': 'Aquí «reduce» se convirtió en «cura».'},
+         'url': 'https://example.org/prensa', 'twisted': True,
+         'note': 'Aquí «reduce» se convirtió en «cura».'},
     ],
     'summary': 'Nació en un estudio real y se torció en un titular.',
 }
@@ -93,6 +96,9 @@ def _sane(v):
             'title': str(e.get('title', ''))[:200],
             'url': url[:500],
             'note': str(e.get('note', ''))[:300],
+            # 6.1-c (David, 2026-11-06): el eslabón donde el mensaje cambió de
+            # significado se marca y la ficha lo resalta en ámbar.
+            'twisted': bool(e.get('twisted')),
         })
     return limpio
 

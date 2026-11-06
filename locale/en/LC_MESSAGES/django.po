@@ -3105,3 +3105,11 @@ msgstr "Administrator adjustment"
 
 msgid "Créditos (SL)"
 msgstr "Credits (Ltd)"
+
+# --- 6.1-c (2026-11-06): eslabon torcido resaltado ---
+
+msgid "Aquí se torció"
+msgstr "This is where it got twisted"
+
+msgid "En este eslabón el mensaje cambió de significado respecto a su fuente."
+msgstr "At this link the message changed meaning compared to its source."
