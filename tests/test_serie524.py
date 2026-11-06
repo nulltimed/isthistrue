@@ -51,11 +51,14 @@ class Parche524A_PayPalPorElServidor(TestCase):
         return mock.patch('apps.analysis.paypal_check.requests.post', side_effect=post)
 
     def test_el_banner_es_un_formulario_sin_sdk(self):
+        # 6.1 (orden de David, 2026-11-06, Lectura A): el banner ya no dona —
+        # sigue sin SDK y la puerta del dinero es /creditos/.
         html = self.client.get('/').content.decode()
         self.assertNotIn('paypal.com/sdk/js', html)
-        self.assertIn('action="/donaciones/iniciar/"', html)
-        self.assertIn('Donar con PayPal', html)
+        self.assertNotIn('action="/donaciones/iniciar/"', html)
+        self.assertNotIn('Donar con PayPal', html)
         self.assertNotIn('istt-pp-cerrar', html)
+        self.assertIn('/creditos/', html)
 
     def test_iniciar_crea_el_pedido_y_redirige_a_paypal(self):
         from apps.panel.models import AuditLog
@@ -111,12 +114,14 @@ class Parche524A_PayPalPorElServidor(TestCase):
         lanza.assert_called_once_with(post.pk)
         self.assertEqual(Donation.objects.get(note='paypal-web:ORD524').post_id, post.pk)
         self.assertEqual(r['Location'], post.get_absolute_url())
-        # y el boton de apadrinar es un formulario al servidor con la cantidad exacta
+        # 6.1 (Lectura A): el boton de apadrinar por donacion se retiro — el
+        # cartel de la cola ofrece adelantar con CREDITOS. (La vuelta del
+        # PayPal legado de arriba sigue funcionando por los enlaces antiguos.)
         post.status = 'AWAITING_BUDGET'
         post.save(update_fields=['status'])
         html = self.client.get(post.get_absolute_url()).content.decode()
-        self.assertIn('action="/donaciones/iniciar/"', html)
-        self.assertIn(f'name="post" value="{post.pk}"', html)
+        self.assertNotIn('action="/donaciones/iniciar/"', html)
+        self.assertIn('Adelántalo con', html)
         self.assertNotIn('paypal.Buttons', html)
 
     def test_una_captura_fallida_no_anota_nada(self):
@@ -421,8 +426,12 @@ class Parche524E_BotonAlojado(TestCase):
         self.assertFalse(Donation.objects.exists())
 
     def test_la_vuelta_del_boton_da_las_gracias_y_el_panel_edita_el_enlace(self):
-        html = self.client.get('/donaciones/?gracias=1').content.decode()
-        self.assertIn('Gracias por tu donación', html)
-        self.assertIn('hosted_button_id=US9EE4FMAKCML', html)
+        # 6.1 (Lectura A): /donaciones/ redirige a /creditos/, pero la vuelta
+        # del boton alojado LEGADO sigue dando las gracias por mensaje.
+        r = self.client.get('/donaciones/?gracias=1')
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(r['Location'], '/creditos/')
+        html = self.client.get('/donaciones/?gracias=1', follow=True).content.decode()
+        self.assertIn('Gracias', html)
         from apps.panel.views import SETTINGS_DEF
         self.assertIn('paypal_url', {k for k, *_ in SETTINGS_DEF})

@@ -6153,7 +6153,10 @@ class Parche515_VerificacionPayPal(TestCase):
         # servidor con PAYPAL_CLIENT_ID/SECRET (create_order) — probado en test_serie524.
         html = self.client.get('/').content.decode()
         self.assertNotIn('client-id=', html)
-        self.assertIn('/donaciones/iniciar/', html)
+        # 6.1 (orden de David, 2026-11-06, Lectura A): el formulario de donar
+        # se fue del banner; la puerta del dinero es /creditos/.
+        self.assertNotIn('/donaciones/iniciar/', html)
+        self.assertIn('/creditos/', html)
 
 
 class Parche516_DRM(TestCase):
@@ -6174,10 +6177,11 @@ class Parche517_DonarUX(TestCase):
     cantidad» al tocarlo; el overlay de PayPal tiene salida (✕ + Escape)."""
 
     def test_el_campo_numerico_selecciona_otra_cantidad(self):
+        # 6.1 (Lectura A): el formulario de donar y su JS se fueron del banner
+        # entero — este test pasa a vigilar que no vuelvan.
         base = open('templates/base.html').read()
-        self.assertIn("['focus', 'input']", base)
-        self.assertNotIn('aria-label="{% trans \'Otra cantidad en euros (mínimo 1)\' %}" hidden>',
-                         base, 'el campo va siempre visible')
+        self.assertNotIn('donate-inline', base)
+        self.assertNotIn('donate-other', base)
 
     def test_ya_no_hay_overlay_que_cerrar(self):
         # 5.24-A (orden de David): sin SDK no hay overlay ni ventana en blanco;
