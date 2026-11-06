@@ -238,11 +238,11 @@ class MigaDePanEnElForo(TestCase):
                                                     'note': '', 'twisted': True}])
         ClaimAppearance.objects.create(claim=claim, segment=seg,
                                        quote='frase rastreada')
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('origen-mini', html)
         self.assertIn(f'/wiki/claim/{claim.slug}/#origen', html)
         self.assertIn('origen rastreado', html)   # el aviso de cabecera
         claim.origin_status = ''
         claim.save(update_fields=['origin_status'])
-        html = self.client.get(f'/post/{post.pk}/').content.decode()
+        html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertNotIn('origen-mini', html)
