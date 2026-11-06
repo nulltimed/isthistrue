@@ -972,3 +972,30 @@ html.tips-js [data-tip]::after{display:none!important}
 #tip-globo.visible{opacity:1}
 dialog #tip-globo{z-index:9999}
 
+
+/* ---------- 6.1 (2026-11-06): creditos y cadena de origen ---------- */
+.packs-creditos{display:flex;gap:1rem;flex-wrap:wrap;margin:.6rem 0}
+.pack-credito{border:1px solid var(--borde,#ccc);border-radius:8px;
+  padding:.8rem 1.1rem;display:flex;flex-direction:column;gap:.45rem;
+  align-items:flex-start;min-width:9rem}
+.pack-credito button[disabled]{opacity:.55;cursor:not-allowed}
+.tabla-creditos{width:100%;border-collapse:collapse;margin:.4rem 0}
+.tabla-creditos th,.tabla-creditos td{text-align:left;padding:.3rem .5rem;
+  border-bottom:1px solid var(--borde,#ddd);font-size:.92em}
+/* La cadena de difusion: eslabones encadenados con flecha, del origen al video */
+.origen-cadena{list-style:none;margin:.6rem 0;padding:0;display:flex;
+  flex-wrap:wrap;gap:.4rem;align-items:stretch}
+.origen-cadena .eslabon{position:relative;border:1px solid var(--borde,#ccc);
+  border-radius:8px;padding:.55rem .8rem .55rem .7rem;max-width:16rem;
+  display:flex;flex-direction:column;gap:.15rem;background:var(--fondo-suave,#fafafa)}
+.origen-cadena .eslabon:not(:last-child)::after{content:'→';position:absolute;
+  right:-.85rem;top:50%;transform:translateY(-50%);font-weight:700;opacity:.6}
+.origen-cadena .eslabon:not(:last-child){margin-right:1rem}
+.eslabon-icono{font-size:1.15em}
+.eslabon-fecha{font-size:.8em;opacity:.7}
+.eslabon-nota{font-size:.85em;opacity:.85}
+.origen-pedir{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.5rem 0}
+@media (max-width:640px){.origen-cadena{flex-direction:column}
+  .origen-cadena .eslabon{max-width:none;margin-right:0}
+  .origen-cadena .eslabon:not(:last-child)::after{content:'↓';right:auto;
+    left:50%;top:auto;bottom:-1.05rem;transform:translateX(-50%)}}

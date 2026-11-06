@@ -1,0 +1,50 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block content %}
+{# 6.1 (ordenes de David, 2026-11-06): donaciones RETIRADAS (Lectura A) — #}
+{# entran los CREDITOS prepagados que cobrara la SL. 1 credito = 1 EUR. #}
+<h1>{% trans "Créditos" %}</h1>
+<p>{% trans "esestocierto? es un proyecto open source (AGPL). El análisis de cualquier vídeo es y seguirá siendo gratuito: lo piden los votos de la comunidad y lo paga el presupuesto del proyecto. Los créditos compran otra cosa: INMEDIATEZ." %}</p>
+<ul>
+  <li>{% blocktrans with m=tramo_min %}Adelantar un análisis (salir de la cola o no esperar los votos): 1 crédito por cada {{ m }} minutos de vídeo.{% endblocktrans %}</li>
+  <li>{% trans "Pedir la cadena de origen de una afirmación verde o gris (las falsas y engañosas la traen de serie)." %}</li>
+</ul>
+
+{% if saldo is not None %}
+<p><strong>{% trans "Tu saldo" %}:</strong> {{ saldo }} {% trans "crédito(s)" %}</p>
+{% else %}
+<p class="hint">{% trans "Inicia sesión para ver tu saldo y usar créditos." %}</p>
+{% endif %}
+
+<h2>{% trans "Recargas" %}</h2>
+<div class="packs-creditos">
+  {% for p in packs %}
+  <div class="pack-credito">
+    <strong>{{ p }} €</strong> → {{ p }} {% trans "crédito(s)" %}
+    {% if checkout_on %}
+    <button data-tip="{% trans 'Compra segura gestionada por la sociedad que opera la web.' %}">{% trans "Comprar" %}</button>
+    {% else %}
+    <button disabled data-tip="{% trans 'La pasarela de pago se activará cuando la sociedad operadora esté constituida.' %}">{% trans "Próximamente" %}</button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% if not checkout_on %}
+<p class="hint">{% trans "La compra de créditos se activará cuando la sociedad que operará la web esté constituida. Mientras tanto, todo lo gratuito sigue funcionando exactamente igual." %}</p>
+{% endif %}
+
+{% if movimientos %}
+<h2>{% trans "Tus movimientos" %}</h2>
+<table class="tabla-creditos">
+  <thead><tr><th>{% trans "Fecha" %}</th><th>{% trans "Movimiento" %}</th><th>{% trans "Motivo" %}</th></tr></thead>
+  <tbody>
+  {% for m in movimientos %}
+    <tr><td>{{ m.created_at|date:"d/m/Y H:i" }}</td>
+        <td>{% if m.delta > 0 %}+{% endif %}{{ m.delta }}</td>
+        <td>{{ m.get_reason_display }}{% if m.post %} · <a href="{% url 'post_detail' m.post.pk %}">{{ m.post.title|truncatechars:40 }}</a>{% endif %}{% if m.claim %} · <a href="/wiki/claim/{{ m.claim.slug }}/">{{ m.claim.title|default:m.claim.text_original|truncatechars:40 }}</a>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<p class="hint" style="margin-top:1.2rem">{% trans "Transparencia: el gasto del proyecto es público, apunte a apunte, en el libro de gastos de la cabecera. Los créditos gastados en adelantar un análisis amplían el depósito de ese mes exactamente en su importe." %}</p>
+{% endblock %}

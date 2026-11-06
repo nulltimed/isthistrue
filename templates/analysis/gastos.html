@@ -24,7 +24,8 @@
   <div><strong>{{ donado|floatformat:2 }} €</strong> {% trans "donados este mes (confirmados)" %}</div>
   <div><strong>{{ objetivo }} €</strong> {% trans "objetivo mensual" %}</div>
 </div>
-<p class="hint">{% trans "¿Quieres empujar?" %} <a href="{% url 'donations' %}">{% trans "Todas las formas de donar" %}</a>.</p>
+{# 6.1: donaciones retiradas (Lectura A) — el empujón ahora son los créditos. #}
+<p class="hint">{% trans "¿Quieres empujar?" %} <a href="{% url 'creditos' %}">{% trans "Los créditos adelantan análisis" %}</a>.</p>
 
 <h2>{% trans "Histórico por meses" %}</h2>
 <p>{% for m in meses %}<a class="chip" href="{% url 'spending_month' m %}">{{ m }}</a> {% empty %}<span class="hint">—</span>{% endfor %}</p>

@@ -28,9 +28,17 @@ def claim_page(request, slug):
         from apps.embeds.adapters import build_embed
         momento = max(0, int(ap.segment.start_seconds or 0) - 1)
         embed_claim = build_embed(ap.segment.post, start_seconds=momento)
+    # 6.1: rastreo de origen — coste en creditos y saldo para el boton bajo demanda.
+    from apps.panel.models import SystemSetting
+    origin_credits = SystemSetting.get_int('origin_trace_credits', 1)
+    my_credits = 0
+    if request.user.is_authenticated:
+        from apps.accounts import credits as _cred
+        my_credits = _cred.wallet(request.user).balance
     return render(request, 'analysis/claim_detail.html',
                   {'claim': claim, 'hide_opinions': hide_opinions, 'linked_evidence': body,
                    'embed_claim': embed_claim, 'momento': momento,
+                   'origin_credits': origin_credits, 'my_credits': my_credits,   # 6.1
                    # 5.1-B: la malla — quien lo dijo y afirmaciones cercanas
                    'hablantes': speakers_of_claim(claim),
                    'relacionados': related_claims(claim)})
@@ -182,6 +190,42 @@ def follow_claim(request, slug):
         obj, created = ClaimFollow.objects.get_or_create(claim=claim, user=request.user)
         if not created:
             obj.delete()
+    return redirect(f'/wiki/claim/{slug}/')
+
+
+def trace_origin(request, slug):
+    """6.1 (orden de David, 2026-11-06): rastreo de origen BAJO DEMANDA para
+    los claims que no lo traen de serie (los ROJOS/AMBAR van solos). Gasta
+    `origin_trace_credits`; el superusuario no gasta (criterio skip_charge)."""
+    from django.contrib import messages
+    if request.method != 'POST':
+        return redirect(f'/wiki/claim/{slug}/')
+    if not request.user.is_authenticated:
+        return redirect(f'/accounts/login/?next=/wiki/claim/{slug}/')
+    from .models import Claim
+    claim = Claim.objects.filter(slug=slug).first()
+    if not claim:
+        from django.http import Http404
+        raise Http404
+    if claim.origin_status == 'DONE':
+        messages.info(request, 'Este claim ya tiene su cadena de origen.')
+        return redirect(f'/wiki/claim/{slug}/')
+    from apps.panel.models import SystemSetting
+    n = SystemSetting.get_int('origin_trace_credits', 1)
+    if not request.user.is_superuser:
+        from apps.accounts import credits as cred
+        from apps.accounts.credits import InsufficientCredits
+        try:
+            # fund=False: el rastreo suelto no autoriza analisis, solo paga el suyo.
+            cred.spend(request.user, n, 'ORIGIN', claim=claim, fund=False)
+        except InsufficientCredits as e:
+            messages.error(request, f'No tienes créditos suficientes: hace(n) falta '
+                           f'{n} y tienes {e.balance}.')
+            return redirect(f'/wiki/claim/{slug}/')
+    from apps.agents import origin
+    ok = origin.trace_claim(claim)
+    messages.success(request, 'Cadena de origen publicada.') if ok else \
+        messages.info(request, 'No se pudo documentar un origen anterior al vídeo.')
     return redirect(f'/wiki/claim/{slug}/')
 
 

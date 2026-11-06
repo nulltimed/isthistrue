@@ -1436,7 +1436,10 @@ class Pase43D(TestCase):
         aviso = Notification.objects.filter(user=votante).first()
         self.assertIsNotNone(aviso)
         self.assertIn('60 minutos', aviso.text)
-        self.assertIn('/donaciones/', aviso.url)
+        # 6.1 (orden de David, 2026-11-06, Lectura A): sin peticion de donacion —
+        # el aviso es pura transparencia y apunta al libro de gastos.
+        self.assertIn('/gastos/', aviso.url)
+        self.assertNotIn('donación', aviso.text)
 
     def test_un_video_corto_no_molesta_a_nadie(self):
         from apps.analysis.services import warn_long_video
@@ -1791,8 +1794,11 @@ class Pase43F(TestCase):
                                                defaults={'value': '150'})
         html = self.client.get(f'/post/{post.pk}/', follow=True).content.decode()
         self.assertIn('En cola por presupuesto', html)
-        self.assertIn('Apadrinar con', html)          # 5.24-A: boton al servidor, sin SDK
-        self.assertIn('/donaciones/', html)
+        # 6.1 (Lectura A): el apadrinamiento por donacion se retiro — la cola
+        # se adelanta con CREDITOS y el cartel lo dice a todo el mundo.
+        self.assertIn('Adelántalo con', html)
+        self.assertIn('/creditos/', html)
+        self.assertNotIn('Apadrinar con', html)
         self.assertIn('no cobra por publicar', html)      # ni muro ni peaje
 
     def test_el_estado_nuevo_existe_en_el_modelo_y_en_la_migracion(self):
@@ -5443,11 +5449,16 @@ class Parche55_Serie(TestCase):
         self.assertIn("getAttribute('data-wt')", js)
 
     def test_el_faltan_sigue_al_presupuesto_base(self):
+        # 6.1 (orden de David, 2026-11-06, Lectura A): el «Faltan X €» se fue
+        # con las donaciones. El banner queda como transparencia de gasto pura
+        # y la puerta a los creditos.
         from apps.panel.models import SystemSetting
         SystemSetting.objects.update_or_create(key='budget_base_eur',
                                                defaults={'value': '77'})
         html = self.client.get('/').content.decode()
-        self.assertIn('Faltan 77', html)
+        self.assertNotIn('Faltan 77', html)
+        self.assertIn('Gasto en directo', html)
+        self.assertIn('/creditos/', html)
 
     def test_el_buscador_encuentra_el_post_y_el_post_enlaza_su_wiki(self):
         # 5.5-H: la portada es la landing (sin listados); el buscador único
@@ -5912,7 +5923,10 @@ class Parche510_Serie(TestCase):
         # abria una ventana en blanco; ahora el pago va por el SERVIDOR.
         base = open('templates/base.html').read()
         self.assertNotIn('paypal.com/sdk/js', base)
-        self.assertIn("{% url 'donation_start' %}", base)
+        # 6.1 (Lectura A): el formulario de donar desaparecio del banner; la
+        # puerta del dinero es /creditos/ (compra apagada hasta que exista la SL).
+        self.assertNotIn("{% url 'donation_start' %}", base)
+        self.assertIn("{% url 'creditos' %}", base)
 
 
 class Parche511_Serie(TestCase):

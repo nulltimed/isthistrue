@@ -50,70 +50,18 @@
   </nav>
 </header>
 {% if quota_banner %}
+{# 6.1 (orden de David, 2026-11-06, Lectura A): las donaciones se RETIRAN. El #}
+{# banner queda como pura transparencia de gasto + la puerta a los creditos. #}
 <div class="quota-banner quota-banner-xl">
   <div class="qb-numbers">
     <span>{% trans "Hoy" %}: <strong>{{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} €</strong></span>
     <span>{% trans "Este mes" %}: <strong>{{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} €</strong></span>
   </div>
   <div class="qb-message">
-    {% trans "Si donas, estos cupos suben." %}
-    {% if quota_banner.goal_missing %}<a href="{% url 'spending' %}">{% blocktrans with m=quota_banner.goal_missing %}Faltan {{ m }} € para costear el proyecto este mes{% endblocktrans %}</a>{% else %}<a href="{% url 'spending' %}">{% trans "Objetivo del mes cubierto — ¡gracias!" %}</a>{% endif %}
+    <a href="{% url 'spending' %}" data-tip="{% trans 'Cada céntimo del proyecto, apunte a apunte: el libro de gastos es público.' %}">{% trans "Gasto en directo: el libro es público." %}</a>
+    <a class="hint" href="{% url 'creditos' %}" data-tip="{% trans 'Los créditos compran inmediatez: adelantar un análisis o pedir un rastreo. El análisis normal sigue siendo gratuito.' %}">{% trans "¿Prisa? Mira los créditos." %}</a>
   </div>
-  {# 5.24-A (orden de David): sin boton del SDK ni ventana emergente. El #}
-  {# formulario manda al servidor, que crea el pedido y lleva a paypal.com. #}
-  <form class="donate-inline" method="post" action="{% url 'donation_start' %}">{% csrf_token %}
-    <fieldset class="donate-amounts">
-      <legend class="sr-only">{% trans "Cantidad a donar" %}</legend>
-      <label><input type="radio" name="donate-amount" value="5" checked><span>5 €</span></label>
-      <label><input type="radio" name="donate-amount" value="10"><span>10 €</span></label>
-      <label><input type="radio" name="donate-amount" value="other"><span>{% trans "Otra cantidad" %}</span></label>
-      <input type="number" id="donate-other" min="1" step="0.01" inputmode="decimal" placeholder="€" aria-label="{% trans 'Otra cantidad en euros (mínimo 1)' %}">
-    </fieldset>
-    <input type="hidden" name="amount" id="donate-amount-final" value="5">
-    <button class="donar-btn" data-tip="{% trans 'Te llevamos a la página segura de PayPal a pantalla completa y volvemos aquí al terminar. Sin ventanas emergentes.' %}">{% trans "Donar con PayPal" %}</button>
-  </form>
-  <a class="hint" href="{% url 'donations' %}">{% trans "Más opciones de donación" %}</a>
 </div>
-<script>
-(function () {
-  var form = document.querySelector('form.donate-inline');
-  if (!form) return;
-  var other = document.getElementById('donate-other');
-  var final = document.getElementById('donate-amount-final');
-  var radios = form.querySelectorAll('input[name="donate-amount"]');
-  function elegido() {
-    var r = form.querySelector('input[name="donate-amount"]:checked');
-    return r ? r.value : '5';
-  }
-  function sincronizar() {
-    var v = elegido();
-    if (v === 'other') v = (other.value || '').replace(',', '.');
-    final.value = v;
-  }
-  Array.prototype.forEach.call(radios, function (r) {
-    r.addEventListener('change', function () { if (elegido() === 'other') other.focus(); sincronizar(); });
-  });
-  /* 5.17-A (reporte de David): clicar o teclear en el campo numerico SELECCIONA «Otra cantidad». */
-  ['focus', 'input'].forEach(function (ev) {
-    other.addEventListener(ev, function () {
-      var r = form.querySelector('input[name="donate-amount"][value="other"]');
-      if (r && !r.checked) r.checked = true;
-      sincronizar();
-    });
-  });
-  form.addEventListener('submit', function (e) {
-    sincronizar();
-    var n = parseFloat(final.value);
-    if (!isFinite(n) || n < 1) {
-      e.preventDefault();
-      other.focus();
-      other.setCustomValidity('{% trans "Cantidad mínima: 1 €" %}'); other.reportValidity();
-      return;
-    }
-    other.setCustomValidity('');
-  });
-})();
-</script>
 {% endif %}
 {% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main class="{% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
@@ -130,7 +78,7 @@
   <a href="{% url 'privacy' %}">{% trans "Privacidad" %}</a> ·
   <a href="{% url 'cookies' %}">Cookies</a> ·
   <a href="{% url 'terms' %}">{% trans "Condiciones" %}</a> ·
-  <a href="{% url 'donations' %}">{% trans "Donaciones" %}</a> ·
+  <a href="{% url 'creditos' %}">{% trans "Créditos" %}</a> ·
   <a href="mailto:webmaster@esestocierto.com">{% trans "Contacto" %}</a> ·
   <a href="/api/v1/claims/">API</a> ·
   <a href="{% url 'rss_verdicts' %}">RSS</a> ·

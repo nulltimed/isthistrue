@@ -333,3 +333,22 @@ perpetuidad.
   `Post.objects.publicos()`.
 - **Las decisiones congeladas del README las reabre SOLO David**, y quedan enmendadas con su
   literal y fecha (votos negativos y subforos en árbol, 2026-09-08).
+
+## SERIE 6.1 (2026-11-06): el pivote a la SL — y David vuelve a ser doble canal
+- David REACTIVO el canal Fable web (esta serie llego por el: desarrolla, commitea y
+  PUSHEA directo a main con la app de GitHub de Claude) y David mismo ejerce de operador
+  en el VPS con los comandos que Fable web le da. El ritual NO cambia: CI verde → espejo →
+  produccion. El regimen del 2026-08-27 queda ENMENDADO en ese punto.
+- Donaciones/apadrinamiento RETIRADOS del producto (Lectura A, literal en README §SERIE 6.1).
+  El modelo Donation queda como libro interno: el gasto de creditos crea un apunte CREDIT
+  verificado que sube live_monthly_cap (mecanica 4.3-F intacta). NO quitar ese puente.
+- Creditos: 1 credito = 1 EUR; compran inmediatez (ceil(minutos/20) para adelantar; la puerta
+  de identificacion NO se salta). Compra APAGADA (sl_checkout_enabled=0) hasta que la SL
+  exista; las claves nuevas del panel estan en SETTINGS_DEF (grupo 6.1).
+- Rastreo de origen: apps/agents/origin.py, automatico en ROJOS/AMBAR tras veredictos,
+  bajo demanda (creditos) en el resto; rueda 'deep'; cadena visual .origen-cadena en la
+  ficha del claim.
+- El dominio esestocierto.com ya apunta al VPS (DNS de David). Los subdominios historicos
+  siguen sirviendose; la marca de cara al usuario sigue siendo «esestocierto?» (5.25-C).
+- La web sigue PRIVADA (site_private=1) hasta que la titularidad de los cobros este resuelta
+  (orden de David, 2026-11-06).

@@ -542,6 +542,14 @@ def run_full_analysis(self, post_id, skip_charge=False):
         clarify.run_pending(post)
     except Exception:
         logger.warning('El clarificador fallo en el post %s', post.pk)
+    # 6.1 (orden de David, 2026-11-06): RASTREO DE ORIGEN automatico de los
+    # claims ROJOS y AMBAR — la cadena de difusion hasta el origen mas antiguo
+    # documentado, visible en la wiki. Fail-soft; se apaga con origin_trace_auto=0.
+    try:
+        from apps.agents import origin
+        origin.run_pending(post)
+    except Exception:
+        logger.warning('El rastreador de origen fallo en el post %s', post.pk)
     post.status = 'DONE'
     post.full_finished_at = timezone.now()
     post.save(update_fields=['status', 'full_finished_at'])

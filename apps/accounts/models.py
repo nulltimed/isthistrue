@@ -227,3 +227,34 @@ class UserBlock(models.Model):
 
     class Meta:
         unique_together = ('blocker', 'blocked')
+
+
+class CreditWallet(models.Model):
+    """6.1 (orden de David, 2026-11-06): el monedero de creditos prepagados.
+
+    1 credito = 1 EUR. Los creditos compran INMEDIATEZ, nunca el analisis en si
+    (que sigue siendo gratuito por la via de los votos y la cola): adelantar un
+    video en cola por presupuesto, lanzar los veredictos sin esperar los votos
+    (la puerta de identificacion de hablantes NO se salta: es de calidad, no de
+    dinero) y pedir el rastreo de origen de un claim verde/gris. La COMPRA de
+    packs la cobrara la SL y nace apagada (sl_checkout_enabled=0)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='credit_wallet')
+    balance = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{self.user} · {self.balance} créditos'
+
+
+class CreditLedger(models.Model):
+    """Libro de creditos: cada alta y cada gasto, con su motivo y su objeto."""
+    REASONS = [('PACK', 'Compra de pack'), ('ADVANCE', 'Adelantar análisis'),
+               ('ORIGIN', 'Rastreo de origen'), ('ADMIN', 'Ajuste del administrador')]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_moves')
+    delta = models.IntegerField()
+    reason = models.CharField(max_length=8, choices=REASONS)
+    post = models.ForeignKey('analysis.Post', null=True, blank=True,
+                             on_delete=models.SET_NULL, related_name='credit_moves')
+    claim = models.ForeignKey('wiki.Claim', null=True, blank=True,
+                              on_delete=models.SET_NULL, related_name='credit_moves')
+    note = models.CharField(max_length=200, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)

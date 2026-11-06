@@ -70,6 +70,13 @@ class Claim(models.Model):
     frame_image = models.FileField(upload_to='frames/', blank=True, default='')
     frame_second = models.FloatField(null=True, blank=True)
     frame_note = models.CharField(max_length=500, blank=True, default='')
+    # 6.1 (orden de David, 2026-11-06): RASTREO DE ORIGEN — la cadena de
+    # difusion de la afirmacion hacia atras hasta su origen mas antiguo
+    # DOCUMENTADO (nunca se finge certeza). Lista de eslabones
+    # {kind, date, title, url, note}; automatico en ROJOS/AMBAR, bajo demanda
+    # (1 credito) en el resto. Vacia = sin rastrear.
+    origin_chain = models.JSONField(default=list, blank=True)
+    origin_status = models.CharField(max_length=10, blank=True, default='')  # ''|DONE|FAILED
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

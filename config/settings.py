@@ -259,6 +259,17 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 5.32 (orden de David): el video como fuente cuando la frase alude a algo del propio video.
     'video_as_source': '1',
     'lang_es': '1', 'lang_en': '1',
+    # SERIE 6.1 (ordenes de David, 2026-11-06): pivote a la SL. Lectura A:
+    # las donaciones/apadrinamiento se RETIRAN del producto y entran los
+    # CREDITOS prepagados que cobrara la SL (aun sin constituir: la compra
+    # nace APAGADA). 1 credito = 1 EUR. Literal: «Aplica todos los cambios
+    # absolutamente en un solo parche».
+    'sl_checkout_enabled': '0',     # compra de packs: APAGADA hasta que exista la SL
+    'credit_pack_eur': '5,10,20',   # packs de recarga (David, 2026-11-06)
+    'credit_tramo_minutes': '20',   # 1 credito adelanta un tramo de 20 min
+    'credit_tramo_eur': '1',        # David: «1 EUR tramo adicional»
+    'origin_trace_auto': '1',       # rastreo de origen automatico en ROJOS/AMBAR
+    'origin_trace_credits': '1',    # coste en creditos del rastreo bajo demanda
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
     # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa
     # intermedia de la cascada (panel > .env > catalogo) seguia sembrando los

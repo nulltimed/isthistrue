@@ -153,7 +153,7 @@ Diseño fusionado, confirmado punto por punto por David:
 
 ## 15. Licencia, monetización y servicios externos
 
-- **AGPL-3.0 + licencia comercial dual** (modelo Grafana/GitLab), copyright de David. Repo público `nulltimed/isthistrue`. Datos wiki: CC-BY-SA + API pública solo lectura (Fase 3). Ingresos: donaciones/Patrono, API de pago, badges/embeds, subvenciones UE alfabetización mediática.
+- **AGPL-3.0 + licencia comercial dual** (modelo Grafana/GitLab), copyright de David. Repo público `nulltimed/isthistrue`. Datos wiki: CC-BY-SA + API pública solo lectura (Fase 3). ~~Ingresos: donaciones/Patrono~~ **ENMENDADO (serie 6.1, orden de David 2026-11-06, ver §SERIE 6.1)**: las donaciones se RETIRAN (Lectura A); los ingresos pasan a créditos cobrados por la SL operadora + API de pago, badges/embeds, licencia comercial.
 - Servicios pendientes de crear por David (todo se configura vía `.env`, él rellena): API Anthropic (50 € iniciales + límite mensual = doble airbag), Cloudflare Turnstile (DNS sigue en IONOS), Brevo (DKIM/DMARC en IONOS), BotFather, PayPal/Bizum, GitHub `nulltimed/isthistrue` (mini-guía Git YA entregada).
 
 ## 16. Frenos ejercidos y aceptados en esta ronda (patrón a mantener)
@@ -333,3 +333,47 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
 - RECORDATORIOS ACTIVOS (David pidio que se le recuerden): PayPal.me (§8), permisos foro (§9),
   backups rclone (§10), fail2ban (§11), apartado de correos (§12).
 - Pendiente menor: David no respondio el quiz de peliculas (lista de 10 sci-fi queda a la espera).
+
+## SERIE 6.1 (2026-11-06) — EL PIVOTE A LA SL: donaciones fuera, créditos dentro, rastreo de origen
+
+**Contexto (literales de David, noche del 2026-11-06, canal Fable web):** «Yo tengo una
+incapacidad absoluta permanente, por lo que no puedo ni aceptar donaciones» · «Yo voy a ser
+el dueño del dominio y el servidor, y otra persona va a formar una SL para lanzar la web» ·
+«Ahora buscamos beneficio [...] minimizando la necesidad de anuncios» · Lectura A confirmada:
+las donaciones/apadrinamiento se RETIRAN y se sustituyen por créditos cobrados por la SL
+(«sólo lo que tiene que ver con la SL») · packs «5/10/20 €» con «1€ tramo adicional» ·
+rastreo de origen «automático solo en rojos/ámbar y de pago bajo demanda en el resto» ·
+«Aplica todos los cambios absolutamente en un solo parche». El patrocinio: descartado.
+El dominio **esestocierto.com** ya apunta al VPS (lo gestiona David en IONOS/Nginx del host).
+
+**Decisiones congeladas que David reabre y enmienda aquí** (solo él puede): el apadrinamiento
+del 4.3-F/5.13-C y las donaciones del banner (5.3-A/5.24/5.25) salen del producto. La MECÁNICA
+presupuestaria NO cambia: el gasto de créditos sobre un post crea un apunte de financiación
+interno (`panel.Donation`, method `CREDIT`, verified) que sube `live_monthly_cap` exactamente
+como lo hacía una donación verificada — el fusible, la cola y el techo duro quedan intactos.
+
+**Qué es un crédito:** 1 crédito = 1 €. Compra INMEDIATEZ, nunca el análisis en sí (el
+análisis sigue siendo gratuito por votos y cola — A2 «aviso, nunca muro» sigue vivo):
+- Adelantar un post en cola de presupuesto o lanzar los veredictos sin esperar los votos:
+  `ceil(minutos/20)` créditos. La puerta de IDENTIFICACIÓN de hablantes NO se salta (calidad).
+- Rastreo de origen bajo demanda de claims verde/gris: `origin_trace_credits` (1 de fábrica).
+- La COMPRA de packs la cobrará la SL: `sl_checkout_enabled=0` hasta que esté constituida
+  (hoy NO lo está). Sin pasarela elegida aún (Stripe vs PayPal Business de la SL: pendiente).
+- El superusuario no gasta (criterio skip_charge de siempre).
+
+**Rastreo de origen** (`apps/agents/origin.py`): cadena de difusión hacia atrás hasta el
+origen más antiguo DOCUMENTADO ({kind,date,title,url,note}, máx. 6 eslabones, rueda 'deep',
+fusible 0,04 €/claim), automático tras veredictos en ROJOS/ÁMBAR (`origin_trace_auto`),
+visual en la ficha del claim (`.origen-cadena`). Honestidad estructural: jamás se afirma
+haber llegado al origen absoluto.
+
+**Legado que se conserva a propósito:** modelo `Donation` (libro/historial), vistas
+`donation_capture/start/return/ipn` (el botón alojado antiguo de PayPal puede seguir
+notificando; `/donaciones/` redirige a `/creditos/`), pestaña del panel. Nada de ello tiene
+ya puerta en la interfaz. Los PDF de la asociación (docs/asociacion) quedan como histórico:
+la vía es la SL de un tercero, no la asociación.
+
+**Pendiente de David/SL:** constituir la SL · elegir pasarela (recomendación: Stripe) ·
+contrato dominio/servidor/licencia David↔SL (abogado) · encender `sl_checkout_enabled`
+cuando todo lo anterior exista · la web sigue PRIVADA (site_private=1) hasta entonces
+(confirmado por David esta misma noche).

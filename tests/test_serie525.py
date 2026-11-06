@@ -34,7 +34,9 @@ class Parche525C_NombreEsestocierto(TestCase):
         self.assertEqual(malos, [])
         po = open('locale/en/LC_MESSAGES/django.po', encoding='utf-8').read()
         self.assertNotIn('isthistrue./escierto.', po)
-        html = self.client.get('/donaciones/').content.decode()
+        # 6.1 (Lectura A): /donaciones/ redirige a /creditos/, que conserva el
+        # tono y la marca de la pagina retirada.
+        html = self.client.get('/donaciones/', follow=True).content.decode()
         self.assertIn('esestocierto? es un proyecto open source', html)
         self.assertIn('og:site_name" content="esestocierto?"', html)
 

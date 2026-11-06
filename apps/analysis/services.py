@@ -197,6 +197,8 @@ def warn_long_video(post):
     """
     from apps.accounts.services import notify
     from .models import ValidationVote
+    # 6.1 (Lectura A, David 2026-11-06): sin peticion de donacion — el aviso
+    # queda como pura transparencia de coste.
     donacion = suggested_donation_eur(post)
     if not donacion:
         return 0
@@ -204,14 +206,14 @@ def warn_long_video(post):
     coste = cost_cheap_eur(post) + cost_full_eur(post)
     texto = (f'«{post.title or post.url}» dura {minutos} minutos y se analiza entero: '
              f'cuesta unos {coste:.2f} € en total, con {free_minutes()} minutos '
-             f'gratuitos. Si puedes, una donación de {donacion:.2f} € cubre este '
-             f'análisis. Es voluntaria: el análisis ya está en marcha.')
+             f'gratuitos. Lo cubre el presupuesto del proyecto: el análisis ya está '
+             f'en marcha.')
     destinatarios = {v.user for v in ValidationVote.objects.filter(post=post)
                      .select_related('user')}
     destinatarios |= {s.user for s in post.subscriptions.select_related('user')}
     destinatarios.add(post.author)
     for u in destinatarios:
-        notify(u, texto, url='/donaciones/', kind='long_video_cost')
+        notify(u, texto, url='/gastos/', kind='long_video_cost')
     return len(destinatarios)
 
 
@@ -325,6 +327,53 @@ def cost_deep_eur(post):
 def free_minutes():
     from apps.panel.models import SystemSetting
     return max(0, SystemSetting.get_int('analysis_free_minutes', 20))
+
+
+# --- 6.1 (ordenes de David, 2026-11-06): los CREDITOS compran inmediatez ---
+
+def credit_tramo_minutes():
+    from apps.panel.models import SystemSetting
+    return max(1, SystemSetting.get_int('credit_tramo_minutes', 20))
+
+
+def credits_for_post(post):
+    """Creditos que cuesta la INMEDIATEZ de un post: 1 credito por tramo de
+    20 minutos (David: «1 EUR tramo adicional»), minimo 1."""
+    import math
+    return max(1, math.ceil(video_minutes(post) / credit_tramo_minutes()))
+
+
+def advance_with_credits(post, user):
+    """Gasta creditos para que un post salga YA: de la cola de presupuesto
+    (AWAITING_BUDGET -> NEW + fase barata) o directo a veredictos si solo le
+    faltaban los votos (la puerta de IDENTIFICACION no se salta: es de
+    calidad, no de dinero). Devuelve (ok, mensaje). El gasto crea el apunte
+    de financiacion que sube el tope mensual (misma mecanica probada del
+    apadrinamiento)."""
+    from apps.accounts import credits as cred
+    n = credits_for_post(post)
+    if post.status == 'AWAITING_BUDGET':
+        cred.spend(user, n, 'ADVANCE', post=post, note='sale de la cola de presupuesto')
+        from .tasks import run_cheap_phase
+        post.status = 'NEW'
+        post.save(update_fields=['status'])
+        run_cheap_phase.delay(post.pk)
+        return True, f'Análisis adelantado con {n} crédito(s): arranca ahora mismo.'
+    if post.status == 'PENDING_VALIDATION':
+        if not identification_gate(post)[0]:
+            return False, ('La verificación con fuentes espera a que se identifique '
+                           'a quienes hablan: eso no se puede comprar, es calidad.')
+        cred.spend(user, n, 'ADVANCE', post=post, note='veredictos sin esperar votos')
+        from .tasks import launch_full_analysis, notify_post_event
+        post.status = 'FULL_QUEUED'
+        post.save(update_fields=['status'])
+        launch_full_analysis(post)
+        warn_unnamed_speakers(post)
+        warn_long_video(post)
+        notify_post_event(post, 'analysis',
+                          'Un usuario adelantó con créditos el análisis con fuentes: verificando')
+        return True, f'Verificación con fuentes lanzada con {n} crédito(s).'
+    return False, 'Este análisis no está esperando: no hay nada que adelantar.'
 
 
 def suggested_donation_eur(post):

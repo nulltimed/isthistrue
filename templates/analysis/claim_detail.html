@@ -38,6 +38,31 @@
     </figure>
   </section>
   {% endif %}
+  {# 6.1 (orden de David, 2026-11-06): la CADENA DE ORIGEN — de dónde viene la #}
+  {# afirmación, eslabón a eslabón, hasta el origen más antiguo DOCUMENTADO. #}
+  {% if claim.origin_chain %}
+  <section class="origen">
+    <h2>{% trans "¿De dónde viene? La cadena de difusión" %}</h2>
+    <ol class="origen-cadena">
+      {% for e in claim.origin_chain %}
+      <li class="eslabon eslabon-{{ e.kind }}">
+        <span class="eslabon-icono">{% if e.kind == 'study' %}🔬{% elif e.kind == 'official' %}🏛️{% elif e.kind == 'press' %}📰{% elif e.kind == 'social' %}💬{% elif e.kind == 'video' %}🎬{% else %}🧩{% endif %}</span>
+        <a href="{{ e.url }}" rel="noopener">{{ e.title|default:e.url|truncatechars:70 }}</a>
+        <span class="eslabon-fecha">{{ e.date }}</span>
+        {% if e.note %}<span class="eslabon-nota">{{ e.note }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+    <p class="hint">{% trans "Se muestra el origen más antiguo que hemos podido documentar: puede existir uno anterior sin rastro público." %}</p>
+  </section>
+  {% elif claim.origin_status == 'DONE' %}
+  <p class="hint">{% trans "Rastreo de origen hecho: no se documentó difusión anterior al vídeo." %}</p>
+  {% elif user.is_authenticated and claim.slug and claim.color != 'RED' and claim.color != 'AMBER' %}
+  <form method="post" action="{% url 'trace_origin' claim.slug %}" class="origen-pedir">{% csrf_token %}
+    <button class="mini" data-tip="{% trans 'Un agente persigue la afirmación hacia atrás (red social ← prensa ← nota ← estudio) y publica aquí la cadena con sus enlaces.' %}">🧭 {% blocktrans with n=origin_credits %}Rastrear el origen ({{ n }} crédito){% endblocktrans %}</button>
+    <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %} <a href="{% url 'creditos' %}">{% trans "Créditos" %}</a></span>
+  </form>
+  {% endif %}
   {% if claim.sensitive %}<p class="warning">{% trans "Tema sensible: consulta siempre fuentes y recursos oficiales." %}</p>{% endif %}
   <h2>{% trans "Fuentes" %}</h2>
   <ul>{% for s in claim.sources.all %}<li><a href="{{ s.url }}" rel="noopener">{{ s.title|default:s.url }}</a></li>{% endfor %}</ul>

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db import models, transaction
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.accounts.models import AnalysisCredit
@@ -344,22 +345,19 @@ def _arrancar_post(request, post, voluntary_offtopic, comprobar_cupo=True):
     if post.is_adult and post.adult_flag_source == 'platform':
         messages.warning(request, 'La plataforma marca este vídeo como +18: el análisis '
                          'irá a la sala para mayores de edad y no aparecerá en portada.')
+    # 6.1 (orden de David, 2026-11-06, Lectura A): las donaciones se RETIRAN.
+    # El aviso de coste queda (transparencia), sin pedir nada a nadie.
     from .services import free_minutes, suggested_donation_eur, video_minutes
-    donacion = suggested_donation_eur(post)
-    # 5.13-C (reporte de David): con la duracion DESCONOCIDA se reservaba el
-    # maximo y el mensaje MENTIA («dura 90 minutos»). La reserva prudente se
-    # queda; el mensaje dice la verdad.
     dur_conocida = bool(post.duration_seconds)
-    if donacion and dur_conocida:
-        messages.info(request, f'Este vídeo dura {video_minutes(post)} minutos y se '
-                      f'analizará entero. Por encima de {free_minutes()} minutos el coste '
-                      f'lo sostienen las donaciones: si puedes, una de {donacion:.2f} € '
-                      f'cubre este análisis. No es obligatoria y tu vídeo ya está en cola.')
-    elif donacion:
-        messages.info(request, f'No he podido leer la duración de este contenido: se '
-                      f'reserva el máximo ({video_minutes(post)} minutos) y lo no usado '
-                      f'se libera al transcribir. Si puedes, una donación de hasta '
-                      f'{donacion:.2f} € ayuda a costearlo. No es obligatoria.')
+    if suggested_donation_eur(post):   # pasa del tramo gratuito: solo informa
+        if dur_conocida:
+            messages.info(request, f'Este vídeo dura {video_minutes(post)} minutos y se '
+                          f'analizará entero. Por encima de {free_minutes()} minutos el '
+                          f'coste lo cubre el presupuesto del proyecto.')
+        else:
+            messages.info(request, f'No he podido leer la duración de este contenido: se '
+                          f'reserva el máximo ({video_minutes(post)} minutos) y lo no '
+                          f'usado se libera al transcribir.')
 
     # 4.3-F (decisión de David): si el vídeo se lleva más de media asignación
     # diaria, NO se analiza al momento. Entra en cola y se lanza cuando haya
@@ -374,8 +372,8 @@ def _arrancar_post(request, post, voluntary_offtopic, comprobar_cupo=True):
         messages.info(request, f'Este vídeo se lleva más de media asignación diaria '
                       f'(cuesta {aprox} {coste:.2f} €), así que entra en cola: se '
                       f'analizará solo en cuanto haya depósito, normalmente mañana. '
-                      f'Si quieres que salga antes, puedes apadrinarlo aquí abajo: '
-                      f'esa donación queda atada a ESTE análisis.')
+                      f'Si quieres que salga antes, puedes adelantarlo con créditos '
+                      f'aquí abajo.')
         return redirect('post_detail', pk=post.pk)
 
     run_cheap_phase.delay(post.pk)
@@ -588,6 +586,14 @@ def _post_context(request, post):
     relaunch_rows = relaunch_options(post) if is_mod else []
     # 4.3-F: cifras del cartel de la cola (solo se pintan si el post está en ella).
     _en_cola, queue_cost, queue_sponsor = needs_sponsorship(post)
+    # 6.1 (orden de David, 2026-11-06): los creditos compran inmediatez — el
+    # cartel enseña cuantos cuesta adelantar ESTE post y el saldo del usuario.
+    from .services import credits_for_post
+    credits_cost = credits_for_post(post)
+    my_credits = 0
+    if u:
+        from apps.accounts import credits as _cred
+        my_credits = _cred.wallet(u).balance
     thread_messages, page_obj, first_unread_pk, newest_pk = _thread_page(
         topic_obj, u, request, incluir_borrados=is_mod)
     # 4.2 H1/H2/H8: estados por mensaje para el hilo
@@ -630,6 +636,7 @@ def _post_context(request, post):
                               .select_related('interlocutor')
                               .order_by('speaker_label', '-confirmed'),
         'queue_cost': queue_cost, 'queue_sponsor': queue_sponsor,
+        'credits_cost': credits_cost, 'my_credits': my_credits,   # 6.1
         'speaker_names': speaker_names, 'speaker_rows': speaker_rows,
         'identification': speaker_identification(post),
         'can_validate': identification_gate(post)[0],
@@ -1642,22 +1649,71 @@ def message_vote(request, mpost_id, direction):
 
 
 def donations_page(request):
-    """Pagina publica de donaciones: objetivo, progreso, PayPal (Bizum ONG llegara con la asociacion)."""
-    from apps.panel.models import Donation, SystemSetting
-    # 5.24-E: vuelta desde el boton alojado (return / cancel_return)
+    """6.1 (orden de David, 2026-11-06, Lectura A): las donaciones se RETIRAN
+    del producto. La URL vive como redireccion (enlaces antiguos y las vueltas
+    del boton alojado de PayPal, que siguen agradeciendose)."""
     if request.GET.get('gracias'):
-        messages.success(request, '¡Gracias por tu donación! PayPal nos la confirma en unos '
-                                  'segundos y se suma al depósito del mes.')
+        messages.success(request, '¡Gracias! PayPal nos lo confirma en unos segundos.')
     elif request.GET.get('cancelado'):
-        messages.info(request, 'Donación cancelada. Aquí sigues teniendo todas las opciones.')
-    from apps.panel.services import live_monthly_cap
-    cap, donated, base = live_monthly_cap()
-    goal = SystemSetting.get_int('donation_goal_eur', 60)
-    paypal_url = SystemSetting.get_str('paypal_url', '')
-    return render(request, 'analysis/donations.html', {
-        'donated': donated, 'goal': goal, 'base': base, 'cap': cap,
-        'paypal_url': paypal_url,
-        'count': Donation.objects.count()})
+        messages.info(request, 'Operación cancelada.')
+    return redirect('creditos')
+
+
+def credits_page(request):
+    """6.1: la pagina de CREDITOS. 1 credito = 1 EUR; compran inmediatez
+    (adelantar analisis, rastreos bajo demanda), nunca el analisis en si, que
+    sigue siendo gratuito por votos y cola. La COMPRA la cobrara la SL: hasta
+    que exista, los packs se muestran desactivados (sl_checkout_enabled=0)."""
+    from apps.panel.models import SystemSetting
+    packs = [p.strip() for p in SystemSetting.get_str('credit_pack_eur', '5,10,20').split(',')
+             if p.strip().isdigit()]
+    saldo = movimientos = None
+    if request.user.is_authenticated:
+        from apps.accounts import credits as cred
+        saldo = cred.wallet(request.user).balance
+        movimientos = (request.user.credit_moves.select_related('post', 'claim')
+                       .order_by('-created_at')[:50])
+    return render(request, 'analysis/creditos.html', {
+        'packs': packs, 'saldo': saldo, 'movimientos': movimientos,
+        'checkout_on': SystemSetting.get_int('sl_checkout_enabled', 0) > 0,
+        'tramo_min': SystemSetting.get_int('credit_tramo_minutes', 20)})
+
+
+@require_POST
+def credits_advance(request, pk):
+    """6.1: el boton «Adelantar con creditos» del post. El superusuario no
+    gasta (mismo criterio skip_charge de las cuatro fases, 5.18)."""
+    from .models import Post
+    from .services import advance_with_credits, credits_for_post
+    post = get_object_or_404(Post, pk=pk)
+    if not request.user.is_authenticated:
+        messages.error(request, 'Inicia sesión para usar créditos.')
+        return redirect('post_detail', pk=pk)
+    if request.user.is_superuser:
+        from .services import identification_gate
+        from .tasks import run_cheap_phase, launch_full_analysis
+        if post.status == 'AWAITING_BUDGET':
+            post.status = 'NEW'
+            post.save(update_fields=['status'])
+            run_cheap_phase.delay(post.pk, skip_charge=True)
+            messages.success(request, 'Adelantado (superusuario, sin gasto).')
+        elif post.status == 'PENDING_VALIDATION' and identification_gate(post)[0]:
+            post.status = 'FULL_QUEUED'
+            post.save(update_fields=['status'])
+            launch_full_analysis(post, skip_charge=True)
+            messages.success(request, 'Veredictos lanzados (superusuario, sin gasto).')
+        else:
+            messages.info(request, 'Nada que adelantar en este estado.')
+        return redirect('post_detail', pk=pk)
+    from apps.accounts.credits import InsufficientCredits
+    try:
+        ok, msg = advance_with_credits(post, request.user)
+        (messages.success if ok else messages.info)(request, msg)
+    except InsufficientCredits as e:
+        messages.error(request, f'No tienes créditos suficientes: hacen falta '
+                       f'{credits_for_post(post)} y tienes {e.balance}. '
+                       f'Consíguelos en la página de créditos.')
+    return redirect('post_detail', pk=pk)
 
 
 @csrf_exempt

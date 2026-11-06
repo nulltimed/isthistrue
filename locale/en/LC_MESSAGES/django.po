@@ -2977,3 +2977,131 @@ msgstr "Username or email"
 
 msgid "Contraseña"
 msgstr "Password"
+
+# --- 6.1 (2026-11-06): creditos de la SL y rastreo de origen ---
+
+msgid "Cada céntimo del proyecto, apunte a apunte: el libro de gastos es público."
+msgstr "Every cent of the project, entry by entry: the spending ledger is public."
+
+msgid "Gasto en directo: el libro es público."
+msgstr "Live spending: the ledger is public."
+
+msgid "Los créditos compran inmediatez: adelantar un análisis o pedir un rastreo. El análisis normal sigue siendo gratuito."
+msgstr "Credits buy immediacy: fast-track an analysis or request a trace. Regular analysis stays free."
+
+msgid "¿Prisa? Mira los créditos."
+msgstr "In a hurry? Check out credits."
+
+msgid "Créditos"
+msgstr "Credits"
+
+msgid "¿Tienes prisa? Adelántalo con %(n)s crédito(s): saldrá de la cola AL INSTANTE."
+msgstr "In a hurry? Fast-track it with %(n)s credit(s): it will leave the queue INSTANTLY."
+
+msgid "Gasta créditos de tu monedero para que este análisis salga ya, sin esperar al depósito de mañana."
+msgstr "Spend credits from your wallet so this analysis runs now, without waiting for tomorrow's budget."
+
+msgid "Adelantar con %(n)s crédito(s)"
+msgstr "Fast-track with %(n)s credit(s)"
+
+msgid "Tienes %(s)s."
+msgstr "You have %(s)s."
+
+msgid "Conseguir créditos"
+msgstr "Get credits"
+
+msgid "Los créditos"
+msgstr "Credits"
+
+msgid "adelantan análisis; inicia sesión para usarlos."
+msgstr "fast-track analyses; sign in to use them."
+
+msgid "El proyecto no cobra por publicar: el vídeo se analizará igualmente cuando llegue su turno."
+msgstr "The project never charges for posting: the video will be analysed anyway when its turn comes."
+
+msgid "Sin esperar los votos de la comunidad: tus créditos lanzan ya la búsqueda de fuentes de este vídeo."
+msgstr "No waiting for community votes: your credits launch this video's source-checking right now."
+
+msgid "Lanzarlo ya con %(n)s crédito(s)"
+msgstr "Launch it now with %(n)s credit(s)"
+
+msgid "esestocierto? es un proyecto open source (AGPL). El análisis de cualquier vídeo es y seguirá siendo gratuito: lo piden los votos de la comunidad y lo paga el presupuesto del proyecto. Los créditos compran otra cosa: INMEDIATEZ."
+msgstr "esestocierto? is an open source project (AGPL). Analysing any video is and will remain free: community votes request it and the project budget pays for it. Credits buy something else: IMMEDIACY."
+
+msgid "Adelantar un análisis (salir de la cola o no esperar los votos): 1 crédito por cada %(m)s minutos de vídeo."
+msgstr "Fast-tracking an analysis (skipping the queue or the vote wait): 1 credit per %(m)s minutes of video."
+
+msgid "Pedir la cadena de origen de una afirmación verde o gris (las falsas y engañosas la traen de serie)."
+msgstr "Requesting the origin chain of a green or grey claim (false and misleading ones include it by default)."
+
+msgid "Tu saldo"
+msgstr "Your balance"
+
+msgid "crédito(s)"
+msgstr "credit(s)"
+
+msgid "Inicia sesión para ver tu saldo y usar créditos."
+msgstr "Sign in to see your balance and use credits."
+
+msgid "Recargas"
+msgstr "Top-ups"
+
+msgid "Compra segura gestionada por la sociedad que opera la web."
+msgstr "Secure purchase handled by the company operating the site."
+
+msgid "Comprar"
+msgstr "Buy"
+
+msgid "La pasarela de pago se activará cuando la sociedad operadora esté constituida."
+msgstr "The payment gateway will go live once the operating company is incorporated."
+
+msgid "Próximamente"
+msgstr "Coming soon"
+
+msgid "La compra de créditos se activará cuando la sociedad que operará la web esté constituida. Mientras tanto, todo lo gratuito sigue funcionando exactamente igual."
+msgstr "Credit purchases will go live once the company that will operate the site is incorporated. Meanwhile, everything free keeps working exactly the same."
+
+msgid "Tus movimientos"
+msgstr "Your activity"
+
+msgid "Fecha"
+msgstr "Date"
+
+msgid "Movimiento"
+msgstr "Change"
+
+msgid "Transparencia: el gasto del proyecto es público, apunte a apunte, en el libro de gastos de la cabecera. Los créditos gastados en adelantar un análisis amplían el depósito de ese mes exactamente en su importe."
+msgstr "Transparency: project spending is public, entry by entry, in the header's ledger. Credits spent fast-tracking an analysis raise that month's budget by exactly their amount."
+
+msgid "¿De dónde viene? La cadena de difusión"
+msgstr "Where does it come from? The spread chain"
+
+msgid "Se muestra el origen más antiguo que hemos podido documentar: puede existir uno anterior sin rastro público."
+msgstr "We show the oldest origin we could document: an earlier one without a public trace may exist."
+
+msgid "Rastreo de origen hecho: no se documentó difusión anterior al vídeo."
+msgstr "Origin trace done: no spread earlier than the video could be documented."
+
+msgid "Un agente persigue la afirmación hacia atrás (red social ← prensa ← nota ← estudio) y publica aquí la cadena con sus enlaces."
+msgstr "An agent chases the claim backwards (social ← press ← release ← study) and publishes the chain here with its links."
+
+msgid "Rastrear el origen (%(n)s crédito)"
+msgstr "Trace the origin (%(n)s credit)"
+
+msgid "Los créditos adelantan análisis"
+msgstr "Credits fast-track analyses"
+
+msgid "Compra de pack"
+msgstr "Pack purchase"
+
+msgid "Adelantar análisis"
+msgstr "Fast-track analysis"
+
+msgid "Rastreo de origen"
+msgstr "Origin trace"
+
+msgid "Ajuste del administrador"
+msgstr "Administrator adjustment"
+
+msgid "Créditos (SL)"
+msgstr "Credits (Ltd)"

@@ -9,17 +9,18 @@
     <div class="validation queued">
       <p><strong>{% trans "En cola por presupuesto." %}</strong>
         {% blocktrans with c=queue_cost %}Este vídeo se lleva más de media asignación diaria (cuesta unos {{ c }} €), así que espera turno: se analizará solo en cuanto haya depósito, normalmente mañana.{% endblocktrans %}</p>
-      {# 5.13-C (orden de David): el apadrinamiento va ATADO a este post — el #}
-      {# boton dona la cantidad EXACTA y la donacion queda ligada al analisis. #}
-      <p>{% blocktrans with d=queue_sponsor %}¿Tienes prisa? Apadrínalo con una donación de {{ d }} €: quedará atada a ESTE análisis, que saldrá de la cola AL INSTANTE.{% endblocktrans %}</p>
-      {# 5.24-A (orden de David): sin SDK ni ventana emergente — el servidor crea #}
-      {# el pedido atado al post y PayPal vuelve a /donaciones/retorno/. #}
-      <form method="post" action="{% url 'donation_start' %}" class="apadrinar-form">{% csrf_token %}
-        <input type="hidden" name="amount" value="{{ queue_sponsor|stringformat:'s'|cut:',' }}">
-        <input type="hidden" name="post" value="{{ post.pk }}">
-        <button class="apadrinar-btn" data-tip="{% trans 'Pagas en la página segura de PayPal y vuelves aquí: el análisis arranca al instante.' %}">💛 {% blocktrans with d=queue_sponsor %}Apadrinar con {{ d }} € por PayPal{% endblocktrans %}</button>
+      {# 6.1 (orden de David, 2026-11-06, Lectura A): el apadrinamiento por #}
+      {# donacion se RETIRA — ahora la cola se adelanta con CREDITOS. #}
+      <p>{% blocktrans with n=credits_cost %}¿Tienes prisa? Adelántalo con {{ n }} crédito(s): saldrá de la cola AL INSTANTE.{% endblocktrans %}</p>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form">{% csrf_token %}
+        <button class="apadrinar-btn" data-tip="{% trans 'Gasta créditos de tu monedero para que este análisis salga ya, sin esperar al depósito de mañana.' %}">⚡ {% blocktrans with n=credits_cost %}Adelantar con {{ n }} crédito(s){% endblocktrans %}</button>
+        <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %} <a href="{% url 'creditos' %}">{% trans "Conseguir créditos" %}</a></span>
       </form>
-      <p class="hint">{% trans "El proyecto no cobra por publicar: la donación es voluntaria y el vídeo se analizará igualmente cuando llegue su turno." %}</p>
+      {% else %}
+      <p class="hint"><a href="{% url 'creditos' %}">{% trans "Los créditos" %}</a> {% trans "adelantan análisis; inicia sesión para usarlos." %}</p>
+      {% endif %}
+      <p class="hint">{% trans "El proyecto no cobra por publicar: el vídeo se analizará igualmente cuando llegue su turno." %}</p>
       {% if is_mod %}
       <form method="post" action="{% url 'post_greenlight' post.pk %}">{% csrf_token %}
         <button class="mini">⏩ {% trans "Adelantar este análisis" %}</button></form>
@@ -41,6 +42,14 @@
       <form method="post" action="{% url 'post_vote' post.pk 'validate' %}">{% csrf_token %}
         <button data-tip="{% if can_validate %}{% trans 'Tu voto cuenta para lanzar la búsqueda de fuentes y el semáforo.' %}{% else %}{% trans 'Tu voto se guarda; el análisis arrancará cuando además se identifique a los hablantes.' %}{% endif %}">🔎 {% trans "Pedir el análisis con fuentes" %}</button>
         {% if is_mod %}<span class="hint">{% trans "Tu voto de moderación vale por todos mientras la web esté en modo arranque." %}</span>{% endif %}</form>
+      {# 6.1 (orden de David): los creditos compran la INMEDIATEZ — lanzar sin #}
+      {# esperar los votos. La puerta de identificacion NO se salta (calidad). #}
+      {% if not waiting_ident %}
+      <form method="post" action="{% url 'credits_advance' post.pk %}" class="apadrinar-form">{% csrf_token %}
+        <button class="mini" data-tip="{% trans 'Sin esperar los votos de la comunidad: tus créditos lanzan ya la búsqueda de fuentes de este vídeo.' %}">⚡ {% blocktrans with n=credits_cost %}Lanzarlo ya con {{ n }} crédito(s){% endblocktrans %}</button>
+        <span class="hint">{% blocktrans with s=my_credits %}Tienes {{ s }}.{% endblocktrans %}</span>
+      </form>
+      {% endif %}
       {% endif %}
     </div>
   {% endif %}

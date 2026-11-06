@@ -64,6 +64,10 @@ urlpatterns = [
     # 5.23-C: karma con flechas (post y comentario)
     path('post/<int:pk>/votar/<str:direction>/', views.post_vote_karma, name='post_vote_karma'),
     path('mensaje/<int:mpost_id>/votar/<str:direction>/', views.message_vote, name='message_vote'),
+    # 6.1 (orden de David, 2026-11-06, Lectura A): donaciones RETIRADAS —
+    # /donaciones/ redirige a /creditos/ (compra apagada hasta que exista la SL).
+    path('creditos/', views.credits_page, name='creditos'),
+    path('post/<int:pk>/adelantar-creditos/', views.credits_advance, name='credits_advance'),
     path('donaciones/', views.donations_page, name='donations'),
     # 5.3-A: registro de la captura PayPal del banner + transparencia de gastos
     path('donaciones/registrar/', views.donation_capture, name='donation_capture'),

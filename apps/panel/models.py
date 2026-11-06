@@ -82,7 +82,13 @@ class AuditLog(models.Model):
 
 
 class Donation(models.Model):
-    METHODS = [('PAYPAL', 'PayPal'), ('BIZUM', 'Bizum'), ('OTHER', 'Otro')]
+    # 6.1 (orden de David, 2026-11-06, Lectura A): las donaciones se RETIRAN del
+    # producto. El modelo queda como LIBRO DE FINANCIACION interno: el metodo
+    # CREDIT es el apunte que genera cada gasto de creditos sobre un post, para
+    # que live_monthly_cap y la cola sigan funcionando sin reescribir el
+    # presupuesto. Los metodos antiguos quedan por el historico y el IPN legado.
+    METHODS = [('PAYPAL', 'PayPal'), ('BIZUM', 'Bizum'), ('OTHER', 'Otro'),
+               ('CREDIT', 'Créditos (SL)')]
     amount_eur = models.DecimalField(max_digits=8, decimal_places=2)
     method = models.CharField(max_length=8, choices=METHODS)
     note = models.CharField(max_length=200, blank=True)
