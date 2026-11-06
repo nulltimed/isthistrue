@@ -117,6 +117,11 @@ AUTHENTICATION_BACKENDS = ['apps.accounts.backends.EmailOrUsernameBackend',
                            'django.contrib.auth.backends.ModelBackend']
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
+# 6.1-d (orden de David, 2026-11-06): segundo superusuario — su socio de la SL —
+# gestionado igual que 'd', solo desde el .env. Vacio = no existe.
+ADMIN2_USERNAME = os.getenv('ADMIN2_USERNAME', '')
+ADMIN2_EMAIL = os.getenv('ADMIN2_EMAIL', '')
+ADMIN2_PASSWORD = os.getenv('ADMIN2_PASSWORD', '')
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'  # salir -> portada, nunca la pantalla de Django (4.2 A6)

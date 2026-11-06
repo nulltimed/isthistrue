@@ -195,3 +195,25 @@ class AjustesNuevos(TestCase):
         self.assertEqual(d['credit_pack_eur'], '5,10,20')
         self.assertEqual(d['credit_tramo_minutes'], '20')
         self.assertEqual(d['origin_trace_auto'], '1')
+
+
+class SegundoSuperusuario(TestCase):
+    def test_el_socio_nace_del_env_y_pasa_el_candado(self):
+        # 6.1-d (David, 2026-11-06): segundo superusuario gestionado SOLO desde
+        # el .env (ADMIN2_*), como 'd': nunca mas contraseñas por chat.
+        from django.core.management import call_command
+        from django.test import override_settings
+        with override_settings(ADMIN_EMAIL='d@example.org', ADMIN_PASSWORD='x1',
+                               ADMIN2_USERNAME='socio', ADMIN2_EMAIL='s@example.org',
+                               ADMIN2_PASSWORD='x2'):
+            call_command('ensure_superuser')
+        s = User.objects.get(username='socio')
+        self.assertTrue(s.is_superuser and s.is_staff and s.email_verified)
+
+    def test_sin_variables_no_nace_nadie(self):
+        from django.core.management import call_command
+        from django.test import override_settings
+        with override_settings(ADMIN_EMAIL='d@example.org', ADMIN_PASSWORD='x1',
+                               ADMIN2_USERNAME='', ADMIN2_EMAIL='', ADMIN2_PASSWORD=''):
+            call_command('ensure_superuser')
+        self.assertFalse(User.objects.filter(username='socio').exists())
