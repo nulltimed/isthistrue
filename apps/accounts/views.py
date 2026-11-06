@@ -22,6 +22,11 @@ def register(request):
             messages.error(request, 'Verificación anti-bots fallida.')
         elif form.is_valid():
             user = form.save()
+            # 6.3 (orden de David, 2026-11-06): el registro en DOS CARRILES.
+            from .signup_vetting import route_new_signup
+            destino = route_new_signup(user, form.cleaned_data, request)
+            if destino:
+                return destino
             from .verification import send_verification_email
             send_verification_email(user)
             messages.success(request, 'Cuenta creada. Revisa tu email y pulsa el '
@@ -530,3 +535,22 @@ def otp_verify(request):
             return redirect(destino)
         messages.error(request, 'Código incorrecto.')
     return render(request, 'accounts/otp_verify.html', {'username': user.username})
+
+
+def signup_appeal(request, pk, token):
+    """6.3: la reclamacion de un registro denegado (fisica o juridica) — entra
+    en la bandeja de los superusuarios, que tienen la ultima palabra."""
+    from django.shortcuts import get_object_or_404
+    from .models import SignupVetting
+    v = get_object_or_404(SignupVetting, pk=pk, appeal_token=token)
+    if v.status not in ('DENIED', 'APPEALED'):
+        messages.info(request, 'Este registro no está denegado.')
+        return redirect('login')
+    if request.method == 'POST':
+        v.appeal_text = request.POST.get('appeal_text', '').strip()[:1000]
+        v.status = 'APPEALED'
+        v.save(update_fields=['appeal_text', 'status'])
+        messages.success(request, 'Reclamación recibida: una persona revisará la '
+                                  'decisión y contestará a tu correo.')
+        return redirect('login')
+    return render(request, 'accounts/escrutinio.html', {'v': v})

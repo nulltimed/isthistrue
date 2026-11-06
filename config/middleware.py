@@ -61,7 +61,7 @@ class PrivateSiteMiddleware:
     # la solicitud deben ser alcanzables, y los endpoints v1 exigen clave propia.
     EXEMPT = ('/accounts/logout', '/accounts/password/', '/accounts/idioma/',
               '/static/', '/healthz', '/donaciones/ipn/', '/aai-hook/', '/metrics',
-              '/api/')
+              '/api/', '/dossier/')
     CAMPO = 'privada_login'
 
     def __init__(self, get_response):

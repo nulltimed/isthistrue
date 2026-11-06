@@ -590,3 +590,18 @@ def video_analysis(request, slug):
     ctx.update({'grupos': grupos, 'total_claims': len(vistos),
                 'indexable': people_indexable(), 'wiki_video': True})
     return render(request, 'wiki/video.html', ctx)
+
+
+def claim_embed(request, slug):
+    """6.3 (orden de David, 2026-11-06): el badge «Verificado» embebible.
+    Una linea de iframe que cualquier webmaster pega; gratis con el enlace de
+    vuelta (es marketing que trabaja solo). Pagina autonoma, sin base.html."""
+    from django.views.decorators.clickjacking import xframe_options_exempt  # noqa
+    from .models import Claim
+    claim = Claim.objects.filter(slug=slug).first()
+    if not claim:
+        from django.http import Http404
+        raise Http404
+    resp = render(request, 'wiki/embed.html', {'claim': claim})
+    resp.xframe_options_exempt = True   # el iframe es el producto
+    return resp

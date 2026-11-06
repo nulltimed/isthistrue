@@ -5,6 +5,8 @@ from .login_view import VerifiedLoginView
 
 urlpatterns = [
     path('register/', views.register, name='register'),
+    # 6.3: reclamacion de un registro denegado por el escrutinio
+    path('escrutinio/<int:pk>/<slug:token>/', views.signup_appeal, name='signup_appeal'),
     path('login/', VerifiedLoginView.as_view(), name='login'),
     path('verify/<str:token>/', views.verify_email, name='verify_email'),
     path('verify/resend/', views.resend_verification, name='resend_verification'),

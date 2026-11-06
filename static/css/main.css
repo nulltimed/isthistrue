@@ -1007,3 +1007,11 @@ dialog #tip-globo{z-index:9999}
 /* 6.1-e (2026-11-06): miga de pan al rastreo de origen en el foro */
 .origen-mini{text-decoration:none;font-size:.95em;margin-left:.15rem}
 .origen-aviso{margin:.3rem 0 .6rem}
+
+/* 6.3: eleccion de cuenta en el registro + caja del badge embebible */
+.tier-eleccion{border:1px solid var(--borde,#ccc);border-radius:8px;
+  padding:.6rem .9rem;margin:.6rem 0;display:flex;flex-direction:column;gap:.4rem}
+.tier-eleccion legend{font-weight:700;padding:0 .3rem}
+.tier-pro{opacity:.75}
+.embed-caja{margin:1rem 0}
+.embed-caja textarea{width:100%;font-family:monospace;font-size:.85em}

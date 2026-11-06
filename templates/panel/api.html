@@ -3,6 +3,21 @@
 {% block content %}
 {% include 'partials/panel_nav.html' %}
 {# 6.2: claves de la API — el escrutinio lo hace la IA; la ultima palabra, aqui. #}
+{# 6.3: y la bandeja del REGISTRO en dos carriles, con la misma ultima palabra. #}
+<h2>{% trans "Registros en escrutinio" %} <span class="badge">{{ registros|length }}</span></h2>
+<ul class="post-list">
+{% for v in registros %}
+  <li><strong>{{ v.org_name|default:v.user.username }}</strong> ({{ v.get_kind_display }})
+      · {{ v.user.email }} · <span class="badge">{{ v.get_status_display }}</span><br>
+      {% if v.org_website %}<a href="{{ v.org_website }}" rel="noopener">web</a> · {% endif %}
+      {% if v.verdict.reasons %}<span class="hint">🤖 {{ v.verdict.reasons|join:" · " }}</span><br>{% endif %}
+      {% if v.appeal_text %}<span class="hint">🗣 {{ v.appeal_text|truncatechars:300 }}</span><br>{% endif %}
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="reg_id" value="{{ v.pk }}">
+        <button name="reg_accion" value="aprobar" class="mini">{% trans "Aprobar" %}</button>
+        <button name="reg_accion" value="denegar" class="mini">{% trans "Denegar en firme" %}</button>
+      </form></li>
+{% empty %}<li class="hint">{% trans "Nada pendiente." %}</li>{% endfor %}
+</ul>
 <h2>{% trans "Reclamaciones y solicitudes" %} <span class="badge">{{ pendientes|length }}</span></h2>
 <ul class="post-list">
 {% for s in pendientes %}
@@ -27,5 +42,27 @@
         {% if s.tier == 'FREE' %}<button name="accion" value="pro" class="mini">{% trans "Subir a PRO" %}</button>{% endif %}
       </form></li>
 {% empty %}<li class="hint">{% trans "Ninguna todavía." %}</li>{% endfor %}
+</ul>
+<h2>{% trans "Dossieres B2B" %} <span class="badge">{{ dossiers|length }}</span></h2>
+{# 6.3: encargo verificado -> dossier interactivo con enlace secreto del cliente #}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="dossier_accion" value="crear">
+  <p><label>{% trans "Cliente" %} <input name="client_name" required maxlength="200" data-tip="{% trans 'El nombre que encabezará el dossier.' %}"></label>
+     <label>{% trans "Correo del cliente" %} <input type="email" name="client_email" required data-tip="{% trans 'Aquí se envía el enlace secreto del dossier.' %}"></label></p>
+  <p><label>{% trans "Posts (ids separados por comas)" %} <input name="posts_csv" required placeholder="12, 15, 31" data-tip="{% trans 'Los análisis que formarán el dossier, por su número de post.' %}"></label></p>
+  <p><label>{% trans "Introducción (opcional)" %} <textarea name="intro" rows="2" maxlength="4000" data-tip="{% trans 'Unas líneas de contexto del encargo que abrirán el dossier.' %}"></textarea></label></p>
+  <button class="mini">{% trans "Crear y enviar dossier" %}</button>
+</form>
+<ul class="post-list">
+{% for d in dossiers %}
+  <li><strong>{{ d.client_name }}</strong> · {{ d.created_at|date:"d/m/Y" }} ·
+      <a href="/dossier/{{ d.pk }}/{{ d.token }}/" rel="noopener">{% trans "ver" %}</a>
+      {% if d.revoked %}· <span class="badge">{% trans "Revocado" %}</span>
+      {% else %}<form method="post" style="display:inline">{% csrf_token %}
+        <input type="hidden" name="dossier_accion" value="revocar">
+        <input type="hidden" name="dossier_id" value="{{ d.pk }}">
+        <button class="mini" onclick="return confirm('{% trans 'El enlace del cliente dejará de funcionar. ¿Revocar?' %}')">{% trans "Revocar" %}</button>
+      </form>{% endif %}</li>
+{% empty %}<li class="hint">{% trans "Ninguno todavía." %}</li>{% endfor %}
 </ul>
 {% endblock %}

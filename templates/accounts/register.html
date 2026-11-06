@@ -27,6 +27,13 @@
         {% elif field.help_text %}<span class="help">{{ field.help_text|safe }}</span>{% endif %}
       </label>
     {% endfor %}
+    {# 6.3 (orden de David): la pasarela de cuentas — Gratuita o Pro. La Pro se #}
+    {# activara con Stripe cuando la sociedad operadora este constituida. #}
+    <fieldset class="tier-eleccion">
+      <legend>{% trans "Tu cuenta" %}</legend>
+      <label><input type="radio" name="tier" value="FREE" checked data-tip="{% trans 'Todo lo esencial, gratis para siempre: leer, votar, comentar y pedir análisis.' %}"> {% trans "Gratuita — todo lo esencial, para siempre" %}</label>
+      <label class="tier-pro"><input type="radio" name="tier" value="PRO" disabled data-tip="{% trans 'Alertas por canal o tema, exportaciones y mini-API personal. Se activará cuando la sociedad operadora esté constituida.' %}"> {% trans "Pro — alertas, exportaciones y mini-API" %} <span class="badge">{% trans "Próximamente" %}</span></label>
+    </fieldset>
     {% if turnstile_site_key %}
       <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}"></div>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -23,6 +23,8 @@ urlpatterns = [
     path('claim/<slug:slug>/seguir/', views.follow_claim, name='follow_claim'),
     # 6.1: rastreo de origen bajo demanda (los rojos/ambar van solos).
     path('claim/<slug:slug>/rastrear/', views.trace_origin, name='trace_origin'),
+    # 6.3: el badge «Verificado» embebible (iframe de una linea)
+    path('claim/<slug:slug>/embed/', views.claim_embed, name='claim_embed'),
     # 5.12: el historial del claim (orden de David).
     path('claim/<slug:slug>/historial/', views.claim_history, name='claim_history'),
     path('claim/<slug:slug>/', views.claim_page, name='claim_page'),

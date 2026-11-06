@@ -1,0 +1,61 @@
+{% load i18n %}<!doctype html>{# 6.3: dossier B2B — autonomo, profesional, imprimible #}
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dossier · esestocierto?</title>
+<style>
+:root{--verde:#2e7d32;--ambar:#b8860b;--rojo:#b3261e;--gris:#757575;--tinta:#1a1a1a}
+body{margin:0;font-family:Georgia,serif;background:#fcfbf7;color:var(--tinta);line-height:1.55}
+.hoja{max-width:860px;margin:0 auto;padding:2rem 1.2rem}
+header.dossier{border-bottom:3px solid var(--tinta);padding-bottom:1rem;margin-bottom:1.6rem}
+.marca{font-weight:700;font-size:1.3rem;letter-spacing:-.02em}
+.meta{color:#666;font-size:.9rem}
+.aviso{background:#f4f1ea;border-left:4px solid var(--tinta);padding:.7rem .9rem;font-size:.92rem;margin:1rem 0}
+.semaforo{display:flex;gap:.6rem;margin:.5rem 0;flex-wrap:wrap}
+.chip{padding:.15rem .7rem;border-radius:999px;color:#fff;font-size:.85rem;font-weight:700}
+.chip.v{background:var(--verde)}.chip.a{background:var(--ambar)}.chip.r{background:var(--rojo)}.chip.o{background:var(--gris)}
+section.bloque{border:1px solid #ddd;border-radius:12px;padding:1rem 1.2rem;margin:1.2rem 0;background:#fff}
+details.claim{border-left:4px solid var(--gris);margin:.7rem 0;padding:.35rem .8rem;background:#fafafa;border-radius:0 8px 8px 0}
+details.claim.c-GREEN{border-color:var(--verde)}details.claim.c-AMBER{border-color:var(--ambar)}
+details.claim.c-RED{border-color:var(--rojo)}
+details.claim summary{cursor:pointer;font-weight:700}
+.fuentes{font-size:.88rem}
+.cadena{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:.4rem;font-size:.85rem}
+.cadena li{border:1px solid #ccc;border-radius:8px;padding:.35rem .6rem;background:#fcfbf7;max-width:15rem}
+.cadena li.torcido{border:2px solid #e0b25c;background:#fdf6ec}
+footer.dossier{margin-top:2rem;border-top:1px solid #ddd;padding-top:.8rem;color:#666;font-size:.85rem}
+@media print{details.claim{border-left-width:6px}details[open] summary{font-weight:700}
+  .hoja{padding:0}section.bloque{break-inside:avoid}}
+</style></head><body><div class="hoja">
+<header class="dossier">
+  <div class="marca">esestocierto?</div>
+  <h1>{% trans "Dossier de verificación" %}</h1>
+  <p class="meta">{% trans "Preparado para" %} <strong>{{ d.client_name }}</strong> · {{ d.created_at|date:"d/m/Y" }} · {% trans "Acceso privado del peticionario" %}</p>
+</header>
+{% if d.intro %}<p>{{ d.intro|linebreaksbr }}</p>{% endif %}
+<p class="aviso">{% trans "Metodología: cada afirmación se transcribe del contenido original, se verifica con fuentes enlazadas y reproducibles, y cuando es falsa o engañosa se rastrea su cadena de difusión hasta el origen más antiguo documentado. Los veredictos pueden actualizarse; este dossier enlaza siempre a la versión viva." %}</p>
+{% for b in bloques %}
+<section class="bloque">
+  <h2>{{ b.post.title|default:b.post.url }}</h2>
+  <p class="meta"><a href="{{ b.post.url }}" rel="noopener">{% trans "Contenido original" %}</a></p>
+  <div class="semaforo">
+    <span class="chip v">🟢 {{ b.colores.GREEN }}</span>
+    <span class="chip a">🟡 {{ b.colores.AMBER }}</span>
+    <span class="chip r">🔴 {{ b.colores.RED }}</span>
+    <span class="chip o">⚪ {{ b.colores.otros }}</span>
+  </div>
+  {% for c in b.claims %}
+  <details class="claim c-{{ c.color }}">
+    <summary>{% trans c.get_color_display %} — «{{ c.text_original|truncatechars:120 }}»</summary>
+    {% if c.what_evidence_says %}<p><strong>{% trans "Qué dice la evidencia" %}:</strong> {{ c.what_evidence_says }}</p>{% endif %}
+    {% if c.the_difference %}<p><strong>{% trans "La diferencia" %}:</strong> {{ c.the_difference }}</p>{% endif %}
+    {% if c.sources.all %}<p class="fuentes"><strong>{% trans "Fuentes" %}:</strong>
+      {% for s in c.sources.all %}<a href="{{ s.url }}" rel="noopener">{{ s.title|default:s.url|truncatechars:60 }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+    {% if c.origin_chain %}<p><strong>{% trans "Cadena de difusión" %}:</strong></p>
+    <ol class="cadena">{% for e in c.origin_chain %}<li{% if e.twisted %} class="torcido"{% endif %}>{{ e.date }} — <a href="{{ e.url }}" rel="noopener">{{ e.title|truncatechars:50 }}</a>{% if e.twisted %} ⚠{% endif %}</li>{% endfor %}</ol>{% endif %}
+    <p class="meta"><a href="https://esestocierto.com/wiki/claim/{{ c.slug }}/" rel="noopener">{% trans "Ficha viva de esta afirmación" %} →</a></p>
+  </details>
+  {% endfor %}
+</section>
+{% empty %}<p class="hint">{% trans "Dossier sin contenidos todavía." %}</p>{% endfor %}
+<footer class="dossier">{% trans "Elaborado con la plataforma abierta esestocierto? · Datos CC-BY-SA · Este enlace es personal del peticionario: no lo publiques." %}</footer>
+</div></body></html>

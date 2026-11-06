@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import re_path
 from apps.panel.media_serve import media_serve
+from apps.panel.views import dossier_view
 from django.contrib import admin
 from django.urls import path, include
 from machina import urls as machina_urls
@@ -20,6 +21,8 @@ urlpatterns = [
     path('panel/', RedirectView.as_view(url='/panel/settings/', permanent=False)),
     path('panel/', include('apps.panel.urls')),
     path('wiki/', include('apps.wiki.urls')),
+    # 6.3: el dossier B2B del cliente (enlace con secreto, exento del candado)
+    path('dossier/<int:pk>/<slug:token>/', dossier_view, name='dossier_view'),
     # 6.2 (orden de David, 2026-11-06): la API pasa a CLAVE con escrutinio.
     # Las rutas keyless antiguas (apps/wiki/api.py) quedan retiradas: la
     # politica nueva exige saber quien lee (exclusion de partidos, etc.).

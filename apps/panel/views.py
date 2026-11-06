@@ -855,6 +855,70 @@ def api_panel(request):
             s.save(update_fields=['tier'])
             messages.success(request, f'{s.entity_name} subida a PRO.')
         return redirect('panel_api')
+    # 6.3: la bandeja tambien recibe las reclamaciones del REGISTRO (dos carriles).
+    from apps.accounts.models import SignupVetting
+    if request.method == 'POST' and request.POST.get('reg_accion'):
+        v = SignupVetting.objects.select_related('user').filter(
+            pk=request.POST.get('reg_id')).first()
+        if v and request.POST.get('reg_accion') == 'aprobar':
+            from django.utils import timezone as _tz
+            v.status = 'OK'
+            v.resolved_by = request.user
+            v.save()
+            v.user.is_active = True
+            v.user.save(update_fields=['is_active'])
+            from apps.accounts.verification import send_verification_email
+            send_verification_email(v.user)
+            AuditLog.objects.create(user=request.user, action='signup_approve',
+                                    detail=f'{v.pk}: {v.user.username}')
+            messages.success(request, f'Registro de {v.user.username} aprobado.')
+        elif v and request.POST.get('reg_accion') == 'denegar':
+            v.status = 'DENIED'
+            v.resolved_by = request.user
+            v.save()
+            AuditLog.objects.create(user=request.user, action='signup_deny',
+                                    detail=f'{v.pk}: {v.user.username}')
+            messages.info(request, 'Registro denegado en firme.')
+        return redirect('panel_api')
+    # 6.3: los DOSSIERES B2B — crear, enviar y revocar desde aqui.
+    from .models import Dossier
+    if request.method == 'POST' and request.POST.get('dossier_accion'):
+        accion = request.POST.get('dossier_accion')
+        if accion == 'crear':
+            from apps.analysis.models import Post
+            ids = [x for x in request.POST.get('posts_csv', '').replace(' ', '').split(',')
+                   if x.isdigit()]
+            d = Dossier.objects.create(
+                client_name=request.POST.get('client_name', '').strip()[:200],
+                client_email=request.POST.get('client_email', '').strip()[:200],
+                intro=request.POST.get('intro', '').strip()[:4000],
+                created_by=request.user)
+            d.posts.set(Post.objects.filter(pk__in=ids))
+            from django.conf import settings as dj
+            enlace = f'{dj.SITE_URL}/dossier/{d.pk}/{d.token}/'
+            try:
+                from django.core.mail import send_mail
+                send_mail('Tu dossier de verificación — esestocierto?',
+                          f'Hola {d.client_name}:\n\nTu dossier está listo:\n{enlace}\n\n'
+                          f'El enlace es personal: no lo publiques.',
+                          dj.DEFAULT_FROM_EMAIL, [d.client_email])
+            except Exception:
+                pass
+            AuditLog.objects.create(user=request.user, action='dossier_create',
+                                    detail=f'{d.pk}: {d.client_name[:60]}')
+            messages.success(request, f'Dossier creado y enviado. Enlace: {enlace}')
+        elif accion == 'revocar':
+            d = Dossier.objects.filter(pk=request.POST.get('dossier_id')).first()
+            if d:
+                d.revoked = True
+                d.save(update_fields=['revoked'])
+                AuditLog.objects.create(user=request.user, action='dossier_revoke',
+                                        detail=f'{d.pk}: {d.client_name[:60]}')
+                messages.info(request, 'Dossier revocado: el enlace ya no funciona.')
+        return redirect('panel_api')
+    dossiers = Dossier.objects.order_by('-created_at')[:30]
+    registros = (SignupVetting.objects.filter(status__in=('APPEALED', 'PENDING'))
+                 .select_related('user').order_by('-status', 'created_at'))
     pendientes = ApiKey.objects.filter(status__in=('APPEALED', 'PENDING')).order_by(
         '-status', 'created_at')
     activas = list(ApiKey.objects.filter(status='APPROVED').order_by('entity_name'))
@@ -862,4 +926,29 @@ def api_panel(request):
     for s in activas:
         s.hoy = hoy.get(s.pk, 0)
     return render(request, 'panel/api.html', {'pendientes': pendientes,
-                                              'activas': activas})
+                                              'activas': activas,
+                                              'registros': registros,
+                                              'dossiers': dossiers})
+
+
+def dossier_view(request, pk, token):
+    """6.3: el dossier B2B del cliente — enlace con secreto, sin cuenta.
+    Exento del candado de web privada (es SU pagina, no la web)."""
+    from django.http import Http404
+    from .models import Dossier
+    d = Dossier.objects.filter(pk=pk, token=token, revoked=False).first()
+    if not d:
+        raise Http404
+    from apps.wiki.models import Claim
+    bloques = []
+    for p in d.posts.all():
+        claims = (Claim.objects.filter(appearances__segment__post=p).distinct()
+                  .prefetch_related('sources'))
+        colores = {'GREEN': 0, 'AMBER': 0, 'RED': 0, 'otros': 0}
+        for c in claims:
+            colores[c.color if c.color in colores else 'otros'] = \
+                colores.get(c.color if c.color in colores else 'otros', 0) + 1
+        bloques.append({'post': p, 'claims': claims, 'colores': colores})
+    resp = render(request, 'dossier.html', {'d': d, 'bloques': bloques})
+    resp['X-Robots-Tag'] = 'noindex, nofollow'
+    return resp

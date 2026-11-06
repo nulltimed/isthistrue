@@ -136,3 +136,21 @@ class ContentComplaint(models.Model):
     body = models.TextField()
     status = models.CharField(max_length=12, default='OPEN')  # OPEN|RESOLVED|REJECTED
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Dossier(models.Model):
+    """6.3 (orden de David, 2026-11-06): el dossier B2B — «un dossier
+    interactivo alojado en la web, accesible unicamente por el peticionista,
+    con estilo profesional». Se crea desde el panel, viaja por un enlace con
+    secreto propio (el cliente no necesita cuenta) y se revoca con un clic."""
+    import secrets as _secrets
+    client_name = models.CharField(max_length=200)
+    client_email = models.EmailField()
+    token = models.CharField(max_length=64, default=_secrets.token_urlsafe)
+    intro = models.TextField(blank=True, default='')
+    posts = models.ManyToManyField('analysis.Post', blank=True,
+                                   related_name='dossiers')
+    created_by = models.ForeignKey('accounts.User', null=True, blank=True,
+                                   on_delete=models.SET_NULL)
+    revoked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

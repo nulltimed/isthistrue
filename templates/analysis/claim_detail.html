@@ -79,5 +79,13 @@
   <p class="hint">{% blocktrans with n=claim.versions.count %}Historial: {{ n }} versión(es).{% endblocktrans %} <a href="#">{% trans "Reportar error" %}</a></p>
   {% if user.is_authenticated %}<p><a href="/wiki/claim/{{ claim.slug }}/seguir/">🔔 {% trans "Seguir esta afirmación" %}</a> ({% trans "aviso si cambia de color o reaparece" %})</p>{% endif %}
   {% include 'partials/share.html' %}
+  {# 6.3 (orden de David): el badge «Verificado» para webs — pegar y listo. #}
+  {% if claim.slug %}
+  <details class="embed-caja">
+    <summary data-tip="{% trans 'Una línea de código que muestra este veredicto en cualquier web, con enlace a esta ficha. Gratis con la atribución.' %}">📋 {% trans "Insertar en tu web" %}</summary>
+    <textarea readonly rows="3" onclick="this.select()" data-tip="{% trans 'Haz clic para seleccionarlo todo y cópialo en tu página.' %}" name="embed_code">&lt;iframe src="https://esestocierto.com/wiki/claim/{{ claim.slug }}/embed/" width="420" height="150" style="border:0;max-width:100%" title="esestocierto?" loading="lazy"&gt;&lt;/iframe&gt;</textarea>
+    <p class="hint">{% trans "Gratis con el enlace de vuelta. El semáforo se actualiza solo si el veredicto cambia." %}</p>
+  </details>
+  {% endif %}
 </article>
 {% endblock %}

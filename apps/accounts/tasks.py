@@ -65,3 +65,10 @@ def refund_failed_credit_advances():
                url='/creditos/', kind='credit_refund')
         hechos += 1
     return hechos
+
+
+@shared_task
+def vet_org_signup(vet_pk):
+    """6.3: escrutinio por IA del registro de una persona juridica."""
+    from .signup_vetting import resolve_org_vetting
+    return resolve_org_vetting(vet_pk)

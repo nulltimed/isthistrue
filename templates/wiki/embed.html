@@ -1,0 +1,24 @@
+{% load i18n %}<!doctype html>{# 6.3: badge embebible — autonomo, sin base.html #}
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>esestocierto?</title>
+<style>
+body{margin:0;font-family:Georgia,serif;background:#fcfbf7}
+.istt-badge{border:1px solid #ddd;border-radius:10px;padding:.7rem .9rem;
+  display:flex;flex-direction:column;gap:.35rem;max-width:100%}
+.istt-color{display:inline-block;padding:.1rem .55rem;border-radius:999px;
+  color:#fff;font-size:.8rem;font-weight:700;width:fit-content}
+.c-GREEN{background:#2e7d32}.c-AMBER{background:#b8860b}.c-RED{background:#b3261e}
+.c-GREY,.c-UNDECIDED,.c-PENDING{background:#757575}
+.istt-texto{font-size:.95rem;color:#1a1a1a}
+.istt-pie{font-size:.78rem;color:#666}
+.istt-pie a{color:#1a1a1a;font-weight:700;text-decoration:none}
+</style></head><body>
+<div class="istt-badge">
+  <span class="istt-color c-{{ claim.color }}">{% trans claim.get_color_display %}</span>
+  <span class="istt-texto">«{{ claim.text_original|truncatechars:160 }}»</span>
+  <span class="istt-pie">{% trans "Verificado por" %}
+    <a href="https://esestocierto.com/wiki/claim/{{ claim.slug }}/" target="_blank" rel="noopener">esestocierto?</a>
+    · {{ claim.updated_at|date:"d/m/Y" }} · CC-BY-SA</span>
+</div>
+</body></html>

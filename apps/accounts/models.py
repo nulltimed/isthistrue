@@ -259,3 +259,29 @@ class CreditLedger(models.Model):
                               on_delete=models.SET_NULL, related_name='credit_moves')
     note = models.CharField(max_length=200, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+
+class SignupVetting(models.Model):
+    """6.3 (orden de David, 2026-11-06): el escrutinio del registro, en DOS
+    CARRILES. Personas juridicas: la IA busca quien es (mismo agente que la
+    API). Personas fisicas: triage ligero SIN investigar su identidad — se las
+    juzga por el uso declarado y su comportamiento dentro (el candado de
+    particulares de la wiki, aplicado a la puerta). Toda denegacion es
+    reclamable y la ultima palabra es de un superusuario."""
+    import secrets as _secrets
+    KINDS = [('PERSON', 'Persona física'), ('ORG', 'Persona jurídica')]
+    STATUSES = [('OK', 'Sin reparos'), ('PENDING', 'En escrutinio'),
+                ('DENIED', 'Denegado'), ('APPEALED', 'Reclamado — en la bandeja')]
+    user = models.OneToOneField(User, on_delete=models.CASCADE,
+                                related_name='signup_vetting')
+    kind = models.CharField(max_length=8, choices=KINDS, default='PERSON')
+    org_name = models.CharField(max_length=200, blank=True, default='')
+    org_website = models.URLField(blank=True, default='')
+    status = models.CharField(max_length=10, choices=STATUSES, default='OK')
+    verdict = models.JSONField(default=dict, blank=True)
+    appeal_token = models.CharField(max_length=64, default=_secrets.token_urlsafe)
+    appeal_text = models.TextField(blank=True, default='')
+    resolved_by = models.ForeignKey(User, null=True, blank=True,
+                                    on_delete=models.SET_NULL,
+                                    related_name='signups_resolved')
+    created_at = models.DateTimeField(auto_now_add=True)

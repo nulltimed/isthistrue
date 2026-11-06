@@ -3283,3 +3283,116 @@ msgstr "What you will do with the data: it weighs most in the decision."
 
 msgid "Cuenta por qué la denegación es un error: lo leerá una persona con la última palabra."
 msgstr "Explain why the denial is wrong: a person with the final say will read it."
+
+# --- 6.3 (2026-11-06): dos carriles, badge embebible, dossieres B2B, Pro ---
+
+msgid "Reclamar el registro"
+msgstr "Appeal the signup"
+
+msgid "Reclamar el registro denegado"
+msgstr "Appeal the denied signup"
+
+msgid "Tu cuenta"
+msgstr "Your account"
+
+msgid "Todo lo esencial, gratis para siempre: leer, votar, comentar y pedir análisis."
+msgstr "All the essentials, free forever: read, vote, comment and request analyses."
+
+msgid "Gratuita — todo lo esencial, para siempre"
+msgstr "Free — all the essentials, forever"
+
+msgid "Alertas por canal o tema, exportaciones y mini-API personal. Se activará cuando la sociedad operadora esté constituida."
+msgstr "Alerts by channel or topic, exports and a personal mini-API. It will go live once the operating company is incorporated."
+
+msgid "Pro — alertas, exportaciones y mini-API"
+msgstr "Pro — alerts, exports and mini-API"
+
+msgid "Una línea de código que muestra este veredicto en cualquier web, con enlace a esta ficha. Gratis con la atribución."
+msgstr "One line of code that shows this verdict on any website, linking back to this record. Free with attribution."
+
+msgid "Insertar en tu web"
+msgstr "Embed on your site"
+
+msgid "Haz clic para seleccionarlo todo y cópialo en tu página."
+msgstr "Click to select it all and copy it into your page."
+
+msgid "Gratis con el enlace de vuelta. El semáforo se actualiza solo si el veredicto cambia."
+msgstr "Free with the backlink. The traffic light updates by itself if the verdict changes."
+
+msgid "Dossier de verificación"
+msgstr "Verification dossier"
+
+msgid "Preparado para"
+msgstr "Prepared for"
+
+msgid "Acceso privado del peticionario"
+msgstr "Private access for the requester"
+
+msgid "Metodología: cada afirmación se transcribe del contenido original, se verifica con fuentes enlazadas y reproducibles, y cuando es falsa o engañosa se rastrea su cadena de difusión hasta el origen más antiguo documentado. Los veredictos pueden actualizarse; este dossier enlaza siempre a la versión viva."
+msgstr "Methodology: every claim is transcribed from the original content, checked against linked, reproducible sources and, when false or misleading, its spread chain is traced to the oldest documented origin. Verdicts may be updated; this dossier always links to the live version."
+
+msgid "Contenido original"
+msgstr "Original content"
+
+msgid "Cadena de difusión"
+msgstr "Spread chain"
+
+msgid "Ficha viva de esta afirmación"
+msgstr "Live record of this claim"
+
+msgid "Dossier sin contenidos todavía."
+msgstr "Dossier with no contents yet."
+
+msgid "Elaborado con la plataforma abierta esestocierto? · Datos CC-BY-SA · Este enlace es personal del peticionario: no lo publiques."
+msgstr "Produced with the open platform esestocierto? · Data CC-BY-SA · This link is personal to the requester: do not publish it."
+
+msgid "Registros en escrutinio"
+msgstr "Signups under vetting"
+
+msgid "Dossieres B2B"
+msgstr "B2B dossiers"
+
+msgid "Cliente"
+msgstr "Client"
+
+msgid "El nombre que encabezará el dossier."
+msgstr "The name that will head the dossier."
+
+msgid "Correo del cliente"
+msgstr "Client email"
+
+msgid "Aquí se envía el enlace secreto del dossier."
+msgstr "The dossier’s secret link is sent here."
+
+msgid "Posts (ids separados por comas)"
+msgstr "Posts (comma-separated ids)"
+
+msgid "Los análisis que formarán el dossier, por su número de post."
+msgstr "The analyses that will form the dossier, by post number."
+
+msgid "Introducción (opcional)"
+msgstr "Introduction (optional)"
+
+msgid "Unas líneas de contexto del encargo que abrirán el dossier."
+msgstr "A few lines of context that will open the dossier."
+
+msgid "Crear y enviar dossier"
+msgstr "Create and send dossier"
+
+msgid "ver"
+msgstr "view"
+
+msgid "Revocado"
+msgstr "Revoked"
+
+msgid "El enlace del cliente dejará de funcionar. ¿Revocar?"
+msgstr "The client’s link will stop working. Revoke?"
+
+msgid "Ninguno todavía."
+msgstr "None yet (masc.)."
+
+msgid "Verificado por"
+msgstr "Verified by"
+
+msgid "El escrutinio denegó el registro de «%(n)s». Una persona revisará tu reclamación y tendrá la última palabra."
+msgstr "Vetting denied the signup of “%(n)s”. A person will review your appeal and have the final say."
