@@ -352,3 +352,22 @@ perpetuidad.
   siguen sirviendose; la marca de cara al usuario sigue siendo «esestocierto?» (5.25-C).
 - La web sigue PRIVADA (site_private=1) hasta que la titularidad de los cobros este resuelta
   (orden de David, 2026-11-06).
+
+## Lecciones de las series 6.2-6.4 (2026-11-06)
+- **Hay DOS listas EXEMPT en config/middleware.py**: la del espejo (StagingAccess) y la
+  de la web privada (PrivateSite). /api/ y /dossier/ van en la SEGUNDA. Un sed ciego
+  cayo en la primera y el CI lo cazo (403 != 200).
+- **El gasto de creditos crea un apunte Donation method=CREDIT verified**: es el puente
+  que sube live_monthly_cap con la mecanica probada del 4.3-F. NO quitarlo. El techo
+  duro manda igual: tocado el techo, ni pagando se lanza nada.
+- **La API keyless antigua (apps/wiki/api.py) esta RETIRADA de las rutas** (politica
+  6.2: saber quien lee). El archivo queda como historico; el pie apunta a /api/.
+- **Escrutinios con ultima palabra humana**: claves API y registros de persona juridica
+  los decide la IA (apps/api/vetting.py, exclusiones de David) y toda denegacion
+  reclamada cae en /panel/api/. A las PERSONAS FISICAS no se les investiga la identidad
+  JAMAS (candado de particulares aplicado a la puerta): solo triage de correos
+  desechables (accounts/signup_vetting.py).
+- **Dossieres B2B**: enlace con secreto propio, exento del candado privado, revocable.
+  Se crean desde /panel/api/; la pagina es templates/dossier.html (autonoma).
+- **seed_settings tras cada pull de estas series** (14 claves nuevas) y recordar que
+  los huecos sl_* quedan VACIOS hasta que David de los datos de la SL.
