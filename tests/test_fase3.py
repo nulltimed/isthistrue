@@ -38,17 +38,27 @@ class PresupuestoVivo(TestCase):
 
 class ApiPublica(TestCase):
     def test_lista_y_detalle(self):
+        # 6.2 (orden de David, 2026-11-06): la API keyless se retiro — ahora
+        # exige clave con escrutinio. Sin clave: 401. Con clave aprobada: el
+        # sobre {data, attribution} con la atribucion CC-BY-SA.
+        from apps.api.models import ApiKey
         Claim.objects.create(text_original='La Tierra es esferica', slug='la-tierra-es-esferica',
                              consolidated=True, color='GREEN')
         Claim.objects.create(text_original='borrador', slug='borrador', consolidated=False)
-        r = self.client.get('/api/v1/claims/')
+        self.assertEqual(self.client.get('/api/v1/claims/').status_code, 401)
+        sol = ApiKey.objects.create(entity_name='Medio Test', contact_email='m@t.org',
+                                    purpose='pruebas de integración continuada')
+        clave = sol.approve()
+        cab = {'HTTP_X_API_KEY': clave}
+        r = self.client.get('/api/v1/claims/?consolidated=1', **cab)
         self.assertEqual(r.status_code, 200)
         data = r.json()
-        self.assertEqual(data['total'], 1)  # solo consolidated
-        self.assertIn('CC-BY-SA', data['license'])
-        r2 = self.client.get('/api/v1/claims/la-tierra-es-esferica/')
+        self.assertEqual(data['meta']['total'], 1)  # solo consolidated
+        self.assertIn('CC-BY-SA', data['attribution']['text'])
+        r2 = self.client.get('/api/v1/claims/la-tierra-es-esferica/', **cab)
         self.assertEqual(r2.status_code, 200)
-        self.assertEqual(self.client.get('/api/v1/claims/no-existe/').status_code, 404)
+        self.assertEqual(r2.json()['data']['color'], 'GREEN')
+        self.assertEqual(self.client.get('/api/v1/claims/no-existe/', **cab).status_code, 404)
 
 
 class VerificacionEmail(TestCase):

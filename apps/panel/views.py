@@ -816,3 +816,50 @@ def moderator_settings_panel(request):
         return redirect('panel_moderator_settings')
     values = [(key, label, SystemSetting.get_int(key, 5)) for key, label in KEYS]
     return render(request, 'panel/moderator_settings.html', {'values': values})
+
+
+@staff_member_required
+def api_panel(request):
+    """6.2 (orden de David): la bandeja de la API. El escrutinio lo hace la IA;
+    la ultima palabra sobre las reclamaciones es de los superusuarios."""
+    from datetime import date
+    from apps.api.models import ApiKey, ApiUsage
+    if request.method == 'POST' and request.POST.get('accion'):
+        s = ApiKey.objects.filter(pk=request.POST.get('id')).first()
+        accion = request.POST.get('accion')
+        if s and accion == 'aprobar':
+            s.resolved_by = request.user
+            clave = s.approve()
+            from apps.api.tasks import _mail
+            _mail(s, f'Tu reclamación ha sido aceptada: clave aprobada.\n\nClave: {clave}\n\nDocumentación: /api/')
+            AuditLog.objects.create(user=request.user, action='api_key_approve',
+                                    detail=f'{s.pk}: {s.entity_name[:60]}')
+            messages.success(request, f'Clave aprobada para {s.entity_name}.')
+        elif s and accion == 'denegar':
+            from django.utils import timezone
+            s.status = 'DENIED'
+            s.resolved_by = request.user
+            s.decided_at = timezone.now()
+            s.save()
+            AuditLog.objects.create(user=request.user, action='api_key_deny',
+                                    detail=f'{s.pk}: {s.entity_name[:60]}')
+            messages.info(request, 'Denegada en firme.')
+        elif s and accion == 'revocar':
+            s.status = 'REVOKED'
+            s.save(update_fields=['status'])
+            AuditLog.objects.create(user=request.user, action='api_key_revoke',
+                                    detail=f'{s.pk}: {s.entity_name[:60]}')
+            messages.info(request, 'Clave revocada.')
+        elif s and accion == 'pro':
+            s.tier = 'PRO'
+            s.save(update_fields=['tier'])
+            messages.success(request, f'{s.entity_name} subida a PRO.')
+        return redirect('panel_api')
+    pendientes = ApiKey.objects.filter(status__in=('APPEALED', 'PENDING')).order_by(
+        '-status', 'created_at')
+    activas = list(ApiKey.objects.filter(status='APPROVED').order_by('entity_name'))
+    hoy = {u.api_key_id: u.count for u in ApiUsage.objects.filter(date=date.today())}
+    for s in activas:
+        s.hoy = hoy.get(s.pk, 0)
+    return render(request, 'panel/api.html', {'pendientes': pendientes,
+                                              'activas': activas})

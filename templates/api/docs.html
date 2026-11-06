@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "API de lectura" %}{% endblock %}
+{% block content %}
+{# SERIE 6.2 (ordenes de David, 2026-11-06): API publica de lectura con #}
+{# escrutinio de solicitantes asistido por IA y reclamacion a superusuario. #}
+<h1>{% trans "API de lectura" %}</h1>
+<p>{% trans "Todo lo público de esestocierto? —veredictos con sus fuentes, cadenas de origen, análisis con su semáforo, estadísticas— se puede leer por API. Los datos son CC-BY-SA: el nivel gratuito exige atribución visible («Datos de esestocierto?», enlazado)." %}</p>
+<p class="hint">{% trans "Quedan excluidas las formaciones políticas y los organismos cuyo fin choque con la neutralidad de la web. Cada solicitud pasa un escrutinio automático; si se deniega, puedes reclamar y la revisará una persona." %}</p>
+
+<h2>{% trans "Puntos de acceso (v1, solo lectura)" %}</h2>
+<table class="tabla-creditos">
+  <thead><tr><th>Endpoint</th><th>{% trans "Qué devuelve" %}</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/v1/claims/</code></td><td>{% trans "Afirmaciones verificadas. Filtros:" %} <code>color, kind, q, since, consolidated, origin, page, per_page</code></td></tr>
+    <tr><td><code>GET /api/v1/claims/&lt;slug&gt;/</code></td><td>{% trans "Ficha completa: veredicto, fuentes, cadena de origen, apariciones con su segundo exacto." %}</td></tr>
+    <tr><td><code>GET /api/v1/analisis/</code></td><td>{% trans "Análisis publicados con su semáforo." %} (<code>since, page</code>)</td></tr>
+    <tr><td><code>GET /api/v1/analisis/&lt;id&gt;/</code></td><td>{% trans "Un análisis con todas sus afirmaciones." %}</td></tr>
+    <tr><td><code>GET /api/v1/analisis/&lt;id&gt;/transcripcion/</code></td><td>{% trans "La transcripción, segmento a segmento." %}</td></tr>
+    <tr><td><code>GET /api/v1/canales/</code></td><td>{% trans "Canales con ficha pública (umbral de reincidencia; particulares, jamás)." %}</td></tr>
+    <tr><td><code>GET /api/v1/stats/</code></td><td>{% trans "Agregados: totales por color, por semana, análisis publicados." %}</td></tr>
+  </tbody>
+</table>
+<p>{% trans "Autenticación: cabecera" %} <code>X-API-Key: istt_...</code> · {% trans "Respuestas JSON con sobre" %} <code>{data, meta, attribution}</code> · {% trans "Cupo diario por clave; al agotarlo, 429." %}</p>
+
+<h2>{% trans "Solicitar una clave" %}</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="web2" value="" autocomplete="off">
+  <p><label>{% trans "¿Quién solicita?" %}
+    <select name="kind" data-tip="{% trans 'Las personas jurídicas se comprueban por lo público; en las físicas se juzga solo el uso declarado.' %}">
+      <option value="ORG">{% trans "Persona jurídica (medio, universidad, ONG, empresa...)" %}</option>
+      <option value="PERSON">{% trans "Persona física (periodista, investigador, desarrollador...)" %}</option>
+    </select></label></p>
+  <p><label>{% trans "Nombre de la entidad o persona" %} <input name="entity_name" required maxlength="200" data-tip="{% trans 'El nombre con el que el escrutinio puede saber quién eres.' %}"></label></p>
+  <p><label>{% trans "Correo de contacto" %} <input type="email" name="contact_email" required maxlength="200" data-tip="{% trans 'Aquí llega la clave o la denegación con su enlace de reclamación.' %}"></label></p>
+  <p><label>{% trans "Web (opcional, ayuda al escrutinio)" %} <input type="url" name="website" maxlength="200" data-tip="{% trans 'Si la das, el escrutinio la usa para confirmarte antes y mejor.' %}"></label></p>
+  <p><label>{% trans "Uso declarado (qué vas a hacer con los datos)" %} <textarea name="purpose" required minlength="20" maxlength="1000" rows="3" data-tip="{% trans 'Qué harás con los datos: es lo que más pesa en la decisión.' %}"></textarea></label></p>
+  <button data-tip="{% trans 'Un agente comprueba quién solicita la clave (solo con lo público y lo declarado) y el resultado llega a tu correo en minutos.' %}">{% trans "Solicitar clave gratuita" %}</button>
+</form>
+<p class="hint">{% trans "Pedimos lo mínimo: nombre, correo y uso. En personas físicas se juzga el uso declarado, no a la persona." %}</p>
+{% endblock %}

@@ -6,7 +6,6 @@ from django.contrib import admin
 from django.urls import path, include
 from machina import urls as machina_urls
 from apps.wiki.feeds import RecentVerdictsFeed, RecentChangesFeed
-from apps.wiki.api import claims_list, claim_detail
 from apps.wiki import views as wiki_views
 from apps.forum import views as foro_views
 from django.views.generic import RedirectView
@@ -21,8 +20,10 @@ urlpatterns = [
     path('panel/', RedirectView.as_view(url='/panel/settings/', permanent=False)),
     path('panel/', include('apps.panel.urls')),
     path('wiki/', include('apps.wiki.urls')),
-    path('api/v1/claims/', claims_list, name='api_claims'),
-    path('api/v1/claims/<slug:slug>/', claim_detail, name='api_claim'),
+    # 6.2 (orden de David, 2026-11-06): la API pasa a CLAVE con escrutinio.
+    # Las rutas keyless antiguas (apps/wiki/api.py) quedan retiradas: la
+    # politica nueva exige saber quien lee (exclusion de partidos, etc.).
+    path('api/', include('apps.api.urls')),
     # 4.2 C4: la pagina canonica de un analisis es /post/<pk>/ — el hilo machina
     # 'post-<pk>' redirige alli (analisis y conversacion son UNA pagina).
     re_path(r'^foro/forum/[^/]+/topic/post-(?P<pk>\d+)-\d+/',

@@ -27,7 +27,9 @@ class UserLanguageMiddleware:
 class StagingAccessMiddleware:
     """Espejo de pruebas: solo entran invitados logueados (gestion desde el panel).
     En produccion (STAGING_MODE=false) no hace nada."""
-    EXEMPT = ('/accounts/login', '/accounts/logout', '/static/', '/healthz')
+    # 6.2: /api/ queda fuera del candado de web privada — sus endpoints v1 ya
+    # exigen clave propia, y la solicitud/reclamacion deben ser alcanzables.
+    EXEMPT = ('/accounts/login', '/accounts/logout', '/static/', '/healthz', '/api/')
 
     def __init__(self, get_response):
         self.get_response = get_response

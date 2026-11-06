@@ -125,7 +125,7 @@
     b025: "footer a[href='/legal/condiciones/']",
     b026: "footer a[href='/donaciones/']",
     b027: "footer a[href^='mailto:']",
-    b028: "footer a[href='/api/v1/claims/']",
+    b028: "footer a[href='/api/']",
     b029: "footer a[href*='rss']",
     b030: "footer a[href*='github']",
     b031: "main a[href='/submit/']",

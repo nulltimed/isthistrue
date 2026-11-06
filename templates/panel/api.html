@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Panel · API" %}{% endblock %}
+{% block content %}
+{% include 'partials/panel_nav.html' %}
+{# 6.2: claves de la API — el escrutinio lo hace la IA; la ultima palabra, aqui. #}
+<h2>{% trans "Reclamaciones y solicitudes" %} <span class="badge">{{ pendientes|length }}</span></h2>
+<ul class="post-list">
+{% for s in pendientes %}
+  <li><strong>{{ s.entity_name }}</strong> ({{ s.get_kind_display }}) · {{ s.contact_email }}
+      {% if s.website %}· <a href="{{ s.website }}" rel="noopener">web</a>{% endif %}
+      · <span class="badge">{{ s.get_status_display }}</span><br>
+      <span class="hint">{% trans "Uso" %}: {{ s.purpose|truncatechars:200 }}</span><br>
+      {% if s.ai_verdict.reasons %}<span class="hint">🤖 {{ s.ai_verdict.category }} ({{ s.ai_verdict.confidence }}): {{ s.ai_verdict.reasons|join:" · " }}</span><br>{% endif %}
+      {% if s.appeal_text %}<span class="hint">🗣 {% trans "Alegación" %}: {{ s.appeal_text|truncatechars:300 }}</span><br>{% endif %}
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ s.pk }}">
+        <button name="accion" value="aprobar" class="mini">{% trans "Aprobar" %}</button>
+        <button name="accion" value="denegar" class="mini">{% trans "Denegar en firme" %}</button>
+      </form></li>
+{% empty %}<li class="hint">{% trans "Nada pendiente." %}</li>{% endfor %}
+</ul>
+<h2>{% trans "Claves activas" %} <span class="badge">{{ activas|length }}</span></h2>
+<ul class="post-list">
+{% for s in activas %}
+  <li><strong>{{ s.entity_name }}</strong> · {{ s.get_tier_display }} · {% trans "hoy" %}: {{ s.hoy }}/{{ s.daily_limit }}
+      <form method="post" style="display:inline">{% csrf_token %}<input type="hidden" name="id" value="{{ s.pk }}">
+        <button name="accion" value="revocar" class="mini" onclick="return confirm('{% trans 'La clave dejará de funcionar al instante. ¿Revocar?' %}')">{% trans "Revocar" %}</button>
+        {% if s.tier == 'FREE' %}<button name="accion" value="pro" class="mini">{% trans "Subir a PRO" %}</button>{% endif %}
+      </form></li>
+{% empty %}<li class="hint">{% trans "Ninguna todavía." %}</li>{% endfor %}
+</ul>
+{% endblock %}

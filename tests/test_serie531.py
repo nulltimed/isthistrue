@@ -31,7 +31,10 @@ class Parche531_WebPrivada(TestCase):
 
     def test_cualquier_direccion_carga_vacia_con_el_modal(self):
         self._privada()
-        for url in ('/', '/foro/', '/wiki/', '/post/1/', '/accounts/login/', '/api/v1/claims/'):
+        # 6.2 (orden de David, 2026-11-06): /api/ queda EXENTO del candado (sus
+        # endpoints exigen clave propia), asi que sale de esta lista y tiene
+        # su propia asercion abajo.
+        for url in ('/', '/foro/', '/wiki/', '/post/1/', '/accounts/login/'):
             r = self.client.get(url)
             html = r.content.decode()
             self.assertEqual(r.status_code, 403, url)

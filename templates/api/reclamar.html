@@ -1,0 +1,11 @@
+{% extends 'base.html' %}{% load i18n %}
+{% block title %}{% trans "Reclamar la denegación" %}{% endblock %}
+{% block content %}
+<h1>{% trans "Reclamar la denegación" %}</h1>
+<p>{% blocktrans with e=sol.entity_name %}El escrutinio automático denegó la clave solicitada por «{{ e }}». Una persona revisará tu reclamación y tendrá la última palabra.{% endblocktrans %}</p>
+{% if sol.ai_verdict.reasons %}<ul>{% for r in sol.ai_verdict.reasons %}<li class="hint">{{ r }}</li>{% endfor %}</ul>{% endif %}
+<form method="post">{% csrf_token %}
+  <p><label>{% trans "Tu alegación" %} <textarea name="appeal_text" required maxlength="1000" rows="4" data-tip="{% trans 'Cuenta por qué la denegación es un error: lo leerá una persona con la última palabra.' %}"></textarea></label></p>
+  <button>{% trans "Enviar reclamación" %}</button>
+</form>
+{% endblock %}

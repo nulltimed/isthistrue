@@ -25,5 +25,6 @@ título de la ventana del navegador.
   <a href="{% url 'panel_staging' %}"{% if cur == 'panel_staging' %} class="active" aria-current="page"{% endif %}>{% icon 'eye' 16 %} {% trans "Espejo" %}</a>
   <a href="{% url 'panel_logs' %}"{% if cur == 'panel_logs' %} class="active" aria-current="page"{% endif %}>{% icon 'list' 16 %} Logs</a>
   <a href="{% url 'panel_gastos' %}"{% if cur == 'panel_gastos' %} class="active" aria-current="page"{% endif %}>{% icon 'gauge' 16 %} {% trans "Gastos" %}</a>
+  <a href="{% url 'panel_api' %}"{% if cur == 'panel_api' %} class="active" aria-current="page"{% endif %}>{% icon 'key' 16 %} API</a>
 </nav>
 {% endwith %}

@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'machina.apps.forum_tracking',
     # --- Apps propias ---
     'apps.accounts', 'apps.analysis', 'apps.agents', 'apps.wiki',
-    'apps.forum', 'apps.panel', 'apps.embeds',
+    'apps.forum', 'apps.panel', 'apps.embeds', 'apps.api',
 ]
 
 MIDDLEWARE = [
@@ -122,6 +122,7 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', '')
 ADMIN2_USERNAME = os.getenv('ADMIN2_USERNAME', '')
 ADMIN2_EMAIL = os.getenv('ADMIN2_EMAIL', '')
 ADMIN2_PASSWORD = os.getenv('ADMIN2_PASSWORD', '')
+SITE_URL = os.getenv('SITE_URL', 'https://esestocierto.com')  # 6.2: enlaces en correos
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'  # salir -> portada, nunca la pantalla de Django (4.2 A6)
