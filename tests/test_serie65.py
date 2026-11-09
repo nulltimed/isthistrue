@@ -101,6 +101,18 @@ class BuloDeLaSemana(TestCase):
         self.assertIn('/wiki/claim/bulo-auto/', html)
         self.assertNotIn('bulo-mas-nuevo', html)
 
+    def test_varios_slugs_con_comas_rotan_solo_entre_los_elegidos(self):
+        # 6.10 (David, 2026-11-09: «sí» a los claims de lujo para la demo).
+        from apps.panel.models import SystemSetting
+        from apps.analysis.views import _bulo_destacado
+        _claim_rojo_con_cadena(slug='lujo-a')
+        _claim_rojo_con_cadena(slug='lujo-b')
+        _claim_rojo_con_cadena(slug='descartado')   # fuera de la lista
+        SystemSetting.objects.update_or_create(
+            key='featured_claim_slug', defaults={'value': ' lujo-a, lujo-b '})
+        vistos = {_bulo_destacado(semana=n).slug for n in (0, 1)}
+        self.assertEqual(vistos, {'lujo-a', 'lujo-b'})
+
     def test_rota_cada_semana_entre_los_mejores(self):
         # 6.6-b (orden de David, 2026-11-09): «sí» a la rotación semanal.
         from apps.analysis.views import _bulo_destacado

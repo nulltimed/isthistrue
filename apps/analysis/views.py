@@ -57,14 +57,20 @@ def _bulo_destacado(semana=None):
     ven siempre el mismo escaparate). Si no hay candidatos, no se pinta."""
     from apps.panel.models import SystemSetting
     from apps.wiki.models import Claim
-    slug = (SystemSetting.get_str('featured_claim_slug', '') or '').strip()
-    if slug:
-        c = Claim.objects.filter(slug=slug).first()
-        if c:   # el filtro por slug garantiza que el enlace de la portada existe
-            return c
-    candidatos = list(Claim.objects.filter(color='RED', consolidated=True)
-                      .exclude(slug__isnull=True).exclude(origin_chain=[])
-                      .order_by('-pk')[:5])
+    # 6.10 (David, 2026-11-09: «sí» a los claims de lujo): el ajuste acepta
+    # VARIOS slugs separados por comas — la rotación semanal elige entre esos
+    # elegidos a mano. Con uno solo queda fijo; vacío, automático (5 últimos
+    # ROJOS consolidados con cadena).
+    slugs = [s.strip() for s in
+             (SystemSetting.get_str('featured_claim_slug', '') or '').split(',')
+             if s.strip()]
+    if slugs:
+        candidatos = [c for s in slugs
+                      for c in [Claim.objects.filter(slug=s).first()] if c]
+    else:
+        candidatos = list(Claim.objects.filter(color='RED', consolidated=True)
+                          .exclude(slug__isnull=True).exclude(origin_chain=[])
+                          .order_by('-pk')[:5])
     if not candidatos:
         return None
     if semana is None:   # estable dentro de la semana, cambia el lunes

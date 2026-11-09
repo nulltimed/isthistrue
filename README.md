@@ -134,8 +134,8 @@ Diseño fusionado, confirmado punto por punto por David:
   - **De un vistazo**: tráfico, salud en semáforo, avisos de ataque (fail2ban + Django).
   - **Servicios**: ficha por contenedor (API Docker) con Parar/Reiniciar/Levantar tras warning + 3 botones globales.
   - **Códigos** (NUEVA, Hito 2A): generar lotes (1 a 1.000.000, nivel seleccionable, txt descargable, >10k en segundo plano), listar, revocar (silencioso).
-  - **Donaciones**: objetivo mensual manual; contador regresivo público; PayPal enlace + Bizum número mostrado; gráficos; registro manual.
-  - **Legal**: PDFs plantilla asociación sin ánimo de lucro, estatal + Xunta de Galicia; siempre con descargo "guía, no asesoramiento".
+  - ~~**Donaciones**: objetivo mensual manual; contador regresivo público; PayPal enlace + Bizum número mostrado; gráficos; registro manual.~~ **ENMENDADO (serie 6.10, pasada de coherencia ordenada por David 2026-11-09: «sí»)**: donaciones retiradas (6.1, Lectura A); la pestaña es «Financiación» (libro interno: créditos + PayPal legado).
+  - ~~**Legal**: PDFs plantilla asociación sin ánimo de lucro, estatal + Xunta de Galicia; siempre con descargo "guía, no asesoramiento".~~ **ENMENDADO (serie 6.10, pasada de coherencia ordenada por David 2026-11-09: «sí»)**: ya no hay asociación — la operación comercial es de una SL (100 % del socio; David titular de dominio/VPS/copyright, alquiler al coste).
   - **Settings**: backup manual VIM3+GDrive; ZIP de configuración cifrado (descarga/subida con flujo validar→stop→.bak→sustituir→queda PARADO); **Panic Button 2 niveles con TOTP** (normal = backup con web viva; Full Panic = backup + parada total con página de pánico); umbrales del algoritmo (70%, 1/5min), umbrales de votación (5/10/3días), N del modo arranque, objetivo de donaciones, flags de idioma.
 - **Bot Telegram `isthistruebot`**: Fase 1 solo alertas salientes; Fase 2 comandos con TOTP obligatorio, chat ID en lista blanca de UNO (David), contenedor propio.
 
@@ -154,7 +154,7 @@ Diseño fusionado, confirmado punto por punto por David:
 ## 15. Licencia, monetización y servicios externos
 
 - **AGPL-3.0 + licencia comercial dual** (modelo Grafana/GitLab), copyright de David. Repo público `nulltimed/isthistrue`. Datos wiki: CC-BY-SA + API pública solo lectura (Fase 3). ~~Ingresos: donaciones/Patrono~~ **ENMENDADO (serie 6.1, orden de David 2026-11-06, ver §SERIE 6.1)**: las donaciones se RETIRAN (Lectura A); los ingresos pasan a créditos cobrados por la SL operadora + API de pago, badges/embeds, licencia comercial.
-- Servicios pendientes de crear por David (todo se configura vía `.env`, él rellena): API Anthropic (50 € iniciales + límite mensual = doble airbag), Cloudflare Turnstile (DNS sigue en IONOS), Brevo (DKIM/DMARC en IONOS), BotFather, PayPal/Bizum, GitHub `nulltimed/isthistrue` (mini-guía Git YA entregada).
+- Servicios pendientes de crear por David (todo se configura vía `.env`, él rellena): API Anthropic (50 € iniciales + límite mensual = doble airbag), Cloudflare Turnstile (DNS sigue en IONOS), Brevo (DKIM/DMARC en IONOS), ~~BotFather~~ (Telegram VETADO para siempre), ~~PayPal/Bizum~~ (ENMENDADO 6.10: la pasarela será **Stripe** de la SL), GitHub `nulltimed/isthistrue` (mini-guía Git YA entregada).
 
 ## 16. Frenos ejercidos y aceptados en esta ronda (patrón a mantener)
 
@@ -170,7 +170,7 @@ Diseño fusionado, confirmado punto por punto por David:
 
 **Arquitectura**: opcion B congelada — **django-machina** como foro dentro de Django (dos foros: Principal y Off-Topic; topics creados SOLO por el sistema desde posts analizados — quiz 3A; los hilos se mudan de subforo al relegar/rescatar). Wiki 100% a medida (no existe OSS para "wiki de claims por agentes"). Discourse/MediaWiki descartados (3 stacks, 3 lenguajes, integracion en los cruces).
 
-**Economia**: presupuesto **60 €/mes y 2 €/dia** (David lo subio desde 30). Los creditos de usuario son cupos GRATUITOS. **Cupos publicos**: banner en cabecera de foro Y wiki con gasto diario/mensual y mensaje "si donas, estos cupos suben — open source, sin animo de lucro" (honestidad radical como marketing). Cuando el deposito se agota: mensaje honesto con posicion en cola de mañana (quiz 9A). Palancas Hito 2B: API por lotes de Anthropic (-50%; el veredicto ya es asincrono) y modelo local para la fase barata.
+**Economia**: presupuesto **60 €/mes y 2 €/dia** (David lo subio desde 30). Los creditos de usuario son cupos GRATUITOS. **Cupos publicos**: banner en cabecera de foro Y wiki con gasto diario/mensual ~~y mensaje "si donas, estos cupos suben — open source, sin animo de lucro"~~ **ENMENDADO (serie 6.10, pasada de coherencia ordenada por David 2026-11-09: «sí»)**: el banner apunta a los créditos («¿Prisa? Mira los créditos»); desde la 6.7 el gasto público va por categorías. Cuando el deposito se agota: mensaje honesto con posicion en cola de mañana (quiz 9A). Palancas Hito 2B: API por lotes de Anthropic (-50%; el veredicto ya es asincrono) y modelo local para la fase barata.
 
 **Embeddings**: modelo LOCAL ahora (sentence-transformers, EMBEDDINGS_MODEL en .env, por defecto paraphrase-multilingual-MiniLM-L12-v2, **dimension 384** — cambia la de 1024 del diseño v1). Carga perezosa en worker (~0,5-1,5 GB RAM).
 
@@ -233,7 +233,7 @@ Diseño fusionado, confirmado punto por punto por David:
 - **EliteBook ELIMINADO del flujo para siempre**: jamas se despliega nada en local; unico entorno de pruebas = espejo del VPS. install.md Parte A eliminada.
 - **Claude Codigo (app Windows de Claude) es el operador de Git y despliegue**, con supervision de David. Archivo **CLAUDE.md** creado en la raiz con comandos, ritual CI→espejo→produccion y lineas rojas (no .env, no host, no Telegram, no biometria, no subir presupuestos sin orden). Toda entrega futura debe mantener CLAUDE.md al dia.
 - **ALERTA de posible errata sin resolver**: David escribio el registro del espejo como "stagins" (sin g) tras haber acordado "stagings". El proyecto esta cableado a **stagings.xyztserver.com**. Verificar con ping cual resuelve; si el DNS real es "stagins", cambiar proyecto o (mejor) corregir el registro DNS.
-- **Donaciones (diseño Fase 3 aprobandose)**: Bizum entre particulares exige mostrar telefono (David lo rechaza); Bizum de empresa requiere pasarela/banco de negocio; **Bizum ONG** requiere asociacion constituida → decision propuesta: lanzar SOLO con PayPal (datos pendientes de David) y activar Bizum ONG tras constituir la asociacion. **Presupuesto vivo**: techo mensual = budget_base_eur (60) + donaciones del mes registradas (a mano en el panel al inicio; webhook PayPal como mejora), diario = techo/dias del mes, con TECHO DURO absoluto (propuesto 200 €) porque el limite de la consola Anthropic es fijo y solo David puede subirlo a mano. Banner publico refleja el techo vivo.
+- ~~**Donaciones (diseño Fase 3 aprobandose)**~~ **ENMENDADO (serie 6.10, pasada de coherencia ordenada por David 2026-11-09: «sí»)** — HISTÓRICO; la mecánica del presupuesto vivo sobrevive vía apuntes CREDIT (6.1): Bizum entre particulares exige mostrar telefono (David lo rechaza); Bizum de empresa requiere pasarela/banco de negocio; **Bizum ONG** requiere asociacion constituida → decision propuesta: lanzar SOLO con PayPal (datos pendientes de David) y activar Bizum ONG tras constituir la asociacion. **Presupuesto vivo**: techo mensual = budget_base_eur (60) + donaciones del mes registradas (a mano en el panel al inicio; webhook PayPal como mejora), diario = techo/dias del mes, con TECHO DURO absoluto (propuesto 200 €) porque el limite de la consola Anthropic es fijo y solo David puede subirlo a mano. Banner publico refleja el techo vivo.
 
 ## 23. PRIMER DESPLIEGUE REAL (2026-08-05) y Fase 3 entregada
 
@@ -258,7 +258,7 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
 - **Portada por secciones**: Recientes / Mas votados (ventana 7 dias, cuenta solo los ▲; desde 5.23 existe tambien el ▼ con karma) /
   Reincidentes (umbral 5/10/5) / filtro por los 12 temas cerrados + tags libres en el submit /
   Off-Topic quinta seccion.
-- **Donaciones + presupuesto vivo**: techo mensual = budget_base_eur(60) + donaciones del mes,
+- **Donaciones + presupuesto vivo** (**ENMENDADO (serie 6.10, pasada de coherencia ordenada por David 2026-11-09: «sí»)**: hoy el techo crece con apuntes CREDIT del gasto respaldado de créditos; /donaciones/ redirige a /creditos/): techo mensual = budget_base_eur(60) + donaciones del mes,
   techo duro budget_hard_ceiling_eur(200), diario = techo/dias del mes; candado try_spend usa el
   vivo; pagina publica /donaciones/ con barra de progreso y boton PayPal (SystemSetting
   paypal_url — ALTA PAYPAL.ME PENDIENTE de David); contador regresivo en cabecera ("faltan X €");
@@ -330,7 +330,7 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
 - Token GitHub con scope workflow: ARREGLADO por David → Claude Codigo debe subir ci.yml (guia §6).
 - SEGURIDAD: David pego su .env completo en el chat (SECRET_KEY, POSTGRES_PASSWORD,
   ADMIN_PASSWORD) y decidio NO rotar claves, riesgo asumido conscientemente tras aviso.
-- RECORDATORIOS ACTIVOS (David pidio que se le recuerden): PayPal.me (§8), permisos foro (§9),
+- RECORDATORIOS ACTIVOS (David pidio que se le recuerden): ~~PayPal.me (§8)~~ (ENMENDADO 6.10: sin PayPal — Stripe de la SL), permisos foro (§9),
   backups rclone (§10), fail2ban (§11), apartado de correos (§12).
 - Pendiente menor: David no respondio el quiz de peliculas (lista de 10 sci-fi queda a la espera).
 
@@ -358,7 +358,7 @@ análisis sigue siendo gratuito por votos y cola — A2 «aviso, nunca muro» si
   `ceil(minutos/20)` créditos. La puerta de IDENTIFICACIÓN de hablantes NO se salta (calidad).
 - Rastreo de origen bajo demanda de claims verde/gris: `origin_trace_credits` (1 de fábrica).
 - La COMPRA de packs la cobrará la SL: `sl_checkout_enabled=0` hasta que esté constituida
-  (hoy NO lo está). Sin pasarela elegida aún (Stripe vs PayPal Business de la SL: pendiente).
+  (hoy NO lo está). Pasarela DECIDIDA (David, 2026-11-06): **Stripe** a nombre de la SL.
 - El superusuario no gasta (criterio skip_charge de siempre).
 
 **Rastreo de origen** (`apps/agents/origin.py`): cadena de difusión hacia atrás hasta el
@@ -377,3 +377,22 @@ la vía es la SL de un tercero, no la asociación.
 contrato dominio/servidor/licencia David↔SL (abogado) · encender `sl_checkout_enabled`
 cuando todo lo anterior exista · la web sigue PRIVADA (site_private=1) hasta entonces
 (confirmado por David esta misma noche).
+
+## SERIES 6.5–6.10 (2026-11-09) — producto, crecimiento y la purga del lenguaje pre-SL
+Órdenes de David (literales): «aplica todo salvo lo que veas que tiene que esperar a que la
+SL esté constituída, pero aún así, prepáralo» · REGLA PERMANENTE «para cada cambio nuevo
+intenta implementar un sistema de revenue» (guardarraíl: votos gratis, veredictos invendibles)
+· «regalo desde el principio» (crédito de bienvenida a 1) · «mejor el viernes, más punch»
+(resumen semanal) · «no, por meses y años» (dataset) · «ahora es una empresa. Cierta
+transparencia, pero eliminemos los puntos más complicados de los gastos que se publican»
+(gastos públicos por categorías) · ORDEN PERMANENTE «prefiero adelantar Qwen antes que claude,
+siempre» (el cliente agota Qwen; respaldo deep = Sonnet, su «sonnet») · «Elimina las
+donaciones de cualquier página. Es ahora una SL. Ya hemos establecido el modelo de negocio»
+(serie 6.9: purga total del lenguaje de donación; candado test_serie69).
+Qué entró: reparador de JSON truncado (fallos de rastreo 52 %→14 % medidos), comando
+`rastrear_origen`, EL BULO DE LA SEMANA rotatorio en portada, ClaimReview (schema.org) en
+fichas, crédito de bienvenida con candado contable (el regalo jamás infla el libro), resumen
+semanal, páginas /quienes-somos/ /correcciones/ /servicios/ /datos/, recorrido guiado del
+invitado (`tour_email`), gastos públicos por categorías y README enmendado (esta pasada).
+Modelo de negocio ESTABLECIDO: créditos de inmediatez (1 €) · API gratis/Pro · dossieres B2B
+· dataset y badge como captación · Pro 4 €/mes · todo a la espera solo de Stripe + datos SL.

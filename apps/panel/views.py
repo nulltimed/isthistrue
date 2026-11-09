@@ -96,8 +96,8 @@ SETTINGS_DEF = [
     ('origin_trace_credits', 'Créditos del rastreo bajo demanda',
      'Lo que cuesta pedir la cadena de origen de un claim verde o gris. Los rojos/ámbar la traen de serie.', 'num'),
     # 6.5: el escaparate de la portada.
-    ('featured_claim_slug', 'El bulo de la semana (slug del claim)',
-     'La ficha que la portada muestra en el escaparate. Vacío = automático: el último claim FALSO consolidado que tenga cadena de origen. Pon aquí el slug de un claim (lo que va tras /wiki/claim/) para fijarlo a mano.', 'text'),
+    ('featured_claim_slug', 'El bulo de la semana (slug, o varios con comas)',
+     'La ficha del escaparate de la portada. Vacío = automático (rota entre los 5 últimos FALSOS consolidados con cadena). Un slug lo fija; VARIOS separados por comas (slug-uno,slug-dos) rotan cada semana solo entre tus elegidos — ideal para demos.', 'text'),
     # 6.6: crecimiento.
     ('welcome_credits', 'Créditos de bienvenida por alta',
      'Créditos de regalo al crear cuenta (de fábrica 1, orden de David 2026-11-09: «regalo desde el principio»; 0 = apagado). OJO: se gastan contra el presupuesto base — un crédito regalado nunca amplía el tope mensual. El tope diario de abajo frena las granjas de cuentas.', 'num'),
