@@ -546,3 +546,14 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   créditos (votos gratis y veredictos invendibles, intactos).
 - _nota() es fail-soft y se limpia ('') al cerrar cada fase: un hito rancio en un
   estado terminal no se pinta (la barra solo existe en estados en marcha).
+
+## REGLA PERMANENTE (orden de David, 2026-11-09): desplegar.sh es EL camino
+David, literal: «sí, y actualízalo y avísame de ello cada vez que sea necesario».
+El despliegue de produccion es `cd /opt/isthistrue && bash desplegar.sh` (UN comando;
+`--forzar` salta el freno de analisis en vuelo). El script encadena los candados
+historicos: freno 4.4-F -> pull -> up --build -d sin down -> restart beat si el pull
+toca config/celery.py -> migrate -> seed_settings -> collectstatic + smoke -> chequeo
+«unregistered». Se auto-relanza si el pull lo actualiza (patron main()+exec).
+**Cada vez que el operador cambie desplegar.sh, AVISA a David expresamente** en el
+informe. Candado: test_serie617 (sintaxis + pasos obligatorios + down prohibido).
+A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta los \).
