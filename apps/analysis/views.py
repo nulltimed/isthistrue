@@ -2180,10 +2180,36 @@ def services_page(request):
         'sl_lista': SystemSetting.get_int('sl_checkout_enabled', 0) > 0})
 
 
+def dataset_page(request):
+    """6.6-c (orden de David, 2026-11-09: «por meses y años»): la portada del
+    dataset — un enlace por año y por mes con su cuenta, más el completo.
+    Solo para cuentas (cada descarga es un contacto); lo programático, por la
+    API con clave."""
+    from django.contrib.auth.decorators import login_required as _lr
+    return _lr(_dataset_page)(request)
+
+
+def _dataset_page(request):
+    from django.db.models import Count
+    from django.db.models.functions import TruncMonth
+    from apps.wiki.models import Claim
+    base = Claim.objects.filter(consolidated=True).exclude(slug__isnull=True)
+    meses = (base.annotate(mes=TruncMonth('created_at')).values('mes')
+             .annotate(n=Count('pk')).order_by('-mes'))
+    anios = {}
+    for f in meses:
+        a = f['mes'].year
+        anios.setdefault(a, {'anio': a, 'total': 0, 'meses': []})
+        anios[a]['total'] += f['n']
+        anios[a]['meses'].append({'num': f['mes'].month, 'fecha': f['mes'],
+                                  'n': f['n']})
+    return render(request, 'legal/datos.html',
+                  {'anios': list(anios.values()), 'total': base.count()})
+
+
 def dataset_csv(request):
-    """6.6: /datos/ — el dataset abierto (CSV, CC-BY-SA) de los claims
-    consolidados, solo para cuentas (cada descarga es un contacto que ya
-    conoce el producto). Lo programatico va por la API con clave."""
+    """6.6: el CSV del dataset (CC-BY-SA). Sin parámetros, completo;
+    ?y=YYYY por año, ?y=YYYY&m=MM por mes (6.6-c)."""
     from django.contrib.auth.decorators import login_required as _lr
     return _lr(_dataset_csv)(request)
 
@@ -2192,14 +2218,22 @@ def _dataset_csv(request):
     import csv
     from django.http import HttpResponse
     from apps.wiki.models import Claim
+    qs = Claim.objects.filter(consolidated=True).exclude(slug__isnull=True)
+    y, m = request.GET.get('y', ''), request.GET.get('m', '')
+    nombre = 'esestocierto-claims'
+    if y.isdigit():
+        qs = qs.filter(created_at__year=int(y))
+        nombre += f'-{y}'
+        if m.isdigit() and 1 <= int(m) <= 12:
+            qs = qs.filter(created_at__month=int(m))
+            nombre += f'-{int(m):02d}'
     resp = HttpResponse(content_type='text/csv; charset=utf-8')
-    resp['Content-Disposition'] = 'attachment; filename="esestocierto-claims.csv"'
+    resp['Content-Disposition'] = f'attachment; filename="{nombre}.csv"'
     w = csv.writer(resp)
     w.writerow(['# esestocierto? — dataset de afirmaciones verificadas',
                 'licencia CC-BY-SA', 'https://esestocierto.com/datos/'])
     w.writerow(['slug', 'color', 'tipo', 'titulo', 'afirmacion', 'fecha'])
-    for c in (Claim.objects.filter(consolidated=True).exclude(slug__isnull=True)
-              .order_by('pk').iterator()):
+    for c in qs.order_by('pk').iterator():
         w.writerow([c.slug, c.color, c.kind, c.title,
                     c.text_original[:500], c.created_at.date().isoformat()])
     return resp

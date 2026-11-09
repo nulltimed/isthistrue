@@ -3436,3 +3436,37 @@ msgstr "Corrections"
 
 msgid "Servicios"
 msgstr "Services"
+
+# 6.6-c: dataset por meses y años + resumen al viernes
+msgid "Datos abiertos"
+msgstr "Open data"
+
+msgid "Todas las afirmaciones verificadas y consolidadas, en CSV y con licencia CC-BY-SA, para investigación y periodismo de datos. Elige el periodo:"
+msgstr "All verified and consolidated claims, as CSV under a CC-BY-SA licence, for research and data journalism. Pick a period:"
+
+msgid "Descarga el CSV con todas las afirmaciones consolidadas desde el principio."
+msgstr "Download the CSV with every consolidated claim since the beginning."
+
+msgid "Dataset completo"
+msgstr "Full dataset"
+
+msgid "Descarga solo las afirmaciones de este año."
+msgstr "Download only this year's claims."
+
+msgid "año entero"
+msgstr "whole year"
+
+msgid "Descarga solo las afirmaciones de este mes."
+msgstr "Download only this month's claims."
+
+msgid "Todavía no hay afirmaciones consolidadas que exportar."
+msgstr "There are no consolidated claims to export yet."
+
+msgid "¿Acceso programático o un recorte a medida? La"
+msgstr "Programmatic access or a tailored slice? The"
+
+msgid "y los"
+msgstr "and the"
+
+msgid "servicios"
+msgstr "services"

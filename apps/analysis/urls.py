@@ -91,5 +91,6 @@ urlpatterns = [
     path('quienes-somos/', views.quienes_somos, name='about'),
     path('correcciones/', TemplateView.as_view(template_name='legal/correcciones.html'), name='corrections'),
     path('servicios/', views.services_page, name='services'),
-    path('datos/', views.dataset_csv, name='dataset'),
+    path('datos/', views.dataset_page, name='dataset'),
+    path('datos/csv/', views.dataset_csv, name='dataset_csv'),  # 6.6-c: ?y=&m=
 ]

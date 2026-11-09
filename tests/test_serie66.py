@@ -85,7 +85,8 @@ class CandadoContableDelRegalo(TestCase):
 
 
 class ResumenSemanal(TestCase):
-    LUNES_8 = datetime(2026, 11, 9, 8, 0)   # el 9-11-2026 es lunes
+    # 6.6-c (David, 2026-11-09): «mejor el viernes, más punch».
+    VIERNES_8 = datetime(2026, 11, 13, 8, 0)   # el 13-11-2026 es viernes
 
     def _claim_rojo(self):
         from apps.wiki.models import Claim
@@ -93,12 +94,12 @@ class ResumenSemanal(TestCase):
                                     slug='bulo-66', color='RED',
                                     consolidated=True)
 
-    def test_el_lunes_sale_con_bulos_y_pie_de_servicios(self):
+    def test_el_viernes_sale_con_bulos_y_pie_de_servicios(self):
         self._claim_rojo()
         make_user(notify_mode='WEEKLY')
         from apps.accounts.tasks import send_daily_digests
         with mock.patch('django.utils.timezone.localtime',
-                        return_value=self.LUNES_8):
+                        return_value=self.VIERNES_8):
             send_daily_digests()
         self.assertEqual(len(mail.outbox), 1)
         cuerpo = mail.outbox[0].body
@@ -107,12 +108,12 @@ class ResumenSemanal(TestCase):
         self.assertIn('/servicios/', cuerpo)       # el pie de revenue
         self.assertIn('/creditos/', cuerpo)
 
-    def test_un_martes_no_sale_nada_semanal(self):
+    def test_un_lunes_no_sale_nada_semanal(self):
         self._claim_rojo()
         make_user(notify_mode='WEEKLY')
         from apps.accounts.tasks import send_daily_digests
         with mock.patch('django.utils.timezone.localtime',
-                        return_value=datetime(2026, 11, 10, 8, 0)):
+                        return_value=datetime(2026, 11, 9, 8, 0)):
             send_daily_digests()
         self.assertEqual(len(mail.outbox), 0)
 
@@ -120,7 +121,7 @@ class ResumenSemanal(TestCase):
         make_user(notify_mode='WEEKLY')
         from apps.accounts.tasks import send_daily_digests
         with mock.patch('django.utils.timezone.localtime',
-                        return_value=self.LUNES_8):
+                        return_value=self.VIERNES_8):
             send_daily_digests()
         self.assertEqual(len(mail.outbox), 0)
 
@@ -154,17 +155,33 @@ class DatasetCsv(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn('login', r['Location'])
 
-    def test_con_cuenta_baja_el_csv_solo_con_consolidados(self):
+    def test_con_cuenta_la_portada_lista_meses_y_anios(self):
+        # 6.6-c (David): «no, por meses y años».
         from apps.wiki.models import Claim
         Claim.objects.create(text_original='consolidado 66', slug='cons-66',
                              color='RED', consolidated=True)
-        Claim.objects.create(text_original='sin consolidar 66', slug='nocons-66',
-                             color='RED', consolidated=False)
         u = make_user(username='u66csv', email='u66csv@example.org')
         self.client.force_login(u)
-        r = self.client.get('/datos/')
+        html = self.client.get('/datos/').content.decode()
+        self.assertIn('Dataset completo', html)
+        self.assertIn('/datos/csv/?y=', html)   # enlaces por periodo
+
+    def test_el_csv_filtra_por_anio_y_mes_y_excluye_sin_consolidar(self):
+        from apps.wiki.models import Claim
+        c = Claim.objects.create(text_original='consolidado 66', slug='cons-66',
+                                 color='RED', consolidated=True)
+        Claim.objects.create(text_original='sin consolidar 66', slug='nocons-66',
+                             color='RED', consolidated=False)
+        u = make_user(username='u66csv2', email='u66csv2@example.org')
+        self.client.force_login(u)
+        y, m = c.created_at.year, c.created_at.month
+        r = self.client.get(f'/datos/csv/?y={y}&m={m}')
         self.assertEqual(r['Content-Type'], 'text/csv; charset=utf-8')
         cuerpo = r.content.decode()
         self.assertIn('CC-BY-SA', cuerpo)
         self.assertIn('cons-66', cuerpo)
         self.assertNotIn('nocons-66', cuerpo)
+        self.assertIn(f'{y}-{m:02d}', r['Content-Disposition'])
+        # Un periodo sin claims baja un CSV con solo las cabeceras.
+        vacio = self.client.get('/datos/csv/?y=1999').content.decode()
+        self.assertNotIn('cons-66', vacio)

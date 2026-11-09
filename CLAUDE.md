@@ -405,8 +405,13 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
   2026-11-09: «regalo desde el principio»; tope `welcome_daily_max`) sale del
   presupuesto base, jamas amplia el tope mensual.
 - **El resumen SEMANAL vive en la misma tarea beat** (send_daily_digests, rama de los
-  lunes): avisos pendientes + bulos de la semana + pie de creditos/servicios. Opt-in
-  por notify_mode=WEEKLY en Ajustes. Sin nada que contar, no se envia.
+  VIERNES — 6.6-c, David: «mejor el viernes, más punch»): avisos pendientes + bulos de
+  la semana + pie de creditos/servicios. Opt-in por notify_mode=WEEKLY en Ajustes.
+  Sin nada que contar, no se envia.
+- **El dataset va POR MESES Y AÑOS** (6.6-c, David: «no, por meses y años»): /datos/
+  es la portada con un enlace por periodo y /datos/csv/?y=&m= sirve el recorte.
+  El tope `welcome_daily_max` es editable en Panel → Ajustes (ya lo era; Turnstile
+  de Cloudflare sigue en el registro como primera barrera).
 - **Paginas de confianza**: /quienes-somos/, /correcciones/ (camino IFCN), /servicios/
   (escaparate B2B; contacto en `b2b_contact_email`, vacio remite al formulario /api/),
   /datos/ (CSV CC-BY-SA solo con cuenta). Patron bilingue de las legales (wrapper +

@@ -59,10 +59,11 @@ def send_daily_digests():
             body = '\n'.join(f'- {n.text}' for n in pending)
             send_mail('esestocierto: resumen diario', body,
                       settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
-    # 6.6: resumen SEMANAL — los lunes a la hora elegida. Lleva los avisos
-    # pendientes Y lo mejor de la semana, con el pie de servicios (regla de
-    # David 2026-11-09: revenue en cada cambio — aqui, embudo, no venta).
-    if timezone.localtime().weekday() != 0:
+    # 6.6: resumen SEMANAL — los VIERNES a la hora elegida (6.6-c, David:
+    # «mejor el viernes, más punch»). Lleva los avisos pendientes Y lo mejor
+    # de la semana, con el pie de servicios (regla de David 2026-11-09:
+    # revenue en cada cambio — aqui, embudo, no venta).
+    if timezone.localtime().weekday() != 4:
         return
     extra = _lo_mejor_de_la_semana()
     base = getattr(settings, 'SITE_URL', '').rstrip('/')

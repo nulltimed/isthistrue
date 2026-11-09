@@ -1,0 +1,22 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{# 6.6-c (orden de David, 2026-11-09: «por meses y años»): la portada del #}
+{# dataset abierto. CSV con licencia CC-BY-SA, partido por periodos. #}
+<h1>{% trans "Datos abiertos" %}</h1>
+<p>{% trans "Todas las afirmaciones verificadas y consolidadas, en CSV y con licencia CC-BY-SA, para investigación y periodismo de datos. Elige el periodo:" %}</p>
+
+<p><a href="{% url 'dataset_csv' %}" data-tip="{% trans 'Descarga el CSV con todas las afirmaciones consolidadas desde el principio.' %}"><strong>⬇ {% trans "Dataset completo" %}</strong></a> ({{ total }} {% trans "afirmaciones" %})</p>
+
+{% for a in anios %}
+<h2>{{ a.anio }} <span class="badge">{{ a.total }}</span>
+  <a class="mini" href="{% url 'dataset_csv' %}?y={{ a.anio }}" data-tip="{% trans 'Descarga solo las afirmaciones de este año.' %}">⬇ {% trans "año entero" %}</a></h2>
+<ul class="post-list">
+  {% for m in a.meses %}
+  <li><a href="{% url 'dataset_csv' %}?y={{ a.anio }}&amp;m={{ m.num }}" data-tip="{% trans 'Descarga solo las afirmaciones de este mes.' %}">⬇ {{ m.fecha|date:"F Y" }}</a> <span class="badge">{{ m.n }}</span></li>
+  {% endfor %}
+</ul>
+{% empty %}
+<p class="hint">{% trans "Todavía no hay afirmaciones consolidadas que exportar." %}</p>
+{% endfor %}
+
+<p class="hint">{% trans "¿Acceso programático o un recorte a medida? La" %} <a href="/api/">API</a> {% trans "y los" %} <a href="{% url 'services' %}">{% trans "servicios" %}</a>.</p>
+{% endblock %}
