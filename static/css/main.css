@@ -1053,3 +1053,10 @@ dialog #tip-globo{z-index:9999}
 .pa-nota { margin: .5rem 0 0; font-size: .9rem; }
 .pa-tiempo { margin: .25rem 0 0; font-size: .8rem; color: var(--muted, #8a8477); }
 .pa-adelantar { margin: .4rem 0 0; font-size: .86rem; }
+
+/* ---- 6.18: la barra avanza en tiempo real (progreso.js) ---- */
+.pa-barra { margin: .55rem 0 0; height: 8px; border-radius: 5px;
+  background: var(--border, #e4dfd4); overflow: hidden; }
+.pa-fill { height: 100%; border-radius: 5px; background: var(--ok, #2e7d32);
+  transition: width .9s linear; }
+.pa-pct { font-weight: 700; color: var(--ok, #2e7d32); }

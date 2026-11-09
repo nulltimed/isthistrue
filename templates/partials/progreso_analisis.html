@@ -9,7 +9,14 @@
       <li class="pa-{{ paso.1 }}"><span class="pa-punto">{% if paso.1 == 'hecho' %}✓{% else %}{{ forloop.counter }}{% endif %}</span> {% trans paso.0 %}</li>
     {% endfor %}
   </ol>
-  {% if progreso.nota %}<p class="pa-nota">⏳ {% trans progreso.nota %}</p>{% endif %}
+  {% if progreso.pct %}
+    {# 6.18 (David: «¿no puede ser en tiempo real?»): la barra avanza cada #}
+    {# segundo en el navegador (progreso.js) y cada hito la re-sincroniza. #}
+    <div class="pa-barra" data-inicio="{{ progreso.inicio_ts }}" data-est="{{ progreso.est_seg }}" role="progressbar" aria-valuenow="{{ progreso.pct }}" aria-valuemin="0" aria-valuemax="100">
+      <div class="pa-fill" style="width: {{ progreso.pct }}%"></div>
+    </div>
+  {% endif %}
+  {% if progreso.nota %}<p class="pa-nota">⏳ {% trans progreso.nota %}{% if progreso.pct %} <span class="pa-pct">{{ progreso.pct }} %</span>{% endif %}</p>{% endif %}
   {% if progreso.inicio %}
     <p class="pa-tiempo">{% trans "En marcha desde hace" %} {{ progreso.inicio|timesince }}{% if progreso.estimado_min %} · {% trans "estimación total" %} ~{{ progreso.estimado_min }} min{% endif %}</p>
   {% endif %}

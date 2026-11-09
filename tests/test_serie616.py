@@ -90,3 +90,49 @@ class NivelDeProcesoDelAnalisis(TestCase):
         self.assertEqual(len(etapas), 4)
         for s in notas + etapas:
             self.assertIn(s, catalogo, f'«{s}» sin traducir en el .po')
+
+
+class ProgresoEnTiempoReal(TestCase):
+    """6.18 (pregunta de David: «¿no puede ser en tiempo real?»)."""
+
+    def test_sin_historial_manda_el_valor_de_fabrica(self):
+        from apps.analysis.views import _ratio_fase
+        self.assertEqual(_ratio_fase('cheap_started_at', 'cheap_finished_at', 2.3), 2.3)
+
+    def test_con_historial_manda_la_mediana_medida(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from apps.analysis.views import _ratio_fase
+        u = User.objects.create_user(username='u618', email='u618@example.org',
+                                     password='x')
+        ahora = timezone.now()
+        for i, ratio in enumerate((0.5, 0.6, 0.7)):   # p. ej. tiempos de GPU
+            Post.objects.create(
+                author=u, url=f'https://youtu.be/s618{i}', status='DONE',
+                duration_seconds=600,
+                cheap_started_at=ahora - timedelta(seconds=600 * ratio),
+                cheap_finished_at=ahora)
+        self.assertAlmostEqual(
+            _ratio_fase('cheap_started_at', 'cheap_finished_at', 2.3), 0.6, places=2)
+
+    def test_el_porcentaje_va_acotado_y_llega_a_la_plantilla(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        u = User.objects.create_user(username='u618b', email='u618b@example.org',
+                                     password='x')
+        p = Post.objects.create(
+            author=u, url='https://youtu.be/s618b', status='CHEAP_RUNNING',
+            duration_seconds=600,
+            cheap_started_at=timezone.now() - timedelta(days=1))   # lleva un dia
+        prog = _progreso_analisis(p)
+        self.assertEqual(prog['pct'], 97)   # jamas el 100: lo pone la realidad
+        html = self.client.get(f'/post/{p.pk}/', follow=True).content.decode()
+        self.assertIn('pa-barra', html)
+        self.assertIn('data-est', html)
+
+    def test_el_reloj_del_navegador_sigue_el_patron_del_vivo(self):
+        """Leccion 6.14: JS dentro de #post-body = init + istt:post-swap + sin
+        apilar intervalos."""
+        js = (RAIZ / 'static/js/progreso.js').read_text(encoding='utf-8')
+        self.assertIn("addEventListener('istt:post-swap'", js)
+        self.assertIn('clearInterval(window.__isttPaReloj)', js)

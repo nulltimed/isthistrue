@@ -557,3 +557,14 @@ toca config/celery.py -> migrate -> seed_settings -> collectstatic + smoke -> ch
 **Cada vez que el operador cambie desplegar.sh, AVISA a David expresamente** en el
 informe. Candado: test_serie617 (sintaxis + pasos obligatorios + down prohibido).
 A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta los \).
+
+## Lecciones de la serie 6.18 (2026-11-09) — el progreso en tiempo real
+- **Pregunta de David: «¿no puede ser en tiempo real?» → sí, en dos piezas**: el % avanza
+  cada segundo EN EL NAVEGADOR (progreso.js: transcurrido/estimación, acotado al 97 % —
+  el 100 lo pone la realidad, no el reloj) y cada hito lo re-sincroniza vía el vivo (6.14).
+- **La estimación se CALIBRA SOLA**: _ratio_fase() = mediana de (duración de la fase /
+  duración del vídeo) en los últimos 10 posts DONE con cronómetro. Si el análisis pasa
+  a GPU, la estimación baja sola sin tocar código. Sin historial: 2,3x (medida 4.4-F)
+  para la fase barata, 1,2x para la cara.
+- progreso.js nació YA con el patrón del vivo (init + istt:post-swap + reloj en window
+  sin apilar): la lección 6.14 aplicada de serie, con su assert en test_serie616.

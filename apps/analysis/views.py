@@ -771,14 +771,51 @@ def _progreso_analisis(post):
         estado = 'hecho' if i < actual else ('activo' if i == actual else 'pendiente')
         pasos.append((nombre, estado))
     inicio = {2: post.cheap_started_at, 4: post.full_started_at}.get(actual)
-    # 4.4-F medido: analizar cuesta ~2,3x la duracion del video (fase barata).
-    estimado_min = None
-    if actual == 2 and post.duration_seconds:
-        estimado_min = max(1, round(post.duration_seconds * 2.3 / 60))
+    # 6.18 (David: «¿no puede ser en tiempo real?»): la estimacion se CALIBRA
+    # SOLA con la mediana de los ultimos videos terminados (GPU o CPU, da
+    # igual: manda lo que de verdad tardaron). Arranque sin historial: el 2,3x
+    # medido en el 4.4-F para la fase barata; 1,2x para la cara.
+    est_seg = None
+    if post.duration_seconds:
+        if actual == 2:
+            est_seg = post.duration_seconds * _ratio_fase(
+                'cheap_started_at', 'cheap_finished_at', 2.3)
+        elif actual == 4:
+            est_seg = post.duration_seconds * _ratio_fase(
+                'full_started_at', 'full_finished_at', 1.2)
+    estimado_min = max(1, round(est_seg / 60)) if est_seg else None
+    # % honesto: tiempo transcurrido contra la estimacion, acotado 1-97 (el
+    # 100 lo pone la realidad, no el reloj). El navegador lo anima cada
+    # segundo (progreso.js) y cada hito lo re-sincroniza via el vivo (6.14).
+    pct = None
+    if inicio and est_seg:
+        from django.utils import timezone as _tz
+        trans = (_tz.now() - inicio).total_seconds()
+        pct = int(max(1, min(97, 100 * trans / est_seg)))
     return {'pasos': pasos, 'nota': post.progress_note or '',
             'inicio': inicio, 'estimado_min': estimado_min,
+            'pct': pct, 'est_seg': int(est_seg) if est_seg else None,
+            'inicio_ts': int(inicio.timestamp()) if inicio else None,
             # Revenue (regla permanente): la espera enseña el atajo de creditos.
             'adelantable': post.status == 'AWAITING_BUDGET'}
+
+
+def _ratio_fase(campo_ini, campo_fin, por_defecto):
+    """6.18: cuanto tarda una fase RESPECTO a la duracion del video, medido —
+    mediana de los ultimos 10 posts terminados con cronometro. Sin historial
+    (o con relojes rotos), el valor de fabrica."""
+    filas = (Post.objects.filter(status='DONE', duration_seconds__gt=0)
+             .exclude(**{f'{campo_ini}__isnull': True})
+             .exclude(**{f'{campo_fin}__isnull': True})
+             .order_by('-pk')[:10])
+    ratios = sorted(
+        (getattr(p, campo_fin) - getattr(p, campo_ini)).total_seconds()
+        / p.duration_seconds
+        for p in filas
+        if getattr(p, campo_fin) > getattr(p, campo_ini))
+    if not ratios:
+        return por_defecto
+    return ratios[len(ratios) // 2]
 
 
 def post_estado(request, pk):
