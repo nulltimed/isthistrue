@@ -604,12 +604,13 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   aprobar) y Spotify (NON_ANALYZABLE: su audio no se puede descargar).
 
 ## Lecciones de las series 6.23-6.25 (2026-11-09, 21:18)
-- **6.23 — orden literal de David: «SIEMPRE se deben analizar TODAS las frases.
-  Repito: siempre»**: tarea beat nocturna reclarify_grey_claims — los claims UNDECIDED
-  de posts DONE con su última ClaimVersion más vieja que grey_retry_days (panel, 3 de
-  fábrica, 0 apaga) vuelven a clarify.run_pending (modelo profundo + búsquedas frescas).
-  El reloj es la última versión: cada intento pospone el siguiente. Gasta dinero real.
-  OJO: el pase toca config/celery.py → desplegar.sh reinicia beat solo.
+- **6.23 — ENMENDADA EL MISMO DÍA (6.23-c)**: la tarea nocturna de grises nació y se
+  RETIRÓ en horas. David, literal (21:30): «No, quiero simplemente que en análisis
+  profundo se verifiquen todas y cada una de las afirmaciones/frases del interlocutor.
+  Nada más. Nada de hacerlo de noche ni nada». Eso YA lo hace verdict.run (un claim por
+  CADA frase con señal; el profundo pasa por el mismo camino) — test_serie623 queda como
+  candado de cobertura total + de que NO exista tarea nocturna. Lección: ante un
+  «siempre», preguntar DÓNDE quiere el usuario la garantía antes de añadir maquinaria.
 - **6.24 — «compatibilidad sin límite»**: la descarga YA era yt-dlp genérico (~1.800
   sitios) — ampliar = reconocer plataforma y darle reproductor. Nuevas: Vimeo,
   Dailymotion, X/Twitter, Instagram, Facebook, Rumble (tarjeta: su embed no se deriva),

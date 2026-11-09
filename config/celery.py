@@ -42,12 +42,8 @@ app.conf.beat_schedule = {
         'task': 'apps.panel.tasks.purge_system_logs',
         'schedule': 86400.0,
     },
-    # 6.23 (orden de David, literal: «SIEMPRE se deben analizar TODAS las
-    # frases. Repito: siempre»): los claims que quedaron en gris (UNDECIDED)
-    # se reintentan solos cada noche con busquedas frescas, pasados
-    # grey_retry_days dias del ultimo intento. Gasta dinero real.
-    'reintentar-grises': {
-        'task': 'apps.analysis.tasks.reclarify_grey_claims',
-        'schedule': 86400.0,
-    },
+    # (6.23-c: 'reintentar-grises' RETIRADA el mismo dia de nacer — David,
+    #  literal: «Nada de hacerlo de noche ni nada». La cobertura total vive
+    #  DENTRO del analisis: verdict.run pasa por TODAS las frases y clarify
+    #  remata los 🔍 en la misma pasada.)
 }

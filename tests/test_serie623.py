@@ -1,71 +1,51 @@
-"""Serie 6.23 (orden de David, 2026-11-09, 21:18, literal: «SIEMPRE se deben
-analizar TODAS las frases. Repito: siempre»): los claims en gris (UNDECIDED)
-se reintentan solos cada noche con busquedas frescas, pasados grey_retry_days
-dias de su ultima version. El reloj es la ultima ClaimVersion: cada intento
-pospone el siguiente (insistencia sin martilleo). 0 lo apaga.
+"""Serie 6.23-c (correccion de David, 2026-11-09, 21:30, literal: «No, quiero
+simplemente que en análisis profundo se verifiquen todas y cada una de las
+afirmaciones/frases del interlocutor. Nada más. Nada de hacerlo de noche ni
+nada»).
+
+La tarea nocturna de reintento de grises (6.23) se RETIRO el mismo dia de
+nacer. Lo que David pide ya lo hace el sistema de fabrica, y este candado lo
+vigila: verdict.run — que es lo que ejecuta tanto el trabajo 2 como el
+reanalisis profundo (opus_rescan) — construye un claim por CADA frase con
+señal (factual, opinion o contradiccion), sin topes ni muestreos.
 """
-from datetime import timedelta
-from unittest.mock import patch
+import inspect
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.utils import timezone
 
 from apps.analysis.models import Post, TranscriptSegment
-from apps.analysis.tasks import reclarify_grey_claims
-from apps.panel.models import SystemSetting
-from apps.wiki.models import Claim, ClaimAppearance, ClaimVersion
 
 User = get_user_model()
 
 
-class ReintentoEternoDeGrises(TestCase):
-    def setUp(self):
-        self.u = User.objects.create_user(username='u623', email='u623@example.org',
-                                          password='x')
+class CoberturaTotalDelAnalisis(TestCase):
+    def test_cada_frase_con_senal_entra_al_verificador(self):
+        u = User.objects.create_user(username='u623', email='u623@example.org',
+                                     password='x')
+        post = Post.objects.create(author=u, url='https://youtu.be/s623c')
+        for i, senal in enumerate(('FACTUAL_UNVERIFIED', 'OPINION',
+                                   'CONTRADICTS_MODEL', '')):
+            TranscriptSegment.objects.create(post=post, start_seconds=i * 5,
+                                             end_seconds=i * 5 + 5,
+                                             text=f'frase {i}', signal=senal)
+        from apps.agents.verdict import _claims_from_segments
+        claims = _claims_from_segments(post)
+        # TODAS las frases con señal — y solo ellas (la vacia es silencio/ruido)
+        self.assertEqual(len(claims), 3)
+        self.assertEqual({c['kind'] for c in claims}, {'FACTUAL', 'OPINION'})
 
-    def _gris(self, dias, status='DONE', color='UNDECIDED'):
-        post = Post.objects.create(author=self.u, status=status,
-                                   url=f'https://youtu.be/s623{dias}{color}')
-        seg = TranscriptSegment.objects.create(post=post, start_seconds=0,
-                                               end_seconds=5, text='frase')
-        claim = Claim.objects.create(title=f'c{dias}{color}',
-                                     slug=f'c623-{dias}-{color.lower()}',
-                                     text_original='frase', color=color)
-        ClaimAppearance.objects.create(claim=claim, segment=seg)
-        v = ClaimVersion.objects.create(claim=claim, color=color, body_snapshot={})
-        ClaimVersion.objects.filter(pk=v.pk).update(
-            created_at=timezone.now() - timedelta(days=dias))
-        return post
+    def test_el_profundo_usa_el_verificador_completo(self):
+        """opus_rescan (reanalisis profundo) pasa por verdict.run — el mismo
+        camino que verifica frase a frase — jamas por un atajo muestreado."""
+        from apps.analysis import tasks
+        src = inspect.getsource(tasks.opus_rescan)
+        self.assertIn('verdict_agent.run(post', src)
 
-    @patch('apps.agents.clarify.run_pending', return_value=1)
-    def test_el_gris_viejo_se_reintenta(self, run):
-        post = self._gris(5)
-        reclarify_grey_claims()
-        run.assert_called_once()
-        self.assertEqual(run.call_args[0][0].pk, post.pk)
-
-    @patch('apps.agents.clarify.run_pending', return_value=1)
-    def test_el_gris_reciente_espera_su_turno(self, run):
-        self._gris(1)   # ultimo intento hace 1 dia < 3 de fabrica
-        reclarify_grey_claims()
-        run.assert_not_called()
-
-    @patch('apps.agents.clarify.run_pending', return_value=1)
-    def test_a_cero_se_apaga(self, run):
-        SystemSetting.objects.update_or_create(key='grey_retry_days',
-                                               defaults={'value': '0'})
-        self._gris(30)
-        reclarify_grey_claims()
-        run.assert_not_called()
-
-    @patch('apps.agents.clarify.run_pending', return_value=1)
-    def test_un_claim_con_color_no_se_toca(self, run):
-        self._gris(30, color='GREEN')
-        reclarify_grey_claims()
-        run.assert_not_called()
-
-    def test_la_tarea_esta_en_el_beat(self):
+    def test_no_hay_tarea_nocturna_de_grises(self):
+        """Literal de David: «Nada de hacerlo de noche ni nada»."""
         from config.celery import app
         tareas = [e['task'] for e in app.conf.beat_schedule.values()]
-        self.assertIn('apps.analysis.tasks.reclarify_grey_claims', tareas)
+        self.assertNotIn('apps.analysis.tasks.reclarify_grey_claims', tareas)
+        from apps.analysis import tasks
+        self.assertFalse(hasattr(tasks, 'reclarify_grey_claims'))
