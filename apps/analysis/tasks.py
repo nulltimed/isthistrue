@@ -601,6 +601,26 @@ def launch_queued_analyses():
         logger.info('Post %s sale de la cola de presupuesto (coste estimado %.2f EUR)',
                     post.pk, coste)
         lanzados += 1
+    # 6.19 (caza del post de Abascal, 2026-11-09): cuando el deposito diario
+    # esta vacio, run_cheap_phase rebota el post a NEW con la promesa «se
+    # reintentara cuando haya deposito» — pero NADIE barria los NEW: esta
+    # tarea solo recogia AWAITING_BUDGET y el rescate solo mira RUNNING. El
+    # post quedaba «Nuevo» para siempre, en silencio. Ahora los NEW huerfanos
+    # (mas de 30 min, sin transcripcion, sin trabajo AAI en vuelo) se
+    # relanzan cada hora en cuanto el deposito da; si sigue vacio, el propio
+    # run_cheap_phase los devuelve a NEW sin gastar y se reintenta a la hora.
+    from django.utils import timezone as _tz
+    viejos = _tz.now() - _tz.timedelta(minutes=30)
+    for post in (Post.objects.filter(status='NEW', censored=False,
+                                     aai_job_id='', created_at__lt=viejos)
+                 .exclude(status='PENDING_APPROVAL').order_by('pk')):
+        if post.transcript_segments.exists():
+            continue   # ya tiene trabajo hecho: no es un huerfano de arranque
+        if cost_cheap_eur(post) + cost_full_eur(post) > budget_left_today():
+            break      # misma regla que la cola: quien llego antes, va antes
+        run_cheap_phase.delay(post.pk)
+        logger.info('Post %s: NEW huerfano relanzado (6.19)', post.pk)
+        lanzados += 1
     return lanzados
 
 
