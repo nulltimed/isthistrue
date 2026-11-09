@@ -293,9 +293,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'api_free_daily': '500',        # 6.2: peticiones/dia de una clave API gratuita
     'api_pro_daily': '10000',       # 6.2: peticiones/dia de una clave API de pago
     # 6.3: los datos de la SL operadora — VACIOS hasta que David los de al
-    # constituirse. Los usaran el aviso legal, la privacidad y Stripe.
+    # constituirse. Los usaran el aviso legal, la privacidad y PayPal Business (6.13).
     'sl_legal_name': '', 'sl_cif': '', 'sl_address': '', 'sl_registry': '',
-    'pro_price_eur': '4',           # cuenta Pro (se cobra via Stripe de la SL)
+    'pro_price_eur': '4',           # cuenta Pro (via PayPal Business de la SL, 6.13)
     # 4.4-C: el modelo y el metodo de envio de cada tarea (panel de modelos).
     # 5.2-A/5.4-D (CI del 06-09, cazado por la pista delatora): esta capa
     # intermedia de la cascada (panel > .env > catalogo) seguia sembrando los

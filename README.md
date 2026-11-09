@@ -154,7 +154,7 @@ Diseño fusionado, confirmado punto por punto por David:
 ## 15. Licencia, monetización y servicios externos
 
 - **AGPL-3.0 + licencia comercial dual** (modelo Grafana/GitLab), copyright de David. Repo público `nulltimed/isthistrue`. Datos wiki: CC-BY-SA + API pública solo lectura (Fase 3). ~~Ingresos: donaciones/Patrono~~ **ENMENDADO (serie 6.1, orden de David 2026-11-06, ver §SERIE 6.1)**: las donaciones se RETIRAN (Lectura A); los ingresos pasan a créditos cobrados por la SL operadora + API de pago, badges/embeds, licencia comercial.
-- Servicios pendientes de crear por David (todo se configura vía `.env`, él rellena): API Anthropic (50 € iniciales + límite mensual = doble airbag), Cloudflare Turnstile (DNS sigue en IONOS), Brevo (DKIM/DMARC en IONOS), ~~BotFather~~ (Telegram VETADO para siempre), ~~PayPal/Bizum~~ (ENMENDADO 6.10: la pasarela será **Stripe** de la SL), GitHub `nulltimed/isthistrue` (mini-guía Git YA entregada).
+- Servicios pendientes de crear por David (todo se configura vía `.env`, él rellena): API Anthropic (50 € iniciales + límite mensual = doble airbag), Cloudflare Turnstile (DNS sigue en IONOS), Brevo (DKIM/DMARC en IONOS), ~~BotFather~~ (Telegram VETADO para siempre), ~~PayPal/Bizum~~ (ENMENDADO 6.13: la pasarela será **PayPal Business** de la SL — David, 2026-11-09), GitHub `nulltimed/isthistrue` (mini-guía Git YA entregada).
 
 ## 16. Frenos ejercidos y aceptados en esta ronda (patrón a mantener)
 
@@ -330,7 +330,7 @@ GitHub con scope workflow (PENDIENTE DAVID #1). SSH del VPS va por puerto 22222.
 - Token GitHub con scope workflow: ARREGLADO por David → Claude Codigo debe subir ci.yml (guia §6).
 - SEGURIDAD: David pego su .env completo en el chat (SECRET_KEY, POSTGRES_PASSWORD,
   ADMIN_PASSWORD) y decidio NO rotar claves, riesgo asumido conscientemente tras aviso.
-- RECORDATORIOS ACTIVOS (David pidio que se le recuerden): ~~PayPal.me (§8)~~ (ENMENDADO 6.10: sin PayPal — Stripe de la SL), permisos foro (§9),
+- RECORDATORIOS ACTIVOS (David pidio que se le recuerden): ~~PayPal.me (§8)~~ (ENMENDADO 6.13: la pasarela será PayPal Business de la SL, no el PayPal.me personal), permisos foro (§9),
   backups rclone (§10), fail2ban (§11), apartado de correos (§12).
 - Pendiente menor: David no respondio el quiz de peliculas (lista de 10 sci-fi queda a la espera).
 
@@ -358,7 +358,7 @@ análisis sigue siendo gratuito por votos y cola — A2 «aviso, nunca muro» si
   `ceil(minutos/20)` créditos. La puerta de IDENTIFICACIÓN de hablantes NO se salta (calidad).
 - Rastreo de origen bajo demanda de claims verde/gris: `origin_trace_credits` (1 de fábrica).
 - La COMPRA de packs la cobrará la SL: `sl_checkout_enabled=0` hasta que esté constituida
-  (hoy NO lo está). Pasarela DECIDIDA (David, 2026-11-06): **Stripe** a nombre de la SL.
+  (hoy NO lo está). Pasarela DECIDIDA (ENMENDADO 6.13, orden de David 2026-11-09, literal: «Paypal Bussiness, te daré los datos más tarde»): **PayPal Business** a nombre de la SL (sustituye al Stripe del 2026-11-06). Su público «prefiere PayPal»; sus datos llegarán con la constitución.
 - El superusuario no gasta (criterio skip_charge de siempre).
 
 **Rastreo de origen** (`apps/agents/origin.py`): cadena de difusión hacia atrás hasta el
@@ -373,7 +373,7 @@ notificando; `/donaciones/` redirige a `/creditos/`), pestaña del panel. Nada d
 ya puerta en la interfaz. Los PDF de la asociación (docs/asociacion) quedan como histórico:
 la vía es la SL de un tercero, no la asociación.
 
-**Pendiente de David/SL:** constituir la SL · elegir pasarela (recomendación: Stripe) ·
+**Pendiente de David/SL:** constituir la SL · alta de PayPal Business (decidida 6.13) ·
 contrato dominio/servidor/licencia David↔SL (abogado) · encender `sl_checkout_enabled`
 cuando todo lo anterior exista · la web sigue PRIVADA (site_private=1) hasta entonces
 (confirmado por David esta misma noche).
@@ -395,4 +395,4 @@ fichas, crédito de bienvenida con candado contable (el regalo jamás infla el l
 semanal, páginas /quienes-somos/ /correcciones/ /servicios/ /datos/, recorrido guiado del
 invitado (`tour_email`), gastos públicos por categorías y README enmendado (esta pasada).
 Modelo de negocio ESTABLECIDO: créditos de inmediatez (1 €) · API gratis/Pro · dossieres B2B
-· dataset y badge como captación · Pro 4 €/mes · todo a la espera solo de Stripe + datos SL.
+· dataset y badge como captación · Pro 4 €/mes · todo a la espera solo de la pasarela (PayPal Business, 6.13) + datos SL.

@@ -468,7 +468,7 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
 - **README ENMENDADO con la pasada de coherencia** (orden de David: «sí»): las secciones
   pre-SL (panel de donaciones, asociacion sin animo de lucro, banner «si donas», Bizum,
   PayPal.me, BotFather) llevan tachado + nota ENMENDADO con serie y literal — la historia
-  no se borra, se anota. Pasarela DECIDIDA en el README: Stripe de la SL. Bloque nuevo
+  no se borra, se anota. Pasarela: Stripe (SUPERADO por 6.13: PayPal Business). Bloque nuevo
   §SERIES 6.5-6.10 con todos los literales de la noche.
 - **featured_claim_slug acepta VARIOS slugs con comas** (David: «sí» a los claims de lujo):
   la rotacion semanal elige solo entre los elegidos a mano — para demos. Vacio = automatico.

@@ -19,7 +19,7 @@ el veredicto existente: se paga la revisión, no el resultado. La puerta de cali
 
 <h2>Vendedor y pagos</h2>
 <p>Los créditos los vende <strong>{{ sl_name|default:"[sociedad operadora pendiente de constitución]" }}</strong>
-{% if sl_cif %}(CIF {{ sl_cif }}){% endif %}, a través de la pasarela de pago Stripe.
+{% if sl_cif %}(CIF {{ sl_cif }}){% endif %}, a través de la pasarela de pago de PayPal (cuenta Business de la operadora).
 El titular de la plataforma no recibe ni gestiona ningún pago de usuarios.
 <em>La compra permanecerá desactivada hasta que la sociedad esté constituida.</em></p>
 
