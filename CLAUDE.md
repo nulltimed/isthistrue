@@ -434,3 +434,14 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
   servicios → panel si es staff / quienes-somos si no). Progreso en localStorage;
   terminar o saltar hace POST a /accounts/tour/visto/ (tour_done en notify_prefs, sin
   migracion) y no vuelve. Context processor `tour_guiado` en settings.
+
+## ORDEN PERMANENTE (David, 2026-11-09): Qwen antes que Claude, SIEMPRE
+David, literal: «prefiero adelantar Qwen antes que claude, siempre. Haz lo posible
+porque eso suceda» · «vamos a intentar que Qwen sea lo principal, como sea».
+Desde la 6.8, call_with_search AGOTA a Qwen antes del respaldo: reintento siempre
+(recortado por el centro si la entrada pasaba de 4000 caracteres; los extremos se
+conservan porque ahi viven la mision y el solo-JSON), y cada fallo deja en el log
+el tamaño de la entrada y el CUERPO del error de DashScope — con esos datos se
+decide si algun dia se recorta de fabrica. El respaldo Claude queda como ultimo
+clavo, no como primera salida. (Contexto: el claim 188 dio un 400 de DashScope con
+expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)

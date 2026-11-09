@@ -138,18 +138,45 @@ def call_with_search(model, system, user_content, max_tokens=2000,
     # 5.2-A: la via Qwen — busqueda nativa de DashScope, fuentes incluidas.
     if model.startswith('qwen'):
         from apps.agents import qwen
-        try:
-            texto, usado, n, fuentes = qwen.call_with_search(
-                model, system, user_content, max_tokens, cacheable, max_searches)
-            _FUENTES_QWEN.valor = fuentes   # para call_search_json (candado)
-            return texto, usado, n
-        except Exception as exc:
-            logger.warning('Qwen %s falló en búsqueda (%r); respaldo: %s',
-                           model, exc, fallback or 'NINGUNO')
-            if not fallback:
-                raise
-            _avisar_suplente(model, fallback)
-            model = fallback
+        # 6.8 (orden de David, 2026-11-09, literal: «prefiero adelantar Qwen
+        # antes que claude, siempre. Haz lo posible porque eso suceda»): Qwen
+        # se AGOTA antes de pagar el respaldo. Segundo intento siempre; si la
+        # entrada era larga, recortada por el centro (los extremos se
+        # conservan: ahi viven la mision y el recordatorio de solo-JSON). El
+        # motivo del error y el tamaño de la entrada quedan en el log, para
+        # decidir con datos si algun dia hay que recortar de fabrica.
+        intentos_q = [user_content]
+        if len(user_content) > 4000:
+            intentos_q.append(user_content[:2000]
+                              + '\n[... expediente recortado ...]\n'
+                              + user_content[-2000:])
+        else:
+            intentos_q.append(user_content)   # reintento simple: tropiezos puntuales
+        ultimo_q = None
+        for intento, contenido_q in enumerate(intentos_q):
+            try:
+                texto, usado, n, fuentes = qwen.call_with_search(
+                    model, system, contenido_q, max_tokens, cacheable,
+                    max_searches)
+                _FUENTES_QWEN.valor = fuentes   # para call_search_json (candado)
+                if intento:
+                    logger.info('Qwen %s respondió al reintento (%d/%d)',
+                                model, intento + 1, len(intentos_q))
+                return texto, usado, n
+            except Exception as exc:
+                ultimo_q = exc
+                cuerpo = str(getattr(getattr(exc, 'response', None),
+                                     'text', ''))[:300]
+                logger.warning('Qwen %s falló en búsqueda (intento %d/%d, '
+                               '%d caracteres de entrada): %r %s',
+                               model, intento + 1, len(intentos_q),
+                               len(system) + len(contenido_q), exc, cuerpo)
+        logger.warning('Qwen agotado tras %d intentos; respaldo: %s',
+                       len(intentos_q), fallback or 'NINGUNO')
+        if not fallback:
+            raise ultimo_q
+        _avisar_suplente(model, fallback)
+        model = fallback
 
     import anthropic
     from apps.agents.catalog import substitute, supports_web
