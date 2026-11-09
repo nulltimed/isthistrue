@@ -393,3 +393,16 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
 - **ClaimReview (schema.org) va en la ficha** salvo colores no pronunciados y
   OPINIONES (un verde de opinion es «fundada», no «verificada»: etiquetarla
   mentiria a Google). Mientras la web este privada no indexa: es siembra.
+
+## Lecciones de la serie 6.6 (2026-11-09)
+- **El credito REGALADO no infla el libro**: spend() solo crea el apunte Donation CREDIT
+  (puente 4.3-F, intacto) si el usuario COMPRO alguna vez un pack (`_respaldado`). El
+  credito de bienvenida (`welcome_credits`, 0 de fabrica; tope `welcome_daily_max`)
+  sale del presupuesto base, jamas amplia el tope mensual.
+- **El resumen SEMANAL vive en la misma tarea beat** (send_daily_digests, rama de los
+  lunes): avisos pendientes + bulos de la semana + pie de creditos/servicios. Opt-in
+  por notify_mode=WEEKLY en Ajustes. Sin nada que contar, no se envia.
+- **Paginas de confianza**: /quienes-somos/, /correcciones/ (camino IFCN), /servicios/
+  (escaparate B2B; contacto en `b2b_contact_email`, vacio remite al formulario /api/),
+  /datos/ (CSV CC-BY-SA solo con cuenta). Patron bilingue de las legales (wrapper +
+  legal/en/). JAMAS identidad ni domicilio del titular en ellas.

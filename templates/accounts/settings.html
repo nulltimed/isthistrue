@@ -97,6 +97,7 @@
               <option value="WEB" {% if u.notify_mode == 'WEB' %}selected{% endif %}>{% trans "Solo campana" %}</option>
               <option value="INSTANT" {% if u.notify_mode == 'INSTANT' %}selected{% endif %}>{% trans "Email inmediato" %}</option>
               <option value="DAILY" {% if u.notify_mode == 'DAILY' %}selected{% endif %}>{% trans "Resumen diario" %}</option>
+              <option value="WEEKLY" {% if u.notify_mode == 'WEEKLY' %}selected{% endif %}>{% trans "Resumen semanal (con los bulos de la semana)" %}</option>
             </select></div>
         </div>
       </section>

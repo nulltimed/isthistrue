@@ -28,6 +28,24 @@ def check_avatar(user_id):
     return verdict
 
 
+def _lo_mejor_de_la_semana():
+    """6.6: los bulos desmontados en los ultimos 7 dias, para el resumen
+    semanal. Texto plano con enlaces a las fichas."""
+    from datetime import timedelta
+    from django.utils import timezone
+    from apps.wiki.models import Claim
+    desde = timezone.now() - timedelta(days=7)
+    rojos = list(Claim.objects.filter(color='RED', consolidated=True,
+                                      created_at__gte=desde)
+                 .exclude(slug__isnull=True).order_by('-pk')[:3])
+    if not rojos:
+        return ''
+    base = getattr(settings, 'SITE_URL', '').rstrip('/')
+    lineas = [f'- «{(c.title or c.text_original)[:90]}» → '
+              f'{base}/wiki/claim/{c.slug}/' for c in rojos]
+    return 'Los bulos desmontados esta semana:\n' + '\n'.join(lineas)
+
+
 @shared_task
 def send_daily_digests():
     from django.core.mail import send_mail
@@ -40,6 +58,27 @@ def send_daily_digests():
         if pending:
             body = '\n'.join(f'- {n.text}' for n in pending)
             send_mail('esestocierto: resumen diario', body,
+                      settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+    # 6.6: resumen SEMANAL — los lunes a la hora elegida. Lleva los avisos
+    # pendientes Y lo mejor de la semana, con el pie de servicios (regla de
+    # David 2026-11-09: revenue en cada cambio — aqui, embudo, no venta).
+    if timezone.localtime().weekday() != 0:
+        return
+    extra = _lo_mejor_de_la_semana()
+    base = getattr(settings, 'SITE_URL', '').rstrip('/')
+    pie = ('—\n¿Prisa por verificar un vídeo? Los créditos lo adelantan: '
+           f'{base}/creditos/\nServicios para medios y empresas: {base}/servicios/')
+    for user in User.objects.filter(notify_mode='WEEKLY', is_active=True,
+                                    digest_hour=hour).exclude(email=''):
+        pending = user.notifications.filter(read=False)[:30]
+        partes = []
+        if pending:
+            partes.append('Tus avisos de la semana:\n'
+                          + '\n'.join(f'- {n.text}' for n in pending))
+        if extra:
+            partes.append(extra)
+        if partes:   # sin nada que contar, no se molesta a nadie
+            send_mail('esestocierto: resumen semanal', '\n\n'.join(partes + [pie]),
                       settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
 
 

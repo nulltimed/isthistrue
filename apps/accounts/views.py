@@ -27,6 +27,9 @@ def register(request):
             destino = route_new_signup(user, form.cleaned_data, request)
             if destino:
                 return destino
+            # 6.6: el credito de bienvenida (apagado de fabrica; tope diario).
+            from .credits import welcome_grant
+            welcome_grant(user)
             from .verification import send_verification_email
             send_verification_email(user)
             messages.success(request, 'Cuenta creada. Revisa tu email y pulsa el '

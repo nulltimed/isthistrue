@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/correcciones.html' %}{% else %}
+{# 6.6: politica de correcciones — requisito IFCN y, sobre todo, honestidad #}
+{# estructural: equivocarse es normal; esconderlo, no. #}
+<h1>Política de correcciones</h1>
+
+<p>Nos equivocaremos. Lo importante es qué pasa después: aquí ninguna
+corrección se esconde, porque <strong>cada ficha conserva su historial
+completo de versiones</strong>, público y enlazado arriba de la propia ficha.
+Un veredicto corregido no sustituye en silencio al anterior: ambos quedan a la
+vista, con fecha.</p>
+
+<h2>Cómo pedir una corrección</h2>
+<ol>
+  <li><strong>Votos ▼ en la frase</strong>: si una frase analizada acumula
+    votos negativos de la comunidad, el sistema relanza solo el reanálisis
+    profundo de esa frase. Es el camino normal y no requiere nada más.</li>
+  <li><strong>El foro del post</strong>: cada vídeo tiene su hilo; aportar ahí
+    una fuente que contradiga el veredicto es la forma más rápida de que
+    moderación lo vea.</li>
+  <li><strong>El formulario de reclamaciones</strong>
+    (<a href="{% url 'complaint_form' %}">reclamaciones</a>): para errores que
+    no son de veredicto (atribución de hablante, datos personales, contenido
+    ilícito) o si prefieres un canal directo.</li>
+</ol>
+
+<h2>Qué hacemos con ella</h2>
+<ul>
+  <li>Si la evidencia nueva cambia el veredicto, el reanálisis se publica como
+    versión nueva en el historial de la ficha, con sus fuentes.</li>
+  <li>Si no lo cambia, la ficha no se toca — pero el hilo del foro conserva el
+    debate y cualquiera puede juzgar por sí mismo.</li>
+  <li>Los errores de operación (transcripción, voces, fechas) se corrigen y
+    quedan registrados en el historial técnico del proyecto, que es público en
+    el repositorio.</li>
+</ul>
+
+<p class="hint">Esta política forma parte de nuestro camino hacia los
+estándares de la International Fact-Checking Network
+(<a href="{% url 'about' %}">quiénes somos</a>).</p>
+{% endif %}
+{% endblock %}

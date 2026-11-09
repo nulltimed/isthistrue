@@ -1,0 +1,43 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/quienes_somos.html' %}{% else %}
+{# 6.6: quienes somos — confianza y camino IFCN. JAMAS el domicilio ni la #}
+{# identidad del titular (linea roja del aviso legal). #}
+<h1>Quiénes somos</h1>
+
+<p><strong>esestocierto?</strong> es una plataforma de verificación de hechos
+comunitaria y asistida por inteligencia artificial: cualquiera trae un vídeo,
+el sistema extrae sus afirmaciones una a una, las busca en fuentes reales y
+publica el veredicto de cada una — verde, ámbar, rojo o gris — con sus fuentes
+enlazadas y su historial completo de revisiones. La comunidad decide con sus
+votos qué se verifica a fondo y puede discutir cada frase en el foro.</p>
+
+<h2>Cómo trabajamos</h2>
+<ul>
+  <li><strong>Traductor y forense, nunca juez de opiniones</strong>: las
+    afirmaciones de hecho se contrastan con fuentes; las opiniones se analizan
+    solo por su lógica y se marcan siempre como opiniones.</li>
+  <li><strong>Todo deja rastro</strong>: cada veredicto lista sus fuentes, cada
+    revisión queda en el historial público de la ficha, y el gasto del proyecto
+    se publica apunte a apunte en <a href="{% url 'spending' %}">el libro de gastos</a>.</li>
+  <li><strong>El método, por escrito</strong>: está completo en
+    <a href="{% url 'methodology' %}">la metodología</a> y las correcciones se
+    piden como explica <a href="{% url 'corrections' %}">la política de correcciones</a>.</li>
+  <li><strong>Código abierto</strong> (AGPL): cualquiera puede auditar cómo se
+    llega a cada veredicto.</li>
+</ul>
+
+<h2>Quién hay detrás</h2>
+<p>La plataforma la creó y la mantiene una persona particular (el titular del
+dominio y del servidor); la operación comercial corre a cargo de
+<strong>{{ sl_name|default:"una sociedad en constitución" }}</strong>. El
+reparto exacto, con quién cobra qué, está en
+<a href="{% url 'transparency' %}">la página de transparencia</a>.</p>
+
+<h2>Hacia los estándares IFCN</h2>
+<p>Trabajamos para cumplir el código de principios de la International
+Fact-Checking Network: imparcialidad, transparencia de fuentes, de financiación
+y de metodología, y política de correcciones abierta y honesta. Esta página,
+junto a la metodología, la transparencia y las correcciones, forma parte de ese
+camino.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,39 @@
+{% load i18n %}
+<h1>About us</h1>
+
+<p><strong>esestocierto?</strong> is a community fact-checking platform
+assisted by artificial intelligence: anyone brings a video, the system
+extracts its claims one by one, checks them against real sources and
+publishes each verdict — green, amber, red or grey — with its sources linked
+and a full public revision history. The community decides with its votes what
+gets deep verification, and every sentence can be discussed in the forum.</p>
+
+<h2>How we work</h2>
+<ul>
+  <li><strong>Translator and forensic analyst, never a judge of opinions</strong>:
+    factual claims are checked against sources; opinions are analysed only for
+    their logic and are always labelled as opinions.</li>
+  <li><strong>Everything leaves a trail</strong>: every verdict lists its
+    sources, every revision stays in the public history of its page, and the
+    project's spending is published entry by entry in
+    <a href="{% url 'spending' %}">the spending ledger</a>.</li>
+  <li><strong>The method, in writing</strong>: it is fully described in
+    <a href="{% url 'methodology' %}">the methodology</a>, and corrections are
+    requested as explained in <a href="{% url 'corrections' %}">the corrections policy</a>.</li>
+  <li><strong>Open source</strong> (AGPL): anyone can audit how each verdict
+    is reached.</li>
+</ul>
+
+<h2>Who is behind it</h2>
+<p>The platform was created and is maintained by a private individual (the
+owner of the domain and the server); commercial operations are run by
+<strong>{{ sl_name|default:"a company in the process of incorporation" }}</strong>.
+The exact split — who charges what — is on
+<a href="{% url 'transparency' %}">the transparency page</a>.</p>
+
+<h2>Towards the IFCN standards</h2>
+<p>We are working to meet the International Fact-Checking Network code of
+principles: non-partisanship, transparency of sources, funding and
+methodology, and an open and honest corrections policy. This page, together
+with the methodology, the transparency page and the corrections policy, is
+part of that path.</p>

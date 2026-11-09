@@ -1,0 +1,50 @@
+{% extends 'base.html' %}{% load i18n %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/servicios.html' %}{% else %}
+{# 6.6: el escaparate B2B (regla de David 2026-11-09: revenue en cada cambio). #}
+{# Lo que espera a la SL se ensena como «en preparacion», no se esconde. #}
+<h1>Servicios para medios, empresas e instituciones</h1>
+<p>Los veredictos no se venden — son públicos, con sus fuentes, para todos.
+Lo que ofrecemos es <strong>acceso cómodo, inmediatez y trabajo a medida</strong>
+sobre ese fondo público de verificaciones.</p>
+
+<h2>📡 API de lectura</h2>
+<p>Todas las verificaciones (claims, veredictos, fuentes, cadenas de origen,
+transcripciones, canales) en JSON, con atribución CC-BY-SA.
+Nivel gratuito: {{ api_free }} peticiones/día. Nivel profesional:
+{{ api_pro }} peticiones/día{% if not sl_lista %} (el cobro se activará con la
+sociedad operadora){% endif %}.
+<a href="/api/">Documentación y solicitud de clave</a>.</p>
+
+<h2>📋 Dossieres a medida</h2>
+<p>Un informe interactivo y privado con los análisis que te interesan
+(un personaje, un tema, una campaña), alojado aquí, con enlace secreto
+revocable y presentación profesional. Pensado para redacciones, gabinetes y
+departamentos de comunicación.</p>
+
+<h2>✅ Badge «Verificado» embebible</h2>
+<p>Una línea de HTML y el veredicto vivo de cualquier afirmación aparece en tu
+web, siempre actualizado. Gratuito, desde la caja «Insertar en tu web» de cada
+ficha.</p>
+
+<h2>📊 Dataset abierto</h2>
+<p>El CSV de todas las afirmaciones consolidadas (CC-BY-SA), para
+investigación y periodismo de datos: <a href="{% url 'dataset' %}">descargarlo</a>
+(hace falta cuenta; para uso programático, la API).</p>
+
+<h2>🏷️ En preparación</h2>
+<ul>
+  <li><strong>Cuenta Pro</strong> ({{ pro_eur }} €/mes): se activará con la
+    pasarela de la sociedad operadora.</li>
+  <li><strong>Informes institucionales y marca blanca</strong>: bajo acuerdo.</li>
+</ul>
+
+<h2>Contacto</h2>
+{% if contacto %}
+<p>Para dossieres, datasets a medida o acuerdos: <a href="mailto:{{ contacto }}">{{ contacto }}</a>.</p>
+{% else %}
+<p>Para dossieres, datasets a medida o acuerdos, deja tus datos en
+<a href="/api/">el formulario de la API</a> indicando qué necesitas: te
+responderemos por correo.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

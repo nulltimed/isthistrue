@@ -98,6 +98,13 @@ SETTINGS_DEF = [
     # 6.5: el escaparate de la portada.
     ('featured_claim_slug', 'El bulo de la semana (slug del claim)',
      'La ficha que la portada muestra en el escaparate. Vacío = automático: el último claim FALSO consolidado que tenga cadena de origen. Pon aquí el slug de un claim (lo que va tras /wiki/claim/) para fijarlo a mano.', 'text'),
+    # 6.6: crecimiento.
+    ('welcome_credits', 'Créditos de bienvenida por alta',
+     'Créditos de regalo al crear cuenta (0 = apagado). OJO: se gastan contra el presupuesto base — un crédito regalado nunca amplía el tope mensual. El tope diario de abajo frena las granjas de cuentas.', 'num'),
+    ('welcome_daily_max', 'Tope diario de bienvenidas',
+     'Máximo de altas que reciben el regalo cada día. Alcanzado el tope, las siguientes cuentas se crean igual, sin créditos.', 'num'),
+    ('b2b_contact_email', 'Correo de contacto B2B (/servicios/)',
+     'El correo que ve quien quiere un dossier, el dataset a medida o un acuerdo. Vacío: la página remite al formulario de la API.', 'text'),
     ('deep_paid_credits', 'Créditos del reanálisis profundo (por frase)',
      'Lo que paga un usuario por relanzar YA una frase con el modelo premium, sin esperar los 5 votos. Una sola vez por frase; pagan la revisión, nunca el resultado.', 'num'),
     ('api_free_daily', 'API: peticiones/día de la clave gratuita',

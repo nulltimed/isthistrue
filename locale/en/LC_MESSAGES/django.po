@@ -3423,3 +3423,16 @@ msgstr "Opens the page with the verdict, the sources and the chain showing where
 
 msgid "Ver dónde nació y dónde se torció"
 msgstr "See where it was born and where it got twisted"
+
+# 6.6: crecimiento — paginas de confianza, servicios y resumen semanal
+msgid "Resumen semanal (con los bulos de la semana)"
+msgstr "Weekly digest (with the week's debunked hoaxes)"
+
+msgid "Quiénes somos"
+msgstr "About us"
+
+msgid "Correcciones"
+msgstr "Corrections"
+
+msgid "Servicios"
+msgstr "Services"

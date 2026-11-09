@@ -1,0 +1,44 @@
+{% load i18n %}
+<h1>Services for media, companies and institutions</h1>
+<p>Verdicts are not for sale — they are public, with their sources, for
+everyone. What we offer is <strong>convenient access, immediacy and tailored
+work</strong> on top of that public body of verifications.</p>
+
+<h2>📡 Read API</h2>
+<p>All verifications (claims, verdicts, sources, origin chains, transcripts,
+channels) in JSON, with CC-BY-SA attribution. Free tier: {{ api_free }}
+requests/day. Professional tier: {{ api_pro }} requests/day{% if not sl_lista %}
+(billing will be enabled once the operating company exists){% endif %}.
+<a href="/api/">Documentation and key request</a>.</p>
+
+<h2>📋 Tailored dossiers</h2>
+<p>A private, interactive report with the analyses you care about (a public
+figure, a topic, a campaign), hosted here, with a revocable secret link and a
+professional presentation. Built for newsrooms, press offices and
+communications departments.</p>
+
+<h2>✅ Embeddable “Verified” badge</h2>
+<p>One line of HTML and the live verdict of any claim appears on your site,
+always up to date. Free, from the “Embed on your site” box on every claim
+page.</p>
+
+<h2>📊 Open dataset</h2>
+<p>The CSV of all consolidated claims (CC-BY-SA), for research and data
+journalism: <a href="{% url 'dataset' %}">download it</a> (account required;
+for programmatic use, the API).</p>
+
+<h2>🏷️ In preparation</h2>
+<ul>
+  <li><strong>Pro account</strong> ({{ pro_eur }} €/month): will be enabled
+    with the operating company's payment gateway.</li>
+  <li><strong>Institutional reports and white label</strong>: by agreement.</li>
+</ul>
+
+<h2>Contact</h2>
+{% if contacto %}
+<p>For dossiers, tailored datasets or agreements: <a href="mailto:{{ contacto }}">{{ contacto }}</a>.</p>
+{% else %}
+<p>For dossiers, tailored datasets or agreements, leave your details in
+<a href="/api/">the API form</a> describing what you need: we will reply by
+email.</p>
+{% endif %}

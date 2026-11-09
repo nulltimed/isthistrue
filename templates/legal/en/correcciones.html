@@ -1,0 +1,36 @@
+{% load i18n %}
+<h1>Corrections policy</h1>
+
+<p>We will make mistakes. What matters is what happens next: here no
+correction is ever hidden, because <strong>every claim page keeps its full
+revision history</strong>, public and linked at the top of the page itself. A
+corrected verdict does not silently replace the previous one: both remain
+visible, with dates.</p>
+
+<h2>How to request a correction</h2>
+<ol>
+  <li><strong>▼ votes on the sentence</strong>: if an analysed sentence
+    accumulates negative votes from the community, the system automatically
+    relaunches the deep re-analysis of that sentence. This is the normal path
+    and requires nothing else.</li>
+  <li><strong>The post's forum thread</strong>: every video has its thread;
+    posting a source there that contradicts the verdict is the fastest way to
+    get moderation to look at it.</li>
+  <li><strong>The complaints form</strong>
+    (<a href="{% url 'complaint_form' %}">complaints</a>): for errors that are
+    not about verdicts (speaker attribution, personal data, unlawful content)
+    or if you prefer a direct channel.</li>
+</ol>
+
+<h2>What we do with it</h2>
+<ul>
+  <li>If the new evidence changes the verdict, the re-analysis is published
+    as a new version in the page's history, with its sources.</li>
+  <li>If it does not, the page is left untouched — but the forum thread keeps
+    the debate and anyone can judge for themselves.</li>
+  <li>Operational errors (transcription, voices, dates) are fixed and logged
+    in the project's technical record, which is public in the repository.</li>
+</ul>
+
+<p class="hint">This policy is part of our path towards the International
+Fact-Checking Network standards (<a href="{% url 'about' %}">about us</a>).</p>

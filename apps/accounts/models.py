@@ -37,7 +37,10 @@ class User(AbstractUser):
     avatar_approved = models.BooleanField(default=True)
     # Notificaciones (Brevo, decision congelada; jamas el Postfix personal)
     NOTIFY_MODES = [('WEB', 'Solo campana'), ('INSTANT', 'Email inmediato'),
-                    ('DAILY', 'Resumen diario')]
+                    ('DAILY', 'Resumen diario'),
+                    # 6.6: resumen semanal (lunes, a la hora elegida) con los
+                    # bulos desmontados de la semana — el email que trae de vuelta.
+                    ('WEEKLY', 'Resumen semanal')]
     notify_mode = models.CharField(max_length=8, choices=NOTIFY_MODES, default='WEB')
     # Espejo de pruebas: invitado por David desde el panel
     staging_invited = models.BooleanField(default=False)
@@ -249,7 +252,9 @@ class CreditLedger(models.Model):
     """Libro de creditos: cada alta y cada gasto, con su motivo y su objeto."""
     REASONS = [('PACK', 'Compra de pack'), ('ADVANCE', 'Adelantar análisis'),
                ('ORIGIN', 'Rastreo de origen'), ('DEEP', 'Reanálisis profundo'),
-               ('ADMIN', 'Ajuste del administrador')]
+               ('ADMIN', 'Ajuste del administrador'),
+               # 6.6: el credito de bienvenida (regalo: NO respalda el libro).
+               ('WELCOME', 'Bienvenida')]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_moves')
     delta = models.IntegerField()
     reason = models.CharField(max_length=8, choices=REASONS)

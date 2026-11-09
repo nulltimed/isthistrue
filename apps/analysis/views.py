@@ -2149,3 +2149,49 @@ def transparency(request):
     return render(request, 'legal/transparencia.html', {
         'sl_name': SystemSetting.get_str('sl_legal_name', ''),
         'sl_cif': SystemSetting.get_str('sl_cif', '')})
+
+
+def quienes_somos(request):
+    """6.6: quienes somos — la pagina que piden la confianza y el camino IFCN.
+    Sin domicilio ni identidad del titular (linea roja)."""
+    from apps.panel.models import SystemSetting
+    return render(request, 'legal/quienes_somos.html', {
+        'sl_name': SystemSetting.get_str('sl_legal_name', '')})
+
+
+def services_page(request):
+    """6.6: /servicios/ — el escaparate B2B (API, dossieres, badge, dataset).
+    Regla de David (2026-11-09): revenue en cada cambio; esta pagina ES el
+    mostrador. Lo que depende de la SL se ensena como «en preparacion»."""
+    from apps.panel.models import SystemSetting
+    return render(request, 'legal/servicios.html', {
+        'contacto': SystemSetting.get_str('b2b_contact_email', ''),
+        'pro_eur': SystemSetting.get_str('pro_price_eur', '4'),
+        'api_free': SystemSetting.get_int('api_free_daily', 500),
+        'api_pro': SystemSetting.get_int('api_pro_daily', 10000),
+        'sl_lista': SystemSetting.get_int('sl_checkout_enabled', 0) > 0})
+
+
+def dataset_csv(request):
+    """6.6: /datos/ — el dataset abierto (CSV, CC-BY-SA) de los claims
+    consolidados, solo para cuentas (cada descarga es un contacto que ya
+    conoce el producto). Lo programatico va por la API con clave."""
+    from django.contrib.auth.decorators import login_required as _lr
+    return _lr(_dataset_csv)(request)
+
+
+def _dataset_csv(request):
+    import csv
+    from django.http import HttpResponse
+    from apps.wiki.models import Claim
+    resp = HttpResponse(content_type='text/csv; charset=utf-8')
+    resp['Content-Disposition'] = 'attachment; filename="esestocierto-claims.csv"'
+    w = csv.writer(resp)
+    w.writerow(['# esestocierto? — dataset de afirmaciones verificadas',
+                'licencia CC-BY-SA', 'https://esestocierto.com/datos/'])
+    w.writerow(['slug', 'color', 'tipo', 'titulo', 'afirmacion', 'fecha'])
+    for c in (Claim.objects.filter(consolidated=True).exclude(slug__isnull=True)
+              .order_by('pk').iterator()):
+        w.writerow([c.slug, c.color, c.kind, c.title,
+                    c.text_original[:500], c.created_at.date().isoformat()])
+    return resp

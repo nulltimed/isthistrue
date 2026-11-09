@@ -87,4 +87,9 @@ urlpatterns = [
     # 6.4 (orden de David, 2026-11-06): compra de creditos y transparencia
     path('legal/creditos/', views.credit_terms, name='credit_terms'),
     path('transparencia/', views.transparency, name='transparency'),
+    # 6.6: crecimiento — confianza (IFCN) y escaparate B2B
+    path('quienes-somos/', views.quienes_somos, name='about'),
+    path('correcciones/', TemplateView.as_view(template_name='legal/correcciones.html'), name='corrections'),
+    path('servicios/', views.services_page, name='services'),
+    path('datos/', views.dataset_csv, name='dataset'),
 ]
