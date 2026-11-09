@@ -2,22 +2,20 @@
 {% block title %}{% trans "Panel · Financiación" %}{% endblock %}
 {% block content %}
 {% include 'partials/panel_nav.html' %}
-{# 5.24-D: el estado REAL de las credenciales de PayPal, a la vista de David. #}
-{% if paypal_estado == 'ok' %}<p class="reg-gate reg-open">🟢 {% trans "PayPal: credenciales válidas" %} ({{ paypal_modo }}). {% trans "La vía legado de PayPal (pago por servidor) está operativa." %}</p>
-{% elif paypal_hosted %}<p class="reg-gate reg-open">🟢 {% trans "PayPal legado: un pago del botón alojado antiguo seguiría entrando en el libro por el aviso IPN." %} <span class="hint">{% if paypal_estado == 'sandbox' %}{% trans "Las credenciales REST del .env son de la app Sandbox: solo hacen falta para el pago por servidor, que es opcional." %}{% elif paypal_estado == 'invalidas' %}{% trans "Las credenciales REST del .env no valen: solo hacen falta para el pago por servidor, que es opcional." %}{% else %}{% trans "Sin credenciales REST: el pago por servidor es opcional." %}{% endif %}</span></p>
-{% elif paypal_estado == 'sandbox' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Solo importa si algún día se reactiva la vía legado de PayPal." %}</p>
-{% elif paypal_estado == 'invalidas' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env NO son válidas (401). Solo importa si algún día se reactiva la vía legado." %}</p>
-{% else %}<p class="reg-gate">⚪ {% trans "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)." %}</p>{% endif %}
-<p class="hint">El libro de financiación: cada entrada (créditos gastados o legado PayPal) amplía el depósito del mes al instante, hasta el techo duro.</p>
+{# 6.12 (orden de David, 2026-11-09, literal: «No quiero eso. Quiero que, como #}
+{# SL, sea una empresa que cobra por los análisis adelantados, informes para #}
+{# empresas, etc»): PayPal FUERA del panel — ni semáforo ni selector. Esta #}
+{# página es el LIBRO DE FINANCIACIÓN de la empresa: los créditos gastados #}
+{# entran solos (apunte CREDIT, puente 4.3-F) y amplían el depósito del mes. #}
+<h1>{% trans "Libro de financiación" %}</h1>
+<p class="hint">{% trans "Cada entrada confirmada amplía el depósito de análisis del mes al instante, hasta el techo duro. Los créditos que gastan los usuarios entran solos; este formulario es solo para aportaciones manuales puntuales." %}</p>
 <form method="post">{% csrf_token %}
-  <label>Importe (€)<input name="amount" required placeholder="5.00"></label>
-  <label>Método<select name="method"><option value="PAYPAL">PayPal</option><option value="BIZUM">Bizum</option><option value="OTHER">Otro</option></select></label>
-  <label>Nota<input name="note" placeholder="opcional"></label>
-  <button>Registrar</button>
+  <label>{% trans "Importe (€)" %}<input name="amount" required placeholder="5.00"></label>
+  <label>{% trans "Nota" %}<input name="note" placeholder="{% trans 'opcional' %}"></label>
+  <button data-tip="{% trans 'Registra una aportación manual: el depósito del mes crece al instante.' %}">{% trans "Registrar" %}</button>
 </form>
-{# 5.3-A: las donaciones del boton PayPal de la web entran SIN verificar #}
-<h2>{% trans "Pendientes de confirmar" %} <span class="badge">{{ pendientes|length }}</span></h2>
-<p class="hint">{% trans "Las del botón PayPal de la web entran aquí SIN verificar. Compara con tu cuenta de PayPal y confirma: solo lo confirmado sube el tope de gasto y cuenta en el «Faltan X €»." %}</p>
+<h2>{% trans "Entradas sin confirmar" %} <span class="badge">{{ pendientes|length }}</span></h2>
+<p class="hint">{% trans "Entradas llegadas por vías automáticas sin verificación humana. Solo lo confirmado amplía el depósito y cuenta en el banner." %}</p>
 <ul class="post-list">
 {% for d in pendientes %}
   <li><strong>{{ d.amount_eur }} €</strong> · {{ d.created_at|date:'d/m/Y H:i' }} · <code>{{ d.note }}</code>
@@ -26,7 +24,7 @@
       <button name="accion" value="descartar" class="mini danger">{% trans "Descartar" %}</button></form></li>
 {% empty %}<li class="hint">{% trans "Nada pendiente." %}</li>{% endfor %}
 </ul>
-<h2>Historial</h2>
-<table><tr><th>Fecha</th><th>Importe</th><th>Método</th><th>Nota</th></tr>
+<h2>{% trans "Historial" %}</h2>
+<table><tr><th>{% trans "Fecha" %}</th><th>{% trans "Importe" %}</th><th>{% trans "Método" %}</th><th>{% trans "Nota" %}</th></tr>
 {% for d in items %}<tr><td>{{ d.created_at|date:'d/m/Y' }}</td><td>{{ d.amount_eur }} €</td><td>{{ d.get_method_display }}</td><td>{{ d.note }}</td></tr>{% endfor %}</table>
 {% endblock %}

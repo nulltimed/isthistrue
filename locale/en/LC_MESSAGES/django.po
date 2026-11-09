@@ -3524,3 +3524,37 @@ msgid "Y quiénes somos: el método, las correcciones y la transparencia, por es
 msgstr "And who we are: the method, the corrections and the transparency, in writing. End of the tour — thanks for visiting."
 msgid "Financiación"
 msgstr "Funding"
+
+# 6.12: PayPal fuera del panel — el libro de financiacion de la SL
+msgid "Libro de financiación"
+msgstr "Funding ledger"
+
+msgid "Cada entrada confirmada amplía el depósito de análisis del mes al instante, hasta el techo duro. Los créditos que gastan los usuarios entran solos; este formulario es solo para aportaciones manuales puntuales."
+msgstr "Every confirmed entry raises the month's analysis budget instantly, up to the hard ceiling. Credits spent by users enter on their own; this form is only for occasional manual entries."
+
+msgid "Entradas sin confirmar"
+msgstr "Unconfirmed entries"
+
+msgid "Entradas llegadas por vías automáticas sin verificación humana. Solo lo confirmado amplía el depósito y cuenta en el banner."
+msgstr "Entries arriving through automated paths without human verification. Only confirmed entries raise the budget and count in the banner."
+
+msgid "Registra una aportación manual: el depósito del mes crece al instante."
+msgstr "Records a manual entry: the month's budget grows instantly."
+
+msgid "Importe (€)"
+msgstr "Amount (€)"
+
+msgid "Nota"
+msgstr "Note"
+
+msgid "opcional"
+msgstr "optional"
+
+msgid "Registrar"
+msgstr "Record"
+
+msgid "Importe"
+msgstr "Amount"
+
+msgid "Método"
+msgstr "Method"

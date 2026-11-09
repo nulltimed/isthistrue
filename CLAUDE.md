@@ -489,3 +489,13 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   cada despliegue que reconstruya la capa de pip, comprobar que el worker consume:
   `sudo -u i docker compose logs worker --tail=5` debe ensenar el banner de celery ready,
   no un traceback.
+
+## Lecciones de la serie 6.12 (2026-11-09)
+- **PayPal FUERA del panel** (orden de David, literal: «No quiero eso. Quiero que, como
+  SL, sea una empresa que cobra por los análisis adelantados, informes para empresas,
+  etc»): /panel/donaciones/ es ahora el LIBRO DE FINANCIACION — sin semáforo PayPal,
+  sin selector de método (el registro manual entra como OTHER), mensajes sin la palabra
+  «donación». `apps/analysis/paypal_check.py` queda como módulo histórico (sus tests lo
+  cubren) y el endpoint IPN sigue mudo por si llega algo de un enlace antiquísimo.
+  El texto viejo que David vio era una PESTAÑA CACHEADA pre-6.9: ante un texto ya
+  corregido que «reaparece», pedir Ctrl+F5 antes de buscar fantasmas.

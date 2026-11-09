@@ -421,7 +421,7 @@ def donations_panel(request):
             d.save(update_fields=['verified'])
             AuditLog.objects.create(user=request.user, action='donation_verify',
                                     detail=f'{d.pk}: {d.amount_eur} EUR {d.note[:40]}')
-            messages.success(request, f'Donación de {d.amount_eur} € confirmada.')
+            messages.success(request, f'Entrada de {d.amount_eur} € confirmada.')
             # 5.13-C (orden de David): si la donacion venia ATADA a un post en
             # cola y lo apadrinado verificado cubre su coste, el analisis sale.
             if d.post and d.post.status == 'AWAITING_BUDGET':
@@ -436,7 +436,7 @@ def donations_panel(request):
                     d.post.status = 'PENDING'
                     d.post.save(update_fields=['status'])
                     run_cheap_phase.delay(d.post.pk)
-                    messages.success(request, f'Post {d.post.pk} apadrinado al '
+                    messages.success(request, f'Post {d.post.pk} cubierto al '
                                               f'completo: análisis LANZADO.')
         elif d and request.POST.get('accion') == 'descartar':
             AuditLog.objects.create(user=request.user, action='donation_discard',
@@ -449,21 +449,21 @@ def donations_panel(request):
         try:
             if float(amt) <= 0:
                 raise ValueError('importe no positivo')  # 4.1 B3: cantidad valida obligatoria
-            Donation.objects.create(amount_eur=float(amt),
-                method=request.POST.get('method', 'PAYPAL'),
+            # 6.12 (orden de David): PayPal fuera del panel — el registro
+            # manual entra como OTHER, venga de donde venga.
+            Donation.objects.create(amount_eur=float(amt), method='OTHER',
                 note=request.POST.get('note', '')[:200])
             AuditLog.objects.create(user=request.user, action='donation_add', detail=amt)
-            messages.success(request, 'Donación registrada: el depósito ha crecido.')
+            messages.success(request, 'Entrada registrada: el depósito ha crecido.')
         except ValueError:
             messages.error(request, 'Importe no válido.')
         return redirect('panel_donations')
     items = Donation.objects.filter(verified=True).order_by('-created_at')[:100]
     pendientes = Donation.objects.filter(verified=False).order_by('-created_at')
+    # 6.12 (orden de David): fuera el semáforo de PayPal — paypal_check queda
+    # como módulo histórico (sus tests lo cubren) pero el panel ya no lo llama.
     return render(request, 'panel/donations.html',
-                  {
-        'paypal_estado': __import__('apps.analysis.paypal_check', fromlist=['comprobar']).comprobar(),
-        'paypal_modo': __import__('django.conf', fromlist=['settings']).settings.PAYPAL_MODE,
-        'paypal_hosted': bool(SystemSetting.get_str('paypal_url', '')),'items': items, 'pendientes': pendientes})
+                  {'items': items, 'pendientes': pendientes})
 
 
 @staff_member_required
