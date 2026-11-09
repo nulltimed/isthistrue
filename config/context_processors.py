@@ -50,7 +50,12 @@ def quota_banner(request):
         # y MonthlyCap siguen siendo los fusibles que cortan — pero sus reservas
         # estimadas ya no se muestran como si fueran gasto.
         from apps.analysis.costs import day_total, month_total_all
+        # 6.20-b (David: «sigue apareciendo el techo de gasto»): con los
+        # limites apagados, los techos no existen — el banner enseña solo el
+        # gasto real, sin el «/X €» que ya no corta nada.
+        from apps.panel.services import budget_limits_enabled
         return {'quota_banner': {
+            'limites': budget_limits_enabled(),
             'daily_spent': day_total(),
             'daily_budget': live_daily_budget(),
             'monthly_spent': month_total_all(),

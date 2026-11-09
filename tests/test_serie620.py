@@ -56,3 +56,20 @@ class LimitesDeGastoConInterruptor(TestCase):
         self.assertIn('budget_limits_enabled', claves)
         from django.conf import settings
         self.assertIn('budget_limits_enabled', settings.SETTING_DEFAULTS)
+
+
+class ElBannerSinTecho(TestCase):
+    """6.20-b (David: «sigue apareciendo el techo de gasto»): con los límites
+    apagados el banner enseña solo el gasto real, sin el «/X €»."""
+
+    def test_el_contexto_lleva_el_interruptor(self):
+        from config.context_processors import quota_banner
+        _interruptor('0')
+        self.assertFalse(quota_banner(None)['quota_banner']['limites'])
+        _interruptor('1')
+        self.assertTrue(quota_banner(None)['quota_banner']['limites'])
+
+    def test_la_plantilla_condiciona_el_techo(self):
+        src = open('templates/base.html', encoding='utf-8').read()
+        self.assertEqual(src.count('{% if quota_banner.limites %}'), 2,
+                         'los dos «/techo» del banner deben ir tras el interruptor')

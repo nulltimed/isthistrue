@@ -54,8 +54,9 @@
 {# banner queda como pura transparencia de gasto + la puerta a los creditos. #}
 <div class="quota-banner quota-banner-xl">
   <div class="qb-numbers">
-    <span>{% trans "Hoy" %}: <strong>{{ quota_banner.daily_spent|floatformat:2 }}/{{ quota_banner.daily_budget|floatformat:2 }} €</strong></span>
-    <span>{% trans "Este mes" %}: <strong>{{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} €</strong></span>
+    {# 6.20-b: sin limites activos no hay techo que enseñar — solo gasto real. #}
+    <span>{% trans "Hoy" %}: <strong>{{ quota_banner.daily_spent|floatformat:2 }}{% if quota_banner.limites %}/{{ quota_banner.daily_budget|floatformat:2 }}{% endif %} €</strong></span>
+    <span>{% trans "Este mes" %}: <strong>{{ quota_banner.monthly_spent|floatformat:2 }}{% if quota_banner.limites %}/{{ quota_banner.monthly_cap|floatformat:0 }}{% endif %} €</strong></span>
   </div>
   <div class="qb-message">
     <a href="{% url 'spending' %}" data-tip="{% trans 'El gasto real del proyecto, por categorías y en euros: el libro es público.' %}">{% trans "Gasto en directo: el libro es público." %}</a>
