@@ -1060,3 +1060,7 @@ dialog #tip-globo{z-index:9999}
 .pa-fill { height: 100%; border-radius: 5px; background: var(--ok, #2e7d32);
   transition: width .9s linear; }
 .pa-pct { font-weight: 700; color: var(--ok, #2e7d32); }
+
+/* ---- 6.21: el total del mes, grande y lo primero en /gastos/ ---- */
+.gasto-total-mes { font-size: 1.6rem; margin: .2rem 0 1rem; }
+.gasto-total-mes strong { font-size: 2.2rem; color: var(--ink, #272727); }

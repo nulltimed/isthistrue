@@ -44,10 +44,45 @@ def record(provider, concept, eur, post=None, model=''):
                                  provider=provider, concept=concept,
                                  model=(model or '')[:60],
                                  eur=Decimal(str(round(float(eur), 4))))
+        _spend_alert_check()   # 6.21: aviso (no freno) si hoy cruza el umbral
     except Exception:
         import logging
         logging.getLogger('analysis.costs').warning(
             'apunte contable perdido: %s/%s %s', provider, concept, eur)
+
+
+def _spend_alert_check():
+    """6.21 (orden de David, 2026-11-09: «sí» al aviso diario de gasto, con el
+    fusible 100 % MANUAL — aqui no se frena ni se enciende nada): si el gasto
+    REAL de hoy cruza `spend_alert_daily_eur` (panel; 0 = apagado), UN aviso
+    al dia a la campana de los superusuarios y al email de alertas. Fail-soft:
+    jamas rompe un apunte."""
+    try:
+        from django.core.cache import cache
+        from apps.panel.models import SystemSetting
+        umbral = SystemSetting.get_int('spend_alert_daily_eur', 0)
+        if umbral <= 0:
+            return
+        clave = f'aviso-gasto-{timezone.localdate().isoformat()}'
+        if cache.get(clave):
+            return
+        gastado = day_total()
+        if gastado < umbral:
+            return
+        cache.set(clave, 1, 24 * 3600)
+        texto = (f'Gasto de hoy: {gastado:.2f} € (umbral de aviso: {umbral} €). '
+                 f'Solo es un aviso: nada se ha frenado.')
+        from django.contrib.auth import get_user_model
+        from apps.accounts.services import notify
+        for su in get_user_model().objects.filter(is_superuser=True,
+                                                  is_active=True):
+            notify(su, f'💶 {texto}', url='/gastos/')
+        from apps.panel.services import alert_admin
+        alert_admin('Aviso de gasto diario', texto)
+    except Exception:
+        import logging
+        logging.getLogger('analysis.costs').warning('aviso de gasto fallido',
+                                                    exc_info=True)
 
 
 def record_failure(provider, concept, motivo=''):

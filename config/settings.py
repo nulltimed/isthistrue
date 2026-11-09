@@ -227,6 +227,10 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # frenan nada (el gasto se sigue apuntando íntegro); 1 = vuelven los frenos
     # 4.3-F tal cual. Las ruedas (base, techo) siguen vivas en el panel.
     'budget_limits_enabled': '0',
+    # 6.21 (orden de David: «sí» al aviso): umbral del aviso diario de gasto
+    # en euros — campana del superusuario + email, UNA vez al dia, sin frenar
+    # nada. 0 = apagado.
+    'spend_alert_daily_eur': '10',
     # 4.9-A: el libro de cuentas — tarifas y topes por proveedor
     'aai_webhook': '1',
     'assemblyai_monthly_cap_eur': '20',

@@ -3598,3 +3598,7 @@ msgstr "First sweep: claims, signals and clickbait…"
 
 msgid "Verificando las afirmaciones una a una…"
 msgstr "Verifying the claims one by one…"
+
+# ---- Serie 6.21: aviso de gasto + total del mes ----
+msgid "gastados este mes"
+msgstr "spent this month"

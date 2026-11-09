@@ -49,6 +49,8 @@ SETTINGS_DEF = [
     # fábrica; este interruptor los revive con un clic.
     ('budget_limits_enabled', 'Aplicar los límites de gasto (diario y mensual)',
      'Apagado: los topes de abajo NO frenan ningún análisis (el gasto se sigue apuntando entero en el libro). Encendido: vuelven los frenos de siempre — depósito diario, techo mensual y cola por presupuesto.', 'bool'),
+    ('spend_alert_daily_eur', 'Aviso de gasto diario (€)',
+     'Si el gasto real de un día cruza esta cifra, te llega UN aviso (campana + email). No frena nada: solo avisa. 0 = apagado.', 'num'),
     ('budget_base_eur', 'Presupuesto base mensual (€)',
      'Lo que el proyecto se permite gastar al mes sin contar donaciones. El límite DIARIO sale de aquí: se divide entre los días del mes.', 'num'),
     ('budget_hard_ceiling_eur', 'Techo duro mensual (€)',

@@ -2,6 +2,9 @@
 {% block title %}{% trans "En qué se gasta" %} — esestocierto?{% endblock %}
 {% block content %}
 <h1>{% trans "En qué se gasta" %} · {{ ym }}</h1>
+{# 6.21 (orden de David): el total del mes, grande y lo primero — sin techos, #}
+{# el libro ES el indicador. #}
+<p class="gasto-total-mes"><strong>{{ total|floatformat:2 }} €</strong> {% trans "gastados este mes" %}</p>
 {# 6.7 (orden de David, 2026-11-09): el público ve categorías y totales; las #}
 {# marcas, los apuntes y la GPU, solo staff («ahora es una empresa»). #}
 {% if es_staff %}

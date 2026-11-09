@@ -582,3 +582,12 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   nunca encola. Encendido: los frenos 4.3-F tal cual. El banco de pruebas lo
   enciende (tests/settings_test.py) porque la suite historica prueba el MECANISMO;
   test_serie620 prueba el apagado con la fila del panel a 0.
+
+## Lecciones de la serie 6.21 (2026-11-09) — vigilancia de gasto sin frenos
+- Respuestas de David (12:53): aviso diario SÍ · total grande en /gastos/ SÍ ·
+  **fusible 100 % MANUAL** (jamás construir un encendido automático de los límites).
+- `spend_alert_daily_eur` (panel, 10 € de fábrica, 0 = apagado): al cruzar el gasto
+  REAL del día, UN aviso (campana de superusuarios + email de alertas) desde
+  costs.record() — fail-soft, con candado de que el aviso jamás frena el apunte.
+- /gastos/ abre con el total del mes en grande (.gasto-total-mes): sin techos,
+  el libro ES el indicador.
