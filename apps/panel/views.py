@@ -86,8 +86,8 @@ SETTINGS_DEF = [
      'Cuántos usuarios (Contribuidor o superior) tienen que pulsar «Pedir el análisis con fuentes» para que arranque el trabajo 2: buscar fuentes y poner el semáforo. Es la ÚNICA puerta junto con los hablantes identificados (5.27-A). 5 de fábrica.', 'num'),
     ('votes_to_rescue', 'Votos para rescatar',
      'Votos que devuelven un post de Off-Topic a Principal.', 'num'),
-    ('startup_mode_min_users', 'Modo arranque hasta N usuarios',
-     'Mientras la web tenga menos usuarios verificados que esto, un solo voto de moderador o del superusuario vale por todos los votos necesarios.', 'num'),
+    ('startup_mode_min_users', 'Modo arranque hasta N usuarios — HISTÓRICA',
+     'Superada en la serie 6.26 (orden de David, 2026-11-09): el voto único de moderador o superusuario vale por todos SIEMPRE, haya los usuarios que haya. La fila queda por el histórico; no mueve nada.', 'num'),
     ('donation_goal_eur', 'Meta de donaciones (€) — HISTÓRICA',
      'Las donaciones se retiraron en la serie 6.1 (orden de David, 2026-11-06, Lectura A). La fila queda por el histórico; no mueve nada.', 'num'),
     # --- 6.1 (ordenes de David, 2026-11-06): los CREDITOS de la SL ---

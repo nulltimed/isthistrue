@@ -622,3 +622,18 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   en la página — ampliar sin documentar pone el CI rojo.
 - Expediente Abascal: el rescate 6.19 es HORARIO — David desplegó y relanzó a mano antes
   del primer tic. Sin indicios de fallo; el siguiente huérfano saldrá solo en <1 h.
+
+## Lecciones de la serie 6.26 (2026-11-09, 21:32) — el voto único de mod, SIEMPRE
+- Orden de David, literal: «Quiero que TODAS las frases de TODOS los interlocutores se
+  analicen en el primer análisis tanto por votos de los usuarios como por único voto del
+  superusuario o moderador». La COBERTURA ya era total (candado test_serie623); el hueco
+  real estaba en la PUERTA: el atajo del voto único de mod/superusuario solo valía en
+  «modo arranque» (<50 usuarios) y habría muerto EN SILENCIO al crecer la web.
+- Desde la 6.26: votes_needed devuelve 1 ante un voto VALIDATE de mod/superusuario
+  SIEMPRE; el rescate de Off-Topic, igual. La puerta de identificación (65 %) NO cambia
+  (David, 21:11: «tal y como está»). startup_mode_min_users queda HISTÓRICA en el panel.
+- El candado 5.27-A de test_serie527 afirmaba el comportamiento viejo: ENMENDADO con el
+  literal (procedimiento de las decisiones congeladas). Candado nuevo: test_serie626,
+  incluido que el atajo NO salta la puerta de voces.
+- Al usuario se le CORRIGIÓ un matiz (lo pidió él): «todas las frases» = todas las que
+  afirman algo; el barrido deja fuera solo saludos/ruido sin contenido verificable.

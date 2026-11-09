@@ -73,15 +73,17 @@ class Parche527A_PuertaUnica(_Base):
         post.refresh_from_db()
         self.assertEqual(post.status, 'FULL_QUEUED')
 
-    def test_el_voto_de_moderacion_vale_por_todos_solo_en_modo_arranque(self):
+    def test_el_voto_de_moderacion_vale_por_todos_siempre(self):
+        """ENMENDADO en la 6.26 (orden de David, 2026-11-09, 21:32, literal:
+        «tanto por votos de los usuarios como por único voto del superusuario
+        o moderador»): antes el atajo solo valia en modo arranque — este test
+        afirmaba justo eso — y habria muerto en silencio al crecer. Ahora el
+        voto de mod/superusuario vale por todos SIEMPRE (arranque apagado
+        incluido: el setUp deja startup_mode_min_users a 0)."""
         from apps.analysis.services import votes_needed, try_launch_full
-        from apps.panel.models import SystemSetting
         post = self._post(2)
         self._nombrar(post, 'SPEAKER_00', 'Ana'); self._nombrar(post, 'SPEAKER_01', 'Bea')
         self._votar(post, 1, mod=True)
-        self.assertEqual(votes_needed(post), 2)          # sin modo arranque: la rueda manda
-        self.assertFalse(try_launch_full(post))
-        SystemSetting.objects.update_or_create(key='startup_mode_min_users', defaults={'value': '1000'})
         self.assertEqual(votes_needed(post), 1)
         with mock.patch('apps.analysis.tasks.launch_full_analysis'):
             self.assertTrue(try_launch_full(post))

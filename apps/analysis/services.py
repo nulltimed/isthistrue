@@ -39,7 +39,9 @@ def cast_vote(post, user, kind):
         return True, f'Voto registrado: van {van} de {faltan}.'
 
     if kind == 'RESCUE' and post.category == 'OFFTOPIC':
-        needed = 1 if (startup_mode_active() and is_mod) \
+        # 6.26: el voto de mod/superusuario tambien rescata en solitario
+        # SIEMPRE (misma enmienda que votes_needed; antes solo en arranque).
+        needed = 1 if is_mod \
             else SystemSetting.get_int('votes_to_rescue', 10)
         if post.distinct_validation_votes('RESCUE') >= needed:
             # El analisis de rescate lo paga el presupuesto global (modo simple).
@@ -102,13 +104,17 @@ def min_identified_percent():
 
 def votes_needed(post):
     """5.27-A (orden de David): cuantos votos «Pedir el analisis con fuentes»
-    hacen falta. En modo arranque, UN voto de moderador o del superusuario vale
-    por todos (README §5, sin cambios); fuera de el, la rueda «Votos para pedir
-    el analisis» del panel."""
-    if startup_mode_active():
-        for v in post.validation_votes.filter(kind='VALIDATE').select_related('user'):
-            if v.user.is_superuser or v.user.effective_level() == 'MOD':
-                return 1
+    hacen falta — la rueda «Votos para pedir el analisis» del panel.
+
+    ENMIENDA 6.26 (orden de David, 2026-11-09, 21:32, literal: «TODAS las
+    frases de TODOS los interlocutores se analicen en el primer análisis
+    tanto por votos de los usuarios como por único voto del superusuario o
+    moderador»): el voto de moderador/superusuario vale por todos SIEMPRE,
+    no solo en modo arranque — antes, al cruzar los 50 usuarios activos, el
+    atajo moria en silencio. La puerta de identificacion no cambia."""
+    for v in post.validation_votes.filter(kind='VALIDATE').select_related('user'):
+        if v.user.is_superuser or v.user.effective_level() == 'MOD':
+            return 1
     return max(1, SystemSetting.get_int('votes_to_validate', 5))
 
 
