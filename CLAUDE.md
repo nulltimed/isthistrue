@@ -591,3 +591,14 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   costs.record() — fail-soft, con candado de que el aviso jamás frena el apunte.
 - /gastos/ abre con el total del mes en grande (.gasto-total-mes): sin techos,
   el libro ES el indicador.
+
+## Lecciones de la serie 6.22 (2026-11-09, 21:11) — atrasados de golpe, puerta intacta
+- Respuestas de David: puerta 5.27-A **TAL CUAL** (literal: «ni una ni otra, tal y como
+  está» — ni piloto automático ni puerta a medias) · atrasados «todo de golpe».
+- `manage.py verificar_atrasados`: lanza el trabajo 2 de los PENDING_VALIDATION
+  saltándose SOLO los votos (con la web privada nunca se juntan); el 65 % de voces se
+  respeta por defecto y se salta con --sin-voces. --limite acota. Candado test_serie622,
+  incluido uno que vigila que try_launch_full siga exigiendo votos+identificación.
+- La fase barata al postear YA era automática (run_cheap_phase.delay al crear);
+  las únicas excepciones son categoría propuesta (PENDING_APPROVAL, se lanza al
+  aprobar) y Spotify (NON_ANALYZABLE: su audio no se puede descargar).
