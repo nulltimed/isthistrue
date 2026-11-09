@@ -3606,3 +3606,13 @@ msgstr "spent this month"
 # ---- Serie 6.25: pagina publica de medios soportados ----
 msgid "Qué puedo postear"
 msgstr "What can I post"
+
+# ---- Serie 6.27: boton «Verificar ya» de moderacion ----
+msgid "Verificar ya"
+msgstr "Verify now"
+
+msgid "Vas a lanzar la verificación con fuentes de este vídeo. Gasta dinero real. ¿Seguro?"
+msgstr "You are about to launch the source-based verification of this video. It spends real money. Sure?"
+
+msgid "Tu voto de moderación vale por todos: vota y lanza la verificación con fuentes en un clic (si los hablantes están identificados)."
+msgstr "Your moderation vote counts for all: vote and launch the source-based verification in one click (if the speakers are identified)."

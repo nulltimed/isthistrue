@@ -47,7 +47,13 @@ class Command(BaseCommand):
             launch_full_analysis(post)
             lanzados.append(post.pk)
         self.stdout.write(f'Lanzados: {len(lanzados)} {lanzados}')
+        # 6.27 (pregunta de David: «¿de qué comando? dónde?» — de ESTE): cada
+        # retenido sale con su enlace, para abrirlo y poner nombres en la caja
+        # «¿Quién habla?» (o pulsar «⚡ Verificar ya» cuando la puerta abra).
         for pk, motivo in retenidos:
-            self.stdout.write(f'Retenido {pk}: {motivo} (ponle nombres o usa --sin-voces)')
+            post = Post.objects.get(pk=pk)
+            self.stdout.write(f'Retenido {pk}: {motivo}')
+            self.stdout.write(f'  -> https://esestocierto.com{post.get_absolute_url()} '
+                              f'(ponle nombres ahí, o usa --sin-voces)')
         if not lanzados and not retenidos:
             self.stdout.write('No hay posts atrasados en espera de votos.')

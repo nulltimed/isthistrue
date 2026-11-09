@@ -1590,6 +1590,24 @@ def vote(request, pk, kind):
     return redirect('post_detail', pk=pk)
 
 
+@login_required
+def verify_now(request, pk):
+    """6.27 (orden de David: «Sí» al botón): «⚡ Verificar ya» — el voto único
+    de moderación (6.26) en un clic. Vota VALIDATE y, si la puerta de voces
+    está abierta, cast_vote lanza el trabajo 2 ahí mismo. Solo mod/superusuario
+    y solo por POST (lanza gasto real: nada de GET prefetcheables)."""
+    if request.method != 'POST':
+        return redirect('post_detail', pk=pk)
+    u = request.user
+    if not (u.is_superuser or u.effective_level() == 'MOD'):
+        messages.error(request, 'Solo moderación puede lanzar la verificación directa.')
+        return redirect('post_detail', pk=pk)
+    post = get_object_or_404(Post, pk=pk)
+    ok, msg = cast_vote(post, u, 'VALIDATE')
+    (messages.success if ok else messages.error)(request, msg)
+    return redirect('post_detail', pk=pk)
+
+
 def search(request):
     """Busqueda unificada, adaptada al 4.2 (G1):
     - Analisis: por TITULO real (F1), etiquetas y tema — ya no por URL en bruto.

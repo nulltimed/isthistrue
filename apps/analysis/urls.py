@@ -21,6 +21,8 @@ urlpatterns = [
     path('post/<int:pk>/fragmento/hilo/', views.post_thread_fragment, name='post_thread_fragment'),
     # 5.7-A: el pulso del vigia — cambia la huella, recarga el navegador.
     path('post/<int:pk>/estado/', views.post_estado, name='post_estado'),
+    # 6.27: el voto unico de moderacion en un clic (solo POST, solo mods).
+    path('post/<int:pk>/verificar-ya/', views.verify_now, name='verify_now'),
     # 5.20: gestion del post (moderacion)
     path('post/<int:pk>/nota/', views.post_mod_note, name='post_mod_note'),
     path('post/<int:pk>/censurar/', views.post_censor, name='post_censor'),

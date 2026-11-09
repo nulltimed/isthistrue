@@ -7,6 +7,17 @@
   {# 6.16: nivel de proceso del análisis, en vivo (orden de David). #}
   {% include 'partials/progreso_analisis.html' %}
 
+  {# 6.27 (orden de David: «Sí» al botón): el voto único de mod/superusuario #}
+  {# (6.26) con un clic. Vota, y si la puerta de voces está abierta, LANZA. #}
+  {% if post.status == 'PENDING_VALIDATION' and user.is_authenticated %}
+    {% if user.is_superuser or user.effective_level == 'MOD' %}
+    <form method="post" action="{% url 'verify_now' post.pk %}" class="verificar-ya"
+          onsubmit="return confirm('{% trans "Vas a lanzar la verificación con fuentes de este vídeo. Gasta dinero real. ¿Seguro?" %}')">{% csrf_token %}
+      <button type="submit" class="btn-primario" data-tip="{% trans 'Tu voto de moderación vale por todos: vota y lanza la verificación con fuentes en un clic (si los hablantes están identificados).' %}">⚡ {% trans "Verificar ya" %}</button>
+    </form>
+    {% endif %}
+  {% endif %}
+
   {% if post.status == 'AWAITING_BUDGET' %}
     {# 4.3-F (David): ni muro ni rechazo — cola con apadrinamiento. #}
     <div class="validation queued">

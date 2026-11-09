@@ -637,3 +637,12 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   incluido que el atajo NO salta la puerta de voces.
 - Al usuario se le CORRIGIÓ un matiz (lo pidió él): «todas las frases» = todas las que
   afirman algo; el barrido deja fuera solo saludos/ruido sin contenido verificable.
+
+## Lecciones de la serie 6.27 (2026-11-09, 21:39) — «⚡ Verificar ya»
+- Botón de un clic para el voto único de moderación (6.26): visible solo a
+  mod/superusuario en posts PENDING_VALIDATION, dentro de #post-body (el vivo lo
+  re-pinta). Pasa por cast_vote → misma puerta de voces, mismos mensajes.
+- **Gasto real JAMÁS por GET**: la vista verify_now solo actúa por POST (los
+  navegadores prefetchean GETs) — candado en test_serie627.
+- verificar_atrasados imprime el ENLACE de cada retenido (duda de David «¿de qué
+  comando? dónde?»): se abre, se nombran voces en «¿Quién habla?», o «Verificar ya».
