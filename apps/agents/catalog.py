@@ -226,7 +226,10 @@ FALLBACK_DEFAULTS = {
     'attribution': 'claude-haiku-4-5-20251001',
     'verdict': 'claude-sonnet-4-6',
     'moderation': 'claude-haiku-4-5-20251001',
-    'deep': 'claude-opus-4-8',
+    # 6.8-b (orden de David, 2026-11-09: «sonnet»): el respaldo del reanalisis
+    # profundo baja de Opus a Sonnet — solo entra cuando Qwen agota sus dos
+    # intentos (6.8), y si entra, que cueste centimos. Antes: claude-opus-4-8.
+    'deep': 'claude-sonnet-4-6',
     'innocuous': 'claude-sonnet-4-6',
     'categories': 'claude-haiku-4-5-20251001',   # 5.26-A
     'china_guard': 'claude-haiku-4-5-20251001',

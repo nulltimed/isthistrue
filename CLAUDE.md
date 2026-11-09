@@ -445,3 +445,10 @@ el tamaño de la entrada y el CUERPO del error de DashScope — con esos datos s
 decide si algun dia se recorta de fabrica. El respaldo Claude queda como ultimo
 clavo, no como primera salida. (Contexto: el claim 188 dio un 400 de DashScope con
 expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
+
+## Lecciones de la serie 6.8-b (2026-11-09)
+- **El respaldo del reanalisis profundo es SONNET de fabrica** (orden de David: «sonnet»;
+  antes Opus). Es el unico cambio del operador en terreno de modelos y va con literal:
+  la rueda sigue siendo de David en /panel/modelos/ (una fila model_fb_deep pisa el
+  default — si en produccion el log volviera a decir opus, es que hay fila: la toca el).
+- **Impresiones del socio: EN PERSONA** (David: no se añade paso de feedback al tour).
