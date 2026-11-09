@@ -17,9 +17,10 @@ STATUSES = [
     ('PENDING_VALIDATION', 'Pendiente de validación (5 votos / 3 días)'),
     ('FULL_QUEUED', 'Análisis completo en cola'),
     # 4.3-F (decision de David): un video que se lleva mas de media asignacion
-    # diaria NO se analiza al momento — espera a que haya deposito, o a que
-    # alguien lo apadrine con una donacion. Nunca se rechaza.
-    ('AWAITING_BUDGET', 'En cola por presupuesto (esperando depósito o apadrinamiento)'),
+    # diaria NO se analiza al momento — espera a que haya deposito. Nunca se
+    # rechaza. 6.9 (David: «Elimina las donaciones de cualquier página»): la
+    # etiqueta ya no habla de apadrinar; los creditos lo adelantan.
+    ('AWAITING_BUDGET', 'En cola por presupuesto (los créditos la adelantan)'),
     ('FULL_RUNNING', 'Análisis completo en curso'),
     ('DONE', 'Analizado'),
     ('OFFTOPIC_SIGNALED', 'Off-Topic con señales'),

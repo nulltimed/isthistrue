@@ -290,8 +290,8 @@ msgstr "Delete my account"
 msgid "Email inmediato"
 msgstr "Immediate email"
 
-msgid "En cola por presupuesto (esperando depósito o apadrinamiento)"
-msgstr "Queued for budget (waiting for funds or a sponsor)"
+msgid "En cola por presupuesto (los créditos la adelantan)"
+msgstr "Queued for budget (credits fast-track it)"
 
 msgid "En cola por presupuesto."
 msgstr "Queued for budget."
