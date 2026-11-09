@@ -499,3 +499,19 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   cubren) y el endpoint IPN sigue mudo por si llega algo de un enlace antiquísimo.
   El texto viejo que David vio era una PESTAÑA CACHEADA pre-6.9: ante un texto ya
   corregido que «reaparece», pedir Ctrl+F5 antes de buscar fantasmas.
+
+## Lecciones de la serie 6.14 (2026-11-09) — el post EN VIVO (vigía v2)
+- **El vigía ya NO recarga por cambios de análisis**: trae /post/<pk>/fragmento/cuerpo/
+  y lo intercambia en #post-body con htmx (orden de David: «No, aplícalo ahora»).
+  El borrador de respuesta (fuera de #post-body) y el scroll del hilo sobreviven;
+  los MENSAJES nuevos siguen recargando (el hilo con scroll infinito no se re-pinta, 5.7-B).
+- **Todo JS que se engancha a nodos DENTRO de #post-body vive en init() y escucha
+  `istt:post-swap`** (transcript.js, speaker-suggest.js). tips.js y menus.js van por
+  delegación a document y no necesitan nada. Si un pase futuro añade JS al cuerpo
+  del post, nace con ese patrón o se rompe en silencio al primer intercambio.
+- **Dos trampas del re-init cazadas con candado** (test_serie614): los setInterval se
+  APILAN si no se limpia el anterior (reloj en window.__isttTransVivo + clearInterval),
+  y la IFrame API de YouTube se cargaría una vez por intercambio sin el guard por id
+  del <script> (istt-yt-api) + comprobar window.YT.Player antes de recargarla.
+- El intercambio re-crea el embed: si el vídeo estaba reproduciéndose, vuelve a su
+  miniatura. Aceptado (durante el análisis se está leyendo, no viendo).

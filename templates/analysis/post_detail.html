@@ -95,7 +95,10 @@
     <div id="thread-messages">
       {% include 'partials/thread_messages.html' %}
     </div>
+    {# 6.14 (orden de David): data-frag = el cuerpo como fragmento; el vigia #}
+    {# v2 lo intercambia EN VIVO en #post-body sin recargar la pagina.       #}
     <div id="vigia-post" hidden data-url="{% url 'post_estado' post.pk %}"
+         data-frag="{% url 'post_body_fragment' post.pk %}"
          data-a="{{ estado_analisis }}" data-m="{{ newest_pk|default:0 }}"></div>
     {% if post.comments_closed and not is_mod %}
       <p class="hint comentarios-cerrados">🔒 {% trans "Comentarios cerrados por moderación." %}</p>

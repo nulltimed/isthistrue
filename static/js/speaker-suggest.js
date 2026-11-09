@@ -54,7 +54,12 @@
     if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
   }
 
+  /* 6.14: el vigía v2 intercambia el cuerpo del post sin recargar — los
+     formularios nuevos se enganchan en cada intercambio (init + evento). */
+  function init() {
   Array.prototype.forEach.call(document.querySelectorAll('form.speaker-suggest'), function (form) {
+    if (form._isttSuggest) return;   // ya enganchado (guard anti doble-init)
+    form._isttSuggest = true;
     var input = form.querySelector('.speaker-q');
     var lista = form.querySelector('.suggest-list');
     var qid = form.querySelector('input[name="qid"]');
@@ -94,8 +99,17 @@
         e.preventDefault(); lista.firstChild.focus();
       }
     });
-    document.addEventListener('click', function (e) {
-      if (!form.contains(e.target)) { lista.hidden = true; recorte(form, false); }
+  });
+  }
+  /* clic fuera: UN solo oyente global (no se apila con los re-init) */
+  document.addEventListener('click', function (e) {
+    Array.prototype.forEach.call(document.querySelectorAll('form.speaker-suggest'), function (form) {
+      if (!form.contains(e.target)) {
+        var l = form.querySelector('.suggest-list');
+        if (l && !l.hidden) { l.hidden = true; recorte(form, false); }
+      }
     });
   });
+  init();
+  document.addEventListener('istt:post-swap', init);   // 6.14: re-enganche
 })();

@@ -2,11 +2,17 @@
  * cualquier tipo, etc) la página se recargará automáticamente mostrando un
  * mensaje de los que ya se usan, sobre el cambio».
  *
- * Cada 12 s se sondea /post/<pk>/estado/ (JSON mínimo). Si la huella del
- * análisis cambia — o llegan mensajes nuevos — el aviso se guarda, la página
- * se recarga y el bocadillo (isttToast) lo canta al aterrizar. Única
- * excepción: si hay una respuesta A MEDIO ESCRIBIR no se recarga (se
- * perdería el borrador); se avisa con el bocadillo y ya. */
+ * 6.14 — VIGÍA v2, MODO VIVO (orden de David, 2026-11-09: «No, aplícalo
+ * ahora»): si lo que cambió es el ANÁLISIS, ya no se recarga la página — el
+ * cuerpo del post (#post-body: embed, transcripción, intervinientes,
+ * semáforo de veredictos) se trae como fragmento y se intercambia en su
+ * sitio con htmx. El borrador de la respuesta (fuera de #post-body) y el
+ * scroll del hilo SOBREVIVEN. Los scripts del cuerpo se re-enganchan con el
+ * evento `istt:post-swap`. Los MENSAJES NUEVOS siguen recargando como
+ * siempre (el hilo con scroll infinito no se re-pinta por fragmento, 5.7-B).
+ *
+ * Cada 12 s se sondea /post/<pk>/estado/ (JSON mínimo). Si no hay htmx o
+ * falta el fragmento, se degrada al comportamiento 5.7: recarga + bocadillo. */
 (function () {
   'use strict';
   var el = document.getElementById('vigia-post');
@@ -29,13 +35,19 @@
     return !!(caja && caja.value.trim());
   }
 
+  function recargar(texto) {
+    try { sessionStorage.setItem('istt-cambio', texto); } catch (e) {}
+    location.reload();
+  }
+
   var avisado = false;
   setInterval(function () {
     fetch(url, { headers: { 'Accept': 'application/json' } })
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        var cambioAnalisis = !!(d.a && d.a !== a);
         var texto = null;
-        if (d.a && d.a !== a) {
+        if (cambioAnalisis) {
           texto = d.txt || 'El análisis de este vídeo ha cambiado';
         } else if (d.m && d.m > m) {
           var n = d.m - m;
@@ -43,6 +55,22 @@
                           : n + ' mensajes nuevos en la conversación';
         }
         if (!texto) return;
+
+        /* 6.14: intercambio EN VIVO del cuerpo del post. */
+        var zona = document.getElementById('post-body');
+        var frag = el.dataset.frag;
+        if (cambioAnalisis && zona && frag && window.htmx) {
+          a = d.a;   // huella al día: el siguiente pulso no repite el cambio
+          window.htmx.ajax('GET', frag, { target: '#post-body', swap: 'innerHTML' })
+            .then(function () {
+              document.dispatchEvent(new CustomEvent('istt:post-swap'));
+              if (window.isttToast) window.isttToast(texto);
+            })
+            .catch(function () { recargar(texto); });   // red o 500: a lo clásico
+          return;
+        }
+
+        /* camino clásico 5.7 (mensajes nuevos, o sin htmx/fragmento) */
         if (borradorVivo()) {
           if (!avisado && window.isttToast) {
             window.isttToast(texto + ' — la página se recargará al enviar tu respuesta');
@@ -50,8 +78,7 @@
           }
           return;
         }
-        try { sessionStorage.setItem('istt-cambio', texto); } catch (e) {}
-        location.reload();
+        recargar(texto);
       })
       .catch(function () { /* red caída: el siguiente pulso lo reintenta */ });
   }, 12000);

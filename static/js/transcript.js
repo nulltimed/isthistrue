@@ -5,6 +5,10 @@
  * identica a la de siempre; este script SOLO añade. */
 (function () {
   'use strict';
+  /* 6.14 (orden de David): MODO VIVO — el vigía v2 intercambia el cuerpo del
+   * post sin recargar, así que todo lo que aquí se engancha a nodos del
+   * cuerpo vive dentro de init() y se re-engancha en cada intercambio. */
+  function init() {
   var box = document.querySelector('.transcript');
   if (!box) return;
   var platform = box.getAttribute('data-platform') || '';
@@ -16,15 +20,23 @@
   function target(s) { return Math.max(0, Math.floor(s) - 1); } // 1 s antes (decidido)
 
   if (platform === 'youtube' && document.getElementById('istt-player')) {
-    // Carga perezosa de la IFrame API oficial (el embed ya lleva enablejsapi=1).
-    var tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(tag);
-    window.onYouTubeIframeAPIReady = function () {
+    var crearPlayer = function () {
       ytPlayer = new YT.Player('istt-player', {
         events: { onReady: function () { ytReady = true; } }
       });
     };
+    if (window.YT && window.YT.Player) {
+      crearPlayer();   // 6.14: tras un intercambio, la API ya esta cargada
+    } else {
+      window.onYouTubeIframeAPIReady = crearPlayer;
+      if (!document.getElementById('istt-yt-api')) {
+        // Carga perezosa de la IFrame API oficial (el embed lleva enablejsapi=1).
+        var tag = document.createElement('script');
+        tag.id = 'istt-yt-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+    }
   }
 
   /* 4.3-A.3 M2 (decision de David): transcripcion con SEGUIMIENTO EN VIVO.
@@ -45,7 +57,9 @@
     }
     liveSpk = spk;
   }
-  setInterval(function () {
+  // 6.14: un solo reloj de seguimiento aunque el cuerpo se intercambie N veces.
+  if (window.__isttTransVivo) clearInterval(window.__isttTransVivo);
+  window.__isttTransVivo = setInterval(function () {
     var t;
     if (audioEl) {
       if (audioEl.paused) return;
@@ -202,4 +216,7 @@
     var s = parseFloat(seg.getAttribute('data-start'));
     if (isFinite(s)) window.seekTo(s);
   });
+  }
+  init();
+  document.addEventListener('istt:post-swap', init);   // 6.14: re-enganche
 })();
