@@ -66,12 +66,25 @@ class Parche523A_RunpodReintentoYContador(TestCase):
             concept__endswith=' — fallo').count(), 2)
 
     def test_la_pagina_de_gastos_enseña_el_contador(self):
+        # ENMIENDA 6.7 (orden de David, 2026-11-09, literal: «ahora es una
+        # empresa. Cierta transparencia, pero eliminemos los puntos más
+        # complicados de los gastos que se publican»): el contador de la GPU
+        # es salud operativa y se muestra SOLO al staff; el público ve
+        # categorías y totales.
+        from django.contrib.auth import get_user_model
         from apps.analysis import costs
         costs.record('runpod', 'diarización', 0.01)
         costs.record_failure('runpod', 'diarización', 'x')
         html = self.client.get('/gastos/').content.decode()
+        self.assertNotIn('gpu-contador', html)
+        staff = get_user_model().objects.create_user(
+            username='staff523gpu', email='staff523gpu@example.org',
+            password='x', is_staff=True)
+        self.client.force_login(staff)
+        html = self.client.get('/gastos/').content.decode()
         self.assertIn('gpu-contador', html)
         self.assertIn('trabajos completados', html)
+        self.client.logout()
 
     def test_el_dockerfile_slim_no_graba_el_token(self):
         """Leccion del 2026-09-08: el ARG quedaba en el historial de la imagen
