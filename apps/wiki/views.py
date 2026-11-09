@@ -4,6 +4,43 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Claim, ClaimSlugHistory, ClaimVersion, Interlocutor
 
 
+def _jsonld_claimreview(claim, request):
+    """6.5: marcado ClaimReview de schema.org en cada ficha con veredicto.
+
+    Es el formato que leen Google (resultados con etiqueta de verificacion),
+    el Fact Check Explorer y los agregadores IFCN. Mientras la web siga
+    privada no lo indexa nadie, pero el dia que abra cada ficha llega ya
+    etiquetada — el trafico de buscadores es el canal de captacion que no
+    cuesta un euro. Solo colores PRONUNCIADOS; las opiniones se excluyen
+    (schema.org exige hechos comprobables, y un verde de opinion significa
+    «fundada», no «verificada»)."""
+    import json as _json
+    from .models import UNSETTLED
+    nota = {'GREEN': 5, 'GREY': 3, 'AMBER': 2, 'RED': 1}.get(claim.color)
+    if nota is None or claim.color in UNSETTLED or not claim.slug \
+            or claim.kind == 'OPINION':
+        return ''
+    host = request.get_host()
+    datos = {
+        '@context': 'https://schema.org',
+        '@type': 'ClaimReview',
+        'url': f'https://{host}/wiki/claim/{claim.slug}/',
+        'claimReviewed': claim.text_original[:500],
+        'author': {'@type': 'Organization', 'name': 'esestocierto?',
+                   'url': f'https://{host}/'},
+        'reviewRating': {'@type': 'Rating', 'ratingValue': nota,
+                         'bestRating': 5, 'worstRating': 1,
+                         'alternateName': claim.get_color_display()},
+    }
+    ap = claim.appearances.select_related('segment__post').first()
+    if ap and ap.segment.post_id:
+        datos['itemReviewed'] = {
+            '@type': 'Claim',
+            'appearance': {'@type': 'CreativeWork', 'url': ap.segment.post.url}}
+    # Vale ir con |safe en la plantilla: el '<' se escapa aqui mismo.
+    return _json.dumps(datos, ensure_ascii=False).replace('<', '\\u003c')
+
+
 def claim_page(request, slug):
     claim = Claim.objects.filter(slug=slug).first()
     if not claim and slug.isdigit():
@@ -37,6 +74,7 @@ def claim_page(request, slug):
         my_credits = _cred.wallet(request.user).balance
     return render(request, 'analysis/claim_detail.html',
                   {'claim': claim, 'hide_opinions': hide_opinions, 'linked_evidence': body,
+                   'claim_jsonld': _jsonld_claimreview(claim, request),   # 6.5
                    'embed_claim': embed_claim, 'momento': momento,
                    'origin_credits': origin_credits, 'my_credits': my_credits,   # 6.1
                    # 5.1-B: la malla — quien lo dijo y afirmaciones cercanas

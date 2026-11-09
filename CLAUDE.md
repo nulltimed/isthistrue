@@ -371,3 +371,25 @@ perpetuidad.
   Se crean desde /panel/api/; la pagina es templates/dossier.html (autonoma).
 - **seed_settings tras cada pull de estas series** (14 claves nuevas) y recordar que
   los huecos sl_* quedan VACIOS hasta que David de los datos de la SL.
+
+## REGLA PERMANENTE (orden de David, 2026-11-09): revenue en cada cambio
+David, literal: «para cada cambio nuevo intenta implementar un sistema de revenue».
+Todo cambio de producto lleva su gancho de ingresos (directo o embudo hacia creditos/
+API/B2B), CON el guardarrail que David acepto: los votos son gratis SIEMPRE y los
+veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
+
+## Lecciones de la serie 6.5 (2026-11-09)
+- 🔴 **El JSON de Qwen llega TRUNCADO por max_tokens, no envuelto**: la tanda real del
+  rastreador (2026-11-08) fallo 16 de 31 con json_parse usando qwen3.8-max. Quitar
+  vallas y buscar la ultima llave NO arregla un JSON cortado. El cliente ahora lo
+  repara (`_salvage_json` en apps/agents/client.py): cierra lo abierto, y si el corte
+  cayo dentro de un texto, recorta al ultimo valor COMPLETO — jamas publica un titulo
+  o URL a medias, antes devuelve error. Misma leccion que el clarificador (4.4-E bis):
+  a un agente con busqueda, darle AIRE de tokens (origen: 3000→5000).
+- **Backfill del rastreo = `manage.py rastrear_origen`** (--reintentar recoge los
+  FAILED, --limite acota la tanda): nada de one-liners dictados por chat.
+- **El bulo de la semana** (portada) se elige solo (ultimo ROJO consolidado con
+  cadena) o a mano en Panel → `featured_claim_slug`. Si no hay candidato, no se pinta.
+- **ClaimReview (schema.org) va en la ficha** salvo colores no pronunciados y
+  OPINIONES (un verde de opinion es «fundada», no «verificada»: etiquetarla
+  mentiria a Google). Mientras la web este privada no indexa: es siembra.

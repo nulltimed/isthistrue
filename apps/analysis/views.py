@@ -44,7 +44,26 @@ def index(request):
         if request.user.is_authenticated else []
     return render(request, 'analysis/index.html', {
         'nuevos': nuevos, 'top': top, 'comentados': comentados,
+        'bulo': _bulo_destacado(),   # 6.5: el bulo de la semana
         'seguidos': seguidos, 'adult_room': _can_see_adult(request)})
+
+
+def _bulo_destacado():
+    """6.5: el claim destacado de la portada — enseña el producto ENTERO de un
+    vistazo (veredicto + cadena de origen) al visitante que llega sin saber
+    qué es esto. Manual desde el panel (featured_claim_slug) o, de fábrica,
+    el último ROJO consolidado que tenga cadena de origen. Si no hay ninguno,
+    la portada queda como estaba (el bloque no se pinta)."""
+    from apps.panel.models import SystemSetting
+    from apps.wiki.models import Claim
+    slug = (SystemSetting.get_str('featured_claim_slug', '') or '').strip()
+    if slug:
+        c = Claim.objects.filter(slug=slug).first()
+        if c:   # el filtro por slug garantiza que el enlace de la portada existe
+            return c
+    return (Claim.objects.filter(color='RED', consolidated=True)
+            .exclude(slug__isnull=True).exclude(origin_chain=[])
+            .order_by('-pk').first())
 
 
 def _mas_comentados(base):

@@ -3410,3 +3410,16 @@ msgstr "credit purchase terms"
 
 msgid "con el desistimiento explicado en claro"
 msgstr "with the right of withdrawal explained plainly"
+
+# 6.5: el bulo de la semana en la portada
+msgid "El bulo de la semana"
+msgstr "Hoax of the week"
+
+msgid "La cadena de difusión: de dónde salió la afirmación, eslabón a eslabón, hasta el vídeo."
+msgstr "The spread chain: where the claim came from, link by link, up to the video."
+
+msgid "Abre la ficha con el veredicto, las fuentes y la cadena que muestra dónde nació y dónde se torció."
+msgstr "Opens the page with the verdict, the sources and the chain showing where it was born and where it got twisted."
+
+msgid "Ver dónde nació y dónde se torció"
+msgstr "See where it was born and where it got twisted"

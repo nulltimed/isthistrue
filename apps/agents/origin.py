@@ -111,8 +111,12 @@ def trace_claim(claim):
         return False
     post = ap.segment.post
     _m, _fb = models_for_post('deep', post)
+    # 6.5 (tanda real del 2026-11-08: 16 de 31 fallaron con json_parse): seis
+    # eslabones con notas de 300 caracteres NO caben en 3000 tokens y el JSON
+    # llegaba truncado — la misma leccion del clarificador. Mas aire, y el
+    # cliente ya repara los truncados que queden (_salvage_json).
     v, usado = client.call_search_json(
-        _m, ORIGIN_SYSTEM, _payload(claim, ap), max_tokens=3000,
+        _m, ORIGIN_SYSTEM, _payload(claim, ap), max_tokens=5000,
         mock_payload=MOCK_ORIGIN, max_searches=_tope(), fallback=_fb)
     if 'error' in v:
         logger.warning('Rastreador: el modelo fallo con el claim %s (%s)',

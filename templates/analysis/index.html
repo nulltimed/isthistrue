@@ -11,6 +11,22 @@
   {% endif %}
 </div>
 
+{# 6.5: EL BULO DE LA SEMANA — la mejor ficha roja con cadena de origen, en #}
+{# el escaparate. Enseña el producto entero (veredicto + de dónde viene) al #}
+{# que llega sin saber qué es esto. Manual: featured_claim_slug en el panel. #}
+{% if bulo %}
+<div class="bulo-semana">
+  <span class="bulo-etiqueta">🔴 {% trans "El bulo de la semana" %}</span>
+  <h2><a href="/wiki/claim/{{ bulo.slug }}/">«{{ bulo.title|default:bulo.text_original|truncatechars:120 }}»</a></h2>
+  {% if bulo.origin_chain %}
+  <p class="bulo-cadena" data-tip="{% trans 'La cadena de difusión: de dónde salió la afirmación, eslabón a eslabón, hasta el vídeo.' %}">
+    {% for e in bulo.origin_chain %}{% if e.kind == 'study' %}🔬{% elif e.kind == 'official' %}🏛️{% elif e.kind == 'press' %}📰{% elif e.kind == 'social' %}💬{% elif e.kind == 'video' %}🎬{% else %}🧩{% endif %}{% if e.twisted %}<span class="bulo-torcido">⚠</span>{% endif %}{% if not forloop.last %} → {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+  <a href="/wiki/claim/{{ bulo.slug }}/#origen"><button class="mini" data-tip="{% trans 'Abre la ficha con el veredicto, las fuentes y la cadena que muestra dónde nació y dónde se torció.' %}">🧭 {% trans "Ver dónde nació y dónde se torció" %}</button></a>
+</div>
+{% endif %}
+
 {% if seguidos %}
 <h1>{% trans "Novedades en tus seguidos" %}</h1>
 <p class="hint">{% trans "Lo que ha pasado en los posts que sigues desde tu última visita." %}</p>

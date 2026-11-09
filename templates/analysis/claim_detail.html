@@ -4,6 +4,9 @@
 <meta property="og:description" content="{{ claim.what_evidence_says|truncatechars:150 }}">
 <meta property="og:image" content="https://{{ request.get_host }}/wiki/claim/{{ claim.slug }}/tarjeta.png">
 <meta name="twitter:card" content="summary_large_image">
+{# 6.5: ClaimReview de schema.org — el dia que la web abra, Google y los #}
+{# agregadores de fact-checking leen el veredicto de aqui. Escapado en la vista. #}
+{% if claim_jsonld %}<script type="application/ld+json">{{ claim_jsonld|safe }}</script>{% endif %}
 {% endblock %}
 {% block content %}
 <article class="claim color-{{ claim.color }}">

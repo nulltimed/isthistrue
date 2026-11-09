@@ -203,6 +203,77 @@ import threading
 _FUENTES_QWEN = threading.local()   # fuentes de search_info del ultimo Qwen
 
 
+def _pila_abierta(texto):
+    """Recorre el texto como lo haria el parser: devuelve (pila de llaves/
+    corchetes abiertos, si el final queda DENTRO de una cadena)."""
+    pila, en_cadena, escape = [], False, False
+    for ch in texto:
+        if en_cadena:
+            if escape:
+                escape = False
+            elif ch == '\\':
+                escape = True
+            elif ch == '"':
+                en_cadena = False
+            continue
+        if ch == '"':
+            en_cadena = True
+        elif ch in '{[':
+            pila.append(ch)
+        elif ch in '}]':
+            if pila:
+                pila.pop()
+    return pila, en_cadena
+
+
+def _salvage_json(raw):
+    """6.5 (tanda real del rastreador, 2026-11-08: ~50% de fallos json_parse
+    con qwen3.8-max): un JSON TRUNCADO por max_tokens no se arregla buscando
+    la ultima llave — hay que CERRAR lo que quedo abierto. Dos intentos:
+    (1) cerrar la cadena y las llaves/corchetes pendientes tal cual;
+    (2) si el corte cayo en mitad de una clave o un valor, recortar al ultimo
+    elemento COMPLETO (ultimo cierre '}'/']' fuera de cadena) y cerrar desde
+    ahi. Devuelve el dict reparado o None — jamas inventa contenido, solo
+    descarta el eslabon a medias del final."""
+    def _cerrar(texto):
+        pila, dentro = _pila_abierta(texto)
+        if dentro:
+            # El corte cayo DENTRO de un texto (un titulo, una URL a medias):
+            # cerrarlo publicaria contenido mutilado. Mejor recortar.
+            return None
+        sufijo = ''.join('}' if c == '{' else ']' for c in reversed(pila))
+        try:
+            v = json.loads(texto + sufijo)
+            return v if isinstance(v, dict) else None
+        except json.JSONDecodeError:
+            return None
+    v = _cerrar(raw)
+    if v is not None:
+        return v
+    # Recorte al ultimo cierre fuera de cadena (fin del ultimo valor completo).
+    pila, en_cadena, escape, ultimo = [], False, False, -1
+    for i, ch in enumerate(raw):
+        if en_cadena:
+            if escape:
+                escape = False
+            elif ch == '\\':
+                escape = True
+            elif ch == '"':
+                en_cadena = False
+            continue
+        if ch == '"':
+            en_cadena = True
+        elif ch in '{[':
+            pila.append(ch)
+        elif ch in '}]':
+            if pila:
+                pila.pop()
+            ultimo = i
+    if ultimo > 0:
+        return _cerrar(raw[:ultimo + 1].rstrip().rstrip(','))
+    return None
+
+
 def call_search_json(model, system, user_content, max_tokens=2000,
                      mock_payload=None, cacheable=None, max_searches=3,
                      fallback=''):
@@ -231,7 +302,12 @@ def call_search_json(model, system, user_content, max_tokens=2000,
     try:
         datos = json.loads(raw)
     except json.JSONDecodeError:
-        datos = {'error': 'json_parse', 'raw': raw[:500]}
+        datos = _salvage_json(raw)   # 6.5: JSON truncado por max_tokens
+        if datos is None:
+            datos = {'error': 'json_parse', 'raw': raw[:500]}
+        else:
+            logger.info('JSON truncado reparado (%d caracteres, modelo %s)',
+                        len(raw), usado)
     fuentes = getattr(_FUENTES_QWEN, 'valor', [])
     if isinstance(datos, dict) and not datos.get('sources') and fuentes:
         datos['sources'] = fuentes
@@ -259,7 +335,9 @@ def call_json(model, system, user_content, max_tokens=2000, mock_payload=None,
     try:
         datos = json.loads(raw)
     except json.JSONDecodeError:
-        datos = {'error': 'json_parse', 'raw': raw[:500]}
+        datos = _salvage_json(raw)   # 6.5: JSON truncado por max_tokens
+        if datos is None:
+            datos = {'error': 'json_parse', 'raw': raw[:500]}
     return (datos, usado) if with_model else datos
 
 

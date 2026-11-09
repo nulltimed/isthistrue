@@ -275,6 +275,9 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'credit_tramo_minutes': '20',   # 1 credito adelanta un tramo de 20 min
     'credit_tramo_eur': '1',        # David: «1 EUR tramo adicional»
     'origin_trace_auto': '1',       # rastreo de origen automatico en ROJOS/AMBAR
+    # 6.5: el bulo de la semana de la portada. Vacio = automatico (ultimo ROJO
+    # consolidado con cadena de origen); un slug de claim lo fija a mano.
+    'featured_claim_slug': '',
     'origin_trace_credits': '1',    # coste en creditos del rastreo bajo demanda
     'deep_paid_credits': '2',       # 6.1-f (David): reanalisis profundo YA, por frase
     'api_free_daily': '500',        # 6.2: peticiones/dia de una clave API gratuita

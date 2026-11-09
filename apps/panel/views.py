@@ -95,6 +95,9 @@ SETTINGS_DEF = [
      'Tras los veredictos, los claims falsos y engañosos reciben su cadena de difusión hasta el origen más antiguo documentado. Usa la rueda del reanálisis profundo y unos céntimos por claim. 0 lo apaga.', 'bool'),
     ('origin_trace_credits', 'Créditos del rastreo bajo demanda',
      'Lo que cuesta pedir la cadena de origen de un claim verde o gris. Los rojos/ámbar la traen de serie.', 'num'),
+    # 6.5: el escaparate de la portada.
+    ('featured_claim_slug', 'El bulo de la semana (slug del claim)',
+     'La ficha que la portada muestra en el escaparate. Vacío = automático: el último claim FALSO consolidado que tenga cadena de origen. Pon aquí el slug de un claim (lo que va tras /wiki/claim/) para fijarlo a mano.', 'text'),
     ('deep_paid_credits', 'Créditos del reanálisis profundo (por frase)',
      'Lo que paga un usuario por relanzar YA una frase con el modelo premium, sin esperar los 5 votos. Una sola vez por frase; pagan la revisión, nunca el resultado.', 'num'),
     ('api_free_daily', 'API: peticiones/día de la clave gratuita',
