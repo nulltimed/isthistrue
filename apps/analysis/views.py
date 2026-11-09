@@ -48,12 +48,13 @@ def index(request):
         'seguidos': seguidos, 'adult_room': _can_see_adult(request)})
 
 
-def _bulo_destacado():
+def _bulo_destacado(semana=None):
     """6.5: el claim destacado de la portada — enseña el producto ENTERO de un
     vistazo (veredicto + cadena de origen) al visitante que llega sin saber
     qué es esto. Manual desde el panel (featured_claim_slug) o, de fábrica,
-    el último ROJO consolidado que tenga cadena de origen. Si no hay ninguno,
-    la portada queda como estaba (el bloque no se pinta)."""
+    ROTANDO cada semana entre los 5 últimos ROJOS consolidados con cadena
+    (6.6-b, orden de David 2026-11-09: «sí» a la rotación — los habituales no
+    ven siempre el mismo escaparate). Si no hay candidatos, no se pinta."""
     from apps.panel.models import SystemSetting
     from apps.wiki.models import Claim
     slug = (SystemSetting.get_str('featured_claim_slug', '') or '').strip()
@@ -61,9 +62,16 @@ def _bulo_destacado():
         c = Claim.objects.filter(slug=slug).first()
         if c:   # el filtro por slug garantiza que el enlace de la portada existe
             return c
-    return (Claim.objects.filter(color='RED', consolidated=True)
-            .exclude(slug__isnull=True).exclude(origin_chain=[])
-            .order_by('-pk').first())
+    candidatos = list(Claim.objects.filter(color='RED', consolidated=True)
+                      .exclude(slug__isnull=True).exclude(origin_chain=[])
+                      .order_by('-pk')[:5])
+    if not candidatos:
+        return None
+    if semana is None:   # estable dentro de la semana, cambia el lunes
+        import datetime
+        iso = datetime.date.today().isocalendar()
+        semana = iso[0] * 100 + iso[1]
+    return candidatos[semana % len(candidatos)]
 
 
 def _mas_comentados(base):

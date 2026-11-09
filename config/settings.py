@@ -278,11 +278,11 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # 6.5: el bulo de la semana de la portada. Vacio = automatico (ultimo ROJO
     # consolidado con cadena de origen); un slug de claim lo fija a mano.
     'featured_claim_slug': '',
-    # 6.6: crecimiento. El credito de bienvenida nace APAGADO (0): encenderlo
-    # es decision de David (gasta presupuesto base; el tope diario frena las
-    # granjas de cuentas). El contacto B2B queda vacio hasta que exista el
-    # correo del dominio.
-    'welcome_credits': '0',
+    # 6.6: crecimiento. El credito de bienvenida nace ENCENDIDO a 1 (orden de
+    # David, 2026-11-09: «regalo desde el principio»); gasta presupuesto base
+    # y el tope diario frena las granjas de cuentas. El contacto B2B queda
+    # vacio hasta que exista el correo del dominio (David: «dejalo en pendiente»).
+    'welcome_credits': '1',
     'welcome_daily_max': '20',
     'b2b_contact_email': '',
     'origin_trace_credits': '1',    # coste en creditos del rastreo bajo demanda

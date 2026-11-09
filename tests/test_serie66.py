@@ -34,14 +34,15 @@ def _set(key, value):
 
 
 class CreditoDeBienvenida(TestCase):
-    def test_apagado_de_fabrica_no_regala_nada(self):
+    def test_con_cero_no_se_regala_nada(self):
+        _set('welcome_credits', 0)
         self.client.post('/accounts/register/', DATOS, follow=True)
         from apps.accounts import credits as cred
         u = User.objects.get(username='nuevo66')
         self.assertEqual(cred.wallet(u).balance, 0)
 
-    def test_encendido_regala_y_apunta_bienvenida(self):
-        _set('welcome_credits', 1)
+    def test_de_fabrica_regala_uno_y_apunta_bienvenida(self):
+        # 6.6-b (orden de David, 2026-11-09): «regalo desde el principio».
         self.client.post('/accounts/register/', DATOS, follow=True)
         from apps.accounts import credits as cred
         from apps.accounts.models import CreditLedger

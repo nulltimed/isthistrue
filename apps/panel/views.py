@@ -100,7 +100,7 @@ SETTINGS_DEF = [
      'La ficha que la portada muestra en el escaparate. Vacío = automático: el último claim FALSO consolidado que tenga cadena de origen. Pon aquí el slug de un claim (lo que va tras /wiki/claim/) para fijarlo a mano.', 'text'),
     # 6.6: crecimiento.
     ('welcome_credits', 'Créditos de bienvenida por alta',
-     'Créditos de regalo al crear cuenta (0 = apagado). OJO: se gastan contra el presupuesto base — un crédito regalado nunca amplía el tope mensual. El tope diario de abajo frena las granjas de cuentas.', 'num'),
+     'Créditos de regalo al crear cuenta (de fábrica 1, orden de David 2026-11-09: «regalo desde el principio»; 0 = apagado). OJO: se gastan contra el presupuesto base — un crédito regalado nunca amplía el tope mensual. El tope diario de abajo frena las granjas de cuentas.', 'num'),
     ('welcome_daily_max', 'Tope diario de bienvenidas',
      'Máximo de altas que reciben el regalo cada día. Alcanzado el tope, las siguientes cuentas se crean igual, sin créditos.', 'num'),
     ('b2b_contact_email', 'Correo de contacto B2B (/servicios/)',

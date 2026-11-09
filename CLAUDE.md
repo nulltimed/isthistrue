@@ -388,8 +388,12 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
   a un agente con busqueda, darle AIRE de tokens (origen: 3000→5000).
 - **Backfill del rastreo = `manage.py rastrear_origen`** (--reintentar recoge los
   FAILED, --limite acota la tanda): nada de one-liners dictados por chat.
-- **El bulo de la semana** (portada) se elige solo (ultimo ROJO consolidado con
-  cadena) o a mano en Panel → `featured_claim_slug`. Si no hay candidato, no se pinta.
+- **El bulo de la semana** (portada) se elige solo — 6.6-b: ROTA cada semana entre
+  los 5 ultimos ROJOS consolidados con cadena (estable dentro de la semana, cambia
+  el lunes) — o a mano en Panel → `featured_claim_slug`. Sin candidatos, no se pinta.
+- **El correo B2B sigue PENDIENTE** (David, 2026-11-09: «todavia no, dejalo en
+  pendiente»): /servicios/ remite al formulario de /api/ hasta que exista el buzon
+  del dominio; entonces se rellena `b2b_contact_email` en el panel.
 - **ClaimReview (schema.org) va en la ficha** salvo colores no pronunciados y
   OPINIONES (un verde de opinion es «fundada», no «verificada»: etiquetarla
   mentiria a Google). Mientras la web este privada no indexa: es siembra.
@@ -397,8 +401,9 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
 ## Lecciones de la serie 6.6 (2026-11-09)
 - **El credito REGALADO no infla el libro**: spend() solo crea el apunte Donation CREDIT
   (puente 4.3-F, intacto) si el usuario COMPRO alguna vez un pack (`_respaldado`). El
-  credito de bienvenida (`welcome_credits`, 0 de fabrica; tope `welcome_daily_max`)
-  sale del presupuesto base, jamas amplia el tope mensual.
+  credito de bienvenida (`welcome_credits`, 1 de fabrica — 6.6-b, orden de David
+  2026-11-09: «regalo desde el principio»; tope `welcome_daily_max`) sale del
+  presupuesto base, jamas amplia el tope mensual.
 - **El resumen SEMANAL vive en la misma tarea beat** (send_daily_digests, rama de los
   lunes): avisos pendientes + bulos de la semana + pie de creditos/servicios. Opt-in
   por notify_mode=WEEKLY en Ajustes. Sin nada que contar, no se envia.

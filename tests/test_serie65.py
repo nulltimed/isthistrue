@@ -101,6 +101,18 @@ class BuloDeLaSemana(TestCase):
         self.assertIn('/wiki/claim/bulo-auto/', html)
         self.assertNotIn('bulo-mas-nuevo', html)
 
+    def test_rota_cada_semana_entre_los_mejores(self):
+        # 6.6-b (orden de David, 2026-11-09): «sí» a la rotación semanal.
+        from apps.analysis.views import _bulo_destacado
+        _claim_rojo_con_cadena(slug='rota-a')
+        _claim_rojo_con_cadena(slug='rota-b')   # candidatos por -pk: [b, a]
+        self.assertEqual(_bulo_destacado(semana=0).slug, 'rota-b')
+        self.assertEqual(_bulo_destacado(semana=1).slug, 'rota-a')
+        self.assertEqual(_bulo_destacado(semana=2).slug, 'rota-b')
+        # Dentro de la misma semana, el escaparate no baila.
+        self.assertEqual(_bulo_destacado(semana=7).slug,
+                         _bulo_destacado(semana=7).slug)
+
     def test_un_rojo_sin_cadena_no_sale_en_el_escaparate(self):
         from apps.wiki.models import Claim
         Claim.objects.create(text_original='rojo sin cadena', slug='sin-cadena-65',
