@@ -456,10 +456,14 @@ class DailyBudget(models.Model):
 
     @classmethod
     def try_spend(cls, amount_eur):
-        from apps.panel.services import live_daily_budget, alert_admin
+        from apps.panel.services import live_daily_budget, alert_admin, \
+            budget_limits_enabled
         with transaction.atomic():
             row, _ = cls.objects.select_for_update().get_or_create(date=timezone.localdate())
-            if float(row.spent_eur) + amount_eur > live_daily_budget():
+            # 6.20 (orden de David): con el interruptor apagado, el tope no
+            # frena — pero el gasto se APUNTA igual (el libro no miente).
+            if budget_limits_enabled() and \
+                    float(row.spent_eur) + amount_eur > live_daily_budget():
                 alert_admin('Presupuesto diario agotado',
                             f'Gasto de hoy: {row.spent_eur} EUR. La cola espera a mañana.')
                 return False
@@ -483,11 +487,14 @@ class MonthlyCap(models.Model):
 
     @classmethod
     def try_spend(cls, amount_eur):
-        from apps.panel.services import live_monthly_cap, alert_admin
+        from apps.panel.services import live_monthly_cap, alert_admin, \
+            budget_limits_enabled
         ym = timezone.localdate().strftime('%Y-%m')
         row, _ = cls.objects.select_for_update().get_or_create(year_month=ym)
         cap, _, _ = live_monthly_cap()
-        if float(row.spent_eur) + amount_eur > cap:
+        # 6.20 (orden de David): interruptor apagado = el techo no corta;
+        # el gasto se apunta igual.
+        if budget_limits_enabled() and float(row.spent_eur) + amount_eur > cap:
             alert_admin('CORTE MENSUAL alcanzado',
                         f'Gasto del mes: {row.spent_eur} EUR (techo vivo {cap}). Cola congelada hasta el dia 1.')
             return False

@@ -45,6 +45,10 @@ SETTINGS_DEF = [
     # 4.3-F (decision de David): el DINERO se toca aqui, escribiendo euros. Hasta
     # hoy estos dos ajustes existian en la base de datos pero no estaban ni en el
     # panel ni en /admin/: para cambiarlos habia que entrar por SSH.
+    # 6.20 (orden de David, 2026-11-09): los límites existen pero APAGADOS de
+    # fábrica; este interruptor los revive con un clic.
+    ('budget_limits_enabled', 'Aplicar los límites de gasto (diario y mensual)',
+     'Apagado: los topes de abajo NO frenan ningún análisis (el gasto se sigue apuntando entero en el libro). Encendido: vuelven los frenos de siempre — depósito diario, techo mensual y cola por presupuesto.', 'bool'),
     ('budget_base_eur', 'Presupuesto base mensual (€)',
      'Lo que el proyecto se permite gastar al mes sin contar donaciones. El límite DIARIO sale de aquí: se divide entre los días del mes.', 'num'),
     ('budget_hard_ceiling_eur', 'Techo duro mensual (€)',

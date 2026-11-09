@@ -18,6 +18,15 @@ def live_monthly_cap():
     return min(base + donated, hard), donated, base
 
 
+def budget_limits_enabled():
+    """6.20 (orden de David, 2026-11-09, literal: «Elimina los límites diarios
+    y mensuales, pero mantenlos en el panel de superusuario»). Apagado (0, de
+    fábrica): ningún tope frena un análisis, aunque el gasto se sigue
+    apuntando íntegro — el libro no miente nunca. Encendido (1): los frenos
+    4.3-F vuelven tal cual estaban."""
+    return SystemSetting.get_int('budget_limits_enabled', 0) == 1
+
+
 def live_daily_budget():
     cap, _, _ = live_monthly_cap()
     days = calendar.monthrange(timezone.localdate().year, timezone.localdate().month)[1]

@@ -263,6 +263,11 @@ def needs_sponsorship(post):
     """
     import math
     coste = cost_cheap_eur(post) + cost_full_eur(post)
+    # 6.20 (orden de David): sin límites activos no hay cola por presupuesto —
+    # todo vídeo arranca al momento.
+    from apps.panel.services import budget_limits_enabled
+    if not budget_limits_enabled():
+        return False, coste, 0.0
     umbral = queue_threshold_eur()
     if umbral <= 0 or coste <= umbral:
         return False, coste, 0.0
@@ -272,7 +277,10 @@ def needs_sponsorship(post):
 
 def budget_left_today():
     """Euros que quedan hoy. Se usa para decidir si la cola puede avanzar."""
-    from apps.panel.services import live_daily_budget
+    from apps.panel.services import live_daily_budget, budget_limits_enabled
+    # 6.20 (orden de David): sin límites activos, la cola nunca espera.
+    if not budget_limits_enabled():
+        return float('inf')
     from .models import DailyBudget
     from django.utils import timezone as tz
     fila = DailyBudget.objects.filter(date=tz.localdate()).first()

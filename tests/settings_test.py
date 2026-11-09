@@ -24,3 +24,10 @@ SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'search_retry_seconds': '0',
 # si no, cada GET anonimo de 500 tests acabaria en la pagina de entrada.
 SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'site_private': '0'}
 
+
+# 6.20 (orden de David): en produccion los limites de gasto nacen APAGADOS
+# («Elimina los límites diarios y mensuales, pero mantenlos en el panel»).
+# La suite historica del 4.3-F prueba el MECANISMO de frenos — que sigue
+# entero detras del interruptor — asi que aqui se enciende; test_serie620
+# prueba el apagado poniendo la fila del panel a 0 expresamente.
+SETTING_DEFAULTS = {**SETTING_DEFAULTS, 'budget_limits_enabled': '1'}

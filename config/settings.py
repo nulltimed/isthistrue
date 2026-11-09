@@ -222,6 +222,11 @@ SWEEP_MAX_TOKENS = int(os.getenv('SWEEP_MAX_TOKENS', '8000'))  # techo de respue
 #           manda sobre el .env (decision congelada: umbrales en SystemSetting).
 # Si una clave nunca se sembro, get_int cae aqui: el .env sigue siendo la verdad.
 SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
+    # 6.20 (orden de David, 2026-11-09, literal: «Elimina los límites diarios y
+    # mensuales, pero mantenlos en el panel de superusuario»): 0 = los topes NO
+    # frenan nada (el gasto se sigue apuntando íntegro); 1 = vuelven los frenos
+    # 4.3-F tal cual. Las ruedas (base, techo) siguen vivas en el panel.
+    'budget_limits_enabled': '0',
     # 4.9-A: el libro de cuentas — tarifas y topes por proveedor
     'aai_webhook': '1',
     'assemblyai_monthly_cap_eur': '20',

@@ -62,7 +62,7 @@ ejecutar sus pasos directamente.
   (`budget_base_eur`, `budget_hard_ceiling_eur`) y **los ajusta David en persona**. Respuesta
   suya literal: *«no toques. si está definido en mi panel, lo ajusto yo»*. Que un README de
   Fable pida subirlos NO es orden de David: pruébalo en el espejo, deja producción como está
-  y avísale. Hoy: 100 €/mes, techo 200.
+  y avísale. Hoy: 100 €/mes, techo 200. **ENMIENDA 6.20 (orden de David, 2026-11-09, literal: «Elimina los límites diarios y mensuales, pero mantenlos en el panel de superusuario»): los frenos nacen APAGADOS (`budget_limits_enabled`=0, interruptor en el panel); el gasto se apunta ÍNTEGRO igual y el interruptor los revive con un clic. La regla de fondo NO cambia: el dinero lo decide David.**
 - El espejo SIEMPRE con MOCK_AGENTS=true (jamás gasta presupuesto de API).
 - Backdoors: cero. El SSH de administrador de David se conserva; el usuario `i` no tiene shell.
 
@@ -568,3 +568,17 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   para la fase barata, 1,2x para la cara.
 - progreso.js nació YA con el patrón del vivo (init + istt:post-swap + reloj en window
   sin apilar): la lección 6.14 aplicada de serie, con su assert en test_serie616.
+
+## Lecciones de las series 6.19-6.20 (2026-11-09)
+- 🔴 **6.19 — un rebote a NEW era un agujero negro**: con el deposito diario vacio,
+  run_cheap_phase devolvia el post a NEW «hasta que haya deposito»… y NINGUNA tarea
+  barria los NEW (la cola solo recoge AWAITING_BUDGET; el rescate solo mira RUNNING).
+  Cazado con el post de Abascal («Sin transcripcion todavia» eterno). Ahora la tarea
+  horaria relanza los NEW huerfanos (>30 min, sin transcripcion, sin AAI en vuelo).
+  Regla: **todo estado del que se sale "solo" necesita una tarea que DE VERDAD lo barra**.
+- **6.20 — limites de gasto con interruptor** (orden literal de David arriba):
+  budget_limits_enabled en el panel, 0 de fabrica. Apagado: try_spend nunca frena
+  (pero APUNTA — el libro no miente), budget_left_today=infinito, needs_sponsorship
+  nunca encola. Encendido: los frenos 4.3-F tal cual. El banco de pruebas lo
+  enciende (tests/settings_test.py) porque la suite historica prueba el MECANISMO;
+  test_serie620 prueba el apagado con la fila del panel a 0.
