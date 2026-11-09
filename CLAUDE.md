@@ -659,3 +659,16 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   retirado se enteran por mensaje privado.
 - «Moderador de turno» = hoy, toda la moderación (no hay turnos); si algún día los hay,
   este helper es el único sitio a tocar.
+
+## Lecciones de la serie 6.29 (2026-11-09, 21:46) — moderación que se entera sola
+- Respuestas de David: email con MINI-GUÍA al nombrar mod («sí») · «avisos totales a
+  los moderadores implicados y superusuarios» · tabla general de posts: NO.
+- GUIA_MODERADOR (panel/views): los 5 poderes en texto plano; se envía directo con
+  send_mail (sin pasar por notify_mode: un nombramiento no es un aviso cualquiera),
+  con su apunte Brevo. Candado: test_serie629 exige los poderes clave en el cuerpo.
+- Avisos de retenidos por voces en TRES puntos, mismo helper y mismo cache 1/post/día:
+  al nacer retenido (open_validation_window), al completar votos con la puerta cerrada
+  (cast_vote) y en el barrido (verificar_atrasados).
+- 🔴 Trampa propia cazada en frío: insertar código «encima de def X» puede partir un
+  DECORADOR de su función (@staff_member_required quedó pegado a una constante y el
+  compileall chilló). Tras toda inserción junto a un def, mirar la línea anterior.

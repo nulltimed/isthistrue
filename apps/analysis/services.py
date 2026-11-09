@@ -35,6 +35,9 @@ def cast_vote(post, user, kind):
         van, faltan = post.distinct_validation_votes('VALIDATE'), votes_needed(post)
         puede, motivo = identification_gate(post)
         if van >= faltan and not puede:
+            # 6.29: los votos ya estan — SOLO retienen las voces: moderacion
+            # y superusuarios se enteran al momento (1/post/dia por el cache).
+            avisar_retenido_por_voces(post, motivo)
             return True, f'Voto registrado ({van} de {faltan}). {motivo}'
         return True, f'Voto registrado: van {van} de {faltan}.'
 
@@ -264,6 +267,12 @@ def open_validation_window(post):
     post.status = 'PENDING_VALIDATION'
     post.validation_deadline = None
     post.save(update_fields=['status', 'validation_deadline'])
+    # 6.29 (orden de David: «avisos totales a los moderadores implicados y
+    # superusuarios»): si el video nace ya retenido por la puerta de voces,
+    # moderacion se entera AL MOMENTO, no cuando alguien lance el barrido.
+    abierta, motivo = identification_gate(post)
+    if not abierta:
+        avisar_retenido_por_voces(post, motivo)
 
 
 # (should_opus_rescan eliminada en Fase 3.4 §6: la unica puerta al reescaneo es

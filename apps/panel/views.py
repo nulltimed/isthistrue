@@ -472,6 +472,53 @@ def donations_panel(request):
                   {'items': items, 'pendientes': pendientes})
 
 
+GUIA_MODERADOR = """Bienvenido/a al equipo de moderación de esestocierto?
+
+Tus poderes, en corto:
+
+1. VOTO ÚNICO — tu voto «Pedir el análisis con fuentes» vale por todos:
+   en cualquier vídeo pendiente verás el botón «⚡ Verificar ya», que vota
+   y lanza la verificación en un clic (gasta presupuesto real: con cabeza).
+   Única condición: los hablantes deben estar identificados (puerta del 65 %).
+
+2. ¿QUIÉN HABLA? — cuando un vídeo queda retenido por voces, te llegará un
+   aviso con su enlace: entra, propone o confirma nombres en la caja
+   «¿Quién habla?» (tu confirmación vale en solitario) y la verificación
+   saldrá sola.
+
+3. LLAVE INGLESA — en cada post analizado puedes relanzar etapas sueltas
+   (transcripción, datación, veredictos, análisis profundo) con su coste
+   estimado y confirmación previa. Tu voto negativo en una frase relanza su
+   verificación en solitario (una vez por frase).
+
+4. FORO — puedes editar, ocultar y censurar mensajes, aprobar posts con
+   categoría propuesta y resolver advertencias. Censurado = inaccesible con
+   motivo y reversible; pendiente de aprobación = invisible al público.
+
+5. TU PANEL — /panel/moderador/ tiene tus ajustes; los avisos te llegan a la
+   campana 🔔 y, según tus preferencias, al email.
+
+Regla de la casa: los votos son gratis SIEMPRE y los veredictos no se venden.
+Ante la duda, pregunta en el foro de moderación. ¡Gracias por el mando!"""
+
+
+def _email_guia_moderador(target):
+    """6.29: la mini-guia por email al nombrar. Fail-soft y con apunte Brevo."""
+    try:
+        from django.conf import settings as dj
+        from django.core.mail import send_mail
+        from apps.analysis import costs
+        from apps.panel.models import SystemSetting
+        send_mail('esestocierto? — Eres moderador/a: tu mini-guía',
+                  GUIA_MODERADOR, dj.DEFAULT_FROM_EMAIL, [target.email],
+                  fail_silently=True)
+        costs.record('brevo', 'email',
+                     float(SystemSetting.get_str('brevo_eur_per_email', '0') or 0)
+                     or 0.0001)
+    except Exception:
+        pass
+
+
 @staff_member_required
 def moderators_panel(request):
     """4.2 H6: nombrar y retirar moderadores por nickname O email (solo superusuario)."""
@@ -495,7 +542,11 @@ def moderators_panel(request):
             notify(target, '🛡️ Has sido nombrado MODERADOR de esestocierto?: '
                            'tu voto único lanza verificaciones y moderas el foro.',
                    '/panel/moderador/')
-            messages.success(request, f'{target.username} nombrado moderador (avisado por campana).')
+            # 6.29 (orden de David: «sí»): ademas, email con la MINI-GUIA de
+            # sus poderes — que arranque sin preguntar. Directo, sin pasar por
+            # el modo de avisos (un nombramiento no es un aviso cualquiera).
+            _email_guia_moderador(target)
+            messages.success(request, f'{target.username} nombrado moderador (avisado por campana y email).')
         else:
             target.level = 'CONTRIB'  # al retirar conserva confianza, no el mando
             target.save(update_fields=['level'])
