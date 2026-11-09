@@ -239,7 +239,12 @@ def submit(request):
         messages.error(request, 'El enlace debe ser de una plataforma soportada: YouTube, TikTok, Twitch o Spotify.')
         return render(request, 'analysis/submit.html', {'arbol': arbol})
     if not platform:
-        messages.error(request, 'Plataforma no soportada todavía. Se mostrará como tarjeta-enlace.')
+        # 6.24 (orden de David: «sin límite»): la descarga es yt-dlp genérico
+        # (~1.800 sitios), así que el ANÁLISIS se intenta igual aunque no haya
+        # reproductor integrado. El aviso ya no asusta: cuenta la verdad.
+        messages.info(request, 'Esta plataforma aún no tiene reproductor integrado: '
+                               'se mostrará como tarjeta-enlace, pero el análisis '
+                               'se intentará igualmente.')
         platform = 'link'
     # 5.19 (orden de David): las fuentes NO ANALIZABLES (Spotify: DRM) ya no se
     # aceptan como post. En su lugar, al pulsar «Analizar» se busca EL MISMO

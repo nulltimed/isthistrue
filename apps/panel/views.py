@@ -134,6 +134,11 @@ SETTINGS_DEF = [
      'Tras los veredictos, los claims 🔍 reciben una segunda pasada de última '
      'instancia con el modelo de reanálisis profundo y el doble de búsquedas '
      '(5.6-A). 1 = encendido, 0 = apagado.', 'num'),
+    # 6.23 (orden de David: «SIEMPRE se deben analizar TODAS las frases»)
+    ('grey_retry_days', 'Reintento nocturno de los 🔍 (días)',
+     'Un claim que sigue en gris se reintenta solo, con búsquedas frescas, '
+     'cada este número de días desde su último intento. Gasta dinero real. '
+     '0 = apagado.', 'num'),
     ('vision_lag_seconds', 'La vista: retardo humano (s)',
      'Entre la pantalla y la voz hay retardo: la imagen puede aparecer antes '
      'o después de decirse. Se capturan fotogramas a −N, 0 y +N segundos del '
@@ -304,7 +309,7 @@ ANALYSIS_GROUPS = [
     ('Trabajo 2 · buscar fuentes y poner el semáforo',
      'La parte que cuesta dinero: cada afirmación se contrasta con fuentes y recibe su color.',
      ['web_searches_per_claim', 'official_sources', 'verdict_context_before', 'verdict_context_after',
-      'verdict_parallel', 'clarify_pass', 'search_retries', 'search_retry_seconds']),
+      'verdict_parallel', 'clarify_pass', 'grey_retry_days', 'search_retries', 'search_retry_seconds']),
     ('La vista',
      'Los ojos: comparar lo que se ve en pantalla con lo que se dice.',
      ['vision_pass', 'vision_lag_seconds', 'video_as_source']),

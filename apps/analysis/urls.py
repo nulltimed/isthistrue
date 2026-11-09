@@ -80,6 +80,8 @@ urlpatterns = [
     path('gastos/<str:ym>/', views.spending_page, name='spending_month'),
     path('reclamaciones/', complaint_form, name='complaint_form'),
     path('metodologia/', TemplateView.as_view(template_name='legal/metodologia.html'), name='methodology'),
+    # 6.25 (orden de David): que puedo postear — plataformas soportadas.
+    path('medios/', TemplateView.as_view(template_name='legal/medios.html'), name='supported_media'),
     path('legal/aviso/', TemplateView.as_view(template_name='legal/aviso_legal.html'), name='legal_notice'),
     path('legal/privacidad/', TemplateView.as_view(template_name='legal/privacidad.html'), name='privacy'),
     path('legal/cookies/', TemplateView.as_view(template_name='legal/cookies.html'), name='cookies'),

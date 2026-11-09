@@ -15,6 +15,18 @@ PATTERNS = {
     'tiktok': re.compile(r'tiktok\.com/@[\w.]+/video/(\d+)'),
     'spotify': re.compile(r'open\.spotify\.com/(episode|show)/(\w+)'),
     'twitch': re.compile(r'twitch\.tv/videos/(\d+)'),
+    # 6.24 (orden de David, literal: «amplíes antes la compatibilidad para el
+    # mayor número de medios/fuentes posibles: sin límite»). La descarga ya
+    # era yt-dlp generico: reconocer la plataforma solo añade su reproductor.
+    'vimeo': re.compile(r'vimeo\.com/(?:video/)?(\d{6,12})'),
+    'dailymotion': re.compile(r'dailymotion\.com/video/([a-zA-Z0-9]+)'),
+    'x': re.compile(r'//(?:www\.)?(?:twitter|x)\.com/\w{1,30}/status/(\d+)'),
+    'instagram': re.compile(r'instagram\.com/(?:reel|p|tv)/([\w-]+)'),
+    'facebook': re.compile(r'(?:facebook\.com/.*[?&]v=|fb\.watch/)([\w-]+)'),
+    'rumble': re.compile(r'rumble\.com/(v[\w]+)-'),
+    'odysee': re.compile(r'odysee\.com/(@[^\s?#]+/[^\s?#]+)'),
+    'soundcloud': re.compile(r'soundcloud\.com/([\w-]+/[\w-]+)'),
+    'ivoox': re.compile(r'ivoox\.com/.*_rf_(\d+)_1\.html'),
 }
 
 
@@ -22,6 +34,13 @@ _OEMBED = {
     'youtube': 'https://www.youtube.com/oembed?format=json&url=',
     'tiktok': 'https://www.tiktok.com/oembed?url=',
     'spotify': 'https://open.spotify.com/oembed?url=',
+    # 6.24: titulo inmediato tambien en las plataformas nuevas con oEmbed.
+    'vimeo': 'https://vimeo.com/api/oembed.json?url=',
+    'dailymotion': 'https://www.dailymotion.com/services/oembed?format=json&url=',
+    'soundcloud': 'https://soundcloud.com/oembed?format=json&url=',
+    'rumble': 'https://rumble.com/api/Media/oembed.json?url=',
+    'odysee': 'https://odysee.com/$/oembed?format=json&url=',
+    'x': 'https://publish.twitter.com/oembed?url=',
 }
 
 
@@ -161,6 +180,54 @@ def build_embed(post, start_seconds=0):
                 f'&parent=escierto.xyztserver.com&autoplay=false&time={s}s" '
                 f'frameborder="0" allowfullscreen loading="lazy" '
                 f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
+    # 6.24 («sin límite»): reproductores de las plataformas nuevas. El salto
+    # al segundo va donde la plataforma lo soporta por URL; el resto, sin seek.
+    if p == 'vimeo' and vid:
+        return (f'<iframe src="https://player.vimeo.com/video/{vid}#t={s}s" '
+                f'frameborder="0" allowfullscreen loading="lazy" '
+                f'referrerpolicy="strict-origin-when-cross-origin" '
+                f'allow="autoplay; fullscreen; picture-in-picture"></iframe>')
+    if p == 'dailymotion' and vid:
+        return (f'<iframe src="https://geo.dailymotion.com/player.html?video={vid}'
+                f'&startTime={s}" frameborder="0" allowfullscreen loading="lazy" '
+                f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
+    if p == 'x' and vid:
+        return (f'<blockquote class="twitter-tweet"><a href="{post.url}">'
+                f'Ver en X</a></blockquote>'
+                f'<script async src="https://platform.twitter.com/widgets.js" '
+                f'charset="utf-8"></script>')
+    if p == 'instagram' and vid:
+        return (f'<blockquote class="instagram-media" '
+                f'data-instgrm-permalink="https://www.instagram.com/reel/{vid}/" '
+                f'data-instgrm-version="14"><a href="{post.url}">Ver en Instagram'
+                f'</a></blockquote>'
+                f'<script async src="https://www.instagram.com/embed.js"></script>')
+    if p == 'facebook' and vid:
+        from urllib.parse import quote
+        return (f'<iframe src="https://www.facebook.com/plugins/video.php?href='
+                f'{quote(post.url, safe="")}&show_text=false" frameborder="0" '
+                f'allowfullscreen loading="lazy" style="width:100%;min-height:315px" '
+                f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
+    if p == 'odysee' and vid:
+        return (f'<iframe src="https://odysee.com/$/embed/{vid}" frameborder="0" '
+                f'allowfullscreen loading="lazy" '
+                f'referrerpolicy="strict-origin-when-cross-origin"></iframe>')
+    if p == 'soundcloud':
+        from urllib.parse import quote
+        return (f'<iframe src="https://w.soundcloud.com/player/?url='
+                f'{quote(post.url, safe="")}" frameborder="0" height="166" '
+                f'style="width:100%" loading="lazy"></iframe>')
+    if p == 'ivoox' and vid:
+        return (f'<iframe src="https://www.ivoox.com/player_ej_{vid}_6_1.html" '
+                f'frameborder="0" height="200" style="width:100%" '
+                f'loading="lazy"></iframe>')
+    if p == 'rumble':
+        # El id de embed de Rumble no se deriva de la URL publica: tarjeta-enlace
+        # (el ANALISIS funciona igual: yt-dlp si sabe bajarlo).
+        return (f'<div class="link-card"><a href="{post.url}" rel="noopener" '
+                f'target="_blank">▶ Reproducir en Rumble — {post.title or post.url}'
+                f'</a><p class="hint">Rumble no permite derivar su reproductor '
+                f'integrado; el análisis funciona igual.</p></div>')
     if p == 'audio':
         # 5.24-B: reproductor de audio nativo; transcript.js lo maneja (seek).
         return (f'<div class="audio-card"><audio id="istt-audio" controls preload="metadata" '

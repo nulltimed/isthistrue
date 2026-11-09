@@ -625,6 +625,44 @@ def launch_queued_analyses():
 
 
 @shared_task
+def reclarify_grey_claims():
+    """6.23 (orden de David, 2026-11-09, literal: «SIEMPRE se deben analizar
+    TODAS las frases. Repito: siempre»): los claims en gris (UNDECIDED) no se
+    quedan asi para siempre — cada noche, los que lleven mas de
+    grey_retry_days dias sin nueva version vuelven a la segunda mirada
+    (clarify.run_pending: modelo profundo + doble de busquedas FRESCAS).
+    El reloj es la ultima ClaimVersion, asi que cada intento fallido pospone
+    el siguiente: insistencia sin martilleo. 0 en grey_retry_days lo apaga.
+    Gasta dinero real; el fusible por claim de clarify sigue dentro."""
+    from django.db.models import Max
+    from apps.panel.models import SystemSetting
+    from apps.wiki.models import Claim
+    dias = SystemSetting.get_int('grey_retry_days', 3)
+    if dias <= 0:
+        return 0
+    limite = timezone.now() - timezone.timedelta(days=dias)
+    post_ids = (Claim.objects.filter(color='UNDECIDED',
+                                     appearances__segment__post__status='DONE')
+                .annotate(ultima=Max('versions__created_at'))
+                .filter(ultima__lt=limite)
+                .values_list('appearances__segment__post_id', flat=True)
+                .distinct())
+    tocados = 0
+    from apps.agents import clarify
+    for pk in post_ids:
+        try:
+            post = Post.objects.get(pk=pk)
+            n = clarify.run_pending(post)
+            tocados += n or 0
+            logger.info('Post %s: reintento de grises nocturno, %s claims (6.23)',
+                        pk, n)
+        except Exception:
+            logger.warning('Reintento de grises fallido en el post %s', pk,
+                           exc_info=True)
+    return tocados
+
+
+@shared_task
 def relaunch_stuck_analyses():
     """4.3-E (decision de David: "que se relancen automaticamente").
 

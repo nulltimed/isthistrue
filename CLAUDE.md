@@ -602,3 +602,22 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
 - La fase barata al postear YA era automática (run_cheap_phase.delay al crear);
   las únicas excepciones son categoría propuesta (PENDING_APPROVAL, se lanza al
   aprobar) y Spotify (NON_ANALYZABLE: su audio no se puede descargar).
+
+## Lecciones de las series 6.23-6.25 (2026-11-09, 21:18)
+- **6.23 — orden literal de David: «SIEMPRE se deben analizar TODAS las frases.
+  Repito: siempre»**: tarea beat nocturna reclarify_grey_claims — los claims UNDECIDED
+  de posts DONE con su última ClaimVersion más vieja que grey_retry_days (panel, 3 de
+  fábrica, 0 apaga) vuelven a clarify.run_pending (modelo profundo + búsquedas frescas).
+  El reloj es la última versión: cada intento pospone el siguiente. Gasta dinero real.
+  OJO: el pase toca config/celery.py → desplegar.sh reinicia beat solo.
+- **6.24 — «compatibilidad sin límite»**: la descarga YA era yt-dlp genérico (~1.800
+  sitios) — ampliar = reconocer plataforma y darle reproductor. Nuevas: Vimeo,
+  Dailymotion, X/Twitter, Instagram, Facebook, Rumble (tarjeta: su embed no se deriva),
+  Odysee, SoundCloud, iVoox. El aviso de plataforma desconocida ahora cuenta la verdad
+  («el análisis se intentará igualmente»). Trampa cazada en frío: `x\.com` sin ancla
+  casaba con maxflix.com — los patrones de dominio corto van anclados a `//`.
+- **6.25 — /medios/ «¿Qué puedo postear?»** (pie, patrón bilingüe de las legales).
+  Candado estructural test_serie625: toda plataforma de PATTERNS debe estar documentada
+  en la página — ampliar sin documentar pone el CI rojo.
+- Expediente Abascal: el rescate 6.19 es HORARIO — David desplegó y relanzó a mano antes
+  del primer tic. Sin indicios de fallo; el siguiente huérfano saldrá solo en <1 h.

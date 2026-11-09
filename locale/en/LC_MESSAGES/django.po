@@ -3602,3 +3602,7 @@ msgstr "Verifying the claims one by one…"
 # ---- Serie 6.21: aviso de gasto + total del mes ----
 msgid "gastados este mes"
 msgstr "spent this month"
+
+# ---- Serie 6.25: pagina publica de medios soportados ----
+msgid "Qué puedo postear"
+msgstr "What can I post"

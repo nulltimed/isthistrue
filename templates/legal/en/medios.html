@@ -1,0 +1,32 @@
+{% load i18n %}
+<h1>What can I post?</h1>
+
+<p>Paste the link of a video, a podcast or an audio file and the system will
+transcribe it, separate the voices and extract its claims. These are the
+platforms with an embedded player; <strong>any other video or audio URL is
+still analyzed</strong> and shown as a link card.</p>
+
+<table class="tabla-gastos">
+  <thead><tr><th>Platform</th><th>Player</th><th>Jump to second</th><th>Analyzed?</th></tr></thead>
+  <tbody>
+    <tr><td><strong>YouTube</strong></td><td>Embedded</td><td>Yes, with live karaoke</td><td>Yes, full (with frames)</td></tr>
+    <tr><td><strong>TikTok</strong></td><td>Embedded</td><td>No</td><td>Yes, full</td></tr>
+    <tr><td><strong>Twitch</strong> (VOD)</td><td>Embedded</td><td>Yes</td><td>Yes, full</td></tr>
+    <tr><td><strong>Vimeo</strong></td><td>Embedded</td><td>Yes</td><td>Yes, full</td></tr>
+    <tr><td><strong>Dailymotion</strong></td><td>Embedded</td><td>Yes</td><td>Yes, full</td></tr>
+    <tr><td><strong>X (Twitter)</strong></td><td>Embedded</td><td>No</td><td>Yes (public videos)</td></tr>
+    <tr><td><strong>Instagram</strong> (reels)</td><td>Embedded</td><td>No</td><td>Yes (public content)</td></tr>
+    <tr><td><strong>Facebook</strong> (videos)</td><td>Embedded</td><td>No</td><td>Yes (public videos)</td></tr>
+    <tr><td><strong>Rumble</strong></td><td>Link card</td><td>No</td><td>Yes</td></tr>
+    <tr><td><strong>Odysee</strong></td><td>Embedded</td><td>No</td><td>Yes</td></tr>
+    <tr><td><strong>SoundCloud</strong></td><td>Embedded</td><td>No</td><td>Yes (audio)</td></tr>
+    <tr><td><strong>iVoox</strong></td><td>Embedded</td><td>No</td><td>Yes (audio)</td></tr>
+    <tr><td><strong>Direct audio</strong> (.mp3 · .m4a · .ogg · .opus · .wav · .aac)</td><td>Native player</td><td>Yes</td><td>Yes (no frames)</td></tr>
+    <tr><td><strong>Spotify</strong></td><td>Embedded</td><td>No</td><td><strong>No</strong>: its audio is DRM-protected. When pasted, the system looks for the same content on an analyzable platform</td></tr>
+    <tr><td>Any other URL</td><td>Link card</td><td>No</td><td>Attempted: if the audio is reachable, it gets analyzed</td></tr>
+  </tbody>
+</table>
+
+<p class="hint">Transcription, voice separation and signals run automatically
+on posting. Source-based verification opens with community votes and
+identified speakers. Paid, private or live streams cannot be analyzed.</p>

@@ -231,6 +231,10 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     # en euros — campana del superusuario + email, UNA vez al dia, sin frenar
     # nada. 0 = apagado.
     'spend_alert_daily_eur': '10',
+    # 6.23 (orden de David: «SIEMPRE se deben analizar TODAS las frases»):
+    # cada cuantos dias se reintenta un claim en gris con busquedas frescas.
+    # 0 lo apaga.
+    'grey_retry_days': '3',
     # 4.9-A: el libro de cuentas — tarifas y topes por proveedor
     'aai_webhook': '1',
     'assemblyai_monthly_cap_eur': '20',

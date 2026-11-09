@@ -1,0 +1,39 @@
+{% extends 'base.html' %}{% load i18n %}{% block title %}{% trans "Qué puedo postear" %} — esestocierto?{% endblock %}{% block content %}
+{% get_current_language as LANG %}{% if LANG == 'en' %}{% include 'legal/en/medios.html' %}{% else %}
+{# 6.25 (orden de David, 2026-11-09: «sí» a la pagina publica, tras ampliar #}
+{# la compatibilidad «sin límite» en la 6.24). Candado: test_serie625 exige #}
+{# que TODA plataforma de PATTERNS aparezca aqui — ampliar una sin #}
+{# documentarla pone el CI rojo. #}
+<h1>¿Qué puedo postear?</h1>
+
+<p>Pega el enlace de un vídeo, un podcast o un audio y el sistema lo transcribe,
+separa las voces y extrae sus afirmaciones. Estas son las plataformas con
+reproductor integrado; <strong>cualquier otra URL de vídeo o audio se intenta
+analizar igualmente</strong> y se muestra como tarjeta-enlace.</p>
+
+<table class="tabla-gastos">
+  <thead><tr><th>Plataforma</th><th>Reproductor</th><th>Salto al segundo</th><th>¿Se analiza?</th></tr></thead>
+  <tbody>
+    <tr><td><strong>YouTube</strong></td><td>Integrado</td><td>Sí, con karaoke en vivo</td><td>Sí, completo (con fotogramas)</td></tr>
+    <tr><td><strong>TikTok</strong></td><td>Integrado</td><td>No</td><td>Sí, completo</td></tr>
+    <tr><td><strong>Twitch</strong> (VOD)</td><td>Integrado</td><td>Sí</td><td>Sí, completo</td></tr>
+    <tr><td><strong>Vimeo</strong></td><td>Integrado</td><td>Sí</td><td>Sí, completo</td></tr>
+    <tr><td><strong>Dailymotion</strong></td><td>Integrado</td><td>Sí</td><td>Sí, completo</td></tr>
+    <tr><td><strong>X (Twitter)</strong></td><td>Integrado</td><td>No</td><td>Sí (vídeos públicos)</td></tr>
+    <tr><td><strong>Instagram</strong> (reels)</td><td>Integrado</td><td>No</td><td>Sí (contenido público)</td></tr>
+    <tr><td><strong>Facebook</strong> (vídeos)</td><td>Integrado</td><td>No</td><td>Sí (vídeos públicos)</td></tr>
+    <tr><td><strong>Rumble</strong></td><td>Tarjeta-enlace</td><td>No</td><td>Sí</td></tr>
+    <tr><td><strong>Odysee</strong></td><td>Integrado</td><td>No</td><td>Sí</td></tr>
+    <tr><td><strong>SoundCloud</strong></td><td>Integrado</td><td>No</td><td>Sí (audio)</td></tr>
+    <tr><td><strong>iVoox</strong></td><td>Integrado</td><td>No</td><td>Sí (audio)</td></tr>
+    <tr><td><strong>Audio directo</strong> (.mp3 · .m4a · .ogg · .opus · .wav · .aac)</td><td>Reproductor nativo</td><td>Sí</td><td>Sí (sin fotogramas)</td></tr>
+    <tr><td><strong>Spotify</strong></td><td>Integrado</td><td>No</td><td><strong>No</strong>: su audio está protegido (DRM). Al pegarlo, el sistema busca el mismo contenido en una plataforma analizable</td></tr>
+    <tr><td>Cualquier otra URL</td><td>Tarjeta-enlace</td><td>No</td><td>Se intenta: si el audio es alcanzable, se analiza</td></tr>
+  </tbody>
+</table>
+
+<p class="hint">La transcripción, la separación de voces y las señales se hacen
+solas al postear. La verificación con fuentes se abre con los votos de la
+comunidad y los hablantes identificados. Los vídeos de pago, privados o en
+directo no se pueden analizar.</p>
+{% endif %}{% endblock %}
