@@ -46,4 +46,7 @@ class LegalesSinDonaciones(TestCase):
         self.assertNotIn('donacion', open('templates/legal/condiciones.html').read().lower())
         priv = open('templates/legal/privacidad.html').read().lower()
         self.assertNotIn('donaciones;', priv)
-        self.assertIn('stripe', priv)
+        # ENMIENDA 6.13 (David, 2026-11-09: «Paypal Bussiness»): la pasarela
+        # nombrada en la privacidad es PayPal, no Stripe.
+        self.assertIn('paypal', priv)
+        self.assertNotIn('stripe', priv)
