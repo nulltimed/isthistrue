@@ -452,3 +452,14 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   la rueda sigue siendo de David en /panel/modelos/ (una fila model_fb_deep pisa el
   default — si en produccion el log volviera a decir opus, es que hay fila: la toca el).
 - **Impresiones del socio: EN PERSONA** (David: no se añade paso de feedback al tour).
+
+## Lecciones de la serie 6.9 (2026-11-09)
+- **Donaciones FUERA de toda pagina** (orden de David, literal: «Elimina las donaciones
+  de cualquier página. Es ahora una SL. Ya hemos establecido el modelo de negocio»):
+  purgado el LENGUAJE — insignia «Apadrinable»→«Adelantable con créditos», «donados
+  este mes»→«financiación extra (créditos)», bocadillos b017-b153 a créditos, cookies
+  sin el botón PayPal, plantilla muerta /donaciones/ borrada (la vista ya redirigía),
+  panel «Donaciones»→«Financiación» con diagnósticos PayPal en clave de VIA LEGADO.
+  Lo que NO es una página se queda: modelo Donation (libro interno, puente CREDIT
+  4.3-F) y el endpoint IPN legado. Candado: test_serie69 recorre las páginas públicas
+  y pone el CI rojo si reaparece «donaci/Donar/Apadrinable».

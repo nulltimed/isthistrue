@@ -6060,11 +6060,16 @@ class Parche513_Serie(TestCase):
         self.assertFalse(d.verified)
 
     def test_el_apadrinamiento_esta_a_la_vista_en_el_foro(self):
+        # ENMIENDA 6.9 (orden de David, 2026-11-09: «Elimina las donaciones de
+        # cualquier página. Es ahora una SL»): la insignia pasa de
+        # «Apadrinable» a «Adelantable con créditos» — mismo gancho, sin
+        # lenguaje de donación en ninguna página.
         u = make_user(username='vis513', email='vis513@example.org')
         Post.objects.create(author=u, url='https://youtu.be/vis513',
                             title='Esperando padrino', status='AWAITING_BUDGET')
         html = self.client.get('/foro/').content.decode()
-        self.assertIn('Apadrinable', html)
+        self.assertIn('Adelantable con créditos', html)
+        self.assertNotIn('Apadrinable', html)
 
     def test_probe_lee_la_duracion_de_spotify(self):
         t = open('apps/embeds/adapters.py').read()

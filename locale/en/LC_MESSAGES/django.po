@@ -599,8 +599,8 @@ msgstr "Panel · Settings"
 msgid "Panel · Códigos"
 msgstr "Panel · Codes"
 
-msgid "Panel · Donaciones"
-msgstr "Panel · Donations"
+msgid "Panel · Financiación"
+msgstr "Panel · Funding"
 
 msgid "Panel · Espejo de pruebas"
 msgstr "Panel · Staging mirror"
@@ -1564,8 +1564,8 @@ msgstr "Total spent"
 msgid "Transparencia total: estos son los apuntes REALES del libro de cuentas del proyecto — cada llamada a cada tecnología se anota con su coste. El contador se reinicia cada día 1."
 msgstr "Full transparency: these are the REAL entries of the project's cost ledger — every call to every technology is recorded with its cost. The counter resets on the 1st of each month."
 
-msgid "donados este mes (confirmados)"
-msgstr "donated this month (confirmed)"
+msgid "de financiación extra este mes (créditos)"
+msgstr "in extra funding this month (credits)"
 
 msgid "objetivo mensual"
 msgstr "monthly goal"
@@ -1686,8 +1686,8 @@ msgid "Todavía no hay re-verificaciones: esta es la primera y única versión."
 msgstr "No re-verifications yet: this is the first and only version."
 
 # 5.13: apadrinamiento a la vista
-msgid "Apadrinable"
-msgstr "Sponsorable"
+msgid "Adelantable con créditos"
+msgstr "Fast-track with credits"
 
 msgid "¿Tienes prisa? Apadrínalo con una donación de %(d)s €: quedará atada a ESTE análisis y, en cuanto se verifique, saldrá de la cola."
 msgstr "In a hurry? Sponsor it with a %(d)s € donation: it will be tied to THIS analysis and, once verified, it will leave the queue."
@@ -2377,21 +2377,21 @@ msgstr "Spending"
 msgid "PayPal: credenciales válidas"
 msgstr "PayPal: valid credentials"
 
-msgid "El botón «Donar con PayPal» funciona con dinero real."
-msgstr "The “Donate with PayPal” button works with real money."
+msgid "La vía legado de PayPal (pago por servidor) está operativa."
+msgstr "The legacy PayPal path (server-side payment) is operational."
 
-msgid "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Nadie puede donar hasta cambiarlas: en developer.paypal.com → Apps & Credentials → pestaña «Live» → copia Client ID y Secret al .env de producción y avisa al operador."
-msgstr "PayPal: the .env credentials belong to the SANDBOX (test) app, not the LIVE app. Nobody can donate until they are replaced: developer.paypal.com → Apps & Credentials → “Live” tab → copy Client ID and Secret into the production .env and tell the operator."
+msgid "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Solo importa si algún día se reactiva la vía legado de PayPal."
+msgstr "PayPal: the .env credentials belong to the SANDBOX app, not the LIVE one. Only relevant if the legacy PayPal path is ever reactivated."
 
-msgid "PayPal: las credenciales del .env NO son válidas (401). Nadie puede donar hasta corregirlas."
-msgstr "PayPal: the .env credentials are NOT valid (401). Nobody can donate until they are fixed."
+msgid "PayPal: las credenciales del .env NO son válidas (401). Solo importa si algún día se reactiva la vía legado."
+msgstr "PayPal: the .env credentials are NOT valid (401). Only relevant if the legacy path is ever reactivated."
 
 msgid "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)."
 msgstr "PayPal: no credentials in the .env; the button goes to the classic PayPal link (if any)."
 
 # --- 5.24-E: boton alojado ---
-msgid "PayPal: las donaciones van por tu botón alojado de PayPal (con la cantidad puesta) y entran en el libro por el aviso IPN. Funciona con dinero real."
-msgstr "PayPal: donations go through your hosted PayPal button (amount pre-filled) and enter the ledger via the IPN notice. Works with real money."
+msgid "PayPal legado: un pago del botón alojado antiguo seguiría entrando en el libro por el aviso IPN."
+msgstr "Legacy PayPal: a payment from the old hosted button would still enter the ledger via the IPN notice."
 
 msgid "Las credenciales REST del .env son de la app Sandbox: solo hacen falta para el pago por servidor, que es opcional."
 msgstr "The REST credentials in the .env belong to the Sandbox app: they are only needed for the server-side payment, which is optional."
@@ -2528,14 +2528,14 @@ msgstr "Log in to your account."
 msgid "Crear una cuenta nueva."
 msgstr "Create a new account."
 
-msgid "Ver en qué se gasta el dinero, céntimo a céntimo."
-msgstr "See where the money goes, cent by cent."
+msgid "Ver en qué se gasta el dinero, por categorías y en euros."
+msgstr "See where the money goes, by category and in euros."
 
-msgid "Elige cuánto donar. Las donaciones suben el cupo diario de análisis."
-msgstr "Choose how much to donate. Donations raise the daily analysis quota."
+msgid "Los créditos adelantan análisis y amplían el depósito del mes."
+msgstr "Credits fast-track analyses and raise the month's budget."
 
-msgid "Otras formas de donar y qué se hace con el dinero."
-msgstr "Other ways to donate and what the money is used for."
+msgid "Qué son los créditos y qué se hace con el dinero."
+msgstr "What credits are and what the money is used for."
 
 msgid "Cómo se verifica cada afirmación, paso a paso."
 msgstr "How each claim is verified, step by step."
@@ -2555,8 +2555,8 @@ msgstr "Which cookies the site uses."
 msgid "Las normas de uso."
 msgstr "The terms of use."
 
-msgid "Donar y ver el estado de las donaciones."
-msgstr "Donate and see the donation status."
+msgid "Créditos: tu saldo, recargas y movimientos."
+msgstr "Credits: your balance, top-ups and history."
 
 msgid "Escribir al equipo."
 msgstr "Write to the team."
@@ -2573,8 +2573,8 @@ msgstr "Open source code, AGPL licence."
 msgid "Pega un enlace y empieza un análisis."
 msgstr "Paste a link and start an analysis."
 
-msgid "Este análisis espera presupuesto: puedes apadrinarlo con una donación."
-msgstr "This analysis is waiting for budget: you can sponsor it with a donation."
+msgid "Este análisis espera presupuesto: los créditos lo adelantan."
+msgstr "This analysis is waiting for budget: credits fast-track it."
 
 msgid "Pega la dirección del vídeo o pódcast: YouTube, TikTok, Twitch, audio…"
 msgstr "Paste the video or podcast address: YouTube, TikTok, Twitch, audio…"
@@ -2822,8 +2822,8 @@ msgstr "Money, PayPal, registration, karma, Trending and logs."
 msgid "Códigos de nivel para repartir."
 msgstr "Level codes to hand out."
 
-msgid "Donaciones recibidas y estado de PayPal."
-msgstr "Donations received and PayPal status."
+msgid "Libro de financiación: créditos y PayPal legado."
+msgstr "Funding ledger: credits and legacy PayPal."
 
 msgid "Qué modelo hace cada tarea, con su coste."
 msgstr "Which model does each task, with its cost."
@@ -2936,8 +2936,8 @@ msgstr "Night silence: no emails between 23:00 and 8:00."
 msgid "Cuántas voces hay, si lo sabes: guía a la separación de voces."
 msgstr "How many voices there are, if you know: it guides the voice separation."
 
-msgid "Elige cuánto donar."
-msgstr "Choose how much to donate."
+msgid "Elige la recarga de créditos."
+msgstr "Pick a credit top-up."
 
 msgid "Dirección de la página con el contenido que reclamas."
 msgstr "Address of the page with the content you are complaining about."
@@ -3522,3 +3522,5 @@ msgstr "Take me there"
 
 msgid "Y quiénes somos: el método, las correcciones y la transparencia, por escrito. Fin del recorrido — gracias por la visita."
 msgstr "And who we are: the method, the corrections and the transparency, in writing. End of the tour — thanks for visiting."
+msgid "Financiación"
+msgstr "Funding"

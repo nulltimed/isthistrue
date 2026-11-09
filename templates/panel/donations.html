@@ -1,14 +1,14 @@
 {% extends 'base.html' %}{% load i18n %}
-{% block title %}{% trans "Panel · Donaciones" %}{% endblock %}
+{% block title %}{% trans "Panel · Financiación" %}{% endblock %}
 {% block content %}
 {% include 'partials/panel_nav.html' %}
 {# 5.24-D: el estado REAL de las credenciales de PayPal, a la vista de David. #}
-{% if paypal_estado == 'ok' %}<p class="reg-gate reg-open">🟢 {% trans "PayPal: credenciales válidas" %} ({{ paypal_modo }}). {% trans "El botón «Donar con PayPal» funciona con dinero real." %}</p>
-{% elif paypal_hosted %}<p class="reg-gate reg-open">🟢 {% trans "PayPal: las donaciones van por tu botón alojado de PayPal (con la cantidad puesta) y entran en el libro por el aviso IPN. Funciona con dinero real." %} <span class="hint">{% if paypal_estado == 'sandbox' %}{% trans "Las credenciales REST del .env son de la app Sandbox: solo hacen falta para el pago por servidor, que es opcional." %}{% elif paypal_estado == 'invalidas' %}{% trans "Las credenciales REST del .env no valen: solo hacen falta para el pago por servidor, que es opcional." %}{% else %}{% trans "Sin credenciales REST: el pago por servidor es opcional." %}{% endif %}</span></p>
-{% elif paypal_estado == 'sandbox' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Nadie puede donar hasta cambiarlas: en developer.paypal.com → Apps & Credentials → pestaña «Live» → copia Client ID y Secret al .env de producción y avisa al operador." %}</p>
-{% elif paypal_estado == 'invalidas' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env NO son válidas (401). Nadie puede donar hasta corregirlas." %}</p>
+{% if paypal_estado == 'ok' %}<p class="reg-gate reg-open">🟢 {% trans "PayPal: credenciales válidas" %} ({{ paypal_modo }}). {% trans "La vía legado de PayPal (pago por servidor) está operativa." %}</p>
+{% elif paypal_hosted %}<p class="reg-gate reg-open">🟢 {% trans "PayPal legado: un pago del botón alojado antiguo seguiría entrando en el libro por el aviso IPN." %} <span class="hint">{% if paypal_estado == 'sandbox' %}{% trans "Las credenciales REST del .env son de la app Sandbox: solo hacen falta para el pago por servidor, que es opcional." %}{% elif paypal_estado == 'invalidas' %}{% trans "Las credenciales REST del .env no valen: solo hacen falta para el pago por servidor, que es opcional." %}{% else %}{% trans "Sin credenciales REST: el pago por servidor es opcional." %}{% endif %}</span></p>
+{% elif paypal_estado == 'sandbox' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env son de la app SANDBOX (pruebas), no de la app LIVE. Solo importa si algún día se reactiva la vía legado de PayPal." %}</p>
+{% elif paypal_estado == 'invalidas' %}<p class="reg-gate reg-closed">🔴 {% trans "PayPal: las credenciales del .env NO son válidas (401). Solo importa si algún día se reactiva la vía legado." %}</p>
 {% else %}<p class="reg-gate">⚪ {% trans "PayPal: sin credenciales en el .env; el botón lleva al enlace clásico de PayPal (si lo hay)." %}</p>{% endif %}
-<p class="hint">Registra aquí cada donación recibida: el depósito del mes crece al instante (hasta el techo duro).</p>
+<p class="hint">El libro de financiación: cada entrada (créditos gastados o legado PayPal) amplía el depósito del mes al instante, hasta el techo duro.</p>
 <form method="post">{% csrf_token %}
   <label>Importe (€)<input name="amount" required placeholder="5.00"></label>
   <label>Método<select name="method"><option value="PAYPAL">PayPal</option><option value="BIZUM">Bizum</option><option value="OTHER">Otro</option></select></label>
