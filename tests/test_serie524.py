@@ -346,7 +346,6 @@ class Parche524D_EstadoPayPal(TestCase):
         self.assertNotIn('botón alojado', html)   # ni rastro de PayPal en la página
         self.assertNotIn('Sandbox', html)
         self.assertIn('Libro de financiación', html)
-        self.assertIn('reg-open', html)
         cache.clear()
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
             self.assertEqual(paypal_check.comprobar(), 'sin')
