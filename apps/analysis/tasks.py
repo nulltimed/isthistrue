@@ -635,6 +635,7 @@ def reclarify_grey_claims():
     el siguiente: insistencia sin martilleo. 0 en grey_retry_days lo apaga.
     Gasta dinero real; el fusible por claim de clarify sigue dentro."""
     from django.db.models import Max
+    from .models import Post   # 6.23-b: tasks.py importa por funcion (candado CI)
     from apps.panel.models import SystemSetting
     from apps.wiki.models import Claim
     dias = SystemSetting.get_int('grey_retry_days', 3)
