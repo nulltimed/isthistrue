@@ -8,6 +8,12 @@ torchaudio==2.2.2+cpu
 numpy==1.26.4
 Django==5.0.*
 celery[redis]==5.4.*
+# 6.11 (500 del 2026-11-09 en /relanzar/): kombu venia SIN fijar y una
+# reconstruccion instalo la 5.6, que exige redis-py >=6.1 — con redis==5.*
+# todo .delay() moria con VersionMismatch (el CI no lo ve: ALWAYS_EAGER no
+# toca el broker). Se fija la pareja que FUNCIONABA; subir redis a 6.* y
+# soltar kombu es valido, pero cambiarlos JUNTOS y con prueba en el espejo.
+kombu==5.5.*
 redis==5.*
 psycopg[binary]==3.*
 pgvector==0.3.*

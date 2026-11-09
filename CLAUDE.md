@@ -475,3 +475,17 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
 - **Brevo y el correo propio del dominio CONVIVEN en DNS** (duda de David respondida): el MX
   (recepcion) va al VPS y Brevo ni lo usa; el SPF es UN registro que autoriza a ambos
   (include:spf.brevo.com + ip4 del VPS) y los DKIM usan selectores distintos. 3-4 registros.
+
+## Lecciones de la serie 6.11 (2026-11-09) — el 500 silencioso del mensajero
+- 🔴 **kombu venia SIN FIJAR y una reconstruccion instalo la 5.6**, que exige redis-py
+  >=6.1; con `redis==5.*` fijado, TODO `.delay()` moria con VersionMismatch. El primer
+  sintoma visible fue un 500 en /relanzar/ — pero worker y beat llevaban mudos desde esa
+  reconstruccion (los backfills por manage.py corren EN LINEA y no lo delatan). Fijada la
+  pareja que funcionaba (`kombu==5.5.*` + `redis==5.*`) y candado test_serie611 que
+  replica el chequeo de kombu: si las versiones se desparejan, el CI chilla antes que
+  produccion. Regla: **toda libreria cuyo fallo solo se ve EN CALIENTE (broker, GPU,
+  correo) va FIJADA en requirements.txt** — lo que el CI no ejecuta, el pin lo protege.
+- **Por que el CI no lo vio**: CELERY_TASK_ALWAYS_EAGER=True jamas toca el broker. Tras
+  cada despliegue que reconstruya la capa de pip, comprobar que el worker consume:
+  `sudo -u i docker compose logs worker --tail=5` debe ensenar el banner de celery ready,
+  no un traceback.
