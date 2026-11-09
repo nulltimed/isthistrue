@@ -515,3 +515,19 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   del <script> (istt-yt-api) + comprobar window.YT.Player antes de recargarla.
 - El intercambio re-crea el embed: si el vídeo estaba reproduciéndose, vuelve a su
   miniatura. Aceptado (durante el análisis se está leyendo, no viendo).
+
+## Lecciones de la serie 6.15 (2026-11-09) — tareas fantasma del worker
+- 🔴 **Celery autodiscover SOLO importa el tasks.py de cada app**: toda @shared_task
+  definida en otro módulo (forum/moderation.py, agents/batch.py) NO existía para el
+  worker — beat programaba resolve_expired_warnings cada hora y el worker la tiraba
+  («Received unregistered task», cazado en el log de producción), y CADA mensaje del
+  foro mandaba el triaje de moderación (moderate_machina_post) a la basura. El CI era
+  ciego: ALWAYS_EAGER ejecuta en línea donde el módulo ya estaba importado (misma
+  familia que el 6.11: lo que solo falla EN CALIENTE necesita candado que lo simule).
+- Arreglo = PUENTES (apps/forum/tasks.py y apps/agents/tasks.py importan las tareas) +
+  candado test_serie615: barrido AST de toda @shared_task bajo apps/ contra app.tasks
+  tras import_default_modules (lo que hace el worker al arrancar) + todo el
+  beat_schedule contra tareas registradas. Tarea nueva → en un tasks.py o importada
+  desde uno, o el CI chilla.
+- El nombre de una shared_task lo da el MÓDULO QUE LA DEFINE, no el que la importa:
+  el puente registra apps.forum.moderation.X, que es lo que web y beat ya enviaban.
