@@ -385,7 +385,8 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
   repara (`_salvage_json` en apps/agents/client.py): cierra lo abierto, y si el corte
   cayo dentro de un texto, recorta al ultimo valor COMPLETO — jamas publica un titulo
   o URL a medias, antes devuelve error. Misma leccion que el clarificador (4.4-E bis):
-  a un agente con busqueda, darle AIRE de tokens (origen: 3000→5000).
+  a un agente con busqueda, darle AIRE de tokens (origen: 3000→5000). MEDIDO en
+  produccion el 09-11: fallos 52%→14%, y el reincidente salio via respaldo del panel.
 - **Backfill del rastreo = `manage.py rastrear_origen`** (--reintentar recoge los
   FAILED, --limite acota la tanda): nada de one-liners dictados por chat.
 - **El bulo de la semana** (portada) se elige solo — 6.6-b: ROTA cada semana entre
