@@ -646,3 +646,16 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   navegadores prefetchean GETs) — candado en test_serie627.
 - verificar_atrasados imprime el ENLACE de cada retenido (duda de David «¿de qué
   comando? dónde?»): se abre, se nombran voces en «¿Quién habla?», o «Verificar ya».
+
+## Lecciones de la serie 6.28 (2026-11-09, 21:42) — avisos de moderación
+- Orden de David: «todo ese proceso debe ser avisado por mensaje privado al moderador
+  de turno y a el/los superusuarios» → avisar_retenido_por_voces() (services): campana
+  (+email según preferencias) a TODA la moderación con el enlace del post retenido,
+  UNA vez por post y día (cache). La llama verificar_atrasados; el terminal queda como
+  espejo, no como único canal.
+- **El nombramiento de moderador YA EXISTÍA** (4.2 H6: /panel/moderadores/, por
+  username O email, solo superusuario; retirar deja CONTRIB). Antes de implementar
+  «algo que falta», buscarlo: el mapa está en docs/32. Añadido 6.28: el nombrado y el
+  retirado se enteran por mensaje privado.
+- «Moderador de turno» = hoy, toda la moderación (no hay turnos); si algún día los hay,
+  este helper es el único sitio a tocar.

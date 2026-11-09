@@ -118,6 +118,40 @@ def votes_needed(post):
     return max(1, SystemSetting.get_int('votes_to_validate', 5))
 
 
+def avisar_retenido_por_voces(post, motivo):
+    """6.28 (orden de David, 2026-11-09, 21:42, literal: «todo ese proceso debe
+    ser avisado por mensaje privado al moderador de turno y a el/los
+    superusuarios»): cuando un video queda RETENIDO por la puerta de voces,
+    campana (y email segun preferencias) a todos los moderadores y
+    superusuarios, con el enlace para poner nombres. UNA vez por post y por
+    dia (cache): insistencia sin martilleo. Fail-soft."""
+    try:
+        from django.core.cache import cache
+        from django.db.models import Q
+        from django.utils import timezone as _tz
+        from apps.accounts.models import User
+        from apps.accounts.services import notify
+        clave = f'aviso-voces-{post.pk}-{_tz.localdate().isoformat()}'
+        if cache.get(clave):
+            return 0
+        cache.set(clave, 1, 24 * 3600)
+        titulo = (post.title or post.url)[:70]
+        url = post.get_absolute_url()
+        n = 0
+        for u in User.objects.filter(is_active=True).filter(
+                Q(is_superuser=True) | Q(level='MOD')):
+            notify(u, f'🎙️ Vídeo retenido por voces: «{titulo}» — {motivo} '
+                      f'Ponle nombres en «¿Quién habla?» (o «⚡ Verificar ya»).',
+                   url, kind='moderation')
+            n += 1
+        return n
+    except Exception:
+        import logging
+        logging.getLogger('analysis.services').warning(
+            'Aviso de retenido por voces fallido (post %s)', post.pk)
+        return 0
+
+
 def try_launch_full(post):
     """5.27-A (orden de David, 2026-09-11): la UNICA puerta al trabajo 2 (los
     veredictos con fuentes). Se abre cuando se cumplen LAS DOS condiciones:

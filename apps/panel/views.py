@@ -490,11 +490,19 @@ def moderators_panel(request):
         elif action == 'add':
             target.level = 'MOD'
             target.save(update_fields=['level'])
-            messages.success(request, f'{target.username} nombrado moderador.')
+            # 6.28: el nombrado se entera por mensaje privado (campana+email).
+            from apps.accounts.services import notify
+            notify(target, '🛡️ Has sido nombrado MODERADOR de esestocierto?: '
+                           'tu voto único lanza verificaciones y moderas el foro.',
+                   '/panel/moderador/')
+            messages.success(request, f'{target.username} nombrado moderador (avisado por campana).')
         else:
             target.level = 'CONTRIB'  # al retirar conserva confianza, no el mando
             target.save(update_fields=['level'])
-            messages.success(request, f'{target.username} ya no es moderador.')
+            from apps.accounts.services import notify
+            notify(target, 'Tu etapa como moderador termina: conservas el nivel '
+                           'Contribuidor. Gracias por el trabajo.')
+            messages.success(request, f'{target.username} ya no es moderador (avisado).')
         return redirect('panel_moderators')
     from apps.accounts.models import User as U
     mods = U.objects.filter(level='MOD', is_active=True).order_by('username')

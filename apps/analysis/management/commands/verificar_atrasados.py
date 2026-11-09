@@ -17,7 +17,7 @@ Cada lanzamiento gasta dinero real (~3,83 EUR/hora de video).
 from django.core.management.base import BaseCommand
 
 from apps.analysis.models import Post
-from apps.analysis.services import identification_gate
+from apps.analysis.services import avisar_retenido_por_voces, identification_gate
 from apps.analysis.tasks import launch_full_analysis
 
 
@@ -41,6 +41,9 @@ class Command(BaseCommand):
                 abierta, motivo = identification_gate(post)
                 if not abierta:
                     retenidos.append((post.pk, motivo))
+                    # 6.28 (orden de David): mensaje privado a moderacion y
+                    # superusuarios, con el enlace — no solo esta terminal.
+                    avisar_retenido_por_voces(post, motivo)
                     continue
             post.status = 'FULL_QUEUED'
             post.save(update_fields=['status'])
