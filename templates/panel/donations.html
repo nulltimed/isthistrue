@@ -7,7 +7,7 @@
 {# empresas, etc»): PayPal FUERA del panel — ni semáforo ni selector. Esta #}
 {# página es el LIBRO DE FINANCIACIÓN de la empresa: los créditos gastados #}
 {# entran solos (apunte CREDIT, puente 4.3-F) y amplían el depósito del mes. #}
-<h1>{% trans "Libro de financiación" %}</h1>
+<h2>{% trans "Libro de financiación" %}</h2>
 <p class="hint">{% trans "Cada entrada confirmada amplía el depósito de análisis del mes al instante, hasta el techo duro. Los créditos que gastan los usuarios entran solos; este formulario es solo para aportaciones manuales puntuales." %}</p>
 <form method="post">{% csrf_token %}
   <label>{% trans "Importe (€)" %}<input name="amount" required placeholder="5.00"></label>

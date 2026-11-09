@@ -327,6 +327,11 @@ class Parche524D_EstadoPayPal(TestCase):
     API sigue a PAYPAL_MODE."""
 
     def test_detecta_sandbox_y_lo_avisa_en_el_panel(self):
+        # ENMIENDA 6.12 (orden de David, 2026-11-09, literal: «No quiero eso.
+        # Quiero que, como SL, sea una empresa que cobra por los análisis
+        # adelantados, informes para empresas, etc»): el semáforo de PayPal
+        # queda FUERA del panel. paypal_check sigue funcionando como módulo
+        # (lo cubren los otros tests de esta clase); el panel ya no lo pinta.
         from django.core.cache import cache
         from apps.analysis import paypal_check
         cache.clear()
@@ -338,9 +343,9 @@ class Parche524D_EstadoPayPal(TestCase):
             sup = make_user(username='pp524', email='pp524@example.org', is_staff=True, is_superuser=True)
             self.client.force_login(sup)
             html = self.client.get('/panel/donaciones/').content.decode()
-        # 5.24-E: con el boton alojado configurado, verde + la nota de que las REST son Sandbox
-        self.assertIn('botón alojado', html)
-        self.assertIn('Sandbox', html)
+        self.assertNotIn('botón alojado', html)   # ni rastro de PayPal en la página
+        self.assertNotIn('Sandbox', html)
+        self.assertIn('Libro de financiación', html)
         self.assertIn('reg-open', html)
         cache.clear()
         with override_settings(PAYPAL_CLIENT_ID='', PAYPAL_CLIENT_SECRET=''):
