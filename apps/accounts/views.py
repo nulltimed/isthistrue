@@ -60,6 +60,20 @@ def set_language_pref(request):
 
 
 @login_required
+def tour_done(request):
+    """6.7: el invitado terminó o saltó el recorrido guiado — no vuelve a
+    aparecer (la marca vive en notify_prefs, sin migración)."""
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        u = request.user
+        prefs = dict(u.notify_prefs or {})
+        prefs['tour_done'] = True
+        u.notify_prefs = prefs
+        u.save(update_fields=['notify_prefs'])
+    return JsonResponse({'ok': True})
+
+
+@login_required
 def settings_view(request):
     """Panel de cuenta unico (foro+wiki): sliders +18 y opiniones."""
     u = request.user

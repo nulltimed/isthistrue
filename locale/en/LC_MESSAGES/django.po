@@ -902,8 +902,8 @@ msgstr "Community verification with reproducible sources."
 msgid "Verificador"
 msgstr "Verifier"
 
-msgid "Verificamos afirmaciones, nunca personas · metodología pública · open source (AGPL) sin ánimo de lucro — si donas, los cupos suben."
-msgstr "We verify claims, never people · public methodology · non-profit open source (AGPL) — if you donate, quotas go up."
+msgid "Verificamos afirmaciones, nunca personas · metodología pública · open source (AGPL) — los votos son gratis siempre; los créditos solo compran inmediatez."
+msgstr "We verify claims, never people · public methodology · open source (AGPL) — votes are always free; credits only buy immediacy."
 
 msgid "Verificar mi cuenta"
 msgstr "Verify my account"
@@ -983,8 +983,8 @@ msgstr "several people"
 msgid "voto(s). Se necesitan votos de usuarios Contribuidor+ antes de"
 msgstr "vote(s). Votes from Contributor+ users are needed before"
 
-msgid "¡Bienvenido/a, %(username)s!\n\nTu cuenta está verificada. Qué puedes hacer ya:\n- Analizar contenidos: pega un enlace y el sistema extrae y clasifica sus afirmaciones.\n- Votar validaciones cuando llegues a Contribuidor (50 de karma o un código de invitación).\n- Seguir afirmaciones en la wiki para enterarte si cambian de color.\n\nRecuerda: verificamos afirmaciones, nunca personas. Metodología pública en /metodologia/.\nProyecto open source (AGPL) sin ánimo de lucro: si donas, los cupos de análisis suben."
-msgstr "Welcome, %(username)s!\n\nYour account is verified. What you can do right now:\n- Analyse content: paste a link and the system pulls out and classifies its claims.\n- Vote on validations once you reach Contributor (50 karma or an invitation code).\n- Follow claims in the wiki to hear about it if they change colour.\n\nRemember: we verify claims, never people. Public methodology at /metodologia/.\nNon-profit open source project (AGPL): if you donate, analysis quotas go up."
+msgid "¡Bienvenido/a, %(username)s!\n\nTu cuenta está verificada. Qué puedes hacer ya:\n- Analizar contenidos: pega un enlace y el sistema extrae y clasifica sus afirmaciones.\n- Votar validaciones cuando llegues a Contribuidor (50 de karma o un código de invitación).\n- Seguir afirmaciones en la wiki para enterarte si cambian de color.\n\nRecuerda: verificamos afirmaciones, nunca personas. Metodología pública en /metodologia/.\nProyecto open source (AGPL). Los votos son gratis siempre; los créditos solo compran inmediatez."
+msgstr "Welcome, %(username)s!\n\nYour account is verified. What you can do right now:\n- Analyse content: paste a link and the system pulls out and classifies its claims.\n- Vote on validations once you reach Contributor (50 karma or an invitation code).\n- Follow claims in the wiki to hear about it if they change colour.\n\nRemember: we verify claims, never people. Public methodology at /metodologia/.\nOpen source project (AGPL). Votes are always free; credits only buy immediacy."
 
 msgid "¡Donación recibida — gracias! Se sumará al depósito del mes."
 msgstr "Donation received — thank you! It will be added to this month's pot."
@@ -2980,8 +2980,8 @@ msgstr "Password"
 
 # --- 6.1 (2026-11-06): creditos de la SL y rastreo de origen ---
 
-msgid "Cada céntimo del proyecto, apunte a apunte: el libro de gastos es público."
-msgstr "Every cent of the project, entry by entry: the spending ledger is public."
+msgid "El gasto real del proyecto, por categorías y en euros: el libro es público."
+msgstr "The project's real spending, by category and in euros: the ledger is public."
 
 msgid "Gasto en directo: el libro es público."
 msgstr "Live spending: the ledger is public."
@@ -3070,8 +3070,8 @@ msgstr "Date"
 msgid "Movimiento"
 msgstr "Change"
 
-msgid "Transparencia: el gasto del proyecto es público, apunte a apunte, en el libro de gastos de la cabecera. Los créditos gastados en adelantar un análisis amplían el depósito de ese mes exactamente en su importe."
-msgstr "Transparency: project spending is public, entry by entry, in the header's ledger. Credits spent fast-tracking an analysis raise that month's budget by exactly their amount."
+msgid "Transparencia: el gasto del proyecto es público, por categorías y totales mensuales, en el libro de gastos de la cabecera. Los créditos gastados en adelantar un análisis amplían el depósito de ese mes exactamente en su importe."
+msgstr "Transparency: project spending is public, by category and monthly totals, in the header's ledger. Credits spent fast-tracking an analysis raise that month's budget by exactly their amount."
 
 msgid "¿De dónde viene? La cadena de difusión"
 msgstr "Where does it come from? The spread chain"
@@ -3470,3 +3470,55 @@ msgstr "and the"
 
 msgid "servicios"
 msgstr "services"
+
+# 6.7: gastos por categorias, regalo en el email y recorrido guiado
+msgid "Transparencia: el gasto real del mes, por categorías y en euros. El contador se reinicia cada día 1."
+msgstr "Transparency: the month's real spending, by category and in euros. The counter resets on the 1st."
+
+msgid "Dentro te espera %(n)s crédito(s) de regalo: sirven para adelantar un análisis sin esperar la cola."
+msgstr "%(n)s gift credit(s) await you inside: they fast-track an analysis past the queue."
+
+msgid "Dentro te espera %(n)s crédito(s) de regalo"
+msgstr "%(n)s gift credit(s) await you inside"
+
+msgid "sirven para adelantar un análisis sin esperar la cola."
+msgstr "they fast-track an analysis past the queue."
+
+msgid "Bienvenido al recorrido. Esta es la portada: se pega el enlace de un vídeo y el sistema extrae y verifica sus afirmaciones una a una. Los votos de la comunidad (siempre gratuitos) deciden qué se analiza a fondo."
+msgstr "Welcome to the tour. This is the homepage: paste a video link and the system extracts and verifies its claims one by one. Community votes (always free) decide what gets deep verification."
+
+msgid "El escaparate de la portada: el bulo de la semana, con su veredicto y su cadena de origen. Rota solo cada semana."
+msgstr "The homepage showcase: the hoax of the week, with its verdict and its origin chain. It rotates by itself every week."
+
+msgid "La ficha de una afirmación: el veredicto con sus fuentes, el historial público de versiones y la cadena que muestra dónde nació y dónde se torció el mensaje."
+msgstr "A claim's page: the verdict with its sources, the public revision history and the chain showing where the message was born and where it got twisted."
+
+msgid "El foro: cada vídeo tiene su hilo y cada frase se puede debatir y votar."
+msgstr "The forum: every video has its thread and every sentence can be debated and voted on."
+
+msgid "Los créditos: lo único que se vende es inmediatez (adelantar un análisis, pedir una cadena). Los veredictos son públicos siempre. La compra se encenderá cuando exista la sociedad."
+msgstr "Credits: the only thing for sale is immediacy (fast-tracking an analysis, requesting a chain). Verdicts are always public. Purchases will be enabled once the company exists."
+
+msgid "El escaparate para medios y empresas que operará la sociedad: API con clave, dossieres a medida, badge embebible y dataset abierto."
+msgstr "The storefront for media and companies the company will run: keyed API, tailored dossiers, embeddable badge and open dataset."
+
+msgid "Y el panel de mando: presupuesto, modelos, ajustes y bandejas de revisión. Fin del recorrido — gracias por la visita."
+msgstr "And the control panel: budget, models, settings and review queues. End of the tour — thanks for visiting."
+
+msgid "Cierra el recorrido para siempre; la web queda tal cual."
+msgstr "Closes the tour for good; the site stays as it is."
+
+msgid "Te lleva a la página de este paso del recorrido."
+msgstr "Takes you to this tour step's page."
+
+msgid "Pasa al siguiente paso del recorrido."
+msgstr "Moves on to the next tour step."
+
+msgid "Saltar"
+msgstr "Skip"
+
+msgid "Llévame"
+msgstr "Take me there"
+
+msgid "Y quiénes somos: el método, las correcciones y la transparencia, por escrito. Fin del recorrido — gracias por la visita."
+msgstr "And who we are: the method, the corrections and the transparency, in writing. End of the tour — thanks for visiting."

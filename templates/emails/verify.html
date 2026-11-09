@@ -7,6 +7,7 @@
     <p style="text-align:center;margin:0 0 20px">
       <a href="{{ url }}" style="background:#141414;color:#fff;text-decoration:none;padding:12px 26px;border-radius:8px;font-weight:600;display:inline-block">{% trans "Verificar mi cuenta" %}</a>
     </p>
+    {% if regalo %}<p style="margin:0 0 10px;color:#1a7a1a;font-size:14px"><strong>🎁 {% blocktrans with n=regalo %}Dentro te espera {{ n }} crédito(s) de regalo{% endblocktrans %}</strong> — {% trans "sirven para adelantar un análisis sin esperar la cola." %}</p>{% endif %}
     <p style="margin:0;color:#5b5b5b;font-size:13px">{% trans "El enlace caduca en 72 horas. Si el botón no funciona, copia esta dirección:" %}<br>{{ url }}</p>
   </div>
   <p style="text-align:center;color:#5b5b5b;font-size:12px;margin-top:16px">{% trans "Si no creaste esta cuenta, ignora este mensaje." %}<br>{% trans "esestocierto? — verificación con fuentes, sin ánimo de lucro" %}</p>

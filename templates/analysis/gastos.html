@@ -2,21 +2,28 @@
 {% block title %}{% trans "En qué se gasta" %} — esestocierto?{% endblock %}
 {% block content %}
 <h1>{% trans "En qué se gasta" %} · {{ ym }}</h1>
+{# 6.7 (orden de David, 2026-11-09): el público ve categorías y totales; las #}
+{# marcas, los apuntes y la GPU, solo staff («ahora es una empresa»). #}
+{% if es_staff %}
 <p class="hint">{% trans "Transparencia total: estos son los apuntes REALES del libro de cuentas del proyecto — cada llamada a cada tecnología se anota con su coste. El contador se reinicia cada día 1." %}</p>
+{% else %}
+<p class="hint">{% trans "Transparencia: el gasto real del mes, por categorías y en euros. El contador se reinicia cada día 1." %}</p>
+{% endif %}
 
 <table class="tabla-gastos">
-  <thead><tr><th>{% trans "Tecnología" %}</th><th>{% trans "Apuntes" %}</th><th>{% trans "Coste" %}</th></tr></thead>
+  <thead><tr><th>{% if es_staff %}{% trans "Tecnología" %}{% else %}{% trans "Categoría" %}{% endif %}</th>{% if es_staff %}<th>{% trans "Apuntes" %}</th>{% endif %}<th>{% trans "Coste" %}</th></tr></thead>
   <tbody>
   {% for f in filas %}
-    <tr><td>{{ f.nombre }}</td><td>{{ f.apuntes }}</td><td>{{ f.eur|floatformat:2 }} €</td></tr>
+    <tr><td>{{ f.nombre }}</td>{% if es_staff %}<td>{{ f.apuntes }}</td>{% endif %}<td>{{ f.eur|floatformat:2 }} €</td></tr>
   {% empty %}
     <tr><td colspan="3" class="hint">{% trans "Sin gastos registrados este mes." %}</td></tr>
   {% endfor %}
   </tbody>
-  <tfoot><tr><th>{% trans "Total gastado" %}</th><th></th><th>{{ total|floatformat:2 }} €</th></tr></tfoot>
+  <tfoot><tr><th>{% trans "Total gastado" %}</th>{% if es_staff %}<th></th>{% endif %}<th>{{ total|floatformat:2 }} €</th></tr></tfoot>
 </table>
-{# 5.23-A (orden de David): la GPU de Runpod, con sus fallos a la vista. #}
-{% if gpu_ok or gpu_fallos %}
+{# 5.23-A (orden de David): la GPU de Runpod, con sus fallos a la vista — #}
+{# desde el 6.7, a la vista DEL STAFF. #}
+{% if es_staff and gpu_ok or es_staff and gpu_fallos %}
 <p class="hint gpu-contador">{% trans "GPU de Runpod este mes" %}: <strong>{{ gpu_ok }}</strong> {% trans "trabajos completados" %} · <strong>{{ gpu_fallos }}</strong> {% trans "fallidos (cayeron a la CPU)" %}</p>
 {% endif %}
 

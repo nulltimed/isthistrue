@@ -12,6 +12,8 @@ urlpatterns = [
     path('verify/resend/', views.resend_verification, name='resend_verification'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('settings/', views.settings_view, name='account_settings'),
+    path('tour/visto/', views.tour_done, name='tour_done'),  # 6.7
+
     # 5.0-E: la cuenta completa — contraseñas, email, datos, 2FA.
     path('password/olvidada/', views.PasswordResetViewES.as_view(), name='password_reset'),
     path('password/olvidada/enviada/',

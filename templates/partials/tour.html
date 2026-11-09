@@ -1,0 +1,24 @@
+{% load i18n static %}
+{# 6.7 (orden de David, 2026-11-09): «Prepara un guión dirigido interactivo en #}
+{# la web para el usuario a@a.com para la próxima vez que se loguee». Un globo #}
+{# fijo lleva al invitado de página en página; termina o se salta con un POST #}
+{# a tour_done y no vuelve a aparecer. El email se cambia en Panel → Ajustes. #}
+<ol id="tour-pasos" hidden data-done-url="{% url 'tour_done' %}" data-csrf="{{ csrf_token }}">
+  <li data-ruta="/" data-sel=".cta-hero">{% trans "Bienvenido al recorrido. Esta es la portada: se pega el enlace de un vídeo y el sistema extrae y verifica sus afirmaciones una a una. Los votos de la comunidad (siempre gratuitos) deciden qué se analiza a fondo." %}</li>
+  <li data-ruta="/" data-sel=".bulo-semana">{% trans "El escaparate de la portada: el bulo de la semana, con su veredicto y su cadena de origen. Rota solo cada semana." %}</li>
+  <li data-ruta="{{ tour_ficha_url }}" data-sel=".origen">{% trans "La ficha de una afirmación: el veredicto con sus fuentes, el historial público de versiones y la cadena que muestra dónde nació y dónde se torció el mensaje." %}</li>
+  <li data-ruta="/foro/" data-sel="h1">{% trans "El foro: cada vídeo tiene su hilo y cada frase se puede debatir y votar." %}</li>
+  <li data-ruta="/creditos/" data-sel="h1">{% trans "Los créditos: lo único que se vende es inmediatez (adelantar un análisis, pedir una cadena). Los veredictos son públicos siempre. La compra se encenderá cuando exista la sociedad." %}</li>
+  <li data-ruta="/servicios/" data-sel="h1">{% trans "El escaparate para medios y empresas que operará la sociedad: API con clave, dossieres a medida, badge embebible y dataset abierto." %}</li>
+  {% if user.is_staff %}<li data-ruta="/panel/settings/" data-sel="h1">{% trans "Y el panel de mando: presupuesto, modelos, ajustes y bandejas de revisión. Fin del recorrido — gracias por la visita." %}</li>
+  {% else %}<li data-ruta="/quienes-somos/" data-sel="h1">{% trans "Y quiénes somos: el método, las correcciones y la transparencia, por escrito. Fin del recorrido — gracias por la visita." %}</li>{% endif %}
+</ol>
+<div id="tour-globo" hidden>
+  <p id="tour-texto"></p>
+  <div class="tour-botones">
+    <button type="button" id="tour-saltar" class="mini" data-tip="{% trans 'Cierra el recorrido para siempre; la web queda tal cual.' %}">{% trans "Saltar" %}</button>
+    <button type="button" id="tour-ir" data-tip="{% trans 'Te lleva a la página de este paso del recorrido.' %}">{% trans "Llévame" %}</button>
+    <button type="button" id="tour-sig" data-tip="{% trans 'Pasa al siguiente paso del recorrido.' %}">{% trans "Siguiente" %} →</button>
+  </div>
+</div>
+<script src="{% static 'js/tour.js' %}" defer></script>

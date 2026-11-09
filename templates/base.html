@@ -58,7 +58,7 @@
     <span>{% trans "Este mes" %}: <strong>{{ quota_banner.monthly_spent|floatformat:2 }}/{{ quota_banner.monthly_cap|floatformat:0 }} €</strong></span>
   </div>
   <div class="qb-message">
-    <a href="{% url 'spending' %}" data-tip="{% trans 'Cada céntimo del proyecto, apunte a apunte: el libro de gastos es público.' %}">{% trans "Gasto en directo: el libro es público." %}</a>
+    <a href="{% url 'spending' %}" data-tip="{% trans 'El gasto real del proyecto, por categorías y en euros: el libro es público.' %}">{% trans "Gasto en directo: el libro es público." %}</a>
     <a class="hint" href="{% url 'creditos' %}" data-tip="{% trans 'Los créditos compran inmediatez: adelantar un análisis o pedir un rastreo. El análisis normal sigue siendo gratuito.' %}">{% trans "¿Prisa? Mira los créditos." %}</a>
   </div>
 </div>
@@ -88,4 +88,6 @@
   <a href="{% url 'rss_verdicts' %}">RSS</a> ·
   <a href="https://github.com/nulltimed/isthistrue" rel="noopener">AGPL-3.0</a>
 </footer>
+{# 6.7: el recorrido guiado del invitado (context processor tour_guiado). #}
+{% if tour_activo %}{% include 'partials/tour.html' %}{% endif %}
 </body></html>

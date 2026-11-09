@@ -105,6 +105,8 @@ SETTINGS_DEF = [
      'Máximo de altas que reciben el regalo cada día. Alcanzado el tope, las siguientes cuentas se crean igual, sin créditos.', 'num'),
     ('b2b_contact_email', 'Correo de contacto B2B (/servicios/)',
      'El correo que ve quien quiere un dossier, el dataset a medida o un acuerdo. Vacío: la página remite al formulario de la API.', 'text'),
+    ('tour_email', 'Recorrido guiado (email del invitado)',
+     'Al siguiente login de la cuenta con este email, la web le enseña el recorrido paso a paso (portada → ficha con cadena → foro → créditos → servicios → panel). Se apaga solo al terminarlo o saltarlo. Vacío = nadie.', 'text'),
     ('deep_paid_credits', 'Créditos del reanálisis profundo (por frase)',
      'Lo que paga un usuario por relanzar YA una frase con el modelo premium, sin esperar los 5 votos. Una sola vez por frase; pagan la revisión, nunca el resultado.', 'num'),
     ('api_free_daily', 'API: peticiones/día de la clave gratuita',

@@ -2109,6 +2109,17 @@ def spending_page(request, ym=None):
                'assemblyai': 'AssemblyAI — transcripción y voces',
                'runpod': 'Runpod — GPU de audio',
                'brevo': 'Brevo — emails'}
+    # 6.7 (orden de David, 2026-11-09, literal: «ahora es una empresa. Cierta
+    # transparencia, pero eliminemos los puntos más complicados de los gastos
+    # que se publican»): el PÚBLICO ve categorías y totales en euros reales;
+    # las marcas del stack, el recuento de apuntes y la salud de la GPU quedan
+    # para staff (el detalle fino sigue en /panel/gastos/).
+    CATEGORIAS = {'anthropic': 'Análisis con inteligencia artificial',
+                  'qwen': 'Análisis con inteligencia artificial',
+                  'assemblyai': 'Transcripción y separación de voces',
+                  'runpod': 'Infraestructura de cálculo',
+                  'brevo': 'Correo'}
+    es_staff = request.user.is_authenticated and request.user.is_staff
     hoy = tz.localdate()
     actual = hoy.strftime('%Y-%m')
     ym = ym or actual
@@ -2121,9 +2132,9 @@ def spending_page(request, ym=None):
     total = 0.0
     for e in CostEntry.objects.filter(created_at__year=year,
                                       created_at__month=month):
-        clave = e.provider
-        filas.setdefault(clave, {'nombre': NOMBRES.get(clave, clave),
-                                 'eur': 0.0, 'apuntes': 0})
+        clave = e.provider if es_staff else CATEGORIAS.get(e.provider, 'Otros')
+        nombre = NOMBRES.get(e.provider, e.provider) if es_staff else clave
+        filas.setdefault(clave, {'nombre': nombre, 'eur': 0.0, 'apuntes': 0})
         filas[clave]['eur'] += float(e.eur)
         filas[clave]['apuntes'] += 1
         total += float(e.eur)
@@ -2135,7 +2146,7 @@ def spending_page(request, ym=None):
     from .costs import gpu_jobs_month
     gpu_ok, gpu_fallos = gpu_jobs_month(year, month)
     return render(request, 'analysis/gastos.html', {
-        'ym': ym, 'es_actual': ym == actual,
+        'ym': ym, 'es_actual': ym == actual, 'es_staff': es_staff,   # 6.7
         'gpu_ok': gpu_ok, 'gpu_fallos': gpu_fallos,
         'filas': filas.values(), 'total': total, 'donado': donado,
         # 5.5-B: el objetivo es el presupuesto base del panel (ver banner)

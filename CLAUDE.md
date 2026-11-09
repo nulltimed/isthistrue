@@ -416,3 +416,20 @@ veredictos no se venden — se vende inmediatez y servicio, jamas el resultado.
   (escaparate B2B; contacto en `b2b_contact_email`, vacio remite al formulario /api/),
   /datos/ (CSV CC-BY-SA solo con cuenta). Patron bilingue de las legales (wrapper +
   legal/en/). JAMAS identidad ni domicilio del titular en ellas.
+
+## Lecciones de la serie 6.7 (2026-11-09)
+- **El libro de gastos publico va POR CATEGORIAS** (orden de David, literal: «ahora es
+  una empresa. Cierta transparencia, pero eliminemos los puntos mas complicados de los
+  gastos que se publican»): el publico ve categorias y euros; las marcas del stack, el
+  recuento de apuntes y la salud de la GPU, SOLO staff (detalle fino en /panel/gastos/).
+  Los textos que prometian «apunte a apunte» quedaron en «por categorias y totales
+  mensuales» (base, transparencia, creditos, quienes-somos, ES+EN). Test de pase42
+  enmendado con el literal.
+- **El email de verificacion anuncia el credito de regalo** (si lo hubo); el de
+  bienvenida ya no pide donaciones (reliquia pre-6.1 cazada y corregida).
+- **Recorrido guiado del invitado**: `tour_email` en el panel (a@a.com de fabrica, orden
+  de David); al siguiente login de ese email, partials/tour.html + static/js/tour.js
+  llevan de pagina en pagina (portada → bulo → ficha con cadena → foro → creditos →
+  servicios → panel si es staff / quienes-somos si no). Progreso en localStorage;
+  terminar o saltar hace POST a /accounts/tour/visto/ (tour_done en notify_prefs, sin
+  migracion) y no vuelve. Context processor `tour_guiado` en settings.

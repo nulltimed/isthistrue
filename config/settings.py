@@ -80,6 +80,7 @@ TEMPLATES = [{
                 'config.context_processors.web_privada',   # 5.31   # logo por DOMINIO (4.2 C6)
         'config.context_processors.unread_notifications',  # campana (4.2 D2)
         'config.context_processors.pendientes_aprobacion',  # 5.23-E: staff
+        'config.context_processors.tour_guiado',  # 6.7: recorrido del socio
     ]},
 }]
 WSGI_APPLICATION = 'config.wsgi.application'
@@ -285,6 +286,8 @@ SETTING_DEFAULTS = {k: os.getenv(k.upper(), v) for k, v in {
     'welcome_credits': '1',
     'welcome_daily_max': '20',
     'b2b_contact_email': '',
+    # 6.7 (orden de David): recorrido guiado para su socio al siguiente login.
+    'tour_email': 'a@a.com',
     'origin_trace_credits': '1',    # coste en creditos del rastreo bajo demanda
     'deep_paid_credits': '2',       # 6.1-f (David): reanalisis profundo YA, por frase
     'api_free_daily': '500',        # 6.2: peticiones/dia de una clave API gratuita

@@ -5186,15 +5186,28 @@ class Parche53_Serie(TestCase):
         self.assertEqual(cap_despues - cap_antes, 10.0)
 
     def test_la_pagina_de_gastos_existe_con_datos_reales(self):
+        # ENMIENDA 6.7 (orden de David, 2026-11-09, literal: «ahora es una
+        # empresa. Cierta transparencia, pero eliminemos los puntos más
+        # complicados de los gastos que se publican»): el público ve
+        # CATEGORÍAS y euros; las marcas del stack, solo staff.
         from apps.analysis.costs import record
         record('qwen', 'analisis', 0.05)
         r = self.client.get('/gastos/')
         self.assertEqual(r.status_code, 200)
         html = r.content.decode()
-        self.assertIn('Qwen', html)
+        self.assertNotIn('Qwen', html)                 # la marca ya no se publica
+        self.assertIn('Análisis con inteligencia artificial', html)
         self.assertIn('0,05', html.replace('0.05', '0,05'))
         self.assertEqual(self.client.get('/gastos/2026-08/').status_code, 200)
         self.assertEqual(self.client.get('/gastos/no-mes/').status_code, 404)
+        # El staff sigue viendo el detalle por tecnología.
+        User = get_user_model()
+        staff = User.objects.create_user(username='staffgastos',
+                                         email='staffgastos@example.org',
+                                         password='x', is_staff=True)
+        self.client.force_login(staff)
+        self.assertIn('Qwen', self.client.get('/gastos/').content.decode())
+        self.client.logout()
 
     def test_el_banner_enlaza_a_gastos(self):
         html = self.client.get('/').content.decode()

@@ -72,3 +72,25 @@ def web_privada(request):
     except Exception:
         return {'web_privada': False}
 
+
+
+def tour_guiado(request):
+    """6.7 (orden de David, 2026-11-09): recorrido guiado por la web para el
+    usuario invitado (su socio) — se activa en su siguiente login y se apaga
+    solo al terminarlo o saltarlo. El email vive en Panel → `tour_email`."""
+    try:
+        u = getattr(request, 'user', None)
+        if not (u and u.is_authenticated):
+            return {}
+        from apps.panel.models import SystemSetting
+        email = (SystemSetting.get_str('tour_email', '') or '').strip().lower()
+        if not email or (u.email or '').lower() != email:
+            return {}
+        if (getattr(u, 'notify_prefs', None) or {}).get('tour_done'):
+            return {}
+        from apps.analysis.views import _bulo_destacado
+        bulo = _bulo_destacado()
+        return {'tour_activo': True,
+                'tour_ficha_url': f'/wiki/claim/{bulo.slug}/' if bulo else '/wiki/'}
+    except Exception:
+        return {}
