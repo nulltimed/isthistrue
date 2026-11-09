@@ -1,0 +1,92 @@
+"""Serie 6.16 (orden de David, 2026-11-09, 12:17, literal: «Hace falta mostrar
+a los usuarios un nivel de proceso cuando se analiza un vídeo. Impleméntalo»).
+
+La barra de etapas del análisis vive dentro de #post-body: las tareas escriben
+el hito en Post.progress_note, el hito forma parte de la huella del vigía, y
+el modo vivo de la 6.14 re-pinta el cuerpo en cada paso — el usuario ve
+avanzar «descargando → voces → sentido → barrido → verificando» sin recargar.
+
+Candados:
+- la barra se pinta en los estados en marcha y NO en los terminales;
+- la huella CAMBIA cuando cambia el hito (sin esto el vivo no se entera);
+- toda cadena de hito/etapa está en el catálogo inglés (el candado de
+  plantillas no ve los {% trans variable %}: regla de los choices, a mano).
+"""
+import re
+from pathlib import Path
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from apps.analysis.models import Post
+from apps.analysis.views import _huella_analisis, _progreso_analisis
+
+User = get_user_model()
+RAIZ = Path(__file__).resolve().parent.parent
+
+
+class NivelDeProcesoDelAnalisis(TestCase):
+    def setUp(self):
+        self.u = User.objects.create_user(username='u616', email='u616@example.org',
+                                          password='x')
+
+    def _post(self, **kw):
+        kw.setdefault('url', 'https://youtu.be/s616')
+        return Post.objects.create(author=self.u, title='Proceso', **kw)
+
+    def test_la_barra_se_pinta_mientras_se_analiza(self):
+        p = self._post(status='CHEAP_RUNNING',
+                       progress_note='Separando las voces (es la parte más lenta)…')
+        html = self.client.get(f'/post/{p.pk}/', follow=True).content.decode()
+        self.assertIn('progreso-analisis', html)
+        self.assertIn('pa-activo', html)
+        self.assertIn('Separando las voces', html)
+
+    def test_la_barra_no_se_pinta_en_un_post_terminado(self):
+        p = self._post(status='DONE')
+        html = self.client.get(f'/post/{p.pk}/', follow=True).content.decode()
+        self.assertNotIn('progreso-analisis', html)
+
+    def test_el_hito_cambia_la_huella_del_vigia(self):
+        """Sin esto, el modo vivo (6.14) no se entera de los hitos."""
+        p = self._post(status='CHEAP_RUNNING')
+        h1, _ = _huella_analisis(p)
+        p.progress_note = 'Separando las voces (es la parte más lenta)…'
+        p.save(update_fields=['progress_note'])
+        h2, texto = _huella_analisis(p)
+        self.assertNotEqual(h1, h2)
+        self.assertIn('Separando las voces', texto)   # el bocadillo canta el hito
+
+    def test_las_etapas_cubren_los_estados_en_marcha(self):
+        for status, etapa in (('NEW', 1), ('CHEAP_RUNNING', 2),
+                              ('PENDING_VALIDATION', 3), ('FULL_QUEUED', 3),
+                              ('AWAITING_BUDGET', 3), ('FULL_RUNNING', 4)):
+            p = Post(status=status)
+            prog = _progreso_analisis(p)
+            self.assertIsNotNone(prog, status)
+            activo = [i for i, (_n, e) in enumerate(prog['pasos'], 1) if e == 'activo']
+            self.assertEqual(activo, [etapa], status)
+        self.assertIsNone(_progreso_analisis(Post(status='DONE')))
+        self.assertIsNone(_progreso_analisis(Post(status='FAILED')))
+
+    def test_la_espera_por_presupuesto_ensena_el_atajo_de_creditos(self):
+        """Revenue (regla permanente): la espera enseña los créditos."""
+        prog = _progreso_analisis(Post(status='AWAITING_BUDGET'))
+        self.assertTrue(prog['adelantable'])
+        self.assertFalse(_progreso_analisis(Post(status='CHEAP_RUNNING'))['adelantable'])
+
+    def test_toda_cadena_de_hito_y_etapa_esta_en_el_catalogo(self):
+        """Los {% trans variable %} no los ve el candado de plantillas (leccion
+        de los choices, 4.4-B): este candado barre las cadenas de _nota() y de
+        las etapas y exige su msgid en el .po."""
+        po = (RAIZ / 'locale/en/LC_MESSAGES/django.po').read_text(encoding='utf-8')
+        catalogo = set(re.findall(r'^msgid "(.+)"$', po, re.M))
+        tareas = (RAIZ / 'apps/analysis/tasks.py').read_text(encoding='utf-8')
+        notas = [n for n in re.findall(r"_nota\(post, '([^']+)'\)", tareas) if n]
+        self.assertGreaterEqual(len(notas), 5, 'el barrido de _nota() no vio nada')
+        vistas = (RAIZ / 'apps/analysis/views.py').read_text(encoding='utf-8')
+        bloque = re.search(r"nombres = \[(.*?)\]", vistas, re.S).group(1)
+        etapas = re.findall(r"'([^']+)'", bloque)
+        self.assertEqual(len(etapas), 4)
+        for s in notas + etapas:
+            self.assertIn(s, catalogo, f'«{s}» sin traducir en el .po')

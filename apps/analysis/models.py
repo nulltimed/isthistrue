@@ -252,6 +252,11 @@ class Post(models.Model):
     # y no en AnalysisRequest porque el analisis ocurre UNA vez por post, mientras
     # que solicitantes puede haber muchos: N relojes para un solo cronometraje.
     cheap_started_at = models.DateTimeField(null=True, blank=True)
+    # 6.16 (orden de David): «hace falta mostrar a los usuarios un nivel de
+    # proceso cuando se analiza un video» — el HITO actual del analisis,
+    # escrito por las tareas y pintado en vivo por la barra de progreso
+    # (el vigia v2 intercambia el cuerpo cuando cambia: forma parte de la huella).
+    progress_note = models.CharField(max_length=80, blank=True, default='')
     # 4.10-A: el trabajo remoto de AssemblyAI en vuelo (webhook). Vacio = ninguno.
     aai_job_id = models.CharField(max_length=64, blank=True, default='')
     cheap_finished_at = models.DateTimeField(null=True, blank=True)

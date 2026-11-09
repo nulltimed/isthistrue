@@ -4,6 +4,9 @@
 
   {% include 'partials/post_status.html' %}
 
+  {# 6.16: nivel de proceso del análisis, en vivo (orden de David). #}
+  {% include 'partials/progreso_analisis.html' %}
+
   {% if post.status == 'AWAITING_BUDGET' %}
     {# 4.3-F (David): ni muro ni rechazo — cola con apadrinamiento. #}
     <div class="validation queued">

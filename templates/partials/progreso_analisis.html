@@ -1,0 +1,20 @@
+{% load i18n %}
+{# 6.16 (orden de David): «hace falta mostrar a los usuarios un nivel de proceso #}
+{# cuando se analiza un vídeo». Vive DENTRO de #post-body: el vigía v2 (6.14) lo #}
+{# re-pinta en vivo con cada hito, sin recargar. Las cadenas, al .po a mano. #}
+{% if progreso %}
+<section class="progreso-analisis" data-tip="{% trans 'Estado del análisis en vivo: esta barra avanza sola, sin recargar la página.' %}">
+  <ol class="pa-pasos">
+    {% for paso in progreso.pasos %}
+      <li class="pa-{{ paso.1 }}"><span class="pa-punto">{% if paso.1 == 'hecho' %}✓{% else %}{{ forloop.counter }}{% endif %}</span> {% trans paso.0 %}</li>
+    {% endfor %}
+  </ol>
+  {% if progreso.nota %}<p class="pa-nota">⏳ {% trans progreso.nota %}</p>{% endif %}
+  {% if progreso.inicio %}
+    <p class="pa-tiempo">{% trans "En marcha desde hace" %} {{ progreso.inicio|timesince }}{% if progreso.estimado_min %} · {% trans "estimación total" %} ~{{ progreso.estimado_min }} min{% endif %}</p>
+  {% endif %}
+  {% if progreso.adelantable %}
+    <p class="pa-adelantar">⚡ {% trans "¿Prisa? Los créditos adelantan este análisis (el botón está justo debajo)." %}</p>
+  {% endif %}
+</section>
+{% endif %}

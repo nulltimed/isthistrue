@@ -3558,3 +3558,43 @@ msgstr "Amount"
 
 msgid "Método"
 msgstr "Method"
+
+# ---- Serie 6.16: nivel de proceso del analisis (barra en vivo) ----
+msgid "Estado del análisis en vivo: esta barra avanza sola, sin recargar la página."
+msgstr "Live analysis status: this bar moves on its own, no page reload needed."
+
+msgid "En cola"
+msgstr "Queued"
+
+msgid "Escucha: transcripción y voces"
+msgstr "Listening: transcription and voices"
+
+msgid "Turno de verificación"
+msgstr "Waiting for verification turn"
+
+msgid "Verificación con fuentes"
+msgstr "Verification with sources"
+
+msgid "En marcha desde hace"
+msgstr "Running for"
+
+msgid "estimación total"
+msgstr "total estimate"
+
+msgid "¿Prisa? Los créditos adelantan este análisis (el botón está justo debajo)."
+msgstr "In a hurry? Credits can fast-track this analysis (the button is right below)."
+
+msgid "Descargando el vídeo y transcribiendo el audio…"
+msgstr "Downloading the video and transcribing the audio…"
+
+msgid "Separando las voces (es la parte más lenta)…"
+msgstr "Separating the voices (the slowest part)…"
+
+msgid "Dando sentido a la conversación (¿quién dice qué?)…"
+msgstr "Making sense of the conversation (who says what?)…"
+
+msgid "Primer barrido: afirmaciones, señales y clickbait…"
+msgstr "First sweep: claims, signals and clickbait…"
+
+msgid "Verificando las afirmaciones una a una…"
+msgstr "Verifying the claims one by one…"

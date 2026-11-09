@@ -19,6 +19,17 @@ logger = logging.getLogger('analysis.tasks')
 # 4.3-A.8: estos dos numeros eran el coste FIJO de cualquier post, durase 3 min o
 # una hora. Se conservan como SUELO (un video corto no cuesta menos que esto) y el
 # precio real lo calcula services.cost_cheap_eur/cost_full_eur por minutos.
+def _nota(post, texto):
+    """6.16 (orden de David): hito visible del analisis. La barra de progreso lo
+    pinta y, como forma parte de la huella del vigia, el cuerpo del post se
+    intercambia EN VIVO en cuanto cambia (6.14). Fail-soft: jamas tumba la tarea."""
+    try:
+        post.progress_note = texto
+        post.save(update_fields=['progress_note'])
+    except Exception:                             # regla 5.7: nunca en silencio
+        logger.warning('No se pudo escribir el hito del post %s', post.pk)
+
+
 COST_CHEAP_EUR = 0.05  # suelo del clasificador Sonnet; en mock tambien se contabiliza: INTENCIONAL (permite probar banner y candados sin gastar)
 COST_FULL_EUR = 0.07  # suelo de los veredictos
 COST_OPUS_RESCAN_EUR = 0.40  # Opus: 5-7x Sonnet; solo posts muy votados, 1 vez
@@ -68,6 +79,7 @@ def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
         # portada y campana ("suscrito a 10 posts, saber cual habla de un plumazo").
         import time as _time
         _t0 = _time.monotonic()
+        _nota(post, 'Descargando el vídeo y transcribiendo el audio…')   # 6.16
         try:
             segments, audio_path = _transcribe_first_tranche(
                 post, tmpdir, skip_aai=skip_aai)
@@ -81,6 +93,7 @@ def run_cheap_phase(self, post_id, skip_charge=False, skip_aai=False):
         # hay — y esa pista es lo que pyannote necesita (docs/47: sin pista fundia
         # a dos hablantes y sacaba un tercero de los restos). Coste anadido: cero.
         _date_and_hint(post, ' '.join(s.get('text', '') for s in segments))
+        _nota(post, 'Separando las voces (es la parte más lenta)…')   # 6.16
         # Diarizacion ANTES de crear segmentos: hace falta el hablante para agrupar.
         _t1 = _time.monotonic()
         if segments and segments[0].get('speaker_label'):
@@ -189,6 +202,7 @@ def _after_segments(post):
     existen los segmentos. La usan run_cheap_phase (via sincrona) y
     resume_after_aai (cuando suena el timbre)."""
     from apps.agents import sweep, algorithm
+    _nota(post, 'Dando sentido a la conversación (¿quién dice qué?)…')   # 6.16
     # 4.4-I: la pasada de sentido, ANTES del barrido (las senales se anclan a la
     # frase definitiva) y ANTES de proponer nombres (las inciertas no cuentan).
     try:
@@ -205,6 +219,7 @@ def _after_segments(post):
     generate_name_proposals.delay(post.pk)  # OCR de rotulos + contexto -> candidatos
 
     # Barrido universal Haiku: claims + señales + clickbait + adulto
+    _nota(post, 'Primer barrido: afirmaciones, señales y clickbait…')   # 6.16
     result = sweep.run(post)
     post.is_adult = post.is_adult or result['is_adult']
     if result['is_adult'] and not post.adult_flag_source:
@@ -238,6 +253,7 @@ def _after_segments(post):
     archive_wayback.delay(post.pk)  # preservacion: TODO post (decidido)
     post.cheap_finished_at = timezone.now()
     post.save(update_fields=['cheap_finished_at'])
+    _nota(post, '')   # 6.16: hito fuera — el estado ya cuenta la historia
     # 5.27-A (orden de David, 2026-09-11): el piloto automatico del 4.4-B SE VA.
     # Ningun video pasa solo al trabajo 2: hacen falta los votos «Pedir el
     # analisis con fuentes» Y el minimo de hablantes identificados
@@ -526,6 +542,7 @@ def run_full_analysis(self, post_id, skip_charge=False):
     post.status = 'FULL_RUNNING'
     post.full_started_at = timezone.now()
     post.save(update_fields=['status', 'full_started_at'])
+    _nota(post, 'Verificando las afirmaciones una a una…')   # 6.16
     # 4.4-G (B.2, encargo del operador): la rama de lotes la decide el PANEL
     # (delivery_for), no una variable del .env que mandaba por encima sin que
     # nadie lo viera. Hay candado: ningun modulo de apps/ lee USE_BATCH_API.
@@ -553,6 +570,7 @@ def run_full_analysis(self, post_id, skip_charge=False):
     post.status = 'DONE'
     post.full_finished_at = timezone.now()
     post.save(update_fields=['status', 'full_finished_at'])
+    _nota(post, '')   # 6.16
     notify_post_event(post, 'analysis', 'Veredictos publicados')
     return 'done'
 

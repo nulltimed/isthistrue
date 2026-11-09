@@ -694,6 +694,8 @@ def _post_context(request, post):
         'my_subscription': (post.subscriptions.filter(user=u).first() if u else None),
         # 5.7-A: la huella del analisis que vigila el navegador (vigia_post.js)
         'estado_analisis': _huella_analisis(post)[0],
+        # 6.16: la barra de etapas del analisis (None = no se pinta)
+        'progreso': _progreso_analisis(post),
         # 5.22 (orden de David): el semaforo del post bajo el titulo, clicable.
         'semaforo_post': _semaforo_del_post(post),
     }
@@ -733,14 +735,50 @@ def _huella_analisis(post):
     ultima = (ClaimVersion.objects
               .filter(claim__appearances__segment__post=post)
               .order_by('-pk').select_related('claim').first())
-    huella = f'{post.status}:{ultima.pk if ultima else 0}:' \
+    # 6.16: el HITO (progress_note) forma parte de la huella — cada paso del
+    # analisis dispara el intercambio en vivo del cuerpo (6.14) y la barra avanza.
+    huella = f'{post.status}:{post.progress_note}:{ultima.pk if ultima else 0}:' \
              f'{post.transcript_segments.count()}'
     if ultima:
         texto = (f'Verificación actualizada ({ultima.claim.get_color_display()}): '
                  f'«{(ultima.claim.title or ultima.claim.text_original)[:70]}»')
+    elif post.progress_note:
+        texto = post.progress_note   # 6.16: el bocadillo canta el hito
     else:
         texto = f'El análisis avanzó: {post.get_status_display()}'
     return huella, texto
+
+
+def _progreso_analisis(post):
+    """6.16 (orden de David, literal: «hace falta mostrar a los usuarios un
+    nivel de proceso cuando se analiza un vídeo»): la barra de etapas del
+    analisis. None cuando no hay nada en marcha (el cuerpo no la pinta).
+
+    Cuatro etapas de cara al usuario: cola -> escucha (transcripcion+voces) ->
+    turno de verificacion (validacion/cola/presupuesto) -> verificacion.
+    Las cadenas van al .po A MANO (son de interfaz; regla de los choices)."""
+    ETAPA_POR_STATUS = {
+        'NEW': 1, 'CHEAP_RUNNING': 2, 'PENDING_VALIDATION': 3,
+        'FULL_QUEUED': 3, 'AWAITING_BUDGET': 3, 'FULL_RUNNING': 4,
+    }
+    actual = ETAPA_POR_STATUS.get(post.status)
+    if not actual:
+        return None
+    nombres = ['En cola', 'Escucha: transcripción y voces',
+               'Turno de verificación', 'Verificación con fuentes']
+    pasos = []
+    for i, nombre in enumerate(nombres, start=1):
+        estado = 'hecho' if i < actual else ('activo' if i == actual else 'pendiente')
+        pasos.append((nombre, estado))
+    inicio = {2: post.cheap_started_at, 4: post.full_started_at}.get(actual)
+    # 4.4-F medido: analizar cuesta ~2,3x la duracion del video (fase barata).
+    estimado_min = None
+    if actual == 2 and post.duration_seconds:
+        estimado_min = max(1, round(post.duration_seconds * 2.3 / 60))
+    return {'pasos': pasos, 'nota': post.progress_note or '',
+            'inicio': inicio, 'estimado_min': estimado_min,
+            # Revenue (regla permanente): la espera enseña el atajo de creditos.
+            'adelantable': post.status == 'AWAITING_BUDGET'}
 
 
 def post_estado(request, pk):

@@ -531,3 +531,18 @@ expediente CORTO — el motivo real esta por cazar; el log nuevo lo dira.)
   desde uno, o el CI chilla.
 - El nombre de una shared_task lo da el MÓDULO QUE LA DEFINE, no el que la importa:
   el puente registra apps.forum.moderation.X, que es lo que web y beat ya enviaban.
+
+## Lecciones de la serie 6.16 (2026-11-09) — nivel de proceso del análisis
+- **Orden de David, literal: «Hace falta mostrar a los usuarios un nivel de proceso
+  cuando se analiza un vídeo»**: barra de 4 etapas (cola → escucha → turno →
+  verificación) en partials/progreso_analisis.html, DENTRO de #post-body. El hito
+  fino vive en Post.progress_note (migración 0026), lo escriben las tareas con
+  _nota(post, '...') y FORMA PARTE de la huella del vigía: cada hito dispara el
+  intercambio en vivo de la 6.14 — la barra avanza sola, sin recargar.
+- **Toda cadena nueva de _nota() o de las etapas va al .po A MANO** (los
+  {% trans variable %} no los ve el candado de plantillas — regla de los choices).
+  Candado propio: test_serie616 barre _nota() y la lista de etapas contra el catálogo.
+- Revenue: la etapa «Turno de verificación» en AWAITING_BUDGET enseña el atajo de
+  créditos (votos gratis y veredictos invendibles, intactos).
+- _nota() es fail-soft y se limpia ('') al cerrar cada fase: un hito rancio en un
+  estado terminal no se pinta (la barra solo existe en estados en marcha).
