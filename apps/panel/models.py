@@ -9,7 +9,8 @@ class SystemSetting(models.Model):
     votes_to_validate(5), votes_to_rescue(10), validation_window_days(3),
     startup_mode_min_users(50), donation_goal_eur, lang_es(1), lang_en(1)."""
     key = models.CharField(max_length=60, unique=True)
-    value = models.CharField(max_length=200)
+    # 6.30: TextField — la mini-guia del moderador (HTML) se edita en el panel.
+    value = models.TextField()
 
     @classmethod
     def get_int(cls, key, default=None):

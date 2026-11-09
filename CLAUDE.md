@@ -672,3 +672,14 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
 - 🔴 Trampa propia cazada en frío: insertar código «encima de def X» puede partir un
   DECORADOR de su función (@staff_member_required quedó pegado a una constante y el
   compileall chilló). Tras toda inserción junto a un def, mirar la línea anterior.
+
+## Lecciones de la serie 6.30 (2026-11-09, 21:53) — la guía del mod, editable en HTML
+- Orden de David: «Poder editarla yo, con caja de texto enriquecido html» →
+  mod_guide_html en Ajustes (kind nuevo 'html': textarea grande; VACÍO = volver a la
+  de fábrica, al revés que los num donde vacío = no tocar). El email sale con
+  html_message + strip_tags de respaldo.
+- **SystemSetting.value era CharField(200)**: migración panel/0008 a TextField (una
+  guía HTML no cabía). Al añadir un kind al panel, mirar SIEMPRE el max_length del
+  modelo antes que la plantilla.
+- Álvaro (a@a.com) ya es superusuario: no necesita nombramiento — el circuito
+  email-guía lo estrenará el primer MOD real.

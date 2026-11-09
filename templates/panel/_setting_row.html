@@ -4,6 +4,12 @@
   <span class="setting-control"><input type="checkbox" class="toggle" id="s-{{ r.key }}" name="{{ r.key }}" {% if r.value != '0' %}checked{% endif %}><label class="toggle-track" for="s-{{ r.key }}" aria-hidden="true"></label></span>
   <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
     <p class="hint">{{ r.hint }}</p></div>
+  {% elif r.kind == 'html' %}
+  {# 6.30: caja grande para contenido HTML (p. ej. la mini-guia del moderador). #}
+  <span class="setting-control">{% icon 'search' 18 %}</span>
+  <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>
+    <p class="hint">{{ r.hint }}</p>
+    <textarea id="s-{{ r.key }}" name="{{ r.key }}" rows="12" style="width:100%;font-family:monospace" placeholder="(vacío = la versión de fábrica)">{{ r.value }}</textarea></div>
   {% elif r.kind == 'text' %}
   <span class="setting-control">{% icon 'search' 18 %}</span>
   <div class="setting-text"><label for="s-{{ r.key }}"><strong>{{ r.label }}</strong></label>

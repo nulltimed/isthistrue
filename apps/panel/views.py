@@ -111,6 +111,9 @@ SETTINGS_DEF = [
      'Máximo de altas que reciben el regalo cada día. Alcanzado el tope, las siguientes cuentas se crean igual, sin créditos.', 'num'),
     ('b2b_contact_email', 'Correo de contacto B2B (/servicios/)',
      'El correo que ve quien quiere un dossier, el dataset a medida o un acuerdo. Vacío: la página remite al formulario de la API.', 'text'),
+    # 6.30 (orden de David: «Poder editarla yo, con caja de texto enriquecido html»)
+    ('mod_guide_html', 'Mini-guía del moderador (HTML)',
+     'El email que recibe cada moderador al ser nombrado. Acepta HTML (negritas, listas, enlaces). Vacío = la guía de fábrica escrita en el código.', 'html'),
     ('tour_email', 'Recorrido guiado (email del invitado)',
      'Al siguiente login de la cuenta con este email, la web le enseña el recorrido paso a paso (portada → ficha con cadena → foro → créditos → servicios → panel). Se apaga solo al terminarlo o saltarlo. Vacío = nadie.', 'text'),
     ('deep_paid_credits', 'Créditos del reanálisis profundo (por frase)',
@@ -324,6 +327,10 @@ def _guardar_ajustes(request, claves):
             continue
         if kind == 'bool':
             value = '1' if request.POST.get(key) == 'on' else '0'
+        elif kind == 'html' and key in request.POST:
+            # 6.30: el HTML se guarda tal cual, y VACIO significa «volver a la
+            # version de fabrica» (al reves que los numeros, donde vacio=no tocar).
+            value = request.POST[key].strip()
         elif key in request.POST and request.POST[key].strip():
             value = request.POST[key].strip()
         else:
@@ -503,15 +510,20 @@ Ante la duda, pregunta en el foro de moderación. ¡Gracias por el mando!"""
 
 
 def _email_guia_moderador(target):
-    """6.29: la mini-guia por email al nombrar. Fail-soft y con apunte Brevo."""
+    """6.29: la mini-guia por email al nombrar. 6.30: si David escribio la suya
+    en el panel (mod_guide_html), manda ESA, en HTML, con texto plano de
+    respaldo. Fail-soft y con apunte Brevo."""
     try:
         from django.conf import settings as dj
         from django.core.mail import send_mail
+        from django.utils.html import strip_tags
         from apps.analysis import costs
         from apps.panel.models import SystemSetting
+        html = SystemSetting.get_str('mod_guide_html', '').strip()
+        cuerpo = strip_tags(html) if html else GUIA_MODERADOR
         send_mail('esestocierto? — Eres moderador/a: tu mini-guía',
-                  GUIA_MODERADOR, dj.DEFAULT_FROM_EMAIL, [target.email],
-                  fail_silently=True)
+                  cuerpo, dj.DEFAULT_FROM_EMAIL, [target.email],
+                  html_message=html or None, fail_silently=True)
         costs.record('brevo', 'email',
                      float(SystemSetting.get_str('brevo_eur_per_email', '0') or 0)
                      or 0.0001)

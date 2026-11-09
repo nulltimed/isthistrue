@@ -86,3 +86,46 @@ class NombramientoAvisado(TestCase):
         self.assertEqual(self.user.level, 'CONTRIB')
         self.assertTrue(self.user.notifications.filter(
             text__icontains='etapa como moderador termina').exists())
+
+
+class GuiaEditableDesdeElPanel(TestCase):
+    """6.30 (orden de David: «Poder editarla yo, con caja de texto enriquecido
+    html»): mod_guide_html en Ajustes manda sobre la guia de fabrica y el email
+    sale en HTML con texto plano de respaldo."""
+
+    def setUp(self):
+        from django.core import mail
+        mail.outbox.clear()
+        self.su = User.objects.create_superuser(username='su630',
+                                                email='su630@example.org',
+                                                password='x')
+        self.user = User.objects.create_user(username='nuevo-mod630',
+                                             email='nm630@example.org',
+                                             password='x')
+        self.client.force_login(self.su)
+
+    def test_la_guia_del_panel_manda_y_va_en_html(self):
+        from django.core import mail
+        from apps.panel.models import SystemSetting
+        SystemSetting.objects.update_or_create(
+            key='mod_guide_html',
+            defaults={'value': '<h1>Bienvenido, jefe 630</h1><p>Tus <b>poderes</b>.</p>'})
+        self.client.post('/panel/moderadores/', {'ident': 'nuevo-mod630',
+                                                 'action': 'add'})
+        guia = [m for m in mail.outbox if 'mini-guía' in m.subject][0]
+        self.assertIn('Bienvenido, jefe 630', guia.body)          # plano (strip_tags)
+        self.assertIn('<h1>Bienvenido, jefe 630</h1>',
+                      guia.alternatives[0][0])                     # HTML
+        self.assertEqual(guia.alternatives[0][1], 'text/html')
+
+    def test_sin_fila_manda_la_guia_de_fabrica(self):
+        from django.core import mail
+        self.client.post('/panel/moderadores/', {'ident': 'nuevo-mod630',
+                                                 'action': 'add'})
+        guia = [m for m in mail.outbox if 'mini-guía' in m.subject][0]
+        self.assertIn('VOTO ÚNICO', guia.body)
+
+    def test_la_caja_html_esta_en_ajustes(self):
+        html = self.client.get('/panel/settings/').content.decode()
+        self.assertIn('s-mod_guide_html', html)
+        self.assertIn('<textarea', html)
