@@ -85,7 +85,8 @@ Empieza diciéndome en pocas líneas en qué punto está el proyecto y qué hay 
 1. **Prueba de fuego del circuito en vivo** (postear un vídeo corto y ver barra, voces y
    veredictos aparecer solos). Guion de 5 pasos entregado el 10-nov; sin hacer.
 2. **RunPod: la GPU llevaba apagada desde el 28-sep-2026.** Ver el apartado de abajo.
-   `istt-diarize` sigue con máximo 0 trabajadores: falta que David lo suba a 1.
+   Ya están los dos a máximo 1, pero volverán a 0 tras 7 días sin uso: falta decidir
+   si se pone un chivato o un latido semanal.
 3. Guion de alta de **PayPal Business** y «paquete constitución» cuando Álvaro tenga la SL.
 4. **IFCN**: lista de lo que mirará el evaluador y qué falta (ofrecida, sin respuesta). El
    reloj de 12 meses publicando en abierto no arranca hasta abrir la web.
@@ -98,18 +99,24 @@ Empieza diciéndome en pocas líneas en qué punto está el proyecto y qué hay 
    si su antibots bloquea descargas. Jamás por chat ni en el repo.
 
 ### RunPod — hallazgo del 2026-11-12 (leído de la cuenta con el conector)
+- **La GPU es la SEGUNDA red, no la primera.** La cadena del oído es (decisión de David,
+  4.7-B): AssemblyAI → subtítulos → GPU de RunPod → CPU. La GPU solo trabaja si
+  AssemblyAI está apagado en el panel, falla, o toca su tope mensual (20 € de fábrica).
 - Endpoints: `istt-whisper` (`mxqg9olrlfglni`, transcripción) e `istt-diarize`
   (`fpl2ql0qgk9ao4`, voces, imagen `ghcr.io/nulltimed/istt-diarize:5.23-slim`).
 - El registro de auditoría dice que el 28-sep-2026 RunPod los bajó a **máximo 0
-  trabajadores por inactividad** (regla suya: 7 días sin peticiones). La facturación lo
-  confirma: último gasto en la semana del 7-sep; total histórico 3,03 $. Desde entonces
-  ningún análisis ha pasado por la GPU: el código cae al respaldo sin avisar («la GPU
-  acelera, jamás bloquea»). Qué respaldo lo absorbió (CPU o AssemblyAI) lo dice el log
-  del worker, que desde aquí no se ve.
-- Hecho el 12-nov: `istt-whisper` subido a máximo 1 (comprobado con lectura posterior).
-  El mismo cambio en `istt-diarize` fue denegado por el control de permisos de la sesión:
-  NO se rodeó. Lo sube David en la consola (Serverless → istt-diarize → Max workers = 1).
-- Si el proyecto vuelve a parar más de 7 días, volverá a pasar: mirar `workers.max` al retomar.
+  trabajadores por inactividad** (regla suya: 7 días sin peticiones, y no lo sube solo).
+  Lo más probable es que la inactividad viniera de que AssemblyAI lo absorbía todo; desde
+  aquí no se ve el log del worker ni el libro de gastos para confirmarlo.
+- Riesgo real mientras estuvieron a 0: si AssemblyAI hubiera fallado, cada trabajo habría
+  esperado en una cola sin trabajadores hasta el timeout local (900 s, y se reintenta una
+  vez) antes de caer a CPU. Media hora perdida por etapa, en silencio.
+- Estado a 12-nov 11:46: **los dos a máximo 1** (whisper lo subió el canal; diarize lo
+  subió David en la consola; ambos comprobados con lectura). Mínimo 0: en reposo no cuestan.
+- **Volverán a 0 solos** si pasan otros 7 días sin que la GPU reciba un trabajo, que es lo
+  normal mientras AssemblyAI funcione. Pendiente de decisión de David: chivato o latido.
+- Topes que también mandan: `runpod_monthly_cap_eur` (15 €) y `assemblyai_monthly_cap_eur`
+  (20 €), ambos en el panel y de David.
 - Correo de RunPod del 11-nov, revisado: el apagado de la API REST v1 (15-nov) NO nos afecta
   (usamos `api.runpod.ai/v2/<id>/run`, que no cambia, y GraphQL solo para leer el saldo, que
   RunPod mantiene). El worker fija `runpod>=1.7,<2`: el SDK 2.0 no entra solo. No hay

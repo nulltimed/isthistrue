@@ -702,8 +702,8 @@ abierto (España tiene ≥5 signatarios) — el reloj arranca al abrir la web.
   análisis de noviembre pasó por la GPU y nadie lo vio (facturación de RunPod a cero desde
   mediados de septiembre; el trabajo lo absorbieron la CPU o AssemblyAI, según el caso). Misma familia que 6.11 y 6.15: lo que falla EN CALIENTE
   y con respaldo silencioso necesita un chivato. Al retomar el proyecto tras un parón,
-  mirar `workers.max` de los dos endpoints. Estado al cerrar: whisper a 1 (subido por el
-  canal, comprobado con lectura); diarize a 0 hasta que David lo suba en la consola.
+  mirar `workers.max` de los dos endpoints. Estado al cerrar: los DOS a 1 (whisper lo subió
+  el canal, diarize lo subió David en la consola; comprobado con lectura).
 - **Si el control de permisos de la sesión deniega un cambio sobre la cuenta de un
   servicio de David, NO se rodea**: se le cuenta qué se intentaba y decide él.
 - **El apagado de la API REST v1 de RunPod (15-nov-2026) no nos toca**: el código usa
@@ -718,3 +718,9 @@ abierto (España tiene ≥5 signatarios) — el reloj arranca al abrir la web.
   queda debajo como HISTÓRICO. Candado: test_handoff_vigente.
 - **Página «Enlaces de esestocierto»** (artefacto privado de David, enlazado en docs/21
   §0): todos los paneles de todos los servicios. Si se añade un proveedor, se añade ahí.
+- **Corrección del mismo día (pregunta de David: «¿ya siempre se va a usar la GPU?»): NO.**
+  La cadena del oído es AssemblyAI → subtítulos → GPU → CPU (4.7-B): la GPU es la SEGUNDA
+  red. Por eso se quedó sin peticiones y RunPod la bajó a 0 — y por eso volverá a bajarla
+  a los 7 días. Dije a David que noviembre había ido «por el camino lento» sin haber leído
+  antes `_tras_la_descarga`: era una conclusión sacada de la factura de UN proveedor.
+  Regla: antes de afirmar por dónde pasó un análisis, leer la cadena entera en el código.
