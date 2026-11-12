@@ -28,3 +28,8 @@ LO QUE FALTA (y propuesta por fases, cada una con su decisión de David):
   arquitectura) y un humano (moderación/comunidad) confirma — nunca automática.
 El orden recomendado es 1 → 2: la foto fuera de contexto es el bulo visual más
 común y el que la competencia desmiente a mano cada semana.
+
+> **RESUELTO 2026-11-12 — APARCADO.** David, literal: «Vamos a dejar el tema OSINT y
+> todo lo que conlleva (nos interesa la certificación IFCN) para una fase más adulta
+> del servicio». La exploración 6.31 queda como referencia; no se construye ninguna
+> fase ni se vuelve a proponer hasta que él lo reabra.

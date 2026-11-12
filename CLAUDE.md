@@ -683,3 +683,14 @@ A David los comandos sueltos se le dan SIEMPRE en UNA linea (su terminal corta l
   modelo antes que la plantilla.
 - Álvaro (a@a.com) ya es superusuario: no necesita nombramiento — el circuito
   email-guía lo estrenará el primer MOD real.
+
+## DECISIÓN DE DAVID (2026-11-12): OSINT de imagen APARCADO — IFCN sí interesa
+David, literal: «Vamos a dejar el tema OSINT y todo lo que conlleva (nos interesa la
+certificación IFCN) para una fase más adulta del servicio». Las 4 fases de la
+exploración 6.31 (foto suelta como post, búsqueda inversa, forense, geolocalización)
+quedan en docs/33 como referencia y NO se construyen ni se vuelven a proponer hasta
+que David lo reabra. Motivo de fondo que él mismo señaló: guardar fotos ajenas abre
+propiedad intelectual (derecho de cita discutible para una SL que cobra) e imagen de
+particulares. «La vista» DENTRO del vídeo (5.5-D/G) sigue como está. El camino IFCN
+se mantiene como objetivo: su único requisito no atajable son 12 meses publicando en
+abierto (España tiene ≥5 signatarios) — el reloj arranca al abrir la web.
