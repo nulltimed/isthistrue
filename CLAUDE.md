@@ -694,3 +694,27 @@ propiedad intelectual (derecho de cita discutible para una SL que cobra) e image
 particulares. «La vista» DENTRO del vídeo (5.5-D/G) sigue como está. El camino IFCN
 se mantiene como objetivo: su único requisito no atajable son 12 meses publicando en
 abierto (España tiene ≥5 signatarios) — el reloj arranca al abrir la web.
+
+## Lecciones del 2026-11-12 — GPU apagada en silencio y handoff reescrito
+- 🔴 **RunPod baja a 0 el máximo de trabajadores de un endpoint tras 7 días sin
+  peticiones, y NO lo vuelve a subir solo.** Lo hizo el 28-sep-2026 con `istt-whisper` e
+  `istt-diarize`; como la regla del código es «la GPU acelera, jamás bloquea», ningún
+  análisis de noviembre pasó por la GPU y nadie lo vio (facturación de RunPod a cero desde
+  mediados de septiembre; el trabajo lo absorbieron la CPU o AssemblyAI, según el caso). Misma familia que 6.11 y 6.15: lo que falla EN CALIENTE
+  y con respaldo silencioso necesita un chivato. Al retomar el proyecto tras un parón,
+  mirar `workers.max` de los dos endpoints. Estado al cerrar: whisper a 1 (subido por el
+  canal, comprobado con lectura); diarize a 0 hasta que David lo suba en la consola.
+- **Si el control de permisos de la sesión deniega un cambio sobre la cuenta de un
+  servicio de David, NO se rodea**: se le cuenta qué se intentaba y decide él.
+- **El apagado de la API REST v1 de RunPod (15-nov-2026) no nos toca**: el código usa
+  `api.runpod.ai/v2/<id>/run` (trabajos serverless) y GraphQL solo para el saldo.
+- **El handoff (docs/21) se REESCRIBE, no se remienda.** Pregunta de David, literal:
+  «Estás haciendo en cada iteración el handoff a Fable, tal y como habíamos quedado, por
+  si esta instancia/chat se corrompe/termina y tengo que empezar un nuevo chat?». La
+  respuesta honesta era «a medias»: se tocaba en cada serie, pero con `sed` sobre una
+  línea de 7.000 caracteres, y el PROMPT DE ARRANQUE seguía describiendo el régimen de
+  agosto (operador dentro del VPS). Desde hoy: prompt de arranque para el canal actual +
+  «§0 ESTADO EXACTO» legible, que se reescribe entero al cerrar cada serie; lo anterior
+  queda debajo como HISTÓRICO. Candado: test_handoff_vigente.
+- **Página «Enlaces de esestocierto»** (artefacto privado de David, enlazado en docs/21
+  §0): todos los paneles de todos los servicios. Si se añade un proveedor, se añade ahí.

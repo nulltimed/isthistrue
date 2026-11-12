@@ -1,35 +1,149 @@
-# HANDOFF DEL OPERADOR — isthistrue. / escierto.
+# HANDOFF — esestocierto? (repo nulltimed/isthistrue)
 
-## ▶ PROMPT DE ARRANQUE (cópialo tal cual como primer mensaje a la nueva instancia)
+> **Para David:** si este chat se rompe o se acaba, abre uno nuevo, conecta el repositorio
+> y pega tal cual el bloque de abajo como primer mensaje. No hace falta explicar nada más.
+
+## ▶ PROMPT DE ARRANQUE (cópialo tal cual como primer mensaje del chat nuevo)
 
 ```
-Eres Claude Code (Fable 5), el operador de despliegue de David para isthistrue./escierto.
-(fact-checking comunitario asistido por IA) en su VPS REAL de IONOS — no es un sandbox.
+Eres Claude, la IA que DESARROLLA «esestocierto?», mi plataforma de verificación de vídeo
+(repositorio de GitHub nulltimed/isthistrue, rama main). Yo soy David, el dueño.
 
-Tu norma es CLAUDE.md en la raíz del repo nulltimed/isthistrue. Tu punto de partida es
-docs/21-handoff-operador-claude-code.md: LÉELO ENTERO antes de tocar nada, y después, en
-este orden, CLAUDE.md, docs/06 (§1 a §51: toda la historia técnica en addenda numerados),
-el informe del último pase (docs/58) y la especificación GPU (docs/56).
+ANTES de contestarme nada, abre el repo y lee, en este orden:
+1) docs/21-handoff-operador-claude-code.md — la sección «§0 ESTADO EXACTO», entera;
+2) CLAUDE.md — tu norma: líneas rojas, mis órdenes permanentes con su literal y las
+   lecciones de cada serie;
+3) README.md — las decisiones canónicas (las congeladas solo las reabro yo).
+No me preguntes nada que ya esté escrito ahí.
 
-El triángulo de trabajo: David (humano, dueño único, decide todo, trabaja en español,
-autodidacta — explícale con claridad), Fable web (otra IA que DESARROLLA los pases y te
-los entrega como parche git; le hablas por addenda en docs/06), y TÚ (implementas,
-verificas con el ritual espejo→producción, arreglas lo que el CI cace, documentas TODO).
+Cómo trabajamos:
+- Me respondes SIEMPRE en castellano y con sencillez: soy autodidacta. Nada de siglas sin explicar.
+- Cierras CADA respuesta con exactamente TRES preguntas para mejorar el proyecto.
+- Tú desarrollas, haces commit y push directo a main, y esperas el CI de GitHub Actions.
+  Con el CI en verde, YO despliego en mi servidor con `cd /opt/isthistrue && bash desplegar.sh`
+  y te pego la salida. Con el CI en rojo no se despliega: lo arreglas tú.
+- No tienes acceso a mi servidor: los comandos me los das en UNA sola línea, uno por bloque.
+- Cada defecto se cierra con un test o candado. Cada orden mía se anota en CLAUDE.md con mi
+  literal y la fecha. Al cerrar cada serie actualizas el §0 de este handoff en el mismo commit.
+- El dinero (límites de gasto, panel de modelos) lo decido yo. Las líneas rojas, íntegras.
 
-Reglas que no se negocian: las líneas rojas de CLAUDE.md íntegras; el presupuesto de
-Anthropic y el panel de modelos son SOLO de David; jamás imprimir ni commitear secretos;
-producción nunca se toca con análisis en vuelo; y toda intervención termina con informe
-a David + addendum en docs/06 + este handoff actualizado + los tres árboles (workspace,
-/opt/isthistrue, /opt/isthistrue-staging) en el mismo commit.
-
-Autorización permanente vigente: actuar SIN preguntar en todo lo que acelere o mejore
-los análisis de los vídeos, incluido el gasto del saldo PREPAGO de Runpod.
-
-Empieza por leer el handoff. No preguntes lo que ya esté escrito.
+Empieza diciéndome en pocas líneas en qué punto está el proyecto y qué hay pendiente.
 ```
 
+---
 
-**De: Claude Code (Fable 5), operador de despliegue de David · Para: la siguiente instancia de Claude Code (Fable 5)**
+## §0. ESTADO EXACTO — actualizado el 2026-11-12
+
+> **Regla de mantenimiento (órdenes de David, 2026-08-15, 2026-08-27 y 2026-11-12):** este §0
+> se REESCRIBE al cerrar cada serie, en el mismo commit. Reescribir, no parchear: entre el
+> 9 y el 12 de noviembre se fue remendando una sola línea de 7.000 caracteres con `sed` y el
+> prompt de arranque se quedó describiendo el régimen de agosto. Un chat nuevo no habría
+> podido arrancar con él. Todo lo que hay por debajo de la raya «HISTÓRICO» es de consulta.
+
+### Quién es quién
+- **David** — dueño técnico. Suyos son el dominio esestocierto.com, el servidor (VPS IONOS)
+  y el copyright del código (AGPL-3.0 + licencia comercial). Es quien ejecuta los comandos
+  en el servidor. Autodidacta: explicar con sencillez y con ejemplos.
+- **Álvaro** — socio. La sociedad operadora (SL) será 100 % suya y está EN CONSTITUCIÓN.
+  Su usuario en la web es `a@a.com` y ya es superusuario.
+- **Claude** — desarrolla desde un contenedor en la nube con permiso de escritura en el
+  repo (app de GitHub). NO tiene acceso al VPS. Los tests solo corren en el CI (~3 min).
+
+### Producción (esestocierto.com)
+- Desplegada hasta la **serie 6.30** (David, 10-nov-2026 00:10: «sí, sin fallos», con el
+  barrido `verificar_atrasados` ya lanzado). Los commits posteriores son solo documentación:
+  no hay nada pendiente de desplegar.
+- La web sigue **PRIVADA** (`site_private=1`) hasta que la SL exista y los cobros tengan titular.
+- Compra de créditos APAGADA (`sl_checkout_enabled=0`). Pasarela decidida: **PayPal Business**.
+- Límites de gasto APAGADOS por orden de David (`budget_limits_enabled=0`); el gasto se apunta
+  igual. Aviso diario de gasto a 10 € (`spend_alert_daily_eur`).
+
+### Qué hay construido (dónde leerlo)
+- El recorrido completo de las series 6.1 → 6.30 está en **CLAUDE.md** (una sección de
+  lecciones por serie, con el literal de cada orden) y en `docs/102` (informe con addenda).
+- En una frase: post en vivo sin recargar con barra de progreso en tiempo real, voto único
+  de moderación y botón «Verificar ya», avisos a moderación por campana, 13 plataformas con
+  reproductor más descarga genérica, página /medios/, créditos, API, dossieres B2B, dataset,
+  rastreo de origen de bulos, libro de gastos público, `desplegar.sh`.
+
+### Órdenes permanentes de David (el literal está en CLAUDE.md)
+1. Cada cambio de producto lleva su gancho de ingresos. Los votos son gratis SIEMPRE y los
+   veredictos no se venden.
+2. Qwen antes que Claude, siempre; Claude queda de respaldo.
+3. Es una SL: nada de donaciones en ninguna página.
+4. Se despliega con `bash desplegar.sh`; si el script cambia, se le avisa expresamente.
+5. Los comandos sueltos, en una sola línea (su terminal corta las barras `\`).
+6. La puerta al análisis con fuentes no se toca: votos + 65 % de voces identificadas; el voto
+   único de moderador o superusuario vale por todos, siempre.
+7. Nada de tareas nocturnas de reintento. Fusible de gasto: 100 % manual.
+8. OSINT de imagen APARCADO (2026-11-12) hasta «una fase más adulta». El IFCN sí interesa.
+9. La «bandeja al abrir al público» no se le repite hasta que él diga que abre.
+10. Sus preferencias piden un contador de tokens al final de cada respuesta: se acordó que
+    no se puede dar, y se sustituye por las TRES preguntas de cierre.
+
+### Pendientes abiertos, por orden
+1. **Prueba de fuego del circuito en vivo** (postear un vídeo corto y ver barra, voces y
+   veredictos aparecer solos). Guion de 5 pasos entregado el 10-nov; sin hacer.
+2. **RunPod: la GPU llevaba apagada desde el 28-sep-2026.** Ver el apartado de abajo.
+   `istt-diarize` sigue con máximo 0 trabajadores: falta que David lo suba a 1.
+3. Guion de alta de **PayPal Business** y «paquete constitución» cuando Álvaro tenga la SL.
+4. **IFCN**: lista de lo que mirará el evaluador y qué falta (ofrecida, sin respuesta). El
+   reloj de 12 meses publicando en abierto no arranca hasta abrir la web.
+5. Lista de bloqueantes reales para abrir al público (ofrecida, sin respuesta).
+6. Buzones `contacto@` y `alvaro@` del dominio (receta entregada el 09-nov) y registro SPF.
+7. Pegar los tres slugs «de lujo» en Panel → `featured_claim_slug` (cadena ya entregada).
+8. Ofrecido y sin decidir: aviso de errores 500 a la campana; diapositivas del dossier;
+   nota para el abogado sobre el fotograma por afirmación ahora que cobrará una SL.
+9. Autorizado y a la espera de que haga falta: cookies de David para X/Instagram/Facebook
+   si su antibots bloquea descargas. Jamás por chat ni en el repo.
+
+### RunPod — hallazgo del 2026-11-12 (leído de la cuenta con el conector)
+- Endpoints: `istt-whisper` (`mxqg9olrlfglni`, transcripción) e `istt-diarize`
+  (`fpl2ql0qgk9ao4`, voces, imagen `ghcr.io/nulltimed/istt-diarize:5.23-slim`).
+- El registro de auditoría dice que el 28-sep-2026 RunPod los bajó a **máximo 0
+  trabajadores por inactividad** (regla suya: 7 días sin peticiones). La facturación lo
+  confirma: último gasto en la semana del 7-sep; total histórico 3,03 $. Desde entonces
+  ningún análisis ha pasado por la GPU: el código cae al respaldo sin avisar («la GPU
+  acelera, jamás bloquea»). Qué respaldo lo absorbió (CPU o AssemblyAI) lo dice el log
+  del worker, que desde aquí no se ve.
+- Hecho el 12-nov: `istt-whisper` subido a máximo 1 (comprobado con lectura posterior).
+  El mismo cambio en `istt-diarize` fue denegado por el control de permisos de la sesión:
+  NO se rodeó. Lo sube David en la consola (Serverless → istt-diarize → Max workers = 1).
+- Si el proyecto vuelve a parar más de 7 días, volverá a pasar: mirar `workers.max` al retomar.
+- Correo de RunPod del 11-nov, revisado: el apagado de la API REST v1 (15-nov) NO nos afecta
+  (usamos `api.runpod.ai/v2/<id>/run`, que no cambia, y GraphQL solo para leer el saldo, que
+  RunPod mantiene). El worker fija `runpod>=1.7,<2`: el SDK 2.0 no entra solo. No hay
+  endpoint público de Whisper activo que sustituya al nuestro.
+
+### Documentos fuera del repo (artefactos de Claude, privados de David)
+- Enlaces de esestocierto (todos los paneles de todos los servicios): https://claude.ai/artifact/Szpsb44Woh7UZbpJumhPsB
+- Dossier para inversores: https://claude.ai/artifact/DKaQs9dmSrbSDPCV1jKf5R
+- Capacidades de la plataforma (para el socio): https://claude.ai/artifact/7AZqr6x4We83DopmjBVWdG
+- Estructura David ↔ SL: https://claude.ai/artifact/JYCH9yokXaoF8DYXRC3ynb
+
+### Oficio de este canal (para no reaprenderlo)
+- Sin Docker local: antes de cada push, `python3 -m compileall`, `node --check` de los JS
+  tocados, parseo de las plantillas tocadas y búsqueda de `msgid` duplicados en el `.po`.
+  El fallo de `istt_icons` al parsear plantillas en frío es benigno.
+- Esperar el CI: primero a que el último run tenga el `headSha` del commit recién subido,
+  luego sondear ESE run por su id. Mirar «el último run» sin más da falsos rojos.
+- `sleep N && comando` está bloqueado en este entorno: usar bucles `until` en segundo plano.
+- CLAUDE.md se amplía por el final (`cat >>`), nunca se reordena. Los tests históricos que
+  una orden nueva contradice se ENMIENDAN citando el literal, no se borran.
+- Si el control de permisos deniega una acción sobre la cuenta de un servicio (RunPod, etc.),
+  no se rodea: se le cuenta a David qué se intentaba y decide él.
+- Pie de los commits: `Co-Authored-By: Claude <modelo> <noreply@anthropic.com>` y la línea
+  `Claude-Session:` que indique la sesión en curso.
+
+---
+
+# HISTÓRICO (solo consulta)
+
+Todo lo que sigue se escribió cuando el operador era una instancia de Claude Code DENTRO
+del VPS (agosto–octubre de 2026). Los comandos, rutas de trabajo y el «primer día» de
+§12 describen ese régimen, no el actual. Las reglas técnicas y las trampas siguen valiendo.
+
+## Bitácora cruda de las series 6.1 → 6.30 (tal como se fue apuntando)
 
 **Última actualización: 2026-11-09, 07:00 · Workspace/main: SERIES 6.1→6.30. CIERRE DE JORNADA 09-11: 19 series en el día; despliegue pendiente único con bash desplegar.sh (migra analysis/0026 + panel/0008) y luego manage.py verificar_atrasados. Producción: AL DÍA hasta la 6.11 incluida (desplegada por David; worker y beat verificados «ready»); PENDIENTE el pull de 6.12→6.21 (CON migrate: analysis/0026; desde ahora: bash desplegar.sh) (PayPal fuera del panel + pasarela + vigía v2 modo vivo; sin migraciones, con collectstatic).** RÉGIMEN (enmendado 2026-11-06): Fable web desarrolla y pushea directo a main; DAVID ejerce de operador en el VPS con comandos paso a paso (él pega las salidas). Ritual intacto: CI verde → producción. ÓRDENES PERMANENTES de David (2026-11-09, literales en CLAUDE.md): «revenue en cada cambio» (guardarraíl: votos gratis, veredictos invendibles) · «Qwen antes que claude, siempre» (6.8: el cliente agota Qwen; respaldo deep=Sonnet) · donaciones FUERA de toda página (6.9, candado test_serie69) · ACUERDO DE CANAL: castellano siempre + cerrar cada respuesta con EXACTAMENTE 3 preguntas de mejora. PASARELA DECIDIDA (6.13, literal «Paypal Bussiness, te daré los datos más tarde»): **PayPal Business de la SL** — sustituye al Stripe del 06-11; legales y register ya lo nombran; los datos llegarán con la constitución. ESTADO por serie: 6.5 reparador JSON truncado (_salvage_json; fallos 52%→14% MEDIDO) + rastrear_origen (--reintentar) + bulo de la semana + ClaimReview · 6.6/b/c crédito de bienvenida=1 («regalo desde el principio», tope diario, candado contable: el regalo no infla el libro) + resumen semanal los VIERNES + /datos/ por meses y años + /quienes-somos/ /correcciones/ /servicios/ + migración accounts/0010 · 6.7 gastos públicos POR CATEGORÍAS + regalo en el email de verificación + recorrido guiado (tour_email=a@a.com, confirmada en .env) · 6.8/b Qwen agotado antes del respaldo (log con tamaño+cuerpo del 400) y respaldo deep=Sonnet · 6.9/b purga de donaciones + migración analysis/0025 · 6.10 README enmendado + featured_claim_slug multi-slug (bulos de lujo elegidos: davidpendiente de pegarlos en el panel) · 6.11 🔴 kombu sin fijar rompió TODO .delay() (VersionMismatch; 500 en /relanzar/): pin kombu==5.5.*+redis==5.* con candado test_serie611; REGLA: lo que solo falla en caliente va FIJADO · 6.12/b/c PayPal fuera del panel («Libro de financiación») · 6.14 VIGÍA v2: la página del post EN VIVO — cambios de análisis por intercambio htmx de #post-body sin recargar (evento istt:post-swap re-engancha transcript/speaker-suggest; candado test_serie614; mensajes nuevos siguen recargando) · 6.15 🔴 tareas FANTASMA: el worker descartaba moderate_machina_post y resolve_expired_warnings (vivían fuera de tasks.py y autodiscover no las importaba; cazado en el log de producción) — puentes forum/tasks.py y agents/tasks.py + candado test_serie615 (barrido AST de toda @shared_task contra el registro del worker) · 6.16 nivel de proceso del análisis (orden de David): barra de 4 etapas + hito fino Post.progress_note (migración 0026) escrito por las tareas y dentro de la huella del vigía — avanza EN VIVO vía 6.14; cadenas de _nota()/etapas al .po a mano con candado test_serie616; en AWAITING_BUDGET enseña créditos · 6.17 desplegar.sh: despliegue en UN comando con todos los candados encadenados (freno vuelo, sin down, beat si celery.py, migrate, seed, smoke estáticos, unregistered) + REGLA: avisar a David en cada cambio del script; comandos sueltos a David SIEMPRE en una línea; barra en listados DESCARTADA («sólo en la página del post») · 6.18 progreso EN TIEMPO REAL («¿no puede ser en tiempo real?»): % animado por segundo en el navegador (progreso.js, patrón del vivo) contra estimación AUTO-CALIBRADA (_ratio_fase: mediana de los últimos 10 DONE; fallback 2,3x/1,2x), acotado al 97 % · 6.19 los NEW huérfanos del presupuesto se relanzan cada hora (caza del post de Abascal: rebote a NEW sin barrendero) · 6.20 LÍMITES DE GASTO APAGADOS por orden literal de David (interruptor budget_limits_enabled en el panel; el gasto se apunta íntegro; el banco de pruebas lo enciende) · 6.20-b el banner público sin «/techo» mientras los límites estén apagados (flag limites en quota_banner) · 6.21 aviso diario de gasto (spend_alert_daily_eur, campana+email, 1/día, sin frenar; candado: el aviso jamás rompe el apunte) + total mensual GRANDE en /gastos/ + fusible automático DESCARTADO por David («100% manual») · 6.22 manage.py verificar_atrasados (backfill «todo de golpe»: salta votos, respeta 65 % salvo --sin-voces; puerta 5.27-A INTACTA por literal «ni una ni otra, tal y como está», con candado) · 6.23-c reintento nocturno RETIRADO el mismo día («Nada de hacerlo de noche ni nada»): la cobertura total ya es de fábrica (verdict.run, un claim por frase con señal; candado test_serie623) + AUTORIZADAS cookies de David para X/IG/FB si el anti-bot muerde (pendiente de darlas) · 6.26 el voto único de mod/superusuario abre el PRIMER análisis SIEMPRE (antes solo en modo arranque <50 usuarios; startup_mode_min_users HISTÓRICA; test 5.27-A enmendado con literal; puerta de voces intacta) · 6.27 botón «⚡ Verificar ya» (solo mods, solo POST — gasto real jamás por GET) + verificar_atrasados imprime el enlace de cada retenido · 6.28 retenidos por voces AVISADOS por campana a mods+superusuarios (1/post/día) + nombramiento de mod (4.2 H6, /panel/moderadores/, username O email) ahora avisa al nombrado/retirado · 6.29 email MINI-GUÍA al nombrar mod + avisos de retenidos TOTALES (nacer retenido, votos completos con puerta cerrada, barrido — helper único, 1/post/día) + tabla general descartada («no») · 6.30 mod_guide_html editable en el panel (kind html, textarea; vacío=fábrica; email html_message+strip_tags; migración panel/0008: SystemSetting.value a TextField) · 6.24 compatibilidad «sin límite»: +Vimeo, Dailymotion, X, Instagram, Facebook, Rumble, Odysee, SoundCloud, iVoox (yt-dlp ya era genérico; patrones anclados a // contra falsos dominios) · 6.25 /medios/ «¿Qué puedo postear?» bilingüe en el pie con candado toda-plataforma-documentada. CORREO DEL DOMINIO: MX ya al VPS; SPF añadido por David; webmaster@ EXISTE (mapa+hash; falta postmap -q de comprobación), david@=alias a su buzón; contacto@ y alvaro@ A MEDIAS (receta de 6 pasos dada en chat 05:44: faltan pasos 2-6). PENDIENTES PRÓXIMA SESIÓN: bash desplegar.sh (trae 6.12-6.21; migra analysis/0026; siembra budget_limits_enabled y spend_alert_daily_eur) + Ctrl+F5 panel · prueba de fuego del relanzar · buzones contacto@/alvaro@ · bulos de lujo al panel · ¿aviso de 500 a la campana? (ofrecido 2 veces) · datos SL → paquete «constitución» AHORA CON PAYPAL BUSINESS (checkout+Pro+sl_*+sl_checkout_enabled=1; nota de prensa docs/101). Documento del socio (Claude Doc «Capacidades») actualizado a PayPal Business. Informe completo: docs/102. ANTERIOR ↓
 
